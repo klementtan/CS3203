@@ -30,15 +30,19 @@ jobs:
           cmake --build . --target unit_testing --config Release
           cmake --build . --target integration_testing --config Release
           cmake --build . --target autotester --config Release
+          if ($lastexitcode -ne 0) { throw "build failed" }
       - name: unit tests
         run: |
           cd Team34/Code34
-          ./build/src/unit_testing/unit_testing
+          ./build/src/unit_testing/Release/unit_testing.exe
+          if ($lastexitcode -ne 0) { throw "unit tests failed" }
       - name: integration tests
         run: |
           cd Team34/Code34
-          ./build/src/integration_testing/integration_testing
+          ./build/src/integration_testing/Release/integration_testing.exe
+          if ($lastexitcode -ne 0) { throw "integration tests failed" }
       - name: autotester
         run: |
           cd Team34
-          Code34/build/src/autotester/autotester Tests34/Sample_source.txt Tests34/Sample_queries.txt out.xml
+          Code34/build/src/autotester/Release/autotester.exe Tests34/Sample_source.txt Tests34/Sample_queries.txt out.xml
+          if ($lastexitcode -ne 0) { throw "autotester failed" }
