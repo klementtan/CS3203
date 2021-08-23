@@ -1,0 +1,101 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  build-linux-gcc:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v1
+      - name: install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -qq cmake
+      - name: build
+        run: |
+          cd Team34/Code34
+          mkdir build
+          cmake ..
+          make -j2
+      - name: integration tests
+        run: |
+          cd Team34/Code34
+          ./build/src/integration_testing/integration_testing
+      - name: autotester
+        run: |
+          cd Team34/Code34
+          ./build/src/autotester/autotester tests/Sample_source.txt tests/Sample_queries.txt build/out.xml
+        env:
+          CC: gcc
+          CXX: g++
+  build-linux-clang:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v1
+      - name: install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -qq cmake
+      - name: build
+        run: |
+          cd Team34/Code34
+          mkdir build
+          cmake ..
+          make -j2
+      - name: integration tests
+        run: |
+          cd Team34/Code34
+          ./build/src/integration_testing/integration_testing
+      - name: autotester
+        run: |
+          cd Team34/Code34
+          ./build/src/autotester/autotester tests/Sample_source.txt tests/Sample_queries.txt build/out.xml
+        env:
+          CC: clang
+          CXX: clang++
+  build-macos:
+    runs-on: macOS-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: install dependencies
+        run: brew install cmake
+      - name: build
+        run: |
+          cd Team34/Code34
+          mkdir build
+          cmake ..
+          make -j2
+      - name: integration tests
+        run: |
+          cd Team34/Code34
+          ./build/src/integration_testing/integration_testing
+      - name: autotester
+        run: |
+          cd Team34/Code34
+          ./build/src/autotester/autotester tests/Sample_source.txt tests/Sample_queries.txt build/out.xml
+        env:
+          CC: clang
+          CXX: clang++
+  build-windows:
+    runs-on: windows-2019
+    steps:
+      - uses: actions/checkout@v1
+        # this runs vcvarsall for us, so we get the MSVC toolchain in PATH.
+      - uses: seanmiddleditch/gha-setup-vsdevenv@master
+      - name: install cmake
+        uses: jwlawson/actions-setup-cmake@v1.9
+        with:
+          cmake-version: '3.21.x'
+      - name: build
+        run: |
+          cd Team34/Code34
+          mkdir build
+          cmake ..
+          ninja
+      - name: integration tests
+        run: |
+          cd Team34/Code34
+          ./build/src/integration_testing/integration_testing
+      - name: autotester
+        run: |
+          cd Team34/Code34
+          ./build/src/autotester/autotester tests/Sample_source.txt tests/Sample_queries.txt build/out.xml

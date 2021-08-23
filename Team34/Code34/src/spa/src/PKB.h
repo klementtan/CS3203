@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-typedef short PROC;
+using PROC = int;
 
 class TNode;
 
