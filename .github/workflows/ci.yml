@@ -3,7 +3,7 @@ on: [push, pull_request]
 
 jobs:
   build-linux-gcc:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v1
       - name: install dependencies
@@ -29,7 +29,7 @@ jobs:
           CC: gcc
           CXX: g++
   build-linux-clang:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v1
       - name: install dependencies
