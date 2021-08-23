@@ -14,6 +14,7 @@ jobs:
         run: |
           cd Team34/Code34
           mkdir build
+          cd build
           cmake ..
           make -j2
       - name: integration tests
@@ -39,6 +40,7 @@ jobs:
         run: |
           cd Team34/Code34
           mkdir build
+          cd build
           cmake ..
           make -j2
       - name: integration tests
@@ -62,6 +64,7 @@ jobs:
         run: |
           cd Team34/Code34
           mkdir build
+          cd build
           cmake ..
           make -j2
       - name: integration tests
@@ -89,6 +92,7 @@ jobs:
         run: |
           cd Team34/Code34
           mkdir build
+          cd build
           cmake ..
           ninja
       - name: integration tests
