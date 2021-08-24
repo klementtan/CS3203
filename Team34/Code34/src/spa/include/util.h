@@ -9,4 +9,3 @@ namespace util
 {
     std::string readEntireFile(const char* path);
 }
-
