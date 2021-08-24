@@ -1,5 +1,5 @@
-// frontend.h
-// contains definitions for frontend related code, namely the lexer & parser.
+// simple_parser.h
+// contains definitions for simple-parsing related code, namely the lexer & parser.
 
 #pragma once
 
@@ -13,15 +13,8 @@
 
 #include "ast.h"
 
-// misc stuff
-namespace frontend
-{
-    std::string readEntireFile(const char* path);
-}
-
-
 // lexer stuff
-namespace frontend
+namespace simple_parser
 {
     enum class TokenType
     {
@@ -76,7 +69,7 @@ namespace frontend
 
 
 // parser stuff
-namespace frontend
+namespace simple_parser
 {
     ast::Program* parseProgram(zst::str_view input);
 }

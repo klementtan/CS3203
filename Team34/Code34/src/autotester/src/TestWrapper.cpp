@@ -3,15 +3,16 @@
 #include "TestWrapper.h"
 
 // spa
-#include "frontend.h"
+#include "util.h"
+#include "simple_parser.h"
 
 
 TestWrapper::TestWrapper() { }
 
 void TestWrapper::parse(std::string filename)
 {
-    auto text = frontend::readEntireFile(filename.c_str());
-    auto program = frontend::parseProgram(text);
+    auto text = util::readEntireFile(filename.c_str());
+    auto program = simple_parser::parseProgram(text);
 }
 
 

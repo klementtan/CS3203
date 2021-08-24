@@ -4,9 +4,9 @@
 #include <zst.h>
 
 #include "ast.h"
-#include "frontend.h"
+#include "simple_parser.h"
 
-namespace frontend
+namespace simple_parser
 {
     using namespace ast;
 

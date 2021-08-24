@@ -10,7 +10,7 @@
 
 #include <zpr.h>
 
-namespace frontend
+namespace util
 {
     std::string readEntireFile(const char* path)
     {

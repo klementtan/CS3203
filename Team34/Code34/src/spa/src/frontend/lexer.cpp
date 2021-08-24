@@ -3,9 +3,9 @@
 #include <zst.h>
 #include <zpr.h>
 
-#include "frontend.h"
+#include "simple_parser.h"
 
-namespace frontend
+namespace simple_parser
 {
     static void eat_whitespace(zst::str_view& sv)
     {
