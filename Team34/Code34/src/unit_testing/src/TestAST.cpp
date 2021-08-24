@@ -1,7 +1,7 @@
-
-#include "TNode.h"
+// TestAST.cpp
 
 #include "catch.hpp"
+
 void require(bool b)
 {
     REQUIRE(b);
@@ -9,8 +9,5 @@ void require(bool b)
 
 TEST_CASE("1st Test")
 {
-    TNode T;
-
-
     require(1 == 1);
 }
