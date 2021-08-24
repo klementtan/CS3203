@@ -226,6 +226,10 @@ namespace frontend
 		if(ps->next() != TT::RBrace)
 			parse_error("expected '}'");
 
+		// the grammar specifies "stmt+"
+		if(list.statements.empty())
+			parse_error("expected at least one statement between '{' and '}'");
+
 		return list;
 	}
 
