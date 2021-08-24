@@ -10,8 +10,7 @@
 #include <list>
 
 using namespace std;
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent),
-                                          ui(new Ui::MainWindow)
+MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
     wrapper = new GUIWrapper();
@@ -25,12 +24,11 @@ MainWindow::~MainWindow()
 
 void MainWindow::btnLoad_clicked()
 {
-    QString src_name = QFileDialog::getOpenFileName(this,
-                                                    tr("Open Source file"), ".", tr("txt Files (*.txt)"));
+    QString src_name = QFileDialog::getOpenFileName(this, tr("Open Source file"), ".", tr("txt Files (*.txt)"));
 
     QFile file;
     file.setFileName(src_name);
-    if (!file.open(QIODevice::ReadOnly))
+    if(!file.open(QIODevice::ReadOnly))
         return;
     QString m_fileContents = file.readAll();
     ui->txtCodeEditor->document()->setPlainText(m_fileContents);
@@ -43,8 +41,8 @@ void MainWindow::btnRun_clicked()
     wrapper->evaluate(ui->txtQuery->toPlainText().toStdString(), results);
     QString result_str;
 
-    for (auto const& result : results) {
+    for(auto const& result : results)
         result_str += QString(result.c_str());
-    }
+
     ui->txtResult->document()->setPlainText(result_str);
 }

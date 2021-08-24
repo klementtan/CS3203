@@ -16,58 +16,61 @@
 // misc stuff
 namespace frontend
 {
-	std::string readEntireFile(const char* path);
+    std::string readEntireFile(const char* path);
 }
 
 
 // lexer stuff
 namespace frontend
 {
-	enum class TokenType
-	{
-		EndOfFile = 0,
+    enum class TokenType
+    {
+        EndOfFile = 0,
 
-		LAngle,
-		RAngle,
-		LBrace,
-		RBrace,
-		LParen,
-		RParen,
+        LAngle,
+        RAngle,
+        LBrace,
+        RBrace,
+        LParen,
+        RParen,
 
-		Exclamation,
-		LogicalAnd,
-		LogicalOr,
+        Exclamation,
+        LogicalAnd,
+        LogicalOr,
 
-		Equal,          // =
+        Equal, // =
 
-		NotEqual,       // !=
-		EqualsTo,       // ==
-		GreaterEqual,   // >=
-		LessEqual,      // <=
+        NotEqual,     // !=
+        EqualsTo,     // ==
+        GreaterEqual, // >=
+        LessEqual,    // <=
 
-		Plus,
-		Minus,
-		Asterisk,
-		Slash,
-		Percent,
-		Semicolon,
+        Plus,
+        Minus,
+        Asterisk,
+        Slash,
+        Percent,
+        Semicolon,
 
-		Identifier,
-		Number,
-	};
+        Identifier,
+        Number,
+    };
 
-	struct Token
-	{
-		zst::str_view text;
-		TokenType type;
+    struct Token
+    {
+        zst::str_view text;
+        TokenType type;
 
-		operator TokenType() const { return this->type; }
-	};
+        operator TokenType() const
+        {
+            return this->type;
+        }
+    };
 
-	using TT = TokenType;
+    using TT = TokenType;
 
-	Token getNextToken(zst::str_view& sv);
-	Token peekNextToken(zst::str_view sv);
+    Token getNextToken(zst::str_view& sv);
+    Token peekNextToken(zst::str_view sv);
 }
 
 
@@ -75,5 +78,5 @@ namespace frontend
 // parser stuff
 namespace frontend
 {
-	ast::Program* parseProgram(zst::str_view input);
+    ast::Program* parseProgram(zst::str_view input);
 }

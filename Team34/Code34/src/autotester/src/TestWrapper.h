@@ -1,7 +1,6 @@
 #ifndef TESTWRAPPER_H
 #define TESTWRAPPER_H
 
-#include <iostream>
 #include <list>
 #include <string>
 
@@ -11,11 +10,11 @@
 class TestWrapper : public AbstractWrapper
 {
 public:
-	TestWrapper();
-	~TestWrapper();
+    TestWrapper();
+    ~TestWrapper();
 
-	virtual void parse(std::string filename);
-	virtual void evaluate(std::string query, std::list<std::string>& results);
+    virtual void parse(std::string filename);
+    virtual void evaluate(std::string query, std::list<std::string>& results);
 
 private:
 };
