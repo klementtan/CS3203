@@ -16,5 +16,6 @@ No additional instructions required.
 
 Name | Mobile | Email | Development OS/Toolchain
 -:|:-:|:-|-|
-Ng Zhia Yang | no | zhiayang@u.nus.edu | macOS / clang 11.1
 Georgie Lee | no | georgie@u.nus.edu | Ubuntu / clang 10.0
+Ng Zhia Yang | no | zhiayang@u.nus.edu | macOS / clang 11.1
+Nicholas Tanvis | no | e0424661@u.nus.edu | Windows 10 / MSVC 14.29
