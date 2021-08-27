@@ -1,2 +1,6 @@
 # Ignore build folder
 build/
+
+reformat.sh
+Makefile
+objs/
