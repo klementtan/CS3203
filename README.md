@@ -1,5 +1,11 @@
 # Team 34
 
+**Contents**:
+
+* Docs
+  * [Meeting Notes](docs/meeting-notes)
+* [Developer tools](Team34/Code34/contrib/devtools)
+
 ## Target Environment
 
 Item | Version
@@ -19,3 +25,4 @@ Name | Mobile | Email | Development OS/Toolchain
 Georgie Lee | no | georgie@u.nus.edu | Ubuntu / clang 10.0
 Ng Zhia Yang | no | zhiayang@u.nus.edu | macOS / clang 11.1
 Nicholas Tanvis | no | e0424661@u.nus.edu | Windows 10 / MSVC 14.29
+Klement Tan | no | klementtan@u.nus.edu | macOS / clang 12.0.1
