@@ -18,6 +18,9 @@ if (WIN32)
     SET(CMAKE_FIND_LIBRARY_PREFIXES "")
     SET(CMAKE_FIND_LIBRARY_SUFFIXES ".lib" ".dll")
     set(AUTOTESTER_ROOT "${CMAKE_CURRENT_LIST_DIR}/lib/autotester/win")
+
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+
 else()
     if(CMAKE_BUILD_TYPE MATCHES Debug)
         set(CMAKE_BUILD_TYPE "") # Messes up autotester if the build type is really set

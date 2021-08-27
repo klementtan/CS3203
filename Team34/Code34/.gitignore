@@ -4,3 +4,4 @@ build/
 reformat.sh
 Makefile
 objs/
+out.xml
