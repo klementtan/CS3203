@@ -10,6 +10,8 @@
 
 #include <zpr.h>
 
+#include "util.h"
+
 namespace util
 {
     std::string readEntireFile(const char* path)
@@ -32,6 +34,7 @@ namespace util
             contents += std::string_view(buf, n);
         }
 
+        util::log("misc", "read input file '{}'", path);
         return contents;
     }
 }
