@@ -41,6 +41,10 @@ namespace pkb
 
         std::map<std::string, Variable> variables;
         std::map<std::string, Procedure> procedures;
+
+        
+        std::vector<ast::Stmt*> while_statements;
+        std::vector<ast::Stmt*> if_statements;
     };
 
     ProgramKB* processProgram(ast::Program* prog);
