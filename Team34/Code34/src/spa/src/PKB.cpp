@@ -7,18 +7,18 @@
 
 namespace pkb
 {
-	template <typename... Args>
-	[[noreturn]] static void error(const char* fmt, Args&&... xs)
-	{
+    template <typename... Args>
+    [[noreturn]] static void error(const char* fmt, Args&&... xs)
+    {
 		zpr::fprintln(stderr, "error: {}", zpr::fwd(fmt, static_cast<Args&&>(xs)...));
 		exit(1);
-	}
+    }
 
 
 	// collection only entails numbering the statements
-	static void collectStmtList(ProgramKB* pkb, ast::StmtList* list);
+    static void collectStmtList(ProgramKB* pkb, ast::StmtList* list);
     static void collectStmt(ProgramKB* pkb, ast::Stmt* stmt, ast::StmtList* parent)
-	{
+    {
 		// the statement should not have been seen yet.
 		assert(stmt->id == 0);
 
@@ -40,17 +40,17 @@ namespace pkb
 			collectStmtList(pkb, &w->body);
             w->body.parent_statement = stmt;
 		}
-	}
+    }
 
-	static void collectStmtList(ProgramKB* pkb, ast::StmtList* list)
-	{
+    static void collectStmtList(ProgramKB* pkb, ast::StmtList* list)
+    {
 		for(const auto& stmt : list->statements)
 			collectStmt(pkb, stmt, list);
-	}
+    }
 
 
-	ProgramKB* processProgram(ast::Program* program)
-	{
+    ProgramKB* processProgram(ast::Program* program)
+    {
 		auto pkb = new ProgramKB();
 
 		// do a first pass to number all the statements, set the
@@ -67,5 +67,5 @@ namespace pkb
 
 
 		return pkb;
-	}
+    }
 }
