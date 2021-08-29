@@ -18,6 +18,8 @@ namespace ast
     {
         std::vector<Stmt*> statements;
 
+        Stmt* parent_statement = nullptr;
+
         std::string toString(int nesting) const;
     };
 
