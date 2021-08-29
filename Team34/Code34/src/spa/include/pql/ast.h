@@ -223,7 +223,7 @@ namespace pql::ast
     {
         SuchThatCl* such_that;
         PatternCl* pattern;
-        Declaration* declaration;
+        Declaration* ent;
         std::string toString() const;
     };
 
