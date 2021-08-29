@@ -3,7 +3,7 @@
 #include <zpr.h>
 
 #include "ast.h"
-#include "PKB.h"
+#include "pkb.h"
 
 namespace pkb
 {
