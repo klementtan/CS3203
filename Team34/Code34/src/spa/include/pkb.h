@@ -33,6 +33,17 @@ namespace pkb
         std::unordered_set<Procedure*> modified_by_procs;
     };
 
+    struct Follows
+    {
+        ast::StatementNum id = 0;
+        ast::StatementNum directly_before = 0;
+        ast::StatementNum directly_after = 0;
+
+        std::vector<ast::StatementNum> before;
+        std::vector<ast::StatementNum> after;
+    };
+
+
     struct ProgramKB
     {
         // this also functions as a unordered_map from (stmt_number - 1) -> Stmt*,
@@ -45,6 +56,8 @@ namespace pkb
 
         std::vector<ast::Stmt*> while_statements;
         std::vector<ast::Stmt*> if_statements;
+
+        std::vector<Follows*> follows;
     };
 
     ProgramKB* processProgram(ast::Program* prog);

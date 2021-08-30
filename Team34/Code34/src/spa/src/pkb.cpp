@@ -48,6 +48,47 @@ namespace pkb
             collectStmt(pkb, stmt, list);
     }
 
+    // processes and populates Follows and FollowsT concurrently
+    static void processFollows(ProgramKB* pkb, ast::StmtList* list)
+    {
+        std::vector<ast::Stmt*> stmt_list = list->statements;
+        for(size_t i = 0; i < list->statements.size(); i++)
+        {
+            ast::Stmt* stmt = stmt_list[i];
+
+            auto follows = new Follows();
+            follows->id = stmt->id;
+            pkb->follows.push_back(follows);
+
+            for(size_t j = i + 1; j < list->statements.size(); j++)
+            {
+                if(j - i == 1)
+                {
+                    follows->directly_after = stmt_list[j]->id;
+                }
+                follows->after.push_back(stmt_list[j]->id);
+            }
+
+            for(size_t k = 0; k < i; k++)
+            {
+                if(i - k == 1)
+                {
+                    follows->directly_before = stmt_list[k]->id;
+                }
+                follows->before.push_back(stmt_list[k]->id);
+            }
+
+            if(auto i = dynamic_cast<ast::IfStmt*>(stmt); i)
+            {
+                processFollows(pkb, &i->true_case);
+                processFollows(pkb, &i->false_case);
+            }
+            else if(auto w = dynamic_cast<ast::WhileLoop*>(stmt); w)
+            {
+                processFollows(pkb, &w->body);
+            }
+        }
+    }
 
     ProgramKB* processProgram(ast::Program* program)
     {
@@ -65,6 +106,11 @@ namespace pkb
             pkb->procedures[proc->name].ast_proc = proc;
         }
 
+        // do a second pass to populate the follows vector.
+        for(const auto& proc : program->procedures)
+        {
+            processFollows(pkb, &proc->body);
+        }
 
         return pkb;
     }
