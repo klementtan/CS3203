@@ -142,7 +142,7 @@ namespace pkb
         // do a second pass to populate the follows vector.
         for(const auto& proc : program->procedures)
         {
-            processFollows(pkb,  &proc->body);
+            processFollows(pkb, &proc->body);
         }
 
         return pkb;

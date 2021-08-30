@@ -39,6 +39,8 @@ namespace pkb
         ast::StatementNum directly_before = 0;
         ast::StatementNum directly_after = 0;
 
+        // For a statement s, before stores all statements s1 for Follows*(s1, s) returns true,
+        // after stores all statements s2 for Follows*(s, s1) returns true.
         std::unordered_set<ast::StatementNum> before;
         std::unordered_set<ast::StatementNum> after;
     };
