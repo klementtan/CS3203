@@ -18,10 +18,7 @@ namespace util
     {
         auto file = fopen(path, "rb");
         if(file == nullptr)
-        {
-            zpr::fprintln(stderr, "failed to open file: {}", strerror(errno));
-            exit(1);
-        }
+            util::error("misc", "failed to open file: {}", strerror(errno));
 
         std::string contents {};
         while(true)
@@ -36,5 +33,34 @@ namespace util
 
         util::log("misc", "read input file '{}'", path);
         return contents;
+    }
+
+    FILE* getLogFile()
+    {
+        static struct _tmp
+        {
+            ~_tmp()
+            {
+                if(this->file)
+                    fclose(this->file);
+            }
+
+            bool failed = false;
+            FILE* file = nullptr;
+        } file_handle;
+
+        if(file_handle.file == nullptr)
+        {
+            if(file_handle.file = fopen(LOG_OUTPUT_FILE, "wb"); file_handle.file == nullptr)
+            {
+                file_handle.failed = true;
+                fprintf(stderr, "failed to open log file! (%s)\n", strerror(errno));
+            }
+
+            if(file_handle.failed)
+                return nullptr;
+        }
+
+        return file_handle.file;
     }
 }

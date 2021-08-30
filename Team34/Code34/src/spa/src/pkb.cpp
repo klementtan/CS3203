@@ -4,17 +4,10 @@
 
 #include "ast.h"
 #include "pkb.h"
+#include "util.h"
 
 namespace pkb
 {
-    template <typename... Args>
-    [[noreturn]] static void error(const char* fmt, Args&&... xs)
-    {
-        zpr::fprintln(stderr, "error: {}", zpr::fwd(fmt, static_cast<Args&&>(xs)...));
-        exit(1);
-    }
-
-
     // collection only entails numbering the statements
     static void collectStmtList(ProgramKB* pkb, ast::StmtList* list);
     static void collectStmt(ProgramKB* pkb, ast::Stmt* stmt, ast::StmtList* parent)
@@ -101,7 +94,7 @@ namespace pkb
             collectStmtList(pkb, &proc->body);
 
             if(pkb->procedures.find(proc->name) != pkb->procedures.end())
-                error("procedure '{}' is already defined", proc->name);
+                util::error("pkb", "procedure '{}' is already defined", proc->name);
 
             pkb->procedures[proc->name].ast_proc = proc;
         }

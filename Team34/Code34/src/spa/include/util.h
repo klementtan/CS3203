@@ -17,30 +17,28 @@ namespace util
     static constexpr const char* LOG_OUTPUT_FILE = "debug.log";
 
     std::string readEntireFile(const char* path);
+    FILE* getLogFile();
 
     template <typename... Args>
     void log(const char* who, const char* fmt, Args&&... args)
     {
-        static struct _tmp
-        {
-            ~_tmp()
-            {
-                if(this->file)
-                    fclose(this->file);
-            }
+        auto file = getLogFile();
+        if(file == nullptr)
+            return;
 
-            FILE* file = nullptr;
-        } file_handle;
+        zpr::fprintln(file, "[{}]: {}", who, zpr::fwd(fmt, static_cast<Args&&>(args)...));
+    }
 
-        if(file_handle.file == nullptr)
-        {
-            if(file_handle.file = fopen(LOG_OUTPUT_FILE, "wb"); file_handle.file == nullptr)
-            {
-                fprintf(stderr, "failed to open log file! (%s)\n", strerror(errno));
-                return;
-            }
-        }
+    template <typename... Args>
+    [[noreturn]] void error(const char* who, const char* fmt, const Args&... args)
+    {
+        // minor impl note: take the varargs by const& since we want to use them twice;
+        // taking T&& would move them in the first call and UB the second call.
 
-        zpr::fprintln(file_handle.file, "[{}]: {}", who, zpr::fwd(fmt, static_cast<Args&&>(args)...));
+        // note: this prints to stderr, but we probably also want to print this to the log file.
+        zpr::fprintln(stderr, "[{} ERROR]: {}", who, zpr::fwd(fmt, args...));
+        log(zpr::sprint("{} ERROR", who).c_str(), fmt, args...);
+
+        exit(1);
     }
 }
