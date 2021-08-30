@@ -4,6 +4,7 @@
 #include <zst.h>
 
 #include "ast.h"
+#include "util.h"
 #include "simple_parser.h"
 
 namespace simple_parser
@@ -34,14 +35,6 @@ namespace simple_parser
     constexpr auto KW_Call = "call";
     constexpr auto KW_While = "while";
 
-
-    template <typename... Args>
-    [[noreturn]] static void parse_error(const char* fmt, Args&&... xs)
-    {
-        zpr::fprintln(stderr, "parse error: {}", zpr::fwd(fmt, static_cast<Args&&>(xs)...));
-        exit(1);
-    }
-
     static int get_precedence(TokenType tt)
     {
         switch(tt)
@@ -68,7 +61,7 @@ namespace simple_parser
             ps->next();
             auto ret = parseExpr(ps);
             if(ps->next() != TT::RParen)
-                parse_error("expected ')'");
+                util::error("parser", "expected ')'");
 
             return ret;
         }
@@ -90,7 +83,7 @@ namespace simple_parser
         }
         else
         {
-            parse_error("invalid start of expression with '{}'", ps->peek().text);
+            util::error("parser", "invalid start of expression with '{}'", ps->peek().text);
         }
     }
 
@@ -134,14 +127,14 @@ namespace simple_parser
         {
             ps->next();
             if(ps->next() != TT::LParen)
-                parse_error("expected '(' after '!'");
+                util::error("parser", "expected '(' after '!'");
 
             auto ret = new UnaryOp();
             ret->expr = parseCondExpr(ps);
             ret->op = "!";
 
             if(ps->next() != TT::RParen)
-                parse_error("expected ')' to match a '('");
+                util::error("parser", "expected ')' to match a '('");
 
             return ret;
         }
@@ -151,11 +144,11 @@ namespace simple_parser
 
             auto parse_parenthesised_condexpr = [](ParserState* ps) -> Expr* {
                 if(ps->next() != TT::LParen)
-                    parse_error("expected '('");
+                    util::error("parser", "expected '('");
 
                 auto ret = parseCondExpr(ps);
                 if(ps->next() != TT::RParen)
-                    parse_error("expected ')' to match a '('");
+                    util::error("parser", "expected ')' to match a '('");
 
                 return ret;
             };
@@ -168,7 +161,7 @@ namespace simple_parser
             else if(tok == TT::LogicalOr)
                 op = "||";
             else
-                parse_error("expected either '&&' or '||'");
+                util::error("parser", "expected either '&&' or '||'");
 
             auto rhs = parse_parenthesised_condexpr(ps);
 
@@ -195,7 +188,7 @@ namespace simple_parser
             else if(tok == TT::EqualsTo)
                 op = "==";
             else
-                parse_error("invalid binary operator '{}'", tok.text);
+                util::error("parser", "invalid binary operator '{}'", tok.text);
 
             auto rhs = parseExpr(ps);
 
@@ -213,22 +206,22 @@ namespace simple_parser
         StmtList list {};
 
         if(ps->next() != TT::LBrace)
-            parse_error("expected '{'");
+            util::error("parser", "expected '{'");
 
         while(ps->peek() != TT::RBrace)
         {
             if(ps->peek() == TT::EndOfFile)
-                parse_error("unexpected end of file");
+                util::error("parser", "unexpected end of file");
 
             list.statements.push_back(parseStmt(ps));
         }
 
         if(ps->next() != TT::RBrace)
-            parse_error("expected '}'");
+            util::error("parser", "expected '}'");
 
         // the grammar specifies "stmt+"
         if(list.statements.empty())
-            parse_error("expected at least one statement between '{' and '}'");
+            util::error("parser", "expected at least one statement between '{' and '}'");
 
         return list;
     }
@@ -237,22 +230,22 @@ namespace simple_parser
     {
         // note: 'if' was already eaten, so we need to parse the expression immediately.
         if(ps->next() != TT::LParen)
-            parse_error("expected '(' after 'if'");
+            util::error("parser", "expected '(' after 'if'");
 
         auto ret = new IfStmt();
         ret->condition = parseCondExpr(ps);
 
         if(ps->next() != TT::RParen)
-            parse_error("expected ')'");
+            util::error("parser", "expected ')'");
 
 
         if(auto then = ps->next(); then != TT::Identifier || then.text != KW_Then)
-            parse_error("expected 'then' after condition for 'if'");
+            util::error("parser", "expected 'then' after condition for 'if'");
 
         ret->true_case = parseStatementList(ps);
 
         if(auto e = ps->next(); e != TT::Identifier || e.text != KW_Else)
-            parse_error("'else' clause is mandatory");
+            util::error("parser", "'else' clause is mandatory");
 
         ret->false_case = parseStatementList(ps);
 
@@ -263,13 +256,13 @@ namespace simple_parser
     {
         // note: 'while' was already eaten, so we need to parse the expression immediately.
         if(ps->next() != TT::LParen)
-            parse_error("expected '(' after 'while'");
+            util::error("parser", "expected '(' after 'while'");
 
         auto ret = new WhileLoop();
         ret->condition = parseCondExpr(ps);
 
         if(ps->next() != TT::RParen)
-            parse_error("expected ')'");
+            util::error("parser", "expected ')'");
 
         ret->body = parseStatementList(ps);
         return ret;
@@ -279,14 +272,14 @@ namespace simple_parser
     {
         auto check_semicolon = [](ParserState* ps) {
             if(ps->next() != TT::Semicolon)
-                parse_error("expected semicolon after statement");
+                util::error("parser", "expected semicolon after statement");
         };
 
         if(auto tok = ps->next(); tok == TT::Identifier && tok.text == KW_Read)
         {
             auto read = new ReadStmt();
             if(auto name = ps->next(); name != TT::Identifier)
-                parse_error("expected identifier after 'read'");
+                util::error("parser", "expected identifier after 'read'");
             else
                 read->var_name = name.text.str();
 
@@ -297,7 +290,7 @@ namespace simple_parser
         {
             auto print = new PrintStmt();
             if(auto name = ps->next(); name != TT::Identifier)
-                parse_error("expected identifier after 'print'");
+                util::error("parser", "expected identifier after 'print'");
             else
                 print->var_name = name.text.str();
 
@@ -308,7 +301,7 @@ namespace simple_parser
         {
             auto call = new ProcCall();
             if(auto name = ps->next(); name != TT::Identifier)
-                parse_error("expected identifier after 'call'");
+                util::error("parser", "expected identifier after 'call'");
             else
                 call->proc_name = name.text.str();
 
@@ -328,7 +321,7 @@ namespace simple_parser
             // based on the grammar, we know that statements starting with an identifier
             // (that is not one of the control flow keywords) will be an assignment.
             if(ps->next() != TT::Equal)
-                parse_error("expected '='");
+                util::error("parser", "expected '='");
 
             auto assign = new AssignStmt();
             assign->lhs = tok.text.str();
@@ -339,21 +332,21 @@ namespace simple_parser
         }
         else
         {
-            parse_error("unexpected token '{}' at beginning of statement", tok.text);
+            util::error("parser", "unexpected token '{}' at beginning of statement", tok.text);
         }
     }
 
     static Procedure* parseProcedure(ParserState* ps)
     {
         if(auto kw = ps->next(); kw != TT::Identifier || kw.text != KW_Procedure)
-            parse_error("expected 'procedure' to define a procedure (found '{}')", kw.text);
+            util::error("parser", "expected 'procedure' to define a procedure (found '{}')", kw.text);
 
         auto proc = new Procedure();
 
         if(auto name = ps->next(); name == TT::Identifier)
             proc->name = name.text.str();
         else
-            parse_error("expected identifier after 'procedure' keyword");
+            util::error("parser", "expected identifier after 'procedure' keyword");
 
         proc->body = parseStatementList(ps);
         return proc;
