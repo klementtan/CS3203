@@ -8,9 +8,11 @@
 
 namespace pkb
 {
+    ProgramKB* pkb;
+
     // collection only entails numbering the statements
-    static void collectStmtList(ProgramKB* pkb, ast::StmtList* list);
-    static void collectStmt(ProgramKB* pkb, ast::Stmt* stmt, ast::StmtList* parent)
+    static void collectStmtList(ast::StmtList* list);
+    static void collectStmt(ast::Stmt* stmt, ast::StmtList* parent)
     {
         // the statement should not have been seen yet.
         assert(stmt->id == 0);
@@ -22,27 +24,27 @@ namespace pkb
         if(auto i = dynamic_cast<ast::IfStmt*>(stmt); i)
         {
             pkb->if_statements.push_back(stmt);
-            collectStmtList(pkb, &i->true_case);
-            collectStmtList(pkb, &i->false_case);
+            collectStmtList(&i->true_case);
+            collectStmtList(&i->false_case);
             i->true_case.parent_statement = stmt;
             i->false_case.parent_statement = stmt;
         }
         else if(auto w = dynamic_cast<ast::WhileLoop*>(stmt); w)
         {
             pkb->while_statements.push_back(stmt);
-            collectStmtList(pkb, &w->body);
+            collectStmtList(&w->body);
             w->body.parent_statement = stmt;
         }
     }
 
-    static void collectStmtList(ProgramKB* pkb, ast::StmtList* list)
+    static void collectStmtList(ast::StmtList* list)
     {
         for(const auto& stmt : list->statements)
-            collectStmt(pkb, stmt, list);
+            collectStmt(stmt, list);
     }
 
     // processes and populates Follows and FollowsT concurrently
-    static void processFollows(ProgramKB* pkb, ast::StmtList* list)
+    static void processFollows(ast::StmtList* list)
     {
         std::vector<ast::Stmt*> stmt_list = list->statements;
         for(size_t i = 0; i < list->statements.size(); i++)
@@ -73,25 +75,66 @@ namespace pkb
 
             if(auto i = dynamic_cast<ast::IfStmt*>(stmt); i)
             {
-                processFollows(pkb, &i->true_case);
-                processFollows(pkb, &i->false_case);
+                processFollows(&i->true_case);
+                processFollows(&i->false_case);
             }
             else if(auto w = dynamic_cast<ast::WhileLoop*>(stmt); w)
             {
-                processFollows(pkb, &w->body);
+                processFollows(&w->body);
             }
         }
     }
 
+    // Takes in two 1-indexed StatementNums
+    bool isFollows(ast::StatementNum fst, ast::StatementNum snd)
+    {
+        // thinking of more elegant ways of handling this hmm
+        if(fst > pkb->follows.size() || snd > pkb->follows.size() || fst < 1 || snd < 1)
+            util::error("pkb", "StatementNum out of range.");
+
+        return pkb->follows[fst - 1]->directly_after == snd;
+    }
+
+    // Same as isFollows
+    bool isFollowsT(ast::StatementNum fst, ast::StatementNum snd)
+    {
+        if(fst > pkb->follows.size() || snd > pkb->follows.size() || fst < 1 || snd < 1)
+            util::error("pkb", "StatementNum out of range.");
+
+        auto& after_list = pkb->follows[fst - 1]->after;
+        return std::find(after_list.begin(), after_list.end(), snd) != after_list.end();
+    }
+
+    // Takes in two 1-indexed StatementNums. Allows for 0 to be used as a wildcard on 1 of the parameters.
+    std::vector<ast::StatementNum> getFollowsTList(ast::StatementNum fst, ast::StatementNum snd)
+    {
+        if(fst > pkb->follows.size() || snd > pkb->follows.size() || fst < 0 || snd < 0)
+            util::error("pkb", "StatementNum out of range.");
+        if(fst < 1 && snd < 1 || fst != 0 && snd != 0)
+            util::error("pkb", "Only 1 wildcard is to be used.");
+
+        if(fst == 0)
+        {
+            return pkb->follows[snd - 1]->before;
+        }
+        else if(snd == 0)
+        {
+            return pkb->follows[fst - 1]->after;
+        }
+
+        // Should not be reachable.
+        util::error("pkb", "Unexpected error.");
+    }
+
     ProgramKB* processProgram(ast::Program* program)
     {
-        auto pkb = new ProgramKB();
+        pkb = new ProgramKB();
 
         // do a first pass to number all the statements, set the
         // parent stmtlist, and collect all the procedures.
         for(const auto& proc : program->procedures)
         {
-            collectStmtList(pkb, &proc->body);
+            collectStmtList(&proc->body);
 
             if(pkb->procedures.find(proc->name) != pkb->procedures.end())
                 util::error("pkb", "procedure '{}' is already defined", proc->name);
@@ -102,7 +145,7 @@ namespace pkb
         // do a second pass to populate the follows vector.
         for(const auto& proc : program->procedures)
         {
-            processFollows(pkb, &proc->body);
+            processFollows(&proc->body);
         }
 
         return pkb;

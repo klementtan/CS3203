@@ -60,5 +60,11 @@ namespace pkb
         std::vector<Follows*> follows;
     };
 
+    bool isFollows(ast::StatementNum fst, ast::StatementNum snd);
+
+    bool isFollowsT(ast::StatementNum fst, ast::StatementNum snd);
+
+    std::vector<ast::StatementNum> getFollowsTList(ast::StatementNum fst, ast::StatementNum snd);
+
     ProgramKB* processProgram(ast::Program* prog);
 }
