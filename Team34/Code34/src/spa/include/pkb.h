@@ -39,8 +39,8 @@ namespace pkb
         ast::StatementNum directly_before = 0;
         ast::StatementNum directly_after = 0;
 
-        std::vector<ast::StatementNum> before;
-        std::vector<ast::StatementNum> after;
+        std::unordered_set<ast::StatementNum> before;
+        std::unordered_set<ast::StatementNum> after;
     };
 
 
@@ -58,13 +58,11 @@ namespace pkb
         std::vector<ast::Stmt*> if_statements;
 
         std::vector<Follows*> follows;
+
+        bool isFollows(ast::StatementNum fst, ast::StatementNum snd);
+        bool isFollowsT(ast::StatementNum fst, ast::StatementNum snd);
+        std::unordered_set<ast::StatementNum> getFollowsTList(ast::StatementNum fst, ast::StatementNum snd);
     };
-
-    bool isFollows(ast::StatementNum fst, ast::StatementNum snd);
-
-    bool isFollowsT(ast::StatementNum fst, ast::StatementNum snd);
-
-    std::vector<ast::StatementNum> getFollowsTList(ast::StatementNum fst, ast::StatementNum snd);
 
     ProgramKB* processProgram(ast::Program* prog);
 }
