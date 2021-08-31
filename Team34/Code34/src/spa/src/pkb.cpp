@@ -43,32 +43,32 @@ namespace pkb
 
     // Start of symbol table methods
 
-    ast::VarRef* SymbolTable::get_var(std::string& str)
+    ast::VarRef* SymbolTable::getVar(const std::string& str)
     {
         return _vars[str];
     }
 
-    bool SymbolTable::has_var(std::string& str)
+    bool SymbolTable::hasVar(const std::string& str)
     {
         return _vars.count(str);
     }
 
-    void SymbolTable::set_var(std::string& str, ast::VarRef* var)
+    void SymbolTable::setVar(const std::string& str, ast::VarRef* var)
     {
         _vars[str] = var;
     }
 
-    ast::Procedure* SymbolTable::get_proc(std::string& str)
+    ast::Procedure* SymbolTable::getProc(const std::string& str)
     {
         return _procs[str];
     }
 
-    bool SymbolTable::has_proc(std::string& str)
+    bool SymbolTable::hasProc(const std::string& str)
     {
         return _procs.count(str);
     }
 
-    void SymbolTable::set_proc(std::string& str, ast::Procedure* var)
+    void SymbolTable::setProc(const std::string& str, ast::Procedure* var)
     {
         _procs[str] = var;
     }
@@ -77,47 +77,47 @@ namespace pkb
     {
         for(auto proc : prog->procedures)
         {
-            set_proc(proc->name, proc);
+            setProc(proc->name, proc);
             populate(proc->body);
         }
     }
 
-    void SymbolTable::populate(ast::StmtList lst)
+    void SymbolTable::populate(const ast::StmtList& lst)
     {
-        for(ast::Stmt* s : lst.statements)
+        for(auto stmt : lst.statements)
         {
-            if(ast::IfStmt* stmt = dynamic_cast<ast::IfStmt*>(s))
+            if(ast::IfStmt* if_stmt = dynamic_cast<ast::IfStmt*>(stmt))
             {
-                populate(stmt->condition);
-                populate(stmt->true_case);
-                populate(stmt->false_case);
+                populate(if_stmt->condition);
+                populate(if_stmt->true_case);
+                populate(if_stmt->false_case);
             }
-            else if(ast::WhileLoop* stmt = dynamic_cast<ast::WhileLoop*>(s))
+            else if(ast::WhileLoop* while_stmt = dynamic_cast<ast::WhileLoop*>(stmt))
             {
-                populate(stmt->condition);
-                populate(stmt->body);
+                populate(while_stmt->condition);
+                populate(while_stmt->body);
             }
-            else if(ast::AssignStmt* stmt = dynamic_cast<ast::AssignStmt*>(s))
+            else if(ast::AssignStmt* assign_stmt = dynamic_cast<ast::AssignStmt*>(stmt))
             {
-                populate(stmt->rhs);
+                populate(assign_stmt->rhs);
             }
         }
     }
 
-    void SymbolTable::populate(ast::Expr* e)
+    void SymbolTable::populate(ast::Expr* expr)
     {
-        if(ast::VarRef* expr = dynamic_cast<ast::VarRef*>(e))
+        if(ast::VarRef* var_ref = dynamic_cast<ast::VarRef*>(expr))
         {
-            set_var(expr->name, expr);
+            setVar(var_ref->name, var_ref);
         }
-        else if(ast::BinaryOp* expr = dynamic_cast<ast::BinaryOp*>(e))
+        else if(ast::BinaryOp* binary_op = dynamic_cast<ast::BinaryOp*>(expr))
         {
-            populate(expr->lhs);
-            populate(expr->rhs);
+            populate(binary_op->lhs);
+            populate(binary_op->rhs);
         }
-        else if(ast::UnaryOp* expr = dynamic_cast<ast::UnaryOp*>(e))
+        else if(ast::UnaryOp* unary_op = dynamic_cast<ast::UnaryOp*>(expr))
         {
-            populate(expr->expr);
+            populate(unary_op->expr);
         }
     }
 

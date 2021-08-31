@@ -37,18 +37,18 @@ namespace pkb
     {
         std::unordered_map<std::string, ast::VarRef*> _vars;
 
-        ast::VarRef* get_var(std::string&);
-        bool has_var(std::string&);
-        void set_var(std::string&, ast::VarRef*);
+        ast::VarRef* getVar(const std::string&);
+        bool hasVar(const std::string&);
+        void setVar(const std::string&, ast::VarRef*);
 
         std::unordered_map<std::string, ast::Procedure*> _procs;
 
-        ast::Procedure* get_proc(std::string&);
-        bool has_proc(std::string&);
-        void set_proc(std::string&, ast::Procedure*);
+        ast::Procedure* getProc(const std::string&);
+        bool hasProc(const std::string&);
+        void setProc(const std::string&, ast::Procedure*);
 
         void populate(ast::Program*);
-        void populate(ast::StmtList);
+        void populate(const ast::StmtList&);
         void populate(ast::Expr*);
     };
 
