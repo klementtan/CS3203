@@ -362,4 +362,11 @@ namespace simple_parser
 
         return prog;
     }
+
+    // exposed to the outside world
+    Expr* parseExpression(zst::str_view input)
+    {
+        auto ps = ParserState { input };
+        return parseExpr(&ps);
+    }
 }
