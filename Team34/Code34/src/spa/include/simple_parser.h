@@ -71,5 +71,6 @@ namespace simple_parser
 // parser stuff
 namespace simple_parser
 {
+    ast::Expr* parseExpression(zst::str_view input);
     ast::Program* parseProgram(zst::str_view input);
 }
