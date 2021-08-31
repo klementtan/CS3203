@@ -45,6 +45,8 @@ namespace pkb
 
     ast::VarRef* SymbolTable::getVar(const std::string& str)
     {
+        if(!hasVar(str))
+            throw "Key does not exist!";
         return _vars[str];
     }
 
@@ -60,6 +62,8 @@ namespace pkb
 
     ast::Procedure* SymbolTable::getProc(const std::string& str)
     {
+        if(!hasProc(str))
+            throw "Key does not exist!";
         return _procs[str];
     }
 
