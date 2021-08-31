@@ -16,7 +16,7 @@
 */
 
 /*
-	Version 1.3.2
+	Version 1.3.3
 	=============
 
 
@@ -735,11 +735,27 @@ namespace zst
 		>>
 		operator Result<U, E> () const
 		{
+			using R = Result<U, E>;
+			if(state == STATE_VAL)  return R(typename R::tag_ok{}, this->val);
+			if(state == STATE_ERR)  return R(typename R::tag_err{}, this->err);
+
+			zst::error_and_exit("invalid state of Result");
+		}
+
+#if 0
+		// same but without const...
+		template <typename U, typename = std::enable_if_t<
+			std::is_pointer_v<T> && std::is_pointer_v<U>
+			&& std::is_base_of_v<std::remove_pointer_t<U>, std::remove_pointer_t<T>>
+		>>
+		operator Result<U, E> ()
+		{
 			if(state == STATE_VAL)  return Result<U, E>(this->val);
 			if(state == STATE_ERR)  return Result<U, E>(this->err);
 
 			zst::error_and_exit("invalid state of Result");
 		}
+#endif
 
 		const T& expect(str_view msg) const
 		{
@@ -775,6 +791,9 @@ namespace zst
 			T val;
 			E err;
 		};
+
+		// befriend all results
+		template <typename, typename> friend struct Result;
 	};
 
 
@@ -953,6 +972,12 @@ namespace zpr
 /*
 	Version History
 	===============
+
+	1.3.3 - 31/08/2021
+	------------------
+	Fix implicit cast for inherited classes in Result.
+
+
 
 	1.3.2 - 23/08/2021
 	------------------
