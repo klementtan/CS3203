@@ -3,6 +3,7 @@
 #include <zst.h>
 #include <zpr.h>
 
+#include "util.h"
 #include "simple_parser.h"
 
 namespace simple_parser
@@ -74,6 +75,9 @@ namespace simple_parser
             while(!sv.empty() && is_digit(sv[num_chars]))
                 num_chars += 1;
 
+            if(num_chars > 1 && sv[0] == '0')
+                util::error("parser", "multi-digit integer literal cannot start with 0");
+
             return Token { sv.take_prefix(num_chars), TT::Number };
         }
         else
@@ -99,8 +103,7 @@ namespace simple_parser
                 case ';':   tt = TT::Semicolon; break;
                 case '!':   tt = TT::Exclamation; break;
                 default:
-                    zpr::fprintln(stderr, "invalid token '{}'", sv[0]);
-                    abort();
+                    util::error("parser", "invalid token '{}'", sv[0]);
             }
 
             return Token { sv.take_prefix(1), tt };
