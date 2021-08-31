@@ -1,0 +1,29 @@
+procedure a
+{
+    a = 0;
+    while (a < 10) {
+        x = 0;
+        if (x > 0)then {
+            a = a + 1;
+        }else{a = 1;}
+    }
+    a = 1;
+}
+
+procedure b
+{
+    if ( ((1==b) && (b == 1)) || (c == 1)) then {
+        a = 2;
+    } else {
+        a = 0;
+    }
+}
+
+procedure c
+{
+    while (a == 1) {
+        call a;
+        read a;
+        print a;
+    }
+}
