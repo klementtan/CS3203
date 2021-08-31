@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include <zpr.h>
 #include <zst.h>
 
 #include "ast.h"

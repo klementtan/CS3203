@@ -117,8 +117,7 @@ namespace zpr
 namespace zst
 {
 	// we need a forward-declaration of error_and_exit for expect().
-	template <typename... Args>
-	[[noreturn]] void error_and_exit(const char* fmt, Args&&... args);
+	[[noreturn]] void error_and_exit(const char* str, size_t n);
 
 	// we really just need a very small subset of <type_traits>, so don't include the whole thing.
 	namespace detail
@@ -574,6 +573,12 @@ namespace zst
 
 namespace zst
 {
+	namespace impl
+	{
+		template <typename... Args>
+		[[noreturn]] void error_wrapper(const char* fmt, Args&&... args);
+	}
+
 	template <typename T>
 	struct Ok
 	{
@@ -739,28 +744,13 @@ namespace zst
 			if(state == STATE_VAL)  return R(typename R::tag_ok{}, this->val);
 			if(state == STATE_ERR)  return R(typename R::tag_err{}, this->err);
 
-			zst::error_and_exit("invalid state of Result");
+			impl::error_wrapper("invalid state of Result");
 		}
-
-#if 0
-		// same but without const...
-		template <typename U, typename = std::enable_if_t<
-			std::is_pointer_v<T> && std::is_pointer_v<U>
-			&& std::is_base_of_v<std::remove_pointer_t<U>, std::remove_pointer_t<T>>
-		>>
-		operator Result<U, E> ()
-		{
-			if(state == STATE_VAL)  return Result<U, E>(this->val);
-			if(state == STATE_ERR)  return Result<U, E>(this->err);
-
-			zst::error_and_exit("invalid state of Result");
-		}
-#endif
 
 		const T& expect(str_view msg) const
 		{
 			if(this->ok())  return this->unwrap();
-			else            zst::error_and_exit("{}: {}", msg, this->error());
+			else            impl::error_wrapper("{}: {}", msg, this->error());
 		}
 
 		const T& or_else(const T& default_value) const
@@ -773,13 +763,13 @@ namespace zst
 		inline void assert_has_value() const
 		{
 			if(this->state != STATE_VAL)
-				zst::error_and_exit("unwrapping result of Err: {}", this->error());
+				impl::error_wrapper("unwrapping result of Err: {}", this->error());
 		}
 
 		inline void assert_is_error() const
 		{
 			if(this->state != STATE_ERR)
-				zst::error_and_exit("result is not an Err");
+				impl::error_wrapper("result is not an Err");
 		}
 
 
@@ -866,7 +856,7 @@ namespace zst
 		void expect(zst::str_view msg) const
 		{
 			if(!this->ok())
-				zst::error_and_exit("{}: {}", msg, this->error());
+				impl::error_wrapper("{}: {}", msg, this->error());
 		}
 
 		static Result of_value()
@@ -890,7 +880,7 @@ namespace zst
 		inline void assert_is_error() const
 		{
 			if(this->state != STATE_ERR)
-				zst::error_and_exit("result is not an Err");
+				impl::error_wrapper("result is not an Err");
 		}
 
 		int state = 0;
@@ -912,6 +902,17 @@ namespace zst
 	Err<std::string> ErrFmt(const char* fmt, Args&&... args)
 	{
 		return Err<std::string>(zpr::sprint(fmt, static_cast<Args&&>(args)...));
+	}
+
+	namespace impl
+	{
+		template <typename... Args>
+		[[noreturn]] void error_wrapper(const char* fmt, Args&&... args)
+		{
+			char buf[1024] { };
+			auto n = zpr::sprint(1024, buf, fmt, static_cast<Args&&>(args)...);
+			zst::error_and_exit(buf, n);
+		}
 	}
 }
 
@@ -965,6 +966,20 @@ namespace zpr
 		}
 	};
 }
+#else
+
+// we need something here...
+
+namespace zst::impl
+{
+	template <typename... Args>
+	[[noreturn]] void error_wrapper(const char* fmt, Args&&... args)
+	{
+		constexpr auto msg = "internal error (no zpr, cannot elaborate)";
+		zst::error_and_exit(msg, sizeof(msg) - 1);
+	}
+}
+
 #endif
 
 
@@ -975,7 +990,10 @@ namespace zpr
 
 	1.3.3 - 31/08/2021
 	------------------
-	Fix implicit cast for inherited classes in Result.
+	- Fix implicit cast for inherited classes in Result
+	- Rearrange how the error function is called. It's now a normal function
+	  that just takes a string+length, because obviously we can't instantiate all possible
+	  templates ahead of time.
 
 
 
