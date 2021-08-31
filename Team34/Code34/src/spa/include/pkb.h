@@ -33,6 +33,25 @@ namespace pkb
         std::unordered_set<Procedure*> modified_by_procs;
     };
 
+    struct SymbolTable
+    {
+        std::unordered_map<std::string, ast::VarRef*> _vars;
+
+        ast::VarRef* get_var(std::string&);
+        bool has_var(std::string&);
+        void set_var(std::string&, ast::VarRef*);
+
+        std::unordered_map<std::string, ast::Procedure*> _procs;
+
+        ast::Procedure* get_proc(std::string&);
+        bool has_proc(std::string&);
+        void set_proc(std::string&, ast::Procedure*);
+
+        void populate(ast::Program*);
+        void populate(ast::StmtList);
+        void populate(ast::Expr*);
+    };
+
     struct ProgramKB
     {
         // this also functions as a unordered_map from (stmt_number - 1) -> Stmt*,

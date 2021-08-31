@@ -41,6 +41,87 @@ namespace pkb
             collectStmt(pkb, stmt, list);
     }
 
+    // Start of symbol table methods
+
+    ast::VarRef* SymbolTable::get_var(std::string& str)
+    {
+        return _vars[str];
+    }
+
+    bool SymbolTable::has_var(std::string& str)
+    {
+        return _vars.count(str);
+    }
+
+    void SymbolTable::set_var(std::string& str, ast::VarRef* var)
+    {
+        _vars[str] = var;
+    }
+
+    ast::Procedure* SymbolTable::get_proc(std::string& str)
+    {
+        return _procs[str];
+    }
+
+    bool SymbolTable::has_proc(std::string& str)
+    {
+        return _procs.count(str);
+    }
+
+    void SymbolTable::set_proc(std::string& str, ast::Procedure* var)
+    {
+        _procs[str] = var;
+    }
+
+    void SymbolTable::populate(ast::Program* prog)
+    {
+        for(auto proc : prog->procedures)
+        {
+            set_proc(proc->name, proc);
+            populate(proc->body);
+        }
+    }
+
+    void SymbolTable::populate(ast::StmtList lst)
+    {
+        for(ast::Stmt* s : lst.statements)
+        {
+            if(ast::IfStmt* stmt = dynamic_cast<ast::IfStmt*>(s))
+            {
+                populate(stmt->condition);
+                populate(stmt->true_case);
+                populate(stmt->false_case);
+            }
+            else if(ast::WhileLoop* stmt = dynamic_cast<ast::WhileLoop*>(s))
+            {
+                populate(stmt->condition);
+                populate(stmt->body);
+            }
+            else if(ast::AssignStmt* stmt = dynamic_cast<ast::AssignStmt*>(s))
+            {
+                populate(stmt->rhs);
+            }
+        }
+    }
+
+    void SymbolTable::populate(ast::Expr* e)
+    {
+        if(ast::VarRef* expr = dynamic_cast<ast::VarRef*>(e))
+        {
+            set_var(expr->name, expr);
+        }
+        else if(ast::BinaryOp* expr = dynamic_cast<ast::BinaryOp*>(e))
+        {
+            populate(expr->lhs);
+            populate(expr->rhs);
+        }
+        else if(ast::UnaryOp* expr = dynamic_cast<ast::UnaryOp*>(e))
+        {
+            populate(expr->expr);
+        }
+    }
+
+    // End of symbol table methods
 
     ProgramKB* processProgram(ast::Program* program)
     {
