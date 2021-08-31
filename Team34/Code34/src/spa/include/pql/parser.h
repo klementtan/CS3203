@@ -44,9 +44,10 @@ namespace pql::parser
 
     using TT = TokenType;
 
+    zst::str_view extractTillQuotes(zst::str_view& sv);
     Token getNextToken(zst::str_view& sv);
     Token peekNextOneToken(zst::str_view sv);
-    std::vector<Token> peekNextTwoToken(zst::str_view sv);
+    std::vector<Token> peekNextTwoTokens(zst::str_view sv);
 }
 
 template <>

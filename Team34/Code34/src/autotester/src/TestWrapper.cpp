@@ -5,6 +5,7 @@
 // spa
 #include "util.h"
 #include "simple_parser.h"
+#include "pql/parser.h"
 
 
 TestWrapper::TestWrapper() { }
@@ -16,7 +17,12 @@ void TestWrapper::parse(std::string filename)
 }
 
 
-void TestWrapper::evaluate(std::string query, std::list<std::string>& results) { }
+void TestWrapper::evaluate(std::string query, std::list<std::string>& results)
+{
+    util::log("pql:ast", "Starting to generate pql ast");
+    pql::ast::Query* query_ast = pql::parser::parsePQL(query);
+    util::log("pql:ast", "Generated AST: {}", query_ast->toString());
+}
 
 
 

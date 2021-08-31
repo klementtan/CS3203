@@ -28,11 +28,23 @@ namespace pql::parser
         return getNextToken(sv);
     }
 
-    std::vector<Token> peekNextTwoToken(zst::str_view sv)
+    std::vector<Token> peekNextTwoTokens(zst::str_view sv)
     {
         Token fst = getNextToken(sv);
         Token snd = getNextToken(sv);
         return { fst, snd };
+    }
+
+    // Extract characters till reaches '"'
+    zst::str_view extractTillQuotes(zst::str_view& sv)
+    {
+        size_t num_chars = 0;
+        while(!sv.empty() && sv[num_chars] != '"')
+        {
+            num_chars += 1;
+        }
+        zst::str_view ret = sv.take_prefix(num_chars);
+        return ret;
     }
 
     Token getNextToken(zst::str_view& sv)
