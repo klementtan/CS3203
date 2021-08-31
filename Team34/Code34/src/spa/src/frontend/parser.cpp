@@ -367,6 +367,11 @@ namespace simple_parser
     Expr* parseExpression(zst::str_view input)
     {
         auto ps = ParserState { input };
-        return parseExpr(&ps);
+        auto ret = parseExpr(&ps);
+
+        if(auto tmp = ps.next(); tmp != TT::EndOfFile)
+            util::error("parser", "unexpected token '{}' after expression", tmp.text);
+
+        return ret;
     }
 }
