@@ -33,6 +33,25 @@ namespace pkb
         std::unordered_set<Procedure*> modified_by_procs;
     };
 
+    struct SymbolTable
+    {
+        std::unordered_map<std::string, ast::VarRef*> _vars;
+
+        ast::VarRef* getVar(const std::string&);
+        bool hasVar(const std::string&);
+        void setVar(const std::string&, ast::VarRef*);
+
+        std::unordered_map<std::string, ast::Procedure*> _procs;
+
+        ast::Procedure* getProc(const std::string&);
+        bool hasProc(const std::string&);
+        void setProc(const std::string&, ast::Procedure*);
+
+        void populate(ast::Program*);
+        void populate(const ast::StmtList&);
+        void populate(ast::Expr*);
+    };
+
     struct Follows
     {
         ast::StatementNum id = 0;
@@ -44,7 +63,6 @@ namespace pkb
         std::unordered_set<ast::StatementNum> before;
         std::unordered_set<ast::StatementNum> after;
     };
-
 
     struct ProgramKB
     {
