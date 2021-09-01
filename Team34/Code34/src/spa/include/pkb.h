@@ -52,6 +52,18 @@ namespace pkb
         void populate(ast::Expr*);
     };
 
+    struct Follows
+    {
+        ast::StatementNum id = 0;
+        ast::StatementNum directly_before = 0;
+        ast::StatementNum directly_after = 0;
+
+        // For a statement s, before stores all statements s1 for Follows*(s1, s) returns true,
+        // after stores all statements s2 for Follows*(s, s1) returns true.
+        std::unordered_set<ast::StatementNum> before;
+        std::unordered_set<ast::StatementNum> after;
+    };
+
     struct ProgramKB
     {
         // this also functions as a unordered_map from (stmt_number - 1) -> Stmt*,
@@ -64,6 +76,12 @@ namespace pkb
 
         std::vector<ast::Stmt*> while_statements;
         std::vector<ast::Stmt*> if_statements;
+
+        std::vector<Follows*> follows;
+
+        bool isFollows(ast::StatementNum fst, ast::StatementNum snd);
+        bool isFollowsT(ast::StatementNum fst, ast::StatementNum snd);
+        std::unordered_set<ast::StatementNum> getFollowsTList(ast::StatementNum fst, ast::StatementNum snd);
     };
 
     ProgramKB* processProgram(ast::Program* prog);
