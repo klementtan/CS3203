@@ -423,7 +423,7 @@ namespace simple_parser
         auto ret = parseExpr(&ps);
 
         if(auto tmp = ps.next(); tmp != TT::EndOfFile)
-            util::error("parser", "unexpected token '{}' after expression", tmp.text);
+            return ErrFmt("unexpected token '{}' after expression", tmp.text);
 
         return ret;
     }
