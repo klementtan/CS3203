@@ -285,7 +285,7 @@ namespace pkb
     {
         if(_direct_parents.count(fst) == 0)
             return false;
-        
+
         return _direct_parents[fst] == snd;
     }
 
