@@ -82,6 +82,13 @@ namespace pkb
         bool isFollows(ast::StatementNum fst, ast::StatementNum snd);
         bool isFollowsT(ast::StatementNum fst, ast::StatementNum snd);
         std::unordered_set<ast::StatementNum> getFollowsTList(ast::StatementNum fst, ast::StatementNum snd);
+
+        std::unordered_map<ast::StatementNum, ast::StatementNum> _direct_parents;
+        std::unordered_map<ast::StatementNum, std::unordered_set<ast::StatementNum>> _ancestors;
+
+        bool isParent(ast::StatementNum, ast::StatementNum);
+        bool isParentT(ast::StatementNum, ast::StatementNum);
+        std::unordered_set<ast::StatementNum> getAncestorsOf(ast::StatementNum);
     };
 
     ProgramKB* processProgram(ast::Program* prog);
