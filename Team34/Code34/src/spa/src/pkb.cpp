@@ -298,7 +298,7 @@ namespace pkb
     }
 
     std::unordered_set<ast::StatementNum> ProgramKB::getAncestorsOf(ast::StatementNum fst)
-    { 
+    {
         std::unordered_set<ast::StatementNum> anc;
 
         if(_ancestors.count(fst) == 0)
