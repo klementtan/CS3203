@@ -1,4 +1,5 @@
 #include <cassert>
+#include <queue>
 
 #include <zpr.h>
 
@@ -209,6 +210,105 @@ namespace pkb
         util::error("pkb", "Unexpected error.");
     }
 
+    // Start of parent methods
+
+    // processes the direct parents of statements
+    static void processParent(ProgramKB* pkb, ast::StmtList* list, ast::StatementNum par)
+    {
+        for(auto stmt : list->statements)
+        {
+            pkb->_direct_parents[stmt->id] = par;
+
+            if(ast::IfStmt* if_stmt = dynamic_cast<ast::IfStmt*>(stmt))
+            {
+                processParent(pkb, &if_stmt->true_case, stmt->id);
+                if_stmt->true_case.parent_statement = if_stmt;
+
+                processParent(pkb, &if_stmt->false_case, stmt->id);
+                if_stmt->false_case.parent_statement = if_stmt;
+            }
+            else if(ast::WhileLoop* while_stmt = dynamic_cast<ast::WhileLoop*>(stmt))
+            {
+                processParent(pkb, &while_stmt->body, stmt->id);
+                while_stmt->body.parent_statement = while_stmt;
+            }
+        }
+    }
+
+    // processes the ancestors of statements
+    static void processAncestors(ProgramKB* pkb, ast::StmtList* lst)
+    {
+        using StmtPair = std::pair<ast::Stmt*, ast::Stmt*>;
+        std::queue<StmtPair> q;
+
+        for(auto stmt : lst->statements)
+            q.push({ stmt, nullptr });
+
+        while(!q.empty())
+        {
+            auto [child, parent] = q.front();
+            q.pop();
+
+            if(child == nullptr)
+                continue;
+
+            std::unordered_set<ast::StatementNum> anc;
+            if(pkb->_ancestors.count(child->id) == 0)
+                pkb->_ancestors[child->id] = anc;
+
+            anc = pkb->_ancestors[child->id];
+
+            if(parent != nullptr)
+            {
+                std::unordered_set<ast::StatementNum> par;
+                for(auto num : par)
+                    anc.insert(num);
+            }
+
+            if(ast::IfStmt* if_stmt = dynamic_cast<ast::IfStmt*>(child))
+            {
+                for(auto inner : if_stmt->true_case.statements)
+                    q.push({ inner, child });
+
+                for(auto inner : if_stmt->false_case.statements)
+                    q.push({ inner, child });
+            }
+            else if(ast::WhileLoop* while_stmt = dynamic_cast<ast::WhileLoop*>(child))
+            {
+                for(auto inner : while_stmt->body.statements)
+                    q.push({ inner, child });
+            }
+        }
+    }
+
+    bool ProgramKB::isParent(ast::StatementNum fst, ast::StatementNum snd)
+    {
+        if(_direct_parents.count(fst) == 0)
+            return false;
+
+        return _direct_parents[fst] == snd;
+    }
+
+    bool ProgramKB::isParentT(ast::StatementNum fst, ast::StatementNum snd)
+    {
+        if(_ancestors.count(snd) == 0)
+            return false;
+
+        return _ancestors[snd].count(fst);
+    }
+
+    std::unordered_set<ast::StatementNum> ProgramKB::getAncestorsOf(ast::StatementNum fst)
+    {
+        std::unordered_set<ast::StatementNum> anc;
+
+        if(_ancestors.count(fst) == 0)
+            return anc;
+
+        return _ancestors[fst];
+    }
+
+    // End of parent methods
+
     ProgramKB* processProgram(ast::Program* program)
     {
         auto pkb = new ProgramKB();
@@ -225,10 +325,17 @@ namespace pkb
             pkb->procedures[proc->name].ast_proc = proc;
         }
 
-        // do a second pass to populate the follows vector.
+        // do a second pass to populate the follows vector and parent hashmap.
         for(const auto& proc : program->procedures)
         {
             processFollows(pkb, &proc->body);
+            processParent(pkb, &proc->body, -1);
+        }
+
+        // do a third pass to populate the ancestors hashmap
+        for(const auto& proc : program->procedures)
+        {
+            processAncestors(pkb, &proc->body);
         }
 
         return pkb;
