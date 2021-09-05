@@ -169,22 +169,42 @@ namespace pkb
         }
     }
 
+    static void processCalls(ProgramKB* pkb, ast::StmtList* list, std::string* procName)
+    {
+        const auto& stmt_list = list->statements;
+        for(ast::Stmt* stmt : stmt_list)
+        {
+            if(auto i = dynamic_cast<ast::ProcCall*>(stmt); i)
+            {
+                pkb->proc_calls.addEdge(*procName, i->proc_name);
+            }
+            else if(auto i = dynamic_cast<ast::IfStmt*>(stmt); i)
+            {
+                processCalls(pkb, &i->true_case, procName);
+                processCalls(pkb, &i->false_case, procName);
+            }
+            else if(auto w = dynamic_cast<ast::WhileLoop*>(stmt); w)
+            {
+                processCalls(pkb, &w->body, procName);
+            }
+        }
+    }
+
     void Calls::addEdge(std::string a, std::string b)
     {
-        adj[a].push_back(b);
+        adj[a].insert(b);
     }
 
     // returns an iterator to the dest node of the next edge after the removed edge
-    std::vector<std::string>::iterator Calls::removeEdge(
-        std::string a, std::string b, std::unordered_map<std::string, std::vector<std::string>>* tempAdj)
+    std::unordered_set<std::string>::iterator Calls::removeEdge(
+        std::string a, std::string b, std::unordered_map<std::string, std::unordered_set<std::string>>* tempAdj)
     {
-        std::vector<std::string>::iterator ret =
-            (*tempAdj)[a].erase(find((*tempAdj)[a].begin(), (*tempAdj)[a].end(), b));
+        std::unordered_set<std::string>::iterator ret = (*tempAdj)[a].erase((*tempAdj)[a].find(b));
         return ret;
     }
 
     // runs dfs to detect cycle
-    bool Calls::dfs(std::string a, std::unordered_map<std::string, std::vector<std::string>>* tempAdj,
+    bool Calls::dfs(std::string a, std::unordered_map<std::string, std::unordered_set<std::string>>* tempAdj,
         std::unordered_set<std::string>* visited)
     {
         if(visited->find(a) != visited->end())
@@ -194,7 +214,7 @@ namespace pkb
         visited->insert(a);
         if(tempAdj->find(a) != tempAdj->end())
         {
-            std::vector<std::string>::iterator s = (*tempAdj)[a].begin();
+            std::unordered_set<std::string>::iterator s = (*tempAdj)[a].begin();
             while(s != (*tempAdj)[a].end())
             {
                 if(dfs(*s, tempAdj, visited))
@@ -219,14 +239,14 @@ namespace pkb
     // runs dfs on each graph
     bool Calls::cycleExists()
     {
-        std::unordered_map<std::string, std::vector<std::string>> tempAdj;
+        std::unordered_map<std::string, std::unordered_set<std::string>> tempAdj;
         std::unordered_set<std::string> visited;
         auto i = adj.begin();
         while(i != adj.end())
         {
             for(auto a : i->second)
             {
-                tempAdj[i->first].push_back(a.c_str());
+                tempAdj[i->first].insert(a.c_str());
             }
             ++i;
         }
@@ -300,6 +320,14 @@ namespace pkb
         {
             processFollows(pkb, &proc->body);
         }
+
+        for(const auto& proc : program->procedures)
+        {
+            processCalls(pkb, &proc->body, &proc->name);
+        }
+
+        if(pkb->proc_calls.cycleExists())
+            util::error("pkb", "cyclic or recursive calls are not allowed");
 
         return pkb;
     }

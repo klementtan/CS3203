@@ -67,13 +67,13 @@ namespace pkb
     struct Calls
     {
         // adjacency graph for the edges. Proc A calls proc B gives edge (A, B).
-        std::unordered_map<std::string, std::vector<std::string>> adj;
+        std::unordered_map<std::string, std::unordered_set<std::string>> adj;
 
         void addEdge(std::string a, std::string b);
-        std::vector<std::string>::iterator removeEdge(
-            std::string a, std::string b, std::unordered_map<std::string, std::vector<std::string>>* adj);
+        std::unordered_set<std::string>::iterator removeEdge(
+            std::string a, std::string b, std::unordered_map<std::string, std::unordered_set<std::string>>* adj);
 
-        bool dfs(std::string a, std::unordered_map<std::string, std::vector<std::string>>* adj,
+        bool dfs(std::string a, std::unordered_map<std::string, std::unordered_set<std::string>>* adj,
             std::unordered_set<std::string>* visited);
         bool cycleExists();
     };
@@ -90,6 +90,8 @@ namespace pkb
 
         std::vector<ast::Stmt*> while_statements;
         std::vector<ast::Stmt*> if_statements;
+
+        Calls proc_calls;
 
         std::vector<Follows*> follows;
 
