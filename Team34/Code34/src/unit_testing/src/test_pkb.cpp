@@ -5,19 +5,25 @@
 #include <zpr.h>
 #include "simple_parser.h"
 #include "pkb.h"
-
+#include "util.h"
+#include <iostream>
+#include <string>
+#include <filesystem>
 using namespace simple::parser;
 using namespace pkb;
 
+using std::cout; using std::cin;
+using std::endl; using std::string;
+using std::filesystem::current_path;
 static void req(bool b)
 {
     REQUIRE(b);
 }
 
-static std::string get_content(const char* path, const char* mode)
+static std::string get_content(std::string path)
 {
     FILE* file = stdin;
-    file = fopen(path, mode);
+    file = fopen(path.c_str(), "rb");
     if(file == nullptr)
     {
         zpr::fprintln(stderr, "failed to open file: {}", strerror(errno));
@@ -36,12 +42,14 @@ static std::string get_content(const char* path, const char* mode)
     return contents;
 }
 
-
 TEST_CASE("Populate PKB")
 {
     SECTION("Cyclic calls")
     {
-        std::string in = get_content("..\\..\\..\\..\\src\\unit_testing\\simple_prog\\recursive_calls.txt", "rb");
+        cout << "Current working directory: " << current_path() << endl;
+
+        std::string a = "../../../../src/unit_testing/simple_prog/recursive_calls.txt";
+        std::string in = util::readEntireFile(a.c_str());
 
         auto prog = parseProgram(in);
         auto pkb = processProgram(prog.unwrap());
@@ -51,7 +59,8 @@ TEST_CASE("Populate PKB")
 
     SECTION("Call to non-existent procedure")
     {
-        std::string in = get_content("..\\..\\..\\..\\src\\unit_testing\\simple_prog\\invalid_call.txt", "rb");
+        std::string a = "../../../../src/unit_testing/simple_prog/invalid_call.txt";
+        std::string in = util::readEntireFile(a.c_str());
 
         auto prog = parseProgram(in);
         auto pkb = processProgram(prog.unwrap());
