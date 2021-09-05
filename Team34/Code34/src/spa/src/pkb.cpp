@@ -269,6 +269,21 @@ namespace pkb
         return false;
     }
 
+    std::string Calls::missingProc(std::unordered_map<std::string, Procedure>* procs)
+    {
+        for(auto& a : adj)
+        {
+            for(auto& callee : a.second)
+            {
+                if(procs->find(callee) == procs->end())
+                {
+                    return callee;
+                }
+            }
+        }
+        return "";
+    }
+
     // Takes in two 1-indexed StatementNums
     bool ProgramKB::isFollows(s_ast::StatementNum fst, s_ast::StatementNum snd)
     {
@@ -444,7 +459,8 @@ namespace pkb
 
         if(pkb->proc_calls.cycleExists())
             return ErrFmt("Cyclic or recursive calls are not allowed");
-
+        if(auto a = pkb->proc_calls.missingProc(&(pkb->procedures)); a != "")
+            return ErrFmt("Procedure '{}' is undefined", a);
         return Ok(pkb);
     }
 }

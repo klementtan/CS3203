@@ -6,7 +6,7 @@
 #include "simple_parser.h"
 #include "pkb.h"
 
-using namespace simple_parser;
+using namespace simple::parser;
 using namespace pkb;
 
 static void req(bool b)
@@ -37,14 +37,25 @@ static std::string get_content(const char* path, const char* mode)
 }
 
 
-TEST_CASE("Parse program")
+TEST_CASE("Populate PKB")
 {
-    SECTION("Multiple assignments")
+    SECTION("Cyclic calls")
     {
         std::string in = get_content("..\\..\\..\\..\\src\\unit_testing\\simple_prog\\recursive_calls.txt", "rb");
 
         auto prog = parseProgram(in);
-        Result<ProgramKB*> pkb = processProgram(prog);
-        req("Cyclic or recursive calls are not allowed" == pkb.unwrap());
+        auto pkb = processProgram(prog.unwrap());
+        std::string expectation = "Cyclic or recursive calls are not allowed";
+        req(expectation == pkb.error());
+    }
+
+    SECTION("Call to non-existent procedure")
+    {
+        std::string in = get_content("..\\..\\..\\..\\src\\unit_testing\\simple_prog\\invalid_call.txt", "rb");
+
+        auto prog = parseProgram(in);
+        auto pkb = processProgram(prog.unwrap());
+        std::string expectation = "Procedure 'C' is undefined";
+        req(expectation == pkb.error());
     }
 }
