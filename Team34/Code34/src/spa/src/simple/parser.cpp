@@ -7,9 +7,9 @@
 #include "util.h"
 #include "simple_parser.h"
 
-namespace simple_parser
+namespace simple::parser
 {
-    using namespace ast;
+    using namespace simple::ast;
 
     using zst::Ok;
     using zst::Err;

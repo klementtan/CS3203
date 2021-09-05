@@ -6,7 +6,7 @@
 
 #include "ast.h"
 
-namespace ast
+namespace simple::ast
 {
     Stmt::~Stmt() { }
 
