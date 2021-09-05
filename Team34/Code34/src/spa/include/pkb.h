@@ -3,11 +3,15 @@
 
 #include <unordered_map>
 #include <unordered_set>
+#include <zst.h>
 
 #include "ast.h"
 
 namespace pkb
 {
+    template <typename T>
+    using Result = zst::Result<T, std::string>;
+
     struct Procedure
     {
         std::string name;
@@ -108,5 +112,5 @@ namespace pkb
         std::unordered_set<simple::ast::StatementNum> getAncestorsOf(simple::ast::StatementNum);
     };
 
-    ProgramKB* processProgram(simple::ast::Program* prog);
+    Result<ProgramKB*> processProgram(simple::ast::Program* prog);
 }

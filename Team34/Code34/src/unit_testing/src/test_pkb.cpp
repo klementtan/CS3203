@@ -44,7 +44,7 @@ TEST_CASE("Parse program")
         std::string in = get_content("..\\..\\..\\..\\src\\unit_testing\\simple_prog\\recursive_calls.txt", "rb");
 
         auto prog = parseProgram(in);
-        auto pkb = processProgram(prog);
-        req(true);
+        Result<ProgramKB*> pkb = processProgram(prog);
+        req("Cyclic or recursive calls are not allowed" == pkb.unwrap());
     }
 }

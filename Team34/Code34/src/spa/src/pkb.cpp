@@ -2,6 +2,7 @@
 #include <queue>
 
 #include <zpr.h>
+#include <zst.h>
 
 #include "ast.h"
 #include "pkb.h"
@@ -9,6 +10,12 @@
 
 namespace pkb
 {
+    using zst::Ok;
+    using zst::Err;
+    using zst::ErrFmt;
+
+    template <typename T>
+    using Result = zst::Result<T, std::string>;
     namespace s_ast = simple::ast;
 
     // collection only entails numbering the statements
@@ -172,21 +179,21 @@ namespace pkb
         }
     }
 
-    static void processCalls(ProgramKB* pkb, ast::StmtList* list, std::string* procName)
+    static void processCalls(ProgramKB* pkb, s_ast::StmtList* list, std::string* procName)
     {
         const auto& stmt_list = list->statements;
-        for(ast::Stmt* stmt : stmt_list)
+        for(s_ast::Stmt* stmt : stmt_list)
         {
-            if(auto i = dynamic_cast<ast::ProcCall*>(stmt); i)
+            if(auto i = dynamic_cast<s_ast::ProcCall*>(stmt); i)
             {
                 pkb->proc_calls.addEdge(*procName, i->proc_name);
             }
-            else if(auto i = dynamic_cast<ast::IfStmt*>(stmt); i)
+            else if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt); i)
             {
                 processCalls(pkb, &i->true_case, procName);
                 processCalls(pkb, &i->false_case, procName);
             }
-            else if(auto w = dynamic_cast<ast::WhileLoop*>(stmt); w)
+            else if(auto w = dynamic_cast<s_ast::WhileLoop*>(stmt); w)
             {
                 processCalls(pkb, &w->body, procName);
             }
@@ -401,7 +408,7 @@ namespace pkb
 
     // End of parent methods
 
-    ProgramKB* processProgram(s_ast::Program* program)
+    Result<ProgramKB*> processProgram(s_ast::Program* program)
     {
         auto pkb = new ProgramKB();
 
@@ -436,8 +443,8 @@ namespace pkb
         }
 
         if(pkb->proc_calls.cycleExists())
-            util::error("pkb", "cyclic or recursive calls are not allowed");
+            return ErrFmt("Cyclic or recursive calls are not allowed");
 
-        return pkb;
+        return Ok(pkb);
     }
 }
