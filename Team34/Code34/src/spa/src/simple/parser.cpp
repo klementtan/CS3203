@@ -7,10 +7,18 @@
 #include "util.h"
 #include "simple_parser.h"
 
-namespace simple_parser
+namespace simple::parser
 {
-    using namespace ast;
+    using namespace simple::ast;
 
+    using zst::Ok;
+    using zst::Err;
+    using zst::ErrFmt;
+
+    template <typename T>
+    using Result = zst::Result<T, std::string>;
+
+    // this is just a convenience wrapper, nothing special.
     struct ParserState
     {
         zst::str_view stream;
@@ -53,15 +61,15 @@ namespace simple_parser
         }
     }
 
-    static Expr* parseExpr(ParserState* ps);
-    static Expr* parsePrimary(ParserState* ps)
+    static Result<Expr*> parseExpr(ParserState* ps);
+    static Result<Expr*> parsePrimary(ParserState* ps)
     {
         if(ps->peek() == TT::LParen)
         {
             ps->next();
             auto ret = parseExpr(ps);
             if(ps->next() != TT::RParen)
-                util::error("parser", "expected ')'");
+                return ErrFmt("expected ')'");
 
             return ret;
         }
@@ -72,88 +80,98 @@ namespace simple_parser
             for(char c : num)
                 constant->value = 10 * constant->value + (c - '0');
 
-            return constant;
+            return Ok(constant);
         }
         else if(ps->peek() == TT::Identifier)
         {
             auto vr = new VarRef();
             vr->name = ps->next().text.str();
 
-            return vr;
+            return Ok(vr);
         }
         else
         {
-            util::error("parser", "invalid start of expression with '{}'", ps->peek().text);
+            return ErrFmt("invalid start of expression with '{}'", ps->peek().text);
         }
     }
 
-    static Expr* parseRhs(ParserState* ps, Expr* lhs, int priority)
+    static Result<Expr*> parseRhs(ParserState* ps, Expr* lhs, int priority)
     {
         if(priority == -1)
-            return lhs;
+            return Ok(lhs);
 
         // everything here is left-associative, so there is no problem.
         while(true)
         {
             auto prec = get_precedence(ps->peek());
             if(prec < priority)
-                return lhs;
+                return Ok(lhs);
 
             auto op = ps->next().text;
             auto rhs = parsePrimary(ps);
+            if(!rhs)
+                return rhs;
 
             auto next = get_precedence(ps->peek());
             if(next > prec)
-                rhs = parseRhs(ps, rhs, prec + 1);
+                rhs = parseRhs(ps, rhs.unwrap(), prec + 1);
 
             auto binop = new BinaryOp();
             binop->lhs = lhs;
-            binop->rhs = rhs;
+            binop->rhs = rhs.unwrap();
             binop->op = op.str();
 
             lhs = binop;
         }
     }
 
-    static Expr* parseExpr(ParserState* ps)
+    static Result<Expr*> parseExpr(ParserState* ps)
     {
-        return parseRhs(ps, parsePrimary(ps), 0);
+        if(auto pri = parsePrimary(ps); pri.ok())
+            return parseRhs(ps, pri.unwrap(), 0);
+        else
+            return pri;
     }
 
     // this is fully parenthesised, so life is easier
-    static Expr* parseCondExpr(ParserState* ps)
+    static Result<Expr*> parseCondExpr(ParserState* ps)
     {
         if(ps->peek() == TT::Exclamation)
         {
             ps->next();
             if(ps->next() != TT::LParen)
-                util::error("parser", "expected '(' after '!'");
+                return ErrFmt("expected '(' after '!'");
 
             auto ret = new UnaryOp();
-            ret->expr = parseCondExpr(ps);
+            if(auto cond = parseCondExpr(ps); cond.ok())
+                ret->expr = cond.unwrap();
+            else
+                return cond;
+
             ret->op = "!";
-
             if(ps->next() != TT::RParen)
-                util::error("parser", "expected ')' to match a '('");
+                return ErrFmt("expected ')' to match a '('");
 
-            return ret;
+            return Ok(ret);
         }
         else if(ps->peek() == TT::LParen)
         {
             // this is either (expr) || (expr) or (expr) && (expr).
 
-            auto parse_parenthesised_condexpr = [](ParserState* ps) -> Expr* {
+            auto parse_parenthesised_condexpr = [](ParserState* ps) -> Result<Expr*> {
                 if(ps->next() != TT::LParen)
-                    util::error("parser", "expected '('");
+                    return ErrFmt("expected '('");
 
                 auto ret = parseCondExpr(ps);
                 if(ps->next() != TT::RParen)
-                    util::error("parser", "expected ')' to match a '('");
+                    return ErrFmt("expected ')' to match a '('");
 
                 return ret;
             };
 
             auto lhs = parse_parenthesised_condexpr(ps);
+            if(!lhs.ok())
+                return Err(lhs.error());
 
             std::string op;
             if(auto tok = ps->next(); tok == TT::LogicalAnd)
@@ -161,19 +179,24 @@ namespace simple_parser
             else if(tok == TT::LogicalOr)
                 op = "||";
             else
-                util::error("parser", "expected either '&&' or '||'");
+                return ErrFmt("expected either '&&' or '||'");
 
             auto rhs = parse_parenthesised_condexpr(ps);
+            if(!rhs.ok())
+                return Err(rhs.error());
 
             auto ret = new BinaryOp();
-            ret->lhs = lhs;
-            ret->rhs = rhs;
+            ret->lhs = lhs.unwrap();
+            ret->rhs = rhs.unwrap();
             ret->op = op;
-            return ret;
+            return Ok(ret);
         }
         else
         {
             auto lhs = parseExpr(ps);
+            if(!lhs.ok())
+                return lhs;
+
             std::string op;
             if(auto tok = ps->next(); tok == TT::LAngle)
                 op = "<";
@@ -188,125 +211,144 @@ namespace simple_parser
             else if(tok == TT::EqualsTo)
                 op = "==";
             else
-                util::error("parser", "invalid binary operator '{}'", tok.text);
+                return ErrFmt("invalid binary operator '{}'", tok.text);
 
             auto rhs = parseExpr(ps);
+            if(!rhs.ok())
+                return rhs;
 
             auto ret = new BinaryOp();
-            ret->lhs = lhs;
-            ret->rhs = rhs;
+            ret->lhs = lhs.unwrap();
+            ret->rhs = rhs.unwrap();
             ret->op = op;
-            return ret;
+            return Ok(ret);
         }
     }
 
-    static Stmt* parseStmt(ParserState* ps);
-    static StmtList parseStatementList(ParserState* ps)
+    static Result<Stmt*> parseStmt(ParserState* ps);
+    static Result<StmtList> parseStatementList(ParserState* ps)
     {
         StmtList list {};
 
         if(ps->next() != TT::LBrace)
-            util::error("parser", "expected '{'");
+            return ErrFmt("expected '{'");
 
         while(ps->peek() != TT::RBrace)
         {
             if(ps->peek() == TT::EndOfFile)
-                util::error("parser", "unexpected end of file");
+                return ErrFmt("unexpected end of file (expected '}')");
 
-            list.statements.push_back(parseStmt(ps));
+            if(auto s = parseStmt(ps); s.ok())
+                list.statements.push_back(s.unwrap());
+            else
+                return Err(s.error());
         }
 
         if(ps->next() != TT::RBrace)
-            util::error("parser", "expected '}'");
+            return ErrFmt("expected '}'");
 
         // the grammar specifies "stmt+"
         if(list.statements.empty())
-            util::error("parser", "expected at least one statement between '{' and '}'");
+            return ErrFmt("expected at least one statement between '{' and '}'");
 
-        return list;
+        return Ok(list);
     }
 
-    static IfStmt* parseIfStmt(ParserState* ps)
+    static Result<IfStmt*> parseIfStmt(ParserState* ps)
     {
         // note: 'if' was already eaten, so we need to parse the expression immediately.
         if(ps->next() != TT::LParen)
-            util::error("parser", "expected '(' after 'if'");
+            return ErrFmt("expected '(' after 'if'");
 
         auto ret = new IfStmt();
-        ret->condition = parseCondExpr(ps);
+        if(auto cond = parseCondExpr(ps); cond.ok())
+            ret->condition = cond.unwrap();
+        else
+            return Err(cond.error());
 
         if(ps->next() != TT::RParen)
-            util::error("parser", "expected ')'");
-
+            return ErrFmt("expected ')'");
 
         if(auto then = ps->next(); then != TT::Identifier || then.text != KW_Then)
-            util::error("parser", "expected 'then' after condition for 'if'");
+            return ErrFmt("expected 'then' after condition for 'if'");
 
-        ret->true_case = parseStatementList(ps);
+        if(auto tc = parseStatementList(ps); tc.ok())
+            ret->true_case = tc.unwrap();
+        else
+            return Err(tc.error());
 
         if(auto e = ps->next(); e != TT::Identifier || e.text != KW_Else)
-            util::error("parser", "'else' clause is mandatory");
+            return ErrFmt("'else' clause is mandatory");
 
-        ret->false_case = parseStatementList(ps);
+        if(auto fc = parseStatementList(ps); fc.ok())
+            ret->false_case = fc.unwrap();
+        else
+            return Err(fc.error());
 
-        return ret;
+        return Ok(ret);
     }
 
-    static WhileLoop* parseWhileLoop(ParserState* ps)
+    static Result<WhileLoop*> parseWhileLoop(ParserState* ps)
     {
         // note: 'while' was already eaten, so we need to parse the expression immediately.
         if(ps->next() != TT::LParen)
-            util::error("parser", "expected '(' after 'while'");
+            return ErrFmt("expected '(' after 'while'");
 
         auto ret = new WhileLoop();
-        ret->condition = parseCondExpr(ps);
+        if(auto cond = parseCondExpr(ps); cond.ok())
+            ret->condition = cond.unwrap();
+        else
+            return Err(cond.error());
 
         if(ps->next() != TT::RParen)
-            util::error("parser", "expected ')'");
+            return ErrFmt("expected ')'");
 
-        ret->body = parseStatementList(ps);
-        return ret;
+        if(auto body = parseStatementList(ps); body.ok())
+            ret->body = body.unwrap();
+        else
+            return Err(body.error());
+
+        return Ok(ret);
     }
 
-    static Stmt* parseStmt(ParserState* ps)
+    static Result<Stmt*> parseStmt(ParserState* ps)
     {
-        auto check_semicolon = [](ParserState* ps) {
+        auto check_semicolon = [](ParserState* ps, auto ret) -> zst::Result<Stmt*, std::string> {
             if(ps->next() != TT::Semicolon)
-                util::error("parser", "expected semicolon after statement");
+                return ErrFmt("expected semicolon after statement");
+            else
+                return Ok(ret);
         };
 
         if(auto tok = ps->next(); tok == TT::Identifier && tok.text == KW_Read)
         {
             auto read = new ReadStmt();
             if(auto name = ps->next(); name != TT::Identifier)
-                util::error("parser", "expected identifier after 'read'");
+                return ErrFmt("expected identifier after 'read'");
             else
                 read->var_name = name.text.str();
 
-            check_semicolon(ps);
-            return read;
+            return check_semicolon(ps, read);
         }
         else if(tok == TT::Identifier && tok.text == KW_Print)
         {
             auto print = new PrintStmt();
             if(auto name = ps->next(); name != TT::Identifier)
-                util::error("parser", "expected identifier after 'print'");
+                return ErrFmt("expected identifier after 'print'");
             else
                 print->var_name = name.text.str();
 
-            check_semicolon(ps);
-            return print;
+            return check_semicolon(ps, print);
         }
         else if(tok == TT::Identifier && tok.text == KW_Call)
         {
             auto call = new ProcCall();
             if(auto name = ps->next(); name != TT::Identifier)
-                util::error("parser", "expected identifier after 'call'");
+                return ErrFmt("expected identifier after 'call'");
             else
                 call->proc_name = name.text.str();
 
-            check_semicolon(ps);
-            return call;
+            return check_semicolon(ps, call);
         }
         else if(tok == TT::Identifier && tok.text == KW_If)
         {
@@ -321,56 +363,67 @@ namespace simple_parser
             // based on the grammar, we know that statements starting with an identifier
             // (that is not one of the control flow keywords) will be an assignment.
             if(ps->next() != TT::Equal)
-                util::error("parser", "expected '='");
+                return ErrFmt("expected '=' after identifier");
 
             auto assign = new AssignStmt();
             assign->lhs = tok.text.str();
-            assign->rhs = parseExpr(ps);
 
-            check_semicolon(ps);
-            return assign;
+            if(auto rhs = parseExpr(ps); rhs.ok())
+                assign->rhs = rhs.unwrap();
+            else
+                return Err(rhs.error());
+
+            return check_semicolon(ps, assign);
         }
         else
         {
-            util::error("parser", "unexpected token '{}' at beginning of statement", tok.text);
+            return ErrFmt("unexpected token '{}' at beginning of statement", tok.text);
         }
     }
 
-    static Procedure* parseProcedure(ParserState* ps)
+    static Result<Procedure*> parseProcedure(ParserState* ps)
     {
         if(auto kw = ps->next(); kw != TT::Identifier || kw.text != KW_Procedure)
-            util::error("parser", "expected 'procedure' to define a procedure (found '{}')", kw.text);
+            return ErrFmt("expected 'procedure' to define a procedure (found '{}')", kw.text);
 
         auto proc = new Procedure();
 
         if(auto name = ps->next(); name == TT::Identifier)
             proc->name = name.text.str();
         else
-            util::error("parser", "expected identifier after 'procedure' keyword");
+            return ErrFmt("expected identifier after 'procedure' keyword");
 
-        proc->body = parseStatementList(ps);
-        return proc;
+        if(auto body = parseStatementList(ps); body.ok())
+            proc->body = body.unwrap();
+        else
+            return Err(body.error());
+
+        return Ok(proc);
     }
 
-    Program* parseProgram(zst::str_view input)
+    Result<Program*> parseProgram(zst::str_view input)
     {
         auto ps = ParserState { input };
         auto prog = new Program();
 
         for(TokenType t; (t = ps.peek()) != TT::EndOfFile;)
-            prog->procedures.push_back(parseProcedure(&ps));
+        {
+            if(auto p = parseProcedure(&ps); p.ok())
+                prog->procedures.push_back(p.unwrap());
+            else
+                return Err(p.error());
+        }
 
-        return prog;
+        return Ok(prog);
     }
 
-    // exposed to the outside world
-    Expr* parseExpression(zst::str_view input)
+    Result<Expr*> parseExpression(zst::str_view input)
     {
         auto ps = ParserState { input };
         auto ret = parseExpr(&ps);
 
         if(auto tmp = ps.next(); tmp != TT::EndOfFile)
-            util::error("parser", "unexpected token '{}' after expression", tmp.text);
+            return ErrFmt("unexpected token '{}' after expression", tmp.text);
 
         return ret;
     }

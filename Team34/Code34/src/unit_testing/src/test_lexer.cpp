@@ -7,7 +7,7 @@
 #include <zpr.h>
 #include "simple_parser.h"
 
-using namespace simple_parser;
+using namespace simple::parser;
 
 static void require(bool b)
 {
