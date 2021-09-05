@@ -1,7 +1,0 @@
-procedure A {
-	call B;
-}
-
-procedure B {
-	call A;
-}

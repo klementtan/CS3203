@@ -68,12 +68,12 @@ namespace pkb
         std::unordered_set<simple::ast::StatementNum> after;
     };
 
-    struct Calls
+    struct CallGraph
     {
         // adjacency graph for the edges. Proc A calls proc B gives edge (A, B).
         std::unordered_map<std::string, std::unordered_set<std::string>> adj;
 
-        void addEdge(std::string a, std::string b);
+        void addEdge(std::string& a, std::string b);
         std::unordered_set<std::string>::iterator removeEdge(
             std::string a, std::string b, std::unordered_map<std::string, std::unordered_set<std::string>>* adj);
 
@@ -96,7 +96,7 @@ namespace pkb
         std::vector<simple::ast::Stmt*> while_statements;
         std::vector<simple::ast::Stmt*> if_statements;
 
-        Calls proc_calls;
+        CallGraph proc_calls;
 
         std::vector<Follows*> follows;
 
