@@ -1,9 +1,9 @@
 // pql/lexer.cpp
 
 #include <zst.h>
-#include <zpr.h>
 #include "util.h"
 #include "pql/parser.h"
+#include "pql/exception.h"
 
 namespace pql::parser
 {
@@ -87,8 +87,7 @@ namespace pql::parser
                 case '*':   tt = TT::Asterisk; break;
                 case ',':   tt = TT::Comma; break;
                 default:
-                    util::error("pql::parser","invalid token '{}'", sv[0]);
-                    abort();
+                    throw pql::exception::PqlException("pql::parser","invalid token '{}'", sv[0]);
             }
 
             return Token { sv.take_prefix(1), tt };
