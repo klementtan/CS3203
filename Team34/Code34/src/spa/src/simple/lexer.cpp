@@ -6,7 +6,7 @@
 #include "util.h"
 #include "simple_parser.h"
 
-namespace simple_parser
+namespace simple::parser
 {
     static void eat_whitespace(zst::str_view& sv)
     {

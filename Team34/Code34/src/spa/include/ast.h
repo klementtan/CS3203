@@ -9,7 +9,7 @@
 #include <vector>
 #include <string>
 
-namespace ast
+namespace simple::ast
 {
     using StatementNum = size_t;
 

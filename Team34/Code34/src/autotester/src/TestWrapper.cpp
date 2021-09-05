@@ -12,7 +12,7 @@ TestWrapper::TestWrapper() { }
 void TestWrapper::parse(std::string filename)
 {
     auto text = util::readEntireFile(filename.c_str());
-    auto program = simple_parser::parseProgram(text);
+    auto program = simple::parser::parseProgram(text);
 }
 
 
