@@ -169,6 +169,76 @@ namespace pkb
         }
     }
 
+    void Calls::addEdge(std::string a, std::string b)
+    {
+        adj[a].push_back(b);
+    }
+
+    // returns an iterator to the dest node of the next edge after the removed edge
+    std::vector<std::string>::iterator Calls::removeEdge(
+        std::string a, std::string b, std::unordered_map<std::string, std::vector<std::string>>* tempAdj)
+    {
+        std::vector<std::string>::iterator ret =
+            (*tempAdj)[a].erase(find((*tempAdj)[a].begin(), (*tempAdj)[a].end(), b));
+        return ret;
+    }
+
+    // runs dfs to detect cycle
+    bool Calls::dfs(std::string a, std::unordered_map<std::string, std::vector<std::string>>* tempAdj,
+        std::unordered_set<std::string>* visited)
+    {
+        if(visited->find(a) != visited->end())
+        {
+            return true;
+        }
+        visited->insert(a);
+        if(tempAdj->find(a) != tempAdj->end())
+        {
+            std::vector<std::string>::iterator s = (*tempAdj)[a].begin();
+            while(s != (*tempAdj)[a].end())
+            {
+                if(dfs(*s, tempAdj, visited))
+                {
+                    return true;
+                }
+                else
+                {
+                    s = removeEdge(a, *s, tempAdj);
+                    if((*tempAdj)[a].empty())
+                    {
+                        tempAdj->erase(a);
+                        break;
+                    }
+                }
+            }
+        }
+        visited->erase(a);
+        return false;
+    }
+
+    // runs dfs on each graph
+    bool Calls::cycleExists()
+    {
+        std::unordered_map<std::string, std::vector<std::string>> tempAdj;
+        std::unordered_set<std::string> visited;
+        auto i = adj.begin();
+        while(i != adj.end())
+        {
+            for(auto a : i->second)
+            {
+                tempAdj[i->first].push_back(a.c_str());
+            }
+            ++i;
+        }
+        while(tempAdj.size() != 0)
+        {
+            bool res = dfs(tempAdj.begin()->first, &tempAdj, &visited);
+            if(res)
+                return true;
+        }
+        return false;
+    }
+
     // Takes in two 1-indexed StatementNums
     bool ProgramKB::isFollows(ast::StatementNum fst, ast::StatementNum snd)
     {
