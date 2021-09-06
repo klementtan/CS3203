@@ -341,7 +341,11 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
-build_win/
+build_win
+
+# Query output
+out.xml
+>>>>>>> master
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/

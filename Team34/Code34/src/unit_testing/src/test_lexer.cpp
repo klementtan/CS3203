@@ -7,12 +7,12 @@
 #include <zpr.h>
 #include "simple_parser.h"
 
+using namespace simple::parser;
+
 static void require(bool b)
 {
     REQUIRE(b);
 }
-
-using namespace simple_parser;
 
 template <typename... Tokens>
 static void check_tokens(zst::str_view sv, Tokens&&... tokens)
@@ -79,7 +79,7 @@ TEST_CASE("basic tokens 2")
 
 TEST_CASE("token sequencing")
 {
-    check_tokens("000aaa000bbb", TT::Number, TT::Identifier);
+    check_tokens("100aaa000bbb", TT::Number, TT::Identifier);
     check_tokens("foobar(123 456 abcdef);", TT::Identifier, TT::LParen, TT::Number, TT::Number, TT::Identifier,
         TT::RParen, TT::Semicolon);
 }

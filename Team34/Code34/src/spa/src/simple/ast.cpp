@@ -8,7 +8,7 @@
 #include "ast.h"
 #include "simple_parser.h"
 
-namespace ast
+namespace simple::ast
 {
     Stmt::~Stmt() { }
 

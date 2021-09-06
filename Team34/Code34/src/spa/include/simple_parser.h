@@ -9,12 +9,13 @@
 #include <string>
 #include <vector>
 
+#include <zpr.h>
 #include <zst.h>
 
 #include "ast.h"
 
 // lexer stuff
-namespace simple_parser
+namespace simple::parser
 {
     enum class TokenType
     {
@@ -70,7 +71,8 @@ namespace simple_parser
 
 
 // parser stuff
-namespace simple_parser
+namespace simple::parser
 {
-    ast::Program* parseProgram(zst::str_view input);
+    zst::Result<ast::Expr*, std::string> parseExpression(zst::str_view input);
+    zst::Result<ast::Program*, std::string> parseProgram(zst::str_view input);
 }

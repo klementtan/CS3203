@@ -9,7 +9,7 @@
 #include <vector>
 #include <string>
 
-namespace ast
+namespace simple::ast
 {
     using StatementNum = size_t;
 
@@ -17,6 +17,8 @@ namespace ast
     struct StmtList
     {
         std::vector<Stmt*> statements;
+
+        Stmt* parent_statement = nullptr;
 
         std::string toString(int nesting) const;
     };
