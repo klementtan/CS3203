@@ -285,21 +285,22 @@ TEST_CASE("Parse program")
         )";
         std::string out3 = "expected '(' after 'while'";
         req(check_err(in3, out3));
-
+        /*
         std::string in4 = R"(
         procedure A {
-            while ((v + x) * y + z * t < 10) {
+            while (v + x * y + z * t < 10) {
                 x = 0;
                 if (x > 0)then {
                     a = a + 1;
                 }else{a = 1;}
             }
-}
+        }
         )";
         std::string out4 = "expected '(' after 'while'";
         auto prog4 = parseProgram(in4);
         zpr::fprintln(stdout, "begin{}end", prog4.error());
         req(prog4.error().compare(out4) == 0);
+        */
     }
 
     SECTION("Error for invalid if syntax")
@@ -443,8 +444,10 @@ TEST_CASE("Parse program")
         auto prog = parseProgram(in).unwrap();
         req(prog->toProgFormat().compare(out) == 0);
     }
-    /*
-    SECTION("Assignment, Conditional and While stmts")
+}
+
+TEST_CASE("Sample tests for parse program") {
+    SECTION("Assignments")
     {
         std::string in = R"(
             procedure a
@@ -488,8 +491,312 @@ TEST_CASE("Parse program")
         )";
 
         auto prog = parseProgram(in).unwrap();
-        zpr::fprintln(stdout, "begin{}end", prog->toProgFormat());
         req(true);
     }
-    */
+
+    // 8 categories mentioned in tut. Combined some of the sections.
+    SECTION("Standalone while loops") // at 3 different positions
+    {
+        std::string in = R"(procedure a
+{
+    while(a == b)
+    {
+        a = b;
+    }
+    c = 2;
+    d = 3;
+}
+)";
+        req(parseProgram(in).unwrap()->toProgFormat().compare(in) == 0);
+
+
+        std::string in2 = R"(procedure a
+{
+    c = 2;
+    while(a == b)
+    {
+        a = b;
+    }
+    d = 3;
+}
+)";
+        req(parseProgram(in2).unwrap()->toProgFormat().compare(in2) == 0);
+
+        std::string in3 = R"(procedure a
+{
+    c = 2;
+    d = 3;
+    while(a == b)
+    {
+        a = b;
+    }
+}
+)";
+        req(parseProgram(in3).unwrap()->toProgFormat().compare(in3) == 0);
+    }
+
+    SECTION("Standalone if stmt and combination of if and while") // at 3 different positions
+    {
+        std::string in = R"(procedure a
+{
+    if(a == b) then
+    {
+        a = b;
+    }
+    else
+    {
+        a = b;
+    }
+    c = 2;
+    d = 3;
+}
+)";
+        req(parseProgram(in).unwrap()->toProgFormat().compare(in) == 0);
+
+        std::string in2 = R"(procedure a
+{
+    c = 2;
+    d = 3;
+    while(a == b)
+    {
+        a = b;
+    }
+    e = 3;
+    if(a == b) then
+    {
+        a = b;
+    }
+    else
+    {
+        a = b;
+    }
+    d = 3;
+}
+)";
+        req(parseProgram(in2).unwrap()->toProgFormat().compare(in2) == 0);
+
+        std::string in3 = R"(procedure a
+{
+    c = 2;
+    d = 3;
+    if(a == b) then
+    {
+        a = b;
+    }
+    else
+    {
+        a = b;
+    }
+}
+procedure b
+{
+    c = 2;
+    d = 3;
+    while(a == b)
+    {
+        a = b;
+    }
+}
+)";
+        req(parseProgram(in3).unwrap()->toProgFormat().compare(in3) == 0);
+    }
+
+    SECTION("2-level nesting of if and while and separate if/while inside a nest if/while") // more than 4 perms cuz there are 4
+    {
+        std::string in = R"(procedure a
+{
+    while(a == b)
+    {
+        if(a == b) then
+        {
+            a = b;
+        }
+        else
+        {
+            a = b;
+        }
+        while(a == b)
+        {
+            a = b;
+        }
+    }
+}
+)";
+        req(parseProgram(in).unwrap()->toProgFormat().compare(in) == 0);
+
+
+        std::string in2 = R"(procedure a
+{
+    while(a == b)
+    {
+        while(a == b)
+        {
+            a = b;
+        }
+    }
+}
+)";
+        req(parseProgram(in2).unwrap()->toProgFormat().compare(in2) == 0);
+
+        std::string in3 = R"(procedure a
+{
+    if(a == b) then
+    {
+        if(a == b) then
+        {
+            a = b;
+        }
+        else
+        {
+            a = b;
+        }
+    }
+    else
+    {
+        while(a == b)
+        {
+            a = b;
+        }
+    }
+}
+)";
+        req(parseProgram(in3).unwrap()->toProgFormat().compare(in3) == 0);
+
+        std::string in4 = R"(procedure a
+{
+    if(a == b) then
+    {
+        while(a == b)
+        {
+            a = b;
+        }
+        if(a == b) then
+        {
+            a = b;
+        }
+        else
+        {
+            a = b;
+        }
+    }
+    else
+    {
+        if(a == b) then
+        {
+            a = b;
+        }
+        else
+        {
+            a = b;
+        }
+    }
+}
+)";
+        req(parseProgram(in4).unwrap()->toProgFormat().compare(in4) == 0);
+    }
+
+
+    SECTION("Permutations of nesting 3 levels") // 8 perms
+    {
+        std::string in = R"(procedure a
+{
+    while(a == b)
+    {
+        if(a == b) then
+        {
+            a = b;
+        }
+        else
+        {
+            a = b;
+        }
+        while(a == b)
+        {
+            a = b;
+        }
+    }
+}
+)";
+        req(parseProgram(in).unwrap()->toProgFormat().compare(in) == 0);
+
+
+        std::string in2 = R"(procedure a
+{
+    while(a == b)
+    {
+        while(a == b)
+        {
+            a = b;
+        }
+    }
+}
+)";
+        req(parseProgram(in2).unwrap()->toProgFormat().compare(in2) == 0);
+    }
+
+    SECTION("Permutations of more than 4 levels of nesting and Permutations of separate if/while in both nested levels") // 8 perms
+    {
+        std::string in = R"(procedure a
+{
+    while(a == b)
+    {
+        if(a == b) then
+        {
+            while(a == b)
+            {
+                if(a == b) then
+                {
+                    while(a == b)
+                    {
+                        a = b;
+                    }
+                }
+                else
+                {
+                    while(a == b)
+                    {
+                        a = b;
+                    }
+                }
+            }
+        }
+        else
+        {
+            while(a == b)
+            {
+                while(a == b)
+                {
+                    if(a == b) then
+                    {
+                        if(a == b) then
+                        {
+                            while(a == b)
+                            {
+                                a = b;
+                            }
+                        }
+                        else
+                        {
+                            while(a == b)
+                            {
+                                a = b;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        while(a == b)
+                        {
+                            a = b;
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+}
+)";
+        req(parseProgram(in).unwrap()->toProgFormat().compare(in) == 0);
+    }
 }
