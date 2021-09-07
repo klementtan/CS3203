@@ -4,7 +4,10 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include <zst.h>
+
 #include "ast.h"
+#include "pql/ast.h"
 
 namespace pkb
 {
@@ -20,6 +23,18 @@ namespace pkb
         std::unordered_set<std::string> called_by;
     };
 
+    // decided to go with 3 data structures because this would allow all 3 kinds of
+    // wildcard queries to be fast. I believe this would not cause consistency issues as
+    // the pre-processing is once off.
+    struct Statement
+    {
+        simple::ast::Stmt* stmt = nullptr;
+
+        // stores uses and modifies information if the stmt is not a proc call
+        std::unordered_set<std::string> uses;
+        std::unordered_set<std::string> modifies;
+    };
+
     struct Variable
     {
         std::string name;
@@ -29,8 +44,8 @@ namespace pkb
         std::unordered_set<simple::ast::Stmt*> used_by;
         std::unordered_set<simple::ast::Stmt*> modified_by;
 
-        std::unordered_set<Procedure*> used_by_procs;
-        std::unordered_set<Procedure*> modified_by_procs;
+        std::unordered_set<simple::ast::Procedure*> used_by_procs;
+        std::unordered_set<simple::ast::Procedure*> modified_by_procs;
     };
 
     struct SymbolTable
@@ -68,10 +83,11 @@ namespace pkb
     {
         // this also functions as a unordered_map from (stmt_number - 1) -> Stmt*,
         // and the Stmt knows its own number.
-        std::vector<simple::ast::Stmt*> statements;
+        // std::vector<simple::ast::Stmt*> statements; // todo: convert this into a vector of Statement.
+        std::vector<Statement*> statements;
 
-        std::unordered_map<std::string, Variable> variables;
         std::unordered_map<std::string, Procedure> procedures;
+        std::unordered_map<std::string, Variable> variables;
 
 
         std::vector<simple::ast::Stmt*> while_statements;
@@ -90,6 +106,32 @@ namespace pkb
         bool isParent(simple::ast::StatementNum, simple::ast::StatementNum);
         bool isParentT(simple::ast::StatementNum, simple::ast::StatementNum);
         std::unordered_set<simple::ast::StatementNum> getAncestorsOf(simple::ast::StatementNum);
+
+        // For queries of type Uses(3, "x")
+        zst::Result<bool, std::string> isUses(const simple::ast::StatementNum& stmt_num, const std::string& var);
+        // For queries of type Uses("main", "x")
+        zst::Result<bool, std::string> isUses(const std::string& proc, const std::string& var);
+        // For queries of type Uses(3, _)
+        zst::Result<std::unordered_set<std::string>, std::string> getUsesVars(
+            const simple::ast::StatementNum& stmt_num);
+        // For queries of type Uses("main", _)
+        zst::Result<std::unordered_set<std::string>, std::string> getUsesVars(const std::string& var);
+        // Returns the Statement numbers of queries of type Uses(a/r/s/p, "x")
+        zst::Result<std::unordered_set<std::string>, std::string> getUses(
+            const pql::ast::DESIGN_ENT& type, const std::string& var);
+
+        // For queries of type Modifies(3, "x")
+        zst::Result<bool, std::string> isModifies(const simple::ast::StatementNum& stmt_num, const std::string& var);
+        // For queries of type Modifies("main", "x")
+        zst::Result<bool, std::string> isModifies(const std::string& proc, const std::string& var);
+        // For queries of type Modifies(3, _)
+        zst::Result<std::unordered_set<std::string>, std::string> getModifiesVars(
+            const simple::ast::StatementNum& stmt_num);
+        // For queries of type Modifies("main", _)
+        zst::Result<std::unordered_set<std::string>, std::string> getModifiesVars(const std::string& var);
+        // Returns the Statement numbers of queries of type Modifies(a/pn/s/p, "x")
+        zst::Result<std::unordered_set<std::string>, std::string> getModifies(
+            const pql::ast::DESIGN_ENT& type, const std::string& var);
     };
 
     ProgramKB* processProgram(simple::ast::Program* prog);

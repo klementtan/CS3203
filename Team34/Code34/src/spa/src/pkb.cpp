@@ -11,6 +11,9 @@ namespace pkb
 {
     namespace s_ast = simple::ast;
 
+    using zst::Ok;
+    using zst::ErrFmt;
+
     // collection only entails numbering the statements
     static void collectStmtList(ProgramKB* pkb, s_ast::StmtList* list);
     static void collectStmt(ProgramKB* pkb, s_ast::Stmt* stmt, s_ast::StmtList* parent)
@@ -20,7 +23,9 @@ namespace pkb
 
         stmt->parent_list = parent;
         stmt->id = pkb->statements.size() + 1;
-        pkb->statements.push_back(stmt);
+        auto statement = new Statement();
+        statement->stmt = stmt;
+        pkb->statements.push_back(statement);
 
         if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt); i)
         {
@@ -311,6 +316,354 @@ namespace pkb
 
     // End of parent methods
 
+    // Start of Uses and Modifies methods.
+    static void processExpr(ProgramKB* pkb, s_ast::Expr* expr, s_ast::Stmt* parent_stmt, s_ast::Procedure* parent_proc)
+    {
+        if(auto vr = dynamic_cast<s_ast::VarRef*>(expr))
+        {
+            pkb->variables[vr->name].used_by.insert(parent_stmt);
+            pkb->variables[vr->name].used_by_procs.insert(parent_proc);
+
+            pkb->procedures[parent_proc->name].uses.insert(vr->name);
+
+            pkb->statements[parent_stmt->id - 1]->uses.insert(vr->name);
+        }
+        else if(auto cc = dynamic_cast<s_ast::Constant*>(expr))
+        {
+            // do nothing
+        }
+        else if(auto bo = dynamic_cast<s_ast::BinaryOp*>(expr))
+        {
+            processExpr(pkb, bo->lhs, parent_stmt, parent_proc);
+            processExpr(pkb, bo->rhs, parent_stmt, parent_proc);
+        }
+        else if(auto uo = dynamic_cast<s_ast::UnaryOp*>(expr))
+        {
+            processExpr(pkb, uo->expr, parent_stmt, parent_proc);
+        }
+        else
+        {
+            util::error("pkb", "unknown expression type");
+        }
+    }
+
+    static void processStmtList(ProgramKB* pkb, s_ast::StmtList* list, s_ast::Procedure* parent_proc);
+    static void processStmt(ProgramKB* pkb, s_ast::Stmt* stmt, s_ast::Procedure* parent_proc)
+    {
+        if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt))
+        {
+            processStmtList(pkb, &i->true_case, parent_proc);
+            processStmtList(pkb, &i->false_case, parent_proc);
+
+            processExpr(pkb, i->condition, i, parent_proc);
+        }
+        else if(auto w = dynamic_cast<s_ast::WhileLoop*>(stmt))
+        {
+            processStmtList(pkb, &w->body, parent_proc);
+
+            processExpr(pkb, w->condition, w, parent_proc);
+        }
+        else if(auto a = dynamic_cast<s_ast::AssignStmt*>(stmt)) // prolly add the uses and modifies inside
+        {
+            pkb->variables[a->lhs].modified_by.insert(stmt);
+            pkb->variables[a->lhs].modified_by_procs.insert(parent_proc);
+
+            pkb->procedures[parent_proc->name].modifies.insert(a->lhs);
+
+            pkb->statements[a->id - 1]->modifies.insert(a->lhs);
+
+            processExpr(pkb, a->rhs, a, parent_proc);
+        }
+        else if(auto r = dynamic_cast<s_ast::ReadStmt*>(stmt))
+        {
+            pkb->variables[r->var_name].modified_by.insert(stmt);
+            pkb->variables[r->var_name].modified_by_procs.insert(parent_proc);
+
+            pkb->statements[r->id - 1]->modifies.insert(r->var_name);
+
+            pkb->procedures[parent_proc->name].modifies.insert(r->var_name);
+        }
+        else if(auto p = dynamic_cast<s_ast::PrintStmt*>(stmt))
+        {
+            pkb->variables[p->var_name].used_by.insert(stmt);
+            pkb->variables[p->var_name].used_by_procs.insert(parent_proc);
+
+            pkb->statements[p->id - 1]->uses.insert(p->var_name);
+
+            pkb->procedures[parent_proc->name].uses.insert(p->var_name);
+        }
+        else if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt))
+        {
+            pkb->procedures[parent_proc->name].calls.insert(c->proc_name);
+            pkb->procedures[c->proc_name].called_by.insert(parent_proc->name);
+        }
+        else
+        {
+            util::error("pkb", "unknown statement type");
+        }
+    }
+
+    static void processStmtList(ProgramKB* pkb, s_ast::StmtList* list, s_ast::Procedure* parent_proc)
+    {
+        for(const auto& stmt : list->statements)
+            processStmt(pkb, stmt, parent_proc);
+    }
+
+    // Secondary processing step to fully populate uses and modifies for nested if/while statements.
+    static void reprocessStmtList(ProgramKB* pkb, s_ast::StmtList* list)
+    {
+        for(const auto& stmt : list->statements)
+        {
+            if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt))
+            {
+                reprocessStmtList(pkb, &i->true_case);
+                reprocessStmtList(pkb, &i->false_case);
+
+                for(const auto& child_stmt : i->true_case.statements)
+                {
+                    auto& tmp = pkb->statements.at(child_stmt->id - 1);
+                    pkb->statements.at(stmt->id - 1)->modifies.insert(tmp->modifies.begin(), tmp->modifies.end());
+                    pkb->statements.at(stmt->id - 1)->uses.insert(tmp->uses.begin(), tmp->uses.end());
+                }
+                for(const auto& child_stmt : i->false_case.statements)
+                {
+                    auto& tmp = pkb->statements.at(child_stmt->id - 1);
+                    pkb->statements.at(stmt->id - 1)->modifies.insert(tmp->modifies.begin(), tmp->modifies.end());
+                    pkb->statements.at(stmt->id - 1)->uses.insert(tmp->uses.begin(), tmp->uses.end());
+                }
+            }
+            else if(auto w = dynamic_cast<s_ast::WhileLoop*>(stmt))
+            {
+                reprocessStmtList(pkb, &w->body);
+
+                for(const auto& child_stmt : w->body.statements)
+                {
+                    auto& tmp = pkb->statements.at(child_stmt->id - 1);
+                    pkb->statements.at(stmt->id - 1)->modifies.insert(tmp->modifies.begin(), tmp->modifies.end());
+                    pkb->statements.at(stmt->id - 1)->uses.insert(tmp->uses.begin(), tmp->uses.end());
+                }
+            }
+        }
+    }
+
+    // Ternary process on uses/modifies for proc calls because the other way I thought of was API set intersection and iteration which is slower(?)
+    static void ternaryProcessStmtList(ProgramKB* pkb, s_ast::StmtList* list)
+    {
+        for(const auto& stmt : list->statements)
+        {
+            if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt))
+            {
+                auto& tmp = pkb->procedures.at(c->proc_name);
+                pkb->statements.at(stmt->id - 1)->modifies.insert(tmp.modifies.begin(), tmp.modifies.end());
+                pkb->statements.at(stmt->id - 1)->uses.insert(tmp.uses.begin(), tmp.uses.end());
+            }
+        }
+    }
+
+    zst::Result<bool, std::string> ProgramKB::isUses(const simple::ast::StatementNum& stmt_num, const std::string& var)
+    {
+        if(this->variables.find(var) == this->variables.end() || stmt_num > this->statements.size())
+        {
+            return ErrFmt("Invalid query parameters.");
+        }
+        auto& stmt = this->statements.at(stmt_num - 1);
+        if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt->stmt))
+        {
+            return Ok(this->procedures[c->proc_name].uses.count(var) > 0);
+        }
+        else
+        {
+            return Ok(stmt->uses.count(var) > 0);
+        }
+    }
+
+    zst::Result<bool, std::string> ProgramKB::isUses(const std::string& proc, const std::string& var)
+    {
+        if(this->variables.find(var) == this->variables.end() || this->procedures.find(proc) == this->procedures.end())
+        {
+            return ErrFmt("Invalid query parameters.");
+        }
+        return Ok(this->procedures.at(proc).uses.count(var) > 0);
+    }
+
+    zst::Result<std::unordered_set<std::string>, std::string> ProgramKB::getUsesVars(
+        const simple::ast::StatementNum& stmt_num)
+    {
+        if(stmt_num > this->statements.size())
+        {
+            return ErrFmt("Invalid statement number.");
+        }
+        return Ok(this->statements.at(stmt_num - 1)->uses);
+    }
+
+    zst::Result<std::unordered_set<std::string>, std::string> ProgramKB::getUsesVars(const std::string& var)
+    {
+        if(this->procedures.find(var) == this->procedures.end())
+        {
+            util::error("pkb", "Procedure not found.");
+        }
+        return Ok(this->procedures.at(var).uses);
+    }
+
+    zst::Result<std::unordered_set<std::string>, std::string> ProgramKB::getUses(
+        const pql::ast::DESIGN_ENT& type, const std::string& var)
+    {
+        if(this->variables.find(var) == this->variables.end())
+        {
+            util::error("pkb", "Variable not found.");
+        }
+        std::unordered_set<std::string> uses;
+        auto& stmt_list = this->variables.at(var).used_by;
+        switch(type)
+        {
+            case pql::ast::DESIGN_ENT::ASSIGN:
+                for(auto& stmt : stmt_list)
+                {
+                    if(auto a = dynamic_cast<s_ast::AssignStmt*>(stmt))
+                    {
+                        uses.insert(std::to_string(stmt->id));
+                    }
+                }
+                break;
+            case pql::ast::DESIGN_ENT::PRINT:
+                for(auto& stmt : stmt_list)
+                {
+                    if(auto pn = dynamic_cast<s_ast::PrintStmt*>(stmt))
+                    {
+                        uses.insert(std::to_string(stmt->id));
+                    }
+                }
+                break;
+            case pql::ast::DESIGN_ENT::STMT:
+                for(auto& stmt : stmt_list)
+                {
+                    uses.insert(std::to_string(stmt->id));
+                }
+                break;
+            case pql::ast::DESIGN_ENT::CALL:
+                for(auto& stmt : stmt_list)
+                {
+                    if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt))
+                    {
+                        uses.insert(std::to_string(c->id));
+                    }
+                }
+                break;
+            case pql::ast::DESIGN_ENT::PROCEDURE:
+                for(auto& proc : this->variables.at(var).used_by_procs)
+                {
+                    uses.insert(proc->name);
+                }
+                break;
+            default:
+                return ErrFmt("Invalid statement type.");
+        }
+        return Ok(uses);
+    }
+
+    zst::Result<bool, std::string> ProgramKB::isModifies(
+        const simple::ast::StatementNum& stmt_num, const std::string& var)
+    {
+        if(this->variables.find(var) == this->variables.end() || stmt_num > this->statements.size())
+        {
+            return ErrFmt("Invalid query parameters.");
+        }
+        auto& stmt = this->statements.at(stmt_num - 1);
+        if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt->stmt))
+        {
+            return Ok(this->procedures[c->proc_name].modifies.count(var) > 0);
+        }
+        else
+        {
+            return Ok(stmt->modifies.count(var) > 0);
+        }
+    }
+
+    zst::Result<bool, std::string> ProgramKB::isModifies(const std::string& proc, const std::string& var)
+    {
+        if(this->variables.find(var) == this->variables.end() || this->procedures.find(proc) == this->procedures.end())
+        {
+            return ErrFmt("Invalid query parameters.");
+        }
+        return Ok(this->procedures.at(proc).modifies.count(var) > 0);
+    }
+
+    zst::Result<std::unordered_set<std::string>, std::string> ProgramKB::getModifiesVars(
+        const simple::ast::StatementNum& stmt_num)
+    {
+        if(stmt_num > this->statements.size())
+        {
+            return ErrFmt("Invalid statement number.");
+        }
+        return Ok(this->statements.at(stmt_num - 1)->modifies);
+    }
+
+    zst::Result<std::unordered_set<std::string>, std::string> ProgramKB::getModifiesVars(const std::string& var)
+    {
+        if(this->procedures.find(var) == this->procedures.end())
+        {
+            util::error("pkb", "Procedure not found.");
+        }
+        return Ok(this->procedures.at(var).modifies);
+    }
+
+    zst::Result<std::unordered_set<std::string>, std::string> ProgramKB::getModifies(
+        const pql::ast::DESIGN_ENT& type, const std::string& var)
+    {
+        if(this->variables.find(var) == this->variables.end())
+        {
+            util::error("pkb", "Variable not found.");
+        }
+        std::unordered_set<std::string> modifies;
+        auto& stmt_list = this->variables.at(var).modified_by;
+        switch(type)
+        {
+            case pql::ast::DESIGN_ENT::ASSIGN:
+                for(auto& stmt : stmt_list)
+                {
+                    if(auto a = dynamic_cast<s_ast::AssignStmt*>(stmt))
+                    {
+                        modifies.insert(std::to_string(stmt->id));
+                    }
+                }
+                break;
+            case pql::ast::DESIGN_ENT::READ:
+                for(auto& stmt : stmt_list)
+                {
+                    if(auto r = dynamic_cast<s_ast::ReadStmt*>(stmt))
+                    {
+                        modifies.insert(std::to_string(stmt->id));
+                    }
+                }
+                break;
+            case pql::ast::DESIGN_ENT::STMT:
+                for(auto& stmt : stmt_list)
+                {
+                    modifies.insert(std::to_string(stmt->id));
+                }
+                break;
+            case pql::ast::DESIGN_ENT::CALL:
+                for(auto& stmt : stmt_list)
+                {
+                    if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt))
+                    {
+                        modifies.insert(std::to_string(stmt->id));
+                    }
+                }
+                break;
+            case pql::ast::DESIGN_ENT::PROCEDURE:
+                for(auto& proc : this->variables.at(var).modified_by_procs)
+                {
+                    modifies.insert(proc->name);
+                }
+                break;
+            default:
+                return ErrFmt("Invalid statement type.");
+        }
+        return Ok(modifies);
+    }
+    // End of Uses and Modifies Methods
+
     ProgramKB* processProgram(s_ast::Program* program)
     {
         auto pkb = new ProgramKB();
@@ -327,17 +680,26 @@ namespace pkb
             pkb->procedures[proc->name].ast_proc = proc;
         }
 
-        // do a second pass to populate the follows vector and parent hashmap.
+        // do a second pass to populate the follows vector and parent, uses, modifies hashmap.
         for(const auto& proc : program->procedures)
         {
             processFollows(pkb, &proc->body);
             processParent(pkb, &proc->body, -1);
+            processStmtList(pkb, &proc->body, proc);
         }
 
-        // do a third pass to populate the ancestors hashmap
+        // do a third pass to populate the ancestors hashmap and to populate uses/modifies for nested if/while
+        // statements
         for(const auto& proc : program->procedures)
         {
             processAncestors(pkb, &proc->body);
+            reprocessStmtList(pkb, &proc->body);
+        }
+
+        // might not be needed, still exploring
+        for(const auto& proc : program->procedures)
+        {
+            ternaryProcessStmtList(pkb, &proc->body);
         }
 
         return pkb;
