@@ -28,9 +28,9 @@ namespace pql::ast
         PROCEDURE
     };
 
-    // Maps string represnetation of design ent to enum represnetation of it. ie: {"if": DESIGN_ENT::IF}
+    // Maps string representation of design ent to enum representation of it. ie: {"if": DESIGN_ENT::IF}
     extern const std::unordered_map<std::string, DESIGN_ENT> DESIGN_ENT_MAP;
-    // Maps enum represnetation of design ent to string represnetation of it. ie: {DESIGN_ENT::IF: "if"}
+    // Maps enum representation of design ent to string representation of it. ie: {DESIGN_ENT::IF: "if"}
     extern const std::unordered_map<DESIGN_ENT, std::string> INV_DESIGN_ENT_MAP;
 
     /** List of design entity declaration. ie Represents [`assign a`, `print p`]. */
@@ -63,7 +63,7 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        Declaration* declaration;
+        Declaration* declaration = nullptr;
     };
 
     /** Statement Reference using id(line number) of statement in program. */
@@ -71,7 +71,7 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        size_t id;
+        size_t id = 0;
     };
 
     /** Statement Reference to all(`_`) statements. */
@@ -92,7 +92,7 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        Declaration* declaration;
+        Declaration* declaration = nullptr;
     };
 
     /** Entity Reference using the string represnetation of variable name in program. */
@@ -116,22 +116,52 @@ namespace pql::ast
         virtual std::string toString() const = 0;
     };
 
-    /** Represents `Modifies(StmtRef, EntRef)` relationship condition. */
-    struct ModifiesS : RelCond
+    /** Abstract class for Uses relationship condition. */
+    struct Modifies : RelCond
+    {
+        virtual std::string toString() const = 0;
+    };
+
+    /** Represents `Modifies(EntRef, EntRef)` relationship condition. */
+    struct ModifiesP : Modifies
     {
         virtual std::string toString() const override;
 
-        StmtRef* modifier;
-        EntRef* ent;
+        EntRef* modifier = nullptr;
+        EntRef* ent = nullptr;
+    };
+
+    /** Represents `Modifies(StmtRef, EntRef)` relationship condition. */
+    struct ModifiesS : Modifies
+    {
+        virtual std::string toString() const override;
+
+        StmtRef* modifier = nullptr;
+        EntRef* ent = nullptr;
+    };
+
+    /** Abstract class for Uses relationship condition. */
+    struct Uses : RelCond
+    {
+        virtual std::string toString() const = 0;
+    };
+
+    /** Represents `Uses(EntRef, EntRef)` relationship condition. */
+    struct UsesP : Uses
+    {
+        virtual std::string toString() const override;
+
+        EntRef* user = nullptr;
+        EntRef* ent = nullptr;
     };
 
     /** Represents `Uses(StmtRef, EntRef)` relationship condition. */
-    struct UsesS : RelCond
+    struct UsesS : Uses
     {
         virtual std::string toString() const override;
 
-        StmtRef* user;
-        EntRef* ent;
+        StmtRef* user = nullptr;
+        EntRef* ent = nullptr;
     };
 
     /** Represents `Parent(StmtRef, StmtRef)` relationship condition. */
@@ -139,8 +169,8 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        StmtRef* parent;
-        StmtRef* child;
+        StmtRef* parent = nullptr;
+        StmtRef* child = nullptr;
     };
 
     /** Represents `Parent*(StmtRef, StmtRef)` relationship condition. */
@@ -148,8 +178,8 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        StmtRef* ancestor;
-        StmtRef* descendant;
+        StmtRef* ancestor = nullptr;
+        StmtRef* descendant = nullptr;
     };
 
     /** Represents `Follows(StmtRef, StmtRef)` relationship condition. */
@@ -157,8 +187,8 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        StmtRef* directly_before;
-        StmtRef* directly_after;
+        StmtRef* directly_before = nullptr;
+        StmtRef* directly_after = nullptr;
     };
 
     /** Represents `Follows*(StmtRef, StmtRef)` relationship condition. */
@@ -166,17 +196,17 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        StmtRef* before;
-        StmtRef* after;
+        StmtRef* before = nullptr;
+        StmtRef* after = nullptr;
     };
 
     /** Expression Specification: pattern segment  of an assignment pattern. */
     struct ExprSpec
     {
         // Is prefixed by `_`
-        bool any_before;
+        bool any_before = false;
         // Is suffixed by `_`
-        bool any_after;
+        bool any_after = false;
         // The assignment expression on rhs that it should match
         // TODO: Refactor to use ast::Expr* instead of raw string for easier matching.
         std::string expr;
@@ -195,9 +225,9 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        EntRef* ent;
-        Declaration* assignment_declaration;
-        ExprSpec* expr_spec;
+        EntRef* ent = nullptr;
+        Declaration* assignment_declaration = nullptr;
+        ExprSpec* expr_spec = nullptr;
     };
 
     /** Pattern Clause. */
@@ -221,16 +251,16 @@ namespace pql::ast
     /** Select query. */
     struct Select
     {
-        SuchThatCl* such_that;
-        PatternCl* pattern;
-        Declaration* ent;
+        SuchThatCl* such_that = nullptr;
+        PatternCl* pattern = nullptr;
+        Declaration* ent = nullptr;
         std::string toString() const;
     };
 
     struct Query
     {
-        Select* select;
-        DeclarationList* declarations;
+        Select* select = nullptr;
+        DeclarationList* declarations = nullptr;
         std::string toString() const;
     };
 } // pqlast

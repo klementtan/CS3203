@@ -19,7 +19,8 @@ namespace pql::ast
         { "stmt", DESIGN_ENT::STMT },
         { "read", DESIGN_ENT::READ },
         { "print", DESIGN_ENT::PRINT },
-        { "call", DESIGN_ENT::WHILE },
+        { "call", DESIGN_ENT::CALL },
+        { "while", DESIGN_ENT::WHILE },
         { "if", DESIGN_ENT::IF },
         { "assign", DESIGN_ENT::ASSIGN },
         { "variable", DESIGN_ENT::VARIABLE },
@@ -31,7 +32,8 @@ namespace pql::ast
         { DESIGN_ENT::STMT, "stmt" },
         { DESIGN_ENT::READ, "read" },
         { DESIGN_ENT::PRINT, "print" },
-        { DESIGN_ENT::WHILE, "call" },
+        { DESIGN_ENT::CALL, "call" },
+        { DESIGN_ENT::WHILE, "while" },
         { DESIGN_ENT::IF, "if" },
         { DESIGN_ENT::ASSIGN, "assign" },
         { DESIGN_ENT::VARIABLE, "variable" },
@@ -45,8 +47,8 @@ namespace pql::ast
 
         for(const auto& name_declaration : this->declarations)
         {
-            ret +=
-                zpr::sprint("\tname:{}, declaration:{}\n", name_declaration.first, name_declaration.second->toString());
+            ret += zpr::sprint("\tname:{}, declaration:{}\n", name_declaration.first,
+                name_declaration.second ? name_declaration.second->toString() : "nullptr");
         }
         ret += "]";
         return ret;
@@ -54,13 +56,19 @@ namespace pql::ast
 
     std::string Declaration::toString() const
     {
-        std::string ent_str = INV_DESIGN_ENT_MAP.find(this->design_ent)->second;
+        auto it = INV_DESIGN_ENT_MAP.find(this->design_ent);
+        if(it == INV_DESIGN_ENT_MAP.end())
+        {
+            return zpr::sprint("Declaration(nullptr)");
+        }
+        std::string ent_str = it->second;
         return zpr::sprint("Declaration(ent:{}, name:{})", ent_str, this->name);
     }
 
     std::string DeclaredStmt::toString() const
     {
-        return zpr::sprint("DeclaredStmt(declaration: {})", this->declaration->toString());
+        return zpr::sprint(
+            "DeclaredStmt(declaration: {})", this->declaration ? this->declaration->toString() : "nullptr");
     }
 
     std::string StmtId::toString() const
@@ -75,7 +83,8 @@ namespace pql::ast
 
     std::string DeclaredEnt::toString() const
     {
-        return zpr::sprint("DeclaredEnt(declaration:{})", this->declaration->toString());
+        return zpr::sprint(
+            "DeclaredEnt(declaration:{})", this->declaration ? this->declaration->toString() : "nullptr");
     }
 
     std::string EntName::toString() const
@@ -90,34 +99,52 @@ namespace pql::ast
 
     std::string ModifiesS::toString() const
     {
-        return zpr::sprint("ModifiesS(modifier:{}, ent:{})", this->modifier->toString(), this->ent->toString());
+        return zpr::sprint("ModifiesS(modifier:{}, ent:{})", this->modifier ? this->modifier->toString() : "nullptr",
+            this->ent ? this->ent->toString() : "nullptr");
+    }
+
+    std::string ModifiesP::toString() const
+    {
+        return zpr::sprint("ModifiesP(modifier:{}, ent:{})", this->modifier ? this->modifier->toString() : "nullptr",
+            this->ent ? this->ent->toString() : "nullptr");
     }
 
     std::string UsesS::toString() const
     {
-        return zpr::sprint("UsesS(user: {}, ent:{})", this->user->toString(), this->ent->toString());
+        return zpr::sprint("UsesS(user: {}, ent:{})", this->user ? this->user->toString() : "nullptr",
+            this->ent ? this->ent->toString() : "nullptr");
+    }
+
+    std::string UsesP::toString() const
+    {
+        return zpr::sprint("UsesP(user: {}, ent:{})", this->user ? this->user->toString() : "nullptr",
+            this->ent ? this->ent->toString() : "nullptr");
     }
 
     std::string Parent::toString() const
     {
-        return zpr::sprint("Parent(parent:{}, child:{})", this->parent->toString(), this->child->toString());
+        return zpr::sprint("Parent(parent:{}, child:{})", this->parent ? this->parent->toString() : "nullptr",
+            this->child ? this->child->toString() : "nullptr");
     }
 
     std::string ParentT::toString() const
     {
-        return zpr::sprint(
-            "ParentT(ancestor:{}, descendant:{})", this->ancestor->toString(), this->descendant->toString());
+        return zpr::sprint("ParentT(ancestor:{}, descendant:{})",
+            this->ancestor ? this->ancestor->toString() : "nullptr",
+            this->descendant ? this->descendant->toString() : "nullptr");
     }
 
     std::string Follows::toString() const
     {
-        return zpr::sprint("Follows(directly_before:{}, directly_after:{})", this->directly_before->toString(),
-            this->directly_after->toString());
+        return zpr::sprint("Follows(directly_before:{}, directly_after:{})",
+            this->directly_before ? this->directly_before->toString() : "nullptr",
+            this->directly_after ? this->directly_after->toString() : "nullptr");
     }
 
     std::string FollowsT::toString() const
     {
-        return zpr::sprint("FollowsT(before:{}, after{})", this->before->toString(), this->after->toString());
+        return zpr::sprint("FollowsT(before:{}, after{})", this->before ? this->before->toString() : "nullptr",
+            this->after ? this->after->toString() : "nullptr");
     }
 
     std::string ExprSpec::toString() const
@@ -129,7 +156,8 @@ namespace pql::ast
     std::string AssignPatternCond::toString() const
     {
         return zpr::sprint("PatternCl(ent:{}, assignment_declaration:{}, expr_spec:{})", this->ent->toString(),
-            this->assignment_declaration->toString(), expr_spec->toString());
+            this->assignment_declaration ? this->assignment_declaration->toString() : "nullptr",
+            expr_spec ? this->expr_spec->toString() : "nullptr");
     }
 
     std::string PatternCl::toString() const
@@ -137,7 +165,7 @@ namespace pql::ast
         std::string ret { "PatternCl[\n" };
         for(const PatternCond* pattern_cond : this->pattern_conds)
         {
-            ret += zpr::sprint("\t{}\n", pattern_cond->toString());
+            ret += zpr::sprint("\t{}\n", pattern_cond ? pattern_cond->toString() : "nullptr");
         }
         ret += "]";
         return ret;
@@ -148,7 +176,7 @@ namespace pql::ast
         std::string ret { "SuchThatCl[\n" };
         for(const RelCond* rel_cond : this->rel_conds)
         {
-            ret += zpr::sprint("\t{}\n", rel_cond->toString());
+            ret += zpr::sprint("\t{}\n", rel_cond ? rel_cond->toString() : "nullptr");
         }
         ret += "]";
         return ret;
@@ -156,13 +184,14 @@ namespace pql::ast
 
     std::string Select::toString() const
     {
-        return zpr::sprint("Select(such_that:{}, pattern:{}, ent:{})", this->such_that->toString(),
-            this->pattern->toString(), this->ent->toString());
+        return zpr::sprint("Select(such_that:{}, pattern:{}, ent:{})",
+            this->such_that ? this->such_that->toString() : "nullptr",
+            this->pattern ? this->pattern->toString() : "nullptr", this->ent ? this->ent->toString() : "nullptr");
     }
 
     std::string Query::toString() const
     {
-        return zpr::sprint(
-            "Query(select:{}, declarations:{})", this->select->toString(), this->declarations->toString());
+        return zpr::sprint("Query(select:{}, declarations:{})", this->select ? this->select->toString() : "nullptr",
+            this->declarations ? this->declarations->toString() : "nullptr");
     }
 }
