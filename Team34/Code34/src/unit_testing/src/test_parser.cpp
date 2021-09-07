@@ -601,7 +601,7 @@ procedure b
         req(parseProgram(in3).unwrap()->toProgFormat().compare(in3) == 0);
     }
 
-    SECTION("2-level nesting of if and while and separate if/while inside a nest if/while") // more than 4 perms cuz there are 4
+    SECTION("2-level nesting of if and while and separate if/while inside a nest if/while")
     {
         std::string in = R"(procedure a
 {
@@ -696,42 +696,88 @@ procedure b
     }
 
 
-    SECTION("Permutations of nesting 3 levels") // 8 perms
+    SECTION("Permutations of nesting 3 levels") // 8 permutations
     {
         std::string in = R"(procedure a
 {
+    if(a == b) then
+    {
+        if(a == b) then
+        {
+            if(a == b) then
+            {
+                a = b;
+            }
+            else
+            {
+                while(a == b)
+                {
+                    a = b;
+                }
+            }
+        }
+        else
+        {
+            a = b;
+        }
+    }
+    else
+    {
+        while(a == b)
+        {
+            while(a == b)
+            {
+                a = b;
+            }
+            if(a == b) then
+            {
+                a = b;
+            }
+            else
+            {
+                a = b;
+            }
+        }
+    }
     while(a == b)
     {
+        while(a == b)
+        {
+            while(a == b)
+            {
+                a = b;
+            }
+        }
         if(a == b) then
         {
             a = b;
         }
         else
         {
-            a = b;
+            while(a == b)
+            {
+                a = b;
+            }
         }
-        while(a == b)
+        if(a == b) then
         {
             a = b;
+        }
+        else
+        {
+            if(a == b) then
+            {
+                a = b;
+            }
+            else
+            {
+                a = b;
+            }
         }
     }
 }
 )";
         req(parseProgram(in).unwrap()->toProgFormat().compare(in) == 0);
-
-
-        std::string in2 = R"(procedure a
-{
-    while(a == b)
-    {
-        while(a == b)
-        {
-            a = b;
-        }
-    }
-}
-)";
-        req(parseProgram(in2).unwrap()->toProgFormat().compare(in2) == 0);
     }
 
     SECTION("Permutations of more than 4 levels of nesting and Permutations of separate if/while in both nested levels") // 8 perms
@@ -793,10 +839,11 @@ procedure b
                 }
             }
         }
-
     }
 }
 )";
+        auto prog = parseProgram(in).unwrap();
+        zpr::fprintln(stdout, "begin{}end", prog->toProgFormat());
         req(parseProgram(in).unwrap()->toProgFormat().compare(in) == 0);
     }
 }
