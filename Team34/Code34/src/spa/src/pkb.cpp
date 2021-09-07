@@ -243,14 +243,12 @@ namespace pkb
     {
         std::unordered_map<std::string, std::unordered_set<std::string>> tempAdj;
         std::unordered_set<std::string> visited;
-        auto i = adj.begin();
-        while(i != adj.end())
+        for(auto i = adj.begin(); i != adj.end(); i++)
         {
             for(auto a : i->second)
             {
                 tempAdj[i->first].insert(a.c_str());
             }
-            ++i;
         }
         while(tempAdj.size() != 0)
         {
