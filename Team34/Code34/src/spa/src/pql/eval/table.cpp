@@ -5,7 +5,9 @@
 #include "pql/parser/ast.h"
 #include "pql/eval/table.h"
 #include "pql/exception.h"
+#include "zpr.h"
 #include "simple/ast.h"
+#include <cassert>
 #include <unordered_set>
 
 namespace pql::eval::table
@@ -18,8 +20,8 @@ namespace pql::eval::table
         { EntryType::kConst, "Const" },
     };
 
-    Entry::Entry() { }
-    Entry::Entry(pql::ast::Declaration* declaration, std::string val)
+    Entry::Entry() = default;
+    Entry::Entry(pql::ast::Declaration* declaration, const std::string& val)
     {
         this->m_declaration = declaration;
         this->m_val = val;
@@ -37,7 +39,7 @@ namespace pql::eval::table
                     "pql::eval::table::Entry", "Entry for {} should be instantiated using stmt num instead of string");
         }
     }
-    Entry::Entry(pql::ast::Declaration* declaration, simple::ast::StatementNum val)
+    Entry::Entry(pql::ast::Declaration* declaration, const simple::ast::StatementNum& val)
     {
         if(declaration->design_ent == ast::DESIGN_ENT::VARIABLE ||
             declaration->design_ent == ast::DESIGN_ENT::PROCEDURE ||
@@ -99,14 +101,21 @@ namespace pql::eval::table
         for(const Entry& entry_a : a)
         {
             if(b.count(entry_a))
+            {
+                util::log("pql::eval::table", "{} added to intersect", entry_a.toString());
                 intersect.insert(entry_a);
+            }
+            else
+            {
+                util::log("pql::eval::table", "{} does not exists in intersect", entry_a.toString());
+            }
         }
         return intersect;
     }
-    Table::Table() { }
+    Table::Table() = default;
 
 
-    void Table::upsertDomains(ast::Declaration* decl, std::unordered_set<Entry> entries)
+    void Table::upsertDomains(ast::Declaration* decl, const std::unordered_set<Entry>& entries)
     {
         m_domains[decl] = entries;
     }
@@ -114,36 +123,32 @@ namespace pql::eval::table
     {
         std::pair<ast::Declaration*, ast::Declaration*> key = order_join_key(a.getDeclaration(), b.getDeclaration());
         std::pair<Entry, Entry> val = order_join_val(a, b);
-        auto it = m_joins.find(key);
-        it->second.push_back(val);
+        util::log("pql::eval", "Adding join");
+        m_joins[key].push_back(val);
     }
 
     std::vector<std::unordered_map<ast::Declaration*, Entry>> Table::getTablePerm() const
     {
         std::vector<std::unordered_map<ast::Declaration*, Entry>> ret;
-        ret.push_back(std::unordered_map<ast::Declaration*, Entry>());
+        ret.emplace_back();
 
         // TODO: Use pruning to reduce search space
-        for(auto decl_entries : m_domains)
+        for(auto [decl, entries] : m_domains)
         {
-            ast::Declaration* decl = decl_entries.first;
-            for(std::unordered_map<ast::Declaration*, Entry> combi : ret)
+            std::vector<std::unordered_map<ast::Declaration*, Entry>> new_ret;
+            for(const Entry& entry : entries)
             {
-                std::vector<std::unordered_map<ast::Declaration*, Entry>> new_ret;
-                for(Entry entry : decl_entries.second)
+                for(const std::unordered_map<ast::Declaration*, Entry>& table_perm : ret)
                 {
-                    std::unordered_map<ast::Declaration*, Entry> new_combi(combi);
-                    new_combi[decl] = entry;
-                    new_ret.push_back(new_combi);
+                    util::log("pql::eval::table", "Adding {} for each table perm", entry.toString());
+                    std::unordered_map<ast::Declaration*, Entry> new_table_perm(table_perm);
+                    new_table_perm[decl] = entry;
+                    new_ret.push_back(new_table_perm);
                 }
-                ret = new_ret;
             }
+            ret = new_ret;
         }
         return ret;
-    }
-    void Table::clearDomains()
-    {
-        m_domains.clear();
     }
 
     std::unordered_set<Entry> Table::getDomain(ast::Declaration* decl) const
@@ -154,14 +159,26 @@ namespace pql::eval::table
         return it->second;
     }
 
+    std::string printTablePerm(const std::unordered_map<ast::Declaration*, Entry>& table)
+    {
+        std::string ret { "Table Perm:[\n" };
+        for(auto [decl_ptr, entry] : table)
+        {
+            ret += zpr::sprint("{}\n", entry.toString());
+        }
+        ret += "]\n";
+        return ret;
+    }
+
     std::list<std::string> Table::getResult(ast::Declaration* ret_decl)
     {
         std::list<std::string> result;
         std::vector<std::unordered_map<ast::Declaration*, Entry>> tables = getTablePerm();
         for(auto table : tables)
         {
+            util::log("pql::eval::table", "Checking if table fulfill all join condition: {}", printTablePerm(table));
             bool is_valid = true;
-            for(auto join : m_joins)
+            for(const auto& join : m_joins)
             {
                 auto [decl_ptr_a, decl_ptr_b] = join.first;
                 assert(table.find(decl_ptr_a) != table.end());
@@ -169,12 +186,12 @@ namespace pql::eval::table
                 Entry actual_entry_a = table.find(decl_ptr_a)->second;
                 Entry actual_entry_b = table.find(decl_ptr_b)->second;
                 bool has_valid_join = false;
-                for(auto expected_entry_ab : join.second)
+                for(const auto& expected_entry_ab : join.second)
                 {
                     // All joins should be have a valid declaration
                     Entry expected_entry_a = expected_entry_ab.first;
                     Entry expected_entry_b = expected_entry_ab.second;
-                    if((actual_entry_a != expected_entry_a) || (actual_entry_a != expected_entry_b))
+                    if((actual_entry_a != expected_entry_a) || (actual_entry_b != expected_entry_b))
                     {
                         continue;
                     }
@@ -195,5 +212,33 @@ namespace pql::eval::table
             }
         }
         return result;
+    }
+    std::string Table::toString() const
+    {
+        std::string ret = "Table(\n";
+        ret += "\tm_domains[\n";
+        for(auto [decl_ptr, entries] : m_domains)
+        {
+            ret += zpr::sprint("\t\t{}:[", decl_ptr->toString());
+            for(const auto& entry : entries)
+            {
+                ret += zpr::sprint("{},", entry.toString());
+            }
+            ret += "],\n";
+        }
+        ret += "\t]\n";
+        ret += "\tm_joins[\n";
+        for(auto [pair_decl_ptr, entries] : m_joins)
+        {
+            ret += zpr::sprint("\t\tJoin({},{}):[", pair_decl_ptr.first->toString(), pair_decl_ptr.second->toString());
+            for(const auto& pair_entry : entries)
+            {
+                ret += zpr::sprint("({},{}),", pair_entry.first.toString(), pair_entry.second.toString());
+            }
+            ret += "],\n";
+        }
+        ret += "\t]\n";
+        ret += ")\n";
+        return ret;
     }
 }

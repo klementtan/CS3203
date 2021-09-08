@@ -59,6 +59,7 @@ namespace pkb
         std::unordered_map<std::string, simple::ast::VarRef*> _vars;
 
         simple::ast::VarRef* getVar(const std::string&);
+        std::unordered_map<std::string, simple::ast::VarRef*> getVars();
         bool hasVar(const std::string&);
         void setVar(const std::string&, simple::ast::VarRef*);
 

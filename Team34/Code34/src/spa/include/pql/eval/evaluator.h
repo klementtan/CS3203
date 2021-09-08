@@ -1,4 +1,8 @@
+// evaluator.h
+//
+// stores declarations for evaluator
 
+#pragma once
 #include "pkb.h"
 #include "pql/parser/ast.h"
 #include "pql/eval/table.h"
@@ -16,7 +20,6 @@ namespace pql::eval
 
         // Stores initial domain for all types of declarations
         std::unordered_map<ast::DESIGN_ENT, std::vector<simple::ast::Stmt*>> m_all_ent_stmt_map;
-        std::unordered_map<ast::DESIGN_ENT, std::vector<pkb::Procedure*>> m_all_ent_proc_map;
 
         void preprocessPkb(pkb::ProgramKB* pkb);
         void processDeclarations(const ast::DeclarationList* declaration_list);
@@ -30,7 +33,7 @@ namespace pql::eval
         void handleParent(const ast::Parent* parent);
         void handleParentT(const ast::ParentT* parent_t);
 
-        bool thereExistsFollows(pkb::ProgramKB* pkb);
+        static bool thereExistsFollows(pkb::ProgramKB* pkb);
         std::unordered_set<table::Entry> getInitialDomainVar(ast::Declaration* declaration);
         std::unordered_set<table::Entry> getInitialDomainProc(ast::Declaration* declaration);
         std::unordered_set<table::Entry> getInitialDomainStmt(ast::Declaration* declaration);

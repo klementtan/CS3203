@@ -1,6 +1,6 @@
 // table.cpp
 //
-// stores implementation of result table for query
+// stores declaration for table
 
 #pragma once
 
@@ -29,13 +29,13 @@ namespace pql::eval::table
 
     public:
         Entry();
-        Entry(pql::ast::Declaration* declaration, std::string val);
-        Entry(pql::ast::Declaration* declaration, simple::ast::StatementNum val);
-        std::string getVal() const;
-        simple::ast::StatementNum getStmtNum() const;
-        EntryType getType() const;
-        ast::Declaration* getDeclaration() const;
-        std::string toString() const;
+        Entry(pql::ast::Declaration* declaration, const std::string& val);
+        Entry(pql::ast::Declaration* declaration, const simple::ast::StatementNum& val);
+        [[nodiscard]] std::string getVal() const;
+        [[nodiscard]] simple::ast::StatementNum getStmtNum() const;
+        [[nodiscard]] EntryType getType() const;
+        [[nodiscard]] ast::Declaration* getDeclaration() const;
+        [[nodiscard]] std::string toString() const;
         bool operator==(const Entry& other) const;
         bool operator!=(const Entry& other) const;
     };
@@ -98,7 +98,7 @@ namespace pql::eval::table
                 return std::make_pair(b, a);
             }
         }
-        static std::pair<Entry, Entry> order_join_val(Entry a, Entry b)
+        static std::pair<Entry, Entry> order_join_val(const Entry& a, const Entry& b)
         {
             if(a.getDeclaration()->name < b.getDeclaration()->name)
             {
@@ -110,14 +110,14 @@ namespace pql::eval::table
             }
         }
 
-        std::vector<std::unordered_map<ast::Declaration*, Entry>> getTablePerm() const;
+        [[nodiscard]] std::vector<std::unordered_map<ast::Declaration*, Entry>> getTablePerm() const;
 
     public:
-        void upsertDomains(ast::Declaration* decl, std::unordered_set<Entry> entries);
+        void upsertDomains(ast::Declaration* decl, const std::unordered_set<Entry>& entries);
         std::unordered_set<Entry> getDomain(ast::Declaration* decl) const;
-        void clearDomains();
         void addJoin(const Entry& a, const Entry& b);
         Table();
         std::list<std::string> getResult(ast::Declaration* ret_decls);
+        [[nodiscard]] std::string toString() const;
     };
 }
