@@ -49,7 +49,16 @@ static bool check_err(const std::string in, const std::string msg)
 // start from the bottom
 TEST_CASE("Parse expr")
 {
-    req(true);
+    SECTION("Valid cases")
+    {
+        req(check_expr("a * 2;", "(a * 2)", &parseExpr));
+        req(check_expr("a = 2;", "a", &parseExpr));
+        req(check_expr("a * 2;", "(a * 2)", &parseExpr));
+    }
+    SECTION("Invalid cases") 
+    {
+        req(check_expr("*aa)", "invalid start of expression with '*'", &parseExpr));
+    }
 }
 
 
@@ -57,18 +66,23 @@ TEST_CASE("Parse primary")
 {
     SECTION("Constant")
     {
-        req(check_expr("2", "2", &parsePrimary));
+        req(check_expr("22", "22", &parsePrimary));
     }
     SECTION("Var")
     {
-        req(check_expr("a", "a", &parsePrimary));
+        req(check_expr("aa", "aa", &parsePrimary));
     }
     SECTION("Expr in parenthesis")
     {
-        req(check_expr("(a)", "a", &parsePrimary));
+        req(check_expr("(aa)", "aa", &parsePrimary));
+        req(check_expr("(aa", "expected ')'", &parsePrimary));
+    }
+    SECTION("Invalid expr")
+    {
+        req(check_expr("*aa)", "invalid start of expression with '*'", &parsePrimary));
     }
 }
-/*
+
 TEST_CASE("Parse rhs")
 {
     req(true);
@@ -78,6 +92,9 @@ TEST_CASE("Parse conditional expr")
 {
     SECTION("!")
     {
+        std::string in = "a = 3;";
+        auto ps = ParserState { in };
+        parseExpr(&ps);
         req(true);
     }
     SECTION("(")
@@ -109,7 +126,7 @@ TEST_CASE("Parse procedure")
 {
     req(true);
 }
-*/
+
 
 TEST_CASE("Parse program")
 {
@@ -461,13 +478,8 @@ TEST_CASE("Sample tests for parse program") {
                 a7 = v + x * y + z * t;
                 while (v + x * y + z * t < 10) {
                     x = 0;
-                    if (x > 0)then {
-                        a = a + 1;
-                    }else{a = 1;}
                 }
-                a = 1;
             }
-
             procedure b
             {
                 if ( ((1==b) && (b == 1)) || (c == 1)) then {
@@ -476,22 +488,34 @@ TEST_CASE("Sample tests for parse program") {
                     a = 0;
                 }
             }
-
-            procedure c
-            {
-                while (a == 1) {
-                    call a;
-                    read a;
-                    print a;
-                }
-            }
         )";
-        std::string out = R"(
-
-        )";
-
-        auto prog = parseProgram(in).unwrap();
-        req(true);
+        std::string out = R"(procedure a
+{
+    a1 = (x + z);
+    a2 = (x * z);
+    a3 = ((x + y) + z);
+    a4 = (x + (z * 5));
+    a5 = ((z * 5) + x);
+    a6 = ((x + z) * 5);
+    a7 = ((v + (x * y)) + (z * t));
+    while(((v + (x * y)) + (z * t)) < 10)
+    {
+        x = 0;
+    }
+}
+procedure b
+{
+    if(((1 == b) && (b == 1)) || (c == 1)) then
+    {
+        a = 2;
+    }
+    else
+    {
+        a = 0;
+    }
+}
+)";
+        req(parseProgram(in).unwrap()->toProgFormat().compare(out) == 0);
     }
 
     // 8 categories mentioned in tut. Combined some of the sections.
@@ -842,8 +866,6 @@ procedure b
     }
 }
 )";
-        auto prog = parseProgram(in).unwrap();
-        zpr::fprintln(stdout, "begin{}end", prog->toProgFormat());
         req(parseProgram(in).unwrap()->toProgFormat().compare(in) == 0);
     }
 }
