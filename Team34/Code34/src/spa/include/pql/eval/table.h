@@ -51,8 +51,10 @@ namespace std
         {
             // http://stackoverflow.com/a/1646913/126995
             size_t res = 17;
-            res = res * 31 + std::hash<string>()(e.getVal());
-            res = res * 31 + std::hash<simple::ast::StatementNum>()(e.getStmtNum());
+            if(e.getType() != pql::eval::table::EntryType::kStmt)
+                res = res * 31 + std::hash<string>()(e.getVal());
+            if(e.getType() == pql::eval::table::EntryType::kStmt)
+                res = res * 31 + std::hash<simple::ast::StatementNum>()(e.getStmtNum());
             res = res * 31 + std::hash<pql::ast::Declaration>()(*e.getDeclaration());
             res = res * 31 + std::hash<pql::eval::table::EntryType>()(e.getType());
             return res;

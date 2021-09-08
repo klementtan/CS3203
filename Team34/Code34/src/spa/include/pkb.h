@@ -147,6 +147,7 @@ namespace pkb
 
         bool isFollows(simple::ast::StatementNum fst, simple::ast::StatementNum snd);
         bool isFollowsT(simple::ast::StatementNum fst, simple::ast::StatementNum snd);
+        Follows* getFollows(simple::ast::StatementNum fst);
         std::unordered_set<simple::ast::StatementNum> getFollowsTList(
             simple::ast::StatementNum fst, simple::ast::StatementNum snd);
 

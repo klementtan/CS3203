@@ -70,6 +70,10 @@ namespace pql::eval::table
     {
         return this->m_type;
     }
+    ast::Declaration* Entry::getDeclaration() const
+    {
+        return this->m_declaration;
+    }
     std::string Entry::toString() const
     {
         return zpr::sprint("Entry(val:{}, stmt_num:{}, type:{}, declaration:{})", m_val, m_stmt_num,
@@ -78,8 +82,9 @@ namespace pql::eval::table
     }
     bool Entry::operator==(const Entry& other) const
     {
-        return this->m_type == other.getType() && this->m_stmt_num == other.getStmtNum() &&
-               this->m_val == other.getVal() && this->m_declaration == other.getDeclaration();
+        return this->m_type == other.getType() && this->m_declaration == other.getDeclaration() &&
+               ((this->m_type == EntryType::kStmt && this->m_stmt_num == other.getStmtNum()) ||
+                   (this->m_type != EntryType::kStmt && this->m_val == other.getVal()));
     }
     bool Entry::operator!=(const Entry& other) const
     {
