@@ -65,6 +65,11 @@ namespace pql::ast
         return zpr::sprint("Declaration(ent:{}, name:{})", ent_str, this->name);
     }
 
+    bool Declaration::operator==(const Declaration& other) const
+    {
+        return this->name == other.name && this->design_ent == other.design_ent;
+    }
+
     std::string DeclaredStmt::toString() const
     {
         return zpr::sprint(
