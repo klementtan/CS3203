@@ -133,7 +133,52 @@ namespace simple::parser
             return pri;
     }
 
-    // this is fully parenthesised, so life is easier
+    static Result<Expr*> parseCondExpr(ParserState* ps);
+
+
+    // parse `(cond_expr) && (cond_expr)` and friends.
+    // but not `! (cond_expr)`
+    static Result<Expr*> parseBinaryCondExpr(ParserState* ps, Expr* lhs)
+    {
+        assert(lhs != nullptr);
+
+        std::string op;
+        if(auto tok = ps->next(); tok == TT::LogicalAnd)
+            op = "&&";
+        else if(tok == TT::LogicalOr)
+            op = "||";
+        else
+            return ErrFmt("expected either '&&' or '||', found '{}'", tok.text);
+
+        if(auto n = ps->next(); n != TT::LParen)
+            return ErrFmt("expected '(' after '{}', found '{}'", n.text, op);
+
+        auto rhs = parseCondExpr(ps);
+        if(!rhs.ok())
+            return Err(rhs.error());
+
+        if(auto n = ps->next(); n != TT::LParen)
+            return ErrFmt("expected ')' after expression, found '{}'", n.text);
+
+        auto ret = new BinaryOp();
+        ret->lhs = lhs;
+        ret->rhs = rhs.unwrap();
+        ret->op = op;
+        return Ok(ret);
+    }
+
+
+    // parse `rel_expr < rel_expr` and friends.
+    static Result<Expr*> parseRelationalExpr(ParserState* ps, Expr* lhs)
+    {
+        assert(lhs != nullptr);
+
+        return ErrFmt("asdf");
+    }
+
+
+
+
     static Result<Expr*> parseCondExpr(ParserState* ps)
     {
         if(ps->peek() == TT::Exclamation)
@@ -156,15 +201,33 @@ namespace simple::parser
         }
         else if(ps->peek() == TT::LParen)
         {
-            // this is either (expr) || (expr) or (expr) && (expr).
+            /*
+                due to the poor design of this "simple" grammar, parsing becomes complicated.
+                it would be easy if conditional expressions were just normal expressions, but NOOoOOOooo
+
+                a "cond_expr" (that doesn't start with '!') is either "(cond_expr) && (cond_expr)", or
+                "(cond_expr) || (cond_expr)". the problem is that '(' can also start an expression, but
+                in a cond_expr, "normal" expressions can only be part of relational expressions (eg.
+                "expr < expr" or whatever).
+
+                for example, "if((1 + 2) < 3) { }" is a valid cond_expr; naively parsing a cond_expr
+                upon seeing the '(' instead of parsing a rel_expr will end in failure.
+
+
+            */
 
             auto parse_parenthesised_condexpr = [](ParserState* ps) -> Result<Expr*> {
                 if(ps->next() != TT::LParen)
                     return ErrFmt("expected '('");
 
                 auto ret = parseCondExpr(ps);
-                if(ps->next() != TT::RParen)
-                    return ErrFmt("expected ')' to match a '('");
+                if(!ret)
+                    return ret;
+
+                zpr::println("front 0 = '{}'", ps->peek().text);
+
+                if(auto n = ps->next(); n != TT::RParen)
+                    return ErrFmt("expected ')' to match a '(', found '{}'", n.text);
 
                 return ret;
             };
@@ -179,7 +242,7 @@ namespace simple::parser
             else if(tok == TT::LogicalOr)
                 op = "||";
             else
-                return ErrFmt("expected either '&&' or '||'");
+                return ErrFmt("expected either '&&' or '||', found '{}'", tok.text);
 
             auto rhs = parse_parenthesised_condexpr(ps);
             if(!rhs.ok())
@@ -193,8 +256,18 @@ namespace simple::parser
         }
         else
         {
+            // this is just a normal expression.
+            zpr::println("front 1 = '{}'", ps->peek().text);
             auto lhs = parseExpr(ps);
             if(!lhs.ok())
+                return lhs;
+
+            zpr::println("front 2 = '{}'", ps->peek().text);
+
+            // this is a little bit of a hack so that we don't need to backtrack and/or
+            // have infinite lookahead. if there is a closing parenthesis left, then this
+            // is not a rel_expr, but rather it is probably a cond_expr.
+            if(ps->peek() == TT::RParen)
                 return lhs;
 
             std::string op;
@@ -223,6 +296,88 @@ namespace simple::parser
             ret->op = op;
             return Ok(ret);
         }
+
+    #if 0
+        else if(ps->peek() == TT::LParen)
+        {
+            // this is either "(cond_expr) || (cond_expr)" or "(cond_expr) && (cond_expr)".
+            // the problem is that '(' also starts a normal expression
+
+            auto parse_parenthesised_condexpr = [](ParserState* ps) -> Result<Expr*> {
+                if(ps->next() != TT::LParen)
+                    return ErrFmt("expected '('");
+
+                auto ret = parseCondExpr(ps);
+                if(!ret)
+                    return ret;
+
+                zpr::println("front 0 = '{}'", ps->peek().text);
+
+                if(auto n = ps->next(); n != TT::RParen)
+                    return ErrFmt("expected ')' to match a '(', found '{}'", n.text);
+
+                return ret;
+            };
+
+            auto lhs = parse_parenthesised_condexpr(ps);
+            if(!lhs.ok())
+                return Err(lhs.error());
+
+            std::string op;
+            if(auto tok = ps->next(); tok == TT::LogicalAnd)
+                op = "&&";
+            else if(tok == TT::LogicalOr)
+                op = "||";
+            else
+                return ErrFmt("expected either '&&' or '||', found '{}'", tok.text);
+
+            auto rhs = parse_parenthesised_condexpr(ps);
+            if(!rhs.ok())
+                return Err(rhs.error());
+
+            auto ret = new BinaryOp();
+            ret->lhs = lhs.unwrap();
+            ret->rhs = rhs.unwrap();
+            ret->op = op;
+            return Ok(ret);
+        }
+        else
+        {
+            zpr::println("front 1 = '{}'", ps->peek().text);
+            auto lhs = parseExpr(ps);
+            if(!lhs.ok())
+                return lhs;
+
+            zpr::println("front 2 = '{}'", ps->peek().text);
+            // zpr::println("front 3 = '{}'", (ps->next(), ps->peek().text));
+
+            std::string op;
+            if(auto tok = ps->next(); tok == TT::LAngle)
+                op = "<";
+            else if(tok == TT::RAngle)
+                op = ">";
+            else if(tok == TT::GreaterEqual)
+                op = ">=";
+            else if(tok == TT::LessEqual)
+                op = "<=";
+            else if(tok == TT::NotEqual)
+                op = "!=";
+            else if(tok == TT::EqualsTo)
+                op = "==";
+            else
+                return ErrFmt("invalid binary operator '{}'", tok.text);
+
+            auto rhs = parseExpr(ps);
+            if(!rhs.ok())
+                return rhs;
+
+            auto ret = new BinaryOp();
+            ret->lhs = lhs.unwrap();
+            ret->rhs = rhs.unwrap();
+            ret->op = op;
+            return Ok(ret);
+        }
+    #endif
     }
 
     static Result<Stmt*> parseStmt(ParserState* ps);

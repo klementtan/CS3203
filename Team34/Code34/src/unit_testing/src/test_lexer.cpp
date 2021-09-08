@@ -3,8 +3,8 @@
 #define CATCH_CONFIG_FAST_COMPILE 1
 #include "catch.hpp"
 
-#include <zst.h>
 #include <zpr.h>
+#include <zst.h>
 #include "simple/parser.h"
 
 using namespace simple::parser;
@@ -23,6 +23,11 @@ static void check_tokens(zst::str_view sv, Tokens&&... tokens)
 
     (check_token(static_cast<Tokens&&>(tokens)), ...);
     require(getNextToken(sv) == TT::EndOfFile);
+}
+
+TEST_CASE("tmp")
+{
+    parseProgram("procedure foo { while((v + x * y + z * t) < 10) { } }").unwrap();
 }
 
 // first, the single-character tokens

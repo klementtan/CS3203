@@ -975,7 +975,7 @@ namespace zst::impl
 	template <typename... Args>
 	[[noreturn]] void error_wrapper(const char* fmt, Args&&... args)
 	{
-		constexpr auto msg = "internal error (no zpr, cannot elaborate)";
+		constexpr const char msg[] = "internal error (no zpr, cannot elaborate)";
 		zst::error_and_exit(msg, sizeof(msg) - 1);
 	}
 }
