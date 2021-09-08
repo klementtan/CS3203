@@ -1,6 +1,8 @@
 // PKB.h
 // contains definitions for all the program knowledge base structures
 
+#pragma once
+
 #include <unordered_map>
 #include <unordered_set>
 #include <zst.h>
