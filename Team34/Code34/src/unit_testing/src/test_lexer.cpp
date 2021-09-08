@@ -3,8 +3,8 @@
 #define CATCH_CONFIG_FAST_COMPILE 1
 #include "catch.hpp"
 
-#include <zst.h>
 #include <zpr.h>
+#include <zst.h>
 #include "simple/parser.h"
 
 using namespace simple::parser;

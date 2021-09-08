@@ -1,0 +1,10 @@
+procedure foo
+{
+	while ((v + x * y + z * t) < 10)
+	{
+	}
+
+	while ((v + x) * y + z * t < 10)
+	{
+	}
+}

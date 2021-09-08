@@ -16,7 +16,7 @@
 */
 
 /*
-	Version 1.3.3
+	Version 1.4.0
 	=============
 
 
@@ -158,6 +158,22 @@ namespace zst
 			&& decltype(test_pre_is_base_of<Base, Derived>(0))::value
 		>
 		{ };
+
+		template <typename T>
+		struct __stop_declval_eval { static constexpr bool __stop = false; };
+
+		template <typename T, typename U = T&&>
+		U __declval(int);
+
+		template <typename T>
+		T __declval(long);
+
+		template <typename T>
+		auto declval() -> decltype(__declval<T>(0))
+		{
+			static_assert(__stop_declval_eval<T>::__stop, "declval() must not be used!");
+			return __stop_declval_eval<T>::__unknown();
+		}
 	}
 }
 
@@ -579,6 +595,18 @@ namespace zst
 		[[noreturn]] void error_wrapper(const char* fmt, Args&&... args);
 	}
 
+	template <typename, typename>
+	struct Result;
+
+	namespace detail
+	{
+		template <typename T>
+		struct is_result : detail::false_type { };
+
+		template <typename T, typename U>
+		struct is_result<Result<T, U>> : detail::true_type { };
+	}
+
 	template <typename T>
 	struct Ok
 	{
@@ -759,6 +787,24 @@ namespace zst
 			else            return default_value;
 		}
 
+		template <typename Fn>
+		auto map(Fn&& fn) -> Result<decltype(fn(detail::declval<T>())), E> const
+		{
+			using Res = Result<decltype(fn(this->val)), E>;
+			if(this->ok())  return Res(typename Res::tag_ok{}, fn(this->val));
+			else            return Res(typename Res::tag_err{}, this->err);
+		}
+
+		template <typename Fn>
+		auto flatmap(Fn&& fn) -> decltype(fn(detail::declval<T>())) const
+		{
+			using Res = decltype(fn(this->val));
+
+			if(this->ok())  return fn(this->val);
+			else            return Res(typename Res::tag_err{}, this->err);
+		}
+
+
 	private:
 		inline void assert_has_value() const
 		{
@@ -876,6 +922,24 @@ namespace zst
 			return Result<void, E>(E(static_cast<Args&&>(xs)...));
 		}
 
+		template <typename Fn>
+		auto map(Fn&& fn) -> Result<decltype(fn()), E> const
+		{
+			using Res = Result<decltype(fn()), E>;
+			if(this->ok())  return Res(typename Res::tag_ok{}, fn());
+			else            return Res(typename Res::tag_err{}, this->err);
+		}
+
+		template <typename Fn>
+		auto flatmap(Fn&& fn) -> decltype(fn()) const
+		{
+			using Res = decltype(fn());
+
+			if(this->ok())  return fn();
+			else            return Res(typename Res::tag_err{}, this->err);
+		}
+
+
 	private:
 		inline void assert_is_error() const
 		{
@@ -975,7 +1039,7 @@ namespace zst::impl
 	template <typename... Args>
 	[[noreturn]] void error_wrapper(const char* fmt, Args&&... args)
 	{
-		constexpr auto msg = "internal error (no zpr, cannot elaborate)";
+		constexpr const char msg[] = "internal error (no zpr, cannot elaborate)";
 		zst::error_and_exit(msg, sizeof(msg) - 1);
 	}
 }
@@ -987,6 +1051,12 @@ namespace zst::impl
 /*
 	Version History
 	===============
+
+	1.4.0 - 08/09/2021
+	------------------
+	- add map() and flatmap() to Result
+
+
 
 	1.3.3 - 31/08/2021
 	------------------
