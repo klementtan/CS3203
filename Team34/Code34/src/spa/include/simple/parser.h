@@ -1,4 +1,4 @@
-// simple_parser.h
+// parser.h
 // contains definitions for simple-parsing related code, namely the lexer & parser.
 
 #pragma once

@@ -6,12 +6,11 @@
 #include <unordered_map>
 #include <vector>
 #include <string>
-#include "ast.h"
+#include "simple/ast.h"
 
 namespace pql::ast
 {
     struct Select;
-    struct Clause;
     struct Declaration;
 
     enum class DESIGN_ENT

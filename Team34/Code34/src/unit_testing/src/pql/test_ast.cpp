@@ -5,7 +5,7 @@
 #define CATCH_CONFIG_FAST_COMPILE
 #include "catch.hpp"
 
-#include "pql/ast.h"
+#include "pql/parser/ast.h"
 #include <iostream>
 #include <unordered_map>
 #include "util.h"

@@ -4,7 +4,7 @@
 #include <zpr.h>
 #include <zst.h>
 
-#include "ast.h"
+#include "simple/ast.h"
 
 namespace simple::ast
 {

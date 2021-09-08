@@ -3,7 +3,7 @@
 #include <zpr.h>
 #include <zst.h>
 
-#include "pql/ast.h"
+#include "pql/parser/ast.h"
 
 namespace pql::ast
 {
