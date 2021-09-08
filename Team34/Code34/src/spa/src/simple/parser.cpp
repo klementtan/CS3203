@@ -3,8 +3,10 @@
 #include <zpr.h>
 #include <zst.h>
 
-#include "simple/ast.h"
+#include <cassert>
+
 #include "util.h"
+#include "simple/ast.h"
 #include "simple/parser.h"
 
 namespace simple::parser
