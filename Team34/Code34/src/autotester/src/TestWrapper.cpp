@@ -4,8 +4,8 @@
 
 // spa
 #include "util.h"
-#include "simple_parser.h"
-#include "pql/parser.h"
+#include "simple/parser.h"
+#include "pql/parser/parser.h"
 #include "pql/exception.h"
 
 

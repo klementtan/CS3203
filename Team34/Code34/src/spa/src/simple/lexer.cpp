@@ -4,7 +4,7 @@
 #include <zpr.h>
 
 #include "util.h"
-#include "simple_parser.h"
+#include "simple/parser.h"
 
 namespace simple::parser
 {

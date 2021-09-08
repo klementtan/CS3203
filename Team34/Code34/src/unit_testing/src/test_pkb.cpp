@@ -3,7 +3,7 @@
 
 #include <zst.h>
 #include <zpr.h>
-#include "simple_parser.h"
+#include "simple/parser.h"
 #include "pkb.h"
 #include "util.h"
 using namespace simple::parser;

@@ -5,7 +5,7 @@
 
 #include <zst.h>
 #include <zpr.h>
-#include "simple_parser.h"
+#include "simple/parser.h"
 
 using namespace simple::parser;
 

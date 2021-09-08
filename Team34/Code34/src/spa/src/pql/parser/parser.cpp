@@ -1,6 +1,6 @@
 // pql/parser.cpp
 
-#include "pql/parser.h"
+#include "pql/parser/parser.h"
 #include "pql/exception.h"
 #include <unordered_set>
 #include <util.h>

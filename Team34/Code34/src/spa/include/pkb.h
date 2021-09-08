@@ -5,7 +5,7 @@
 #include <unordered_set>
 #include <zst.h>
 
-#include "ast.h"
+#include "simple/ast.h"
 
 namespace pkb
 {

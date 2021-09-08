@@ -3,9 +3,9 @@
 #include <zpr.h>
 #include <zst.h>
 
-#include "ast.h"
+#include "simple/ast.h"
 #include "util.h"
-#include "simple_parser.h"
+#include "simple/parser.h"
 
 namespace simple::parser
 {
