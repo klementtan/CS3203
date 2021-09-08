@@ -1,12 +1,11 @@
-// lexer.cpp
+// pql/lexer.cpp
 
 #include <zst.h>
-#include <zpr.h>
-
 #include "util.h"
-#include "simple/parser.h"
+#include "pql/parser/parser.h"
+#include "pql/exception.h"
 
-namespace simple::parser
+namespace pql::parser
 {
     static void eat_whitespace(zst::str_view& sv)
     {
@@ -24,9 +23,28 @@ namespace simple::parser
         return '0' <= c && c <= '9';
     }
 
-    Token peekNextToken(zst::str_view sv)
+    Token peekNextOneToken(zst::str_view sv)
     {
         return getNextToken(sv);
+    }
+
+    std::vector<Token> peekNextTwoTokens(zst::str_view sv)
+    {
+        Token fst = getNextToken(sv);
+        Token snd = getNextToken(sv);
+        return { fst, snd };
+    }
+
+    // Extract characters till reaches '"'
+    zst::str_view extractTillQuotes(zst::str_view& sv)
+    {
+        size_t num_chars = 0;
+        while(!sv.empty() && sv[num_chars] != '"')
+        {
+            num_chars += 1;
+        }
+        zst::str_view ret = sv.take_prefix(num_chars);
+        return ret;
     }
 
     Token getNextToken(zst::str_view& sv)
@@ -36,30 +54,6 @@ namespace simple::parser
         if(sv.empty() || sv[0] == '\0')
         {
             return Token { "", TT::EndOfFile };
-        }
-        else if(sv.find(">=") == 0)
-        {
-            return Token { sv.take_prefix(2), TT::GreaterEqual };
-        }
-        else if(sv.find("<=") == 0)
-        {
-            return Token { sv.take_prefix(2), TT::LessEqual };
-        }
-        else if(sv.find("!=") == 0)
-        {
-            return Token { sv.take_prefix(2), TT::NotEqual };
-        }
-        else if(sv.find("==") == 0)
-        {
-            return Token { sv.take_prefix(2), TT::EqualsTo };
-        }
-        else if(sv.find("&&") == 0)
-        {
-            return Token { sv.take_prefix(2), TT::LogicalAnd };
-        }
-        else if(sv.find("||") == 0)
-        {
-            return Token { sv.take_prefix(2), TT::LogicalOr };
         }
         else if(is_letter(sv[0]))
         {
@@ -75,9 +69,6 @@ namespace simple::parser
             while(!sv.empty() && is_digit(sv[num_chars]))
                 num_chars += 1;
 
-            if(num_chars > 1 && sv[0] == '0')
-                util::error("parser", "multi-digit integer literal cannot start with 0");
-
             return Token { sv.take_prefix(num_chars), TT::Number };
         }
         else
@@ -88,22 +79,15 @@ namespace simple::parser
             // clang-format off
             switch(sv[0])
             {
-                case '<':   tt = TT::LAngle; break;
-                case '>':   tt = TT::RAngle; break;
-                case '{':   tt = TT::LBrace; break;
-                case '}':   tt = TT::RBrace; break;
                 case '(':   tt = TT::LParen; break;
                 case ')':   tt = TT::RParen; break;
-                case '+':   tt = TT::Plus; break;
-                case '-':   tt = TT::Minus; break;
-                case '*':   tt = TT::Asterisk; break;
-                case '/':   tt = TT::Slash; break;
-                case '%':   tt = TT::Percent; break;
-                case '=':   tt = TT::Equal; break;
+                case '_':   tt = TT::Undersocre; break;
+                case '"':   tt = TT::DoubleQuotes; break;
                 case ';':   tt = TT::Semicolon; break;
-                case '!':   tt = TT::Exclamation; break;
+                case '*':   tt = TT::Asterisk; break;
+                case ',':   tt = TT::Comma; break;
                 default:
-                    util::error("parser", "invalid token '{}'", sv[0]);
+                    throw pql::exception::PqlException("pql::parser","invalid token '{}'", sv[0]);
             }
 
             return Token { sv.take_prefix(1), tt };

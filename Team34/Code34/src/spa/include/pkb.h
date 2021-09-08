@@ -3,11 +3,15 @@
 
 #include <unordered_map>
 #include <unordered_set>
+#include <zst.h>
 
-#include "ast.h"
+#include "simple/ast.h"
 
 namespace pkb
 {
+    template <typename T>
+    using Result = zst::Result<T, std::string>;
+
     struct Procedure
     {
         std::string name;
@@ -64,6 +68,21 @@ namespace pkb
         std::unordered_set<simple::ast::StatementNum> after;
     };
 
+    struct CallGraph
+    {
+        // adjacency graph for the edges. Proc A calls proc B gives edge (A, B).
+        std::unordered_map<std::string, std::unordered_set<std::string>> adj;
+
+        void addEdge(std::string& a, std::string b);
+        std::unordered_set<std::string>::iterator removeEdge(
+            std::string a, std::string b, std::unordered_map<std::string, std::unordered_set<std::string>>* adj);
+
+        bool dfs(std::string a, std::unordered_map<std::string, std::unordered_set<std::string>>* adj,
+            std::unordered_set<std::string>* visited);
+        bool cycleExists();
+        std::string missingProc(std::unordered_map<std::string, Procedure>* procs);
+    };
+
     struct ProgramKB
     {
         // this also functions as a unordered_map from (stmt_number - 1) -> Stmt*,
@@ -76,6 +95,8 @@ namespace pkb
 
         std::vector<simple::ast::Stmt*> while_statements;
         std::vector<simple::ast::Stmt*> if_statements;
+
+        CallGraph proc_calls;
 
         std::vector<Follows*> follows;
 
@@ -92,5 +113,5 @@ namespace pkb
         std::unordered_set<simple::ast::StatementNum> getAncestorsOf(simple::ast::StatementNum);
     };
 
-    ProgramKB* processProgram(simple::ast::Program* prog);
+    Result<ProgramKB*> processProgram(simple::ast::Program* prog);
 }

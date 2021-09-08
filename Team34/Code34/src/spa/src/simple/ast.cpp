@@ -5,8 +5,7 @@
 #include <zst.h>
 #include <string>
 
-#include "ast.h"
-#include "simple_parser.h"
+#include "simple/ast.h"
 
 namespace simple::ast
 {

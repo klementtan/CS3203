@@ -2,13 +2,20 @@
 #include <queue>
 
 #include <zpr.h>
+#include <zst.h>
 
-#include "ast.h"
+#include "simple/ast.h"
 #include "pkb.h"
 #include "util.h"
 
 namespace pkb
 {
+    using zst::Ok;
+    using zst::Err;
+    using zst::ErrFmt;
+
+    template <typename T>
+    using Result = zst::Result<T, std::string>;
     namespace s_ast = simple::ast;
 
     // collection only entails numbering the statements
@@ -172,6 +179,101 @@ namespace pkb
         }
     }
 
+    static void processCallGraph(ProgramKB* pkb, s_ast::StmtList* list, std::string* procName)
+    {
+        const auto& stmt_list = list->statements;
+        for(s_ast::Stmt* stmt : stmt_list)
+        {
+            if(auto i = dynamic_cast<s_ast::ProcCall*>(stmt); i)
+            {
+                pkb->proc_calls.addEdge(*procName, i->proc_name);
+            }
+            else if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt); i)
+            {
+                processCallGraph(pkb, &i->true_case, procName);
+                processCallGraph(pkb, &i->false_case, procName);
+            }
+            else if(auto w = dynamic_cast<s_ast::WhileLoop*>(stmt); w)
+            {
+                processCallGraph(pkb, &w->body, procName);
+            }
+        }
+    }
+
+    void CallGraph::addEdge(std::string& a, std::string b)
+    {
+        adj[a].insert(std::move(b));
+    }
+
+    // runs dfs to detect cycle
+    bool CallGraph::dfs(std::string a, std::unordered_map<std::string, std::unordered_set<std::string>>* tempAdj,
+        std::unordered_set<std::string>* visited)
+    {
+        if(visited->find(a) != visited->end())
+        {
+            return true;
+        }
+        visited->insert(a);
+        if(tempAdj->find(a) != tempAdj->end())
+        {
+            auto s = (*tempAdj)[a].begin();
+            while(s != (*tempAdj)[a].end())
+            {
+                if(dfs(*s, tempAdj, visited))
+                {
+                    return true;
+                }
+                else
+                {
+                    s = (*tempAdj)[a].erase((*tempAdj)[a].find(*s));
+                    if((*tempAdj)[a].empty())
+                    {
+                        tempAdj->erase(a);
+                        break;
+                    }
+                }
+            }
+        }
+        visited->erase(a);
+        return false;
+    }
+
+    // runs dfs on each graph
+    bool CallGraph::cycleExists()
+    {
+        std::unordered_map<std::string, std::unordered_set<std::string>> tempAdj;
+        std::unordered_set<std::string> visited;
+        for(auto i = adj.begin(); i != adj.end(); i++)
+        {
+            for(auto a : i->second)
+            {
+                tempAdj[i->first].insert(a.c_str());
+            }
+        }
+        while(tempAdj.size() != 0)
+        {
+            bool res = dfs(tempAdj.begin()->first, &tempAdj, &visited);
+            if(res)
+                return true;
+        }
+        return false;
+    }
+
+    std::string CallGraph::missingProc(std::unordered_map<std::string, Procedure>* procs)
+    {
+        for(auto& a : adj)
+        {
+            for(auto& callee : a.second)
+            {
+                if(procs->find(callee) == procs->end())
+                {
+                    return callee;
+                }
+            }
+        }
+        return "";
+    }
+
     // Takes in two 1-indexed StatementNums
     bool ProgramKB::isFollows(s_ast::StatementNum fst, s_ast::StatementNum snd)
     {
@@ -311,7 +413,7 @@ namespace pkb
 
     // End of parent methods
 
-    ProgramKB* processProgram(s_ast::Program* program)
+    Result<ProgramKB*> processProgram(s_ast::Program* program)
     {
         auto pkb = new ProgramKB();
 
@@ -340,6 +442,15 @@ namespace pkb
             processAncestors(pkb, &proc->body);
         }
 
-        return pkb;
+        for(const auto& proc : program->procedures)
+        {
+            processCallGraph(pkb, &proc->body, &proc->name);
+        }
+
+        if(pkb->proc_calls.cycleExists())
+            return ErrFmt("Cyclic or recursive calls are not allowed");
+        if(auto a = pkb->proc_calls.missingProc(&(pkb->procedures)); a != "")
+            return ErrFmt("Procedure '{}' is undefined", a);
+        return Ok(pkb);
     }
 }
