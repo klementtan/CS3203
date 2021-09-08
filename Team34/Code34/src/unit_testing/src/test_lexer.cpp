@@ -25,11 +25,6 @@ static void check_tokens(zst::str_view sv, Tokens&&... tokens)
     require(getNextToken(sv) == TT::EndOfFile);
 }
 
-TEST_CASE("tmp")
-{
-    parseProgram("procedure foo { while((v + x * y + z * t) < 10) { } }").unwrap();
-}
-
 // first, the single-character tokens
 TEST_CASE("basic tokens")
 {

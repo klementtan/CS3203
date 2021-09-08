@@ -150,6 +150,7 @@ namespace simple::parser
         else
             return ErrFmt("expected either '&&' or '||', found '{}'", tok.text);
 
+
         if(auto n = ps->next(); n != TT::LParen)
             return ErrFmt("expected '(' after '{}', found '{}'", n.text, op);
 
@@ -172,8 +173,31 @@ namespace simple::parser
     static Result<Expr*> parseRelationalExpr(ParserState* ps, Expr* lhs)
     {
         assert(lhs != nullptr);
+        std::string op;
+        if(auto tok = ps->next(); tok == TT::LAngle)
+            op = "<";
+        else if(tok == TT::RAngle)
+            op = ">";
+        else if(tok == TT::GreaterEqual)
+            op = ">=";
+        else if(tok == TT::LessEqual)
+            op = "<=";
+        else if(tok == TT::NotEqual)
+            op = "!=";
+        else if(tok == TT::EqualsTo)
+            op = "==";
+        else
+            return ErrFmt("invalid binary operator '{}'", tok.text);
 
-        return ErrFmt("asdf");
+        auto rhs = parseExpr(ps);
+        if(!rhs)
+            return rhs;
+
+        auto ret = new BinaryOp();
+        ret->lhs = lhs;
+        ret->rhs = rhs.unwrap();
+        ret->op = op;
+        return Ok(ret);
     }
 
 
@@ -210,52 +234,67 @@ namespace simple::parser
                 in a cond_expr, "normal" expressions can only be part of relational expressions (eg.
                 "expr < expr" or whatever).
 
-                for example, "if((1 + 2) < 3) { }" is a valid cond_expr; naively parsing a cond_expr
+                for example, "(1 + 2) < 3" is a valid cond_expr; naively parsing a cond_expr
                 upon seeing the '(' instead of parsing a rel_expr will end in failure.
 
-
+                so what we do is parse a cond_expr as the lhs first; this should allow us to recursively
+                handle the case where it's actually a rel_expr inside the '()'.
             */
 
-            auto parse_parenthesised_condexpr = [](ParserState* ps) -> Result<Expr*> {
-                if(ps->next() != TT::LParen)
-                    return ErrFmt("expected '('");
-
-                auto ret = parseCondExpr(ps);
-                if(!ret)
-                    return ret;
-
-                zpr::println("front 0 = '{}'", ps->peek().text);
-
-                if(auto n = ps->next(); n != TT::RParen)
-                    return ErrFmt("expected ')' to match a '(', found '{}'", n.text);
-
-                return ret;
+            auto is_relational = [](auto tok) -> bool {
+                return tok == TT::LAngle || tok == TT::RAngle || tok == TT::EqualsTo || tok == TT::NotEqual
+                    || tok == TT::LessEqual || tok == TT::GreaterEqual;
             };
 
-            auto lhs = parse_parenthesised_condexpr(ps);
-            if(!lhs.ok())
-                return Err(lhs.error());
+            auto is_logical = [](auto tok) -> bool {
+                return tok == TT::LogicalAnd || tok == TT::LogicalOr;
+            };
 
-            std::string op;
-            if(auto tok = ps->next(); tok == TT::LogicalAnd)
-                op = "&&";
-            else if(tok == TT::LogicalOr)
-                op = "||";
+            // consume the paren
+            ps->next();
+            auto lhs = parseCondExpr(ps);
+            if(auto n = ps->next(); n != TT::RParen)
+                return ErrFmt("expected ')', found '{}'", n.text);
+
+            // now for some hackery...
+            if(ps->peek() == TT::RParen)
+            {
+                // we are in a nested '()', so just return here.
+                return lhs;
+            }
+            else if(is_relational(ps->peek()))
+            {
+                return lhs.flatmap([&ps](auto lhs) -> auto {
+                    return parseRelationalExpr(ps, lhs);
+                });
+            }
+            else if(is_logical(ps->peek()))
+            {
+                return lhs.flatmap([&ps](auto lhs) -> auto {
+                    return parseBinaryCondExpr(ps, lhs);
+                });
+            }
             else
-                return ErrFmt("expected either '&&' or '||', found '{}'", tok.text);
-
-            auto rhs = parse_parenthesised_condexpr(ps);
-            if(!rhs.ok())
-                return Err(rhs.error());
-
-            auto ret = new BinaryOp();
-            ret->lhs = lhs.unwrap();
-            ret->rhs = rhs.unwrap();
-            ret->op = op;
-            return Ok(ret);
+            {
+                return ErrFmt("expected an operator after ')', found '{}'", ps->peek().text);
+            }
         }
         else
         {
+            auto lhs = parseExpr(ps);
+            if(!lhs)
+                return lhs;
+
+            // peek the next token. if it's a closing paren, then we defer to the higher-level.
+            if(ps->peek() == TT::RParen)
+                return lhs;
+
+            // this *has* to be a rel_expr (since cond_exprs must be parenthesised)
+            return lhs.flatmap([&ps](auto lhs) -> auto {
+                return parseRelationalExpr(ps, lhs);
+            });
+
+        #if 0
             // this is just a normal expression.
             zpr::println("front 1 = '{}'", ps->peek().text);
             auto lhs = parseExpr(ps);
@@ -295,6 +334,7 @@ namespace simple::parser
             ret->rhs = rhs.unwrap();
             ret->op = op;
             return Ok(ret);
+        #endif
         }
 
     #if 0
