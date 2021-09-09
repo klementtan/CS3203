@@ -546,19 +546,20 @@ namespace pkb
                     pkb->statements.at(stmt->id - 1)->uses.insert(tmp->uses.begin(), tmp->uses.end());
                 }
             }
-        }
-    }
-
-    // Ternary process on uses/modifies for proc calls because the other way I thought of was API set intersection and iteration which is slower(?)
-    static void ternaryProcessStmtList(ProgramKB* pkb, s_ast::StmtList* list)
-    {
-        for(const auto& stmt : list->statements)
-        {
-            if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt))
+            else if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt))
             {
                 auto& tmp = pkb->procedures.at(c->proc_name);
-                pkb->statements.at(stmt->id - 1)->modifies.insert(tmp.modifies.begin(), tmp.modifies.end());
-                pkb->statements.at(stmt->id - 1)->uses.insert(tmp.uses.begin(), tmp.uses.end());
+                pkb->statements.at(c->id - 1)->modifies.insert(tmp.modifies.begin(), tmp.modifies.end());
+                pkb->statements.at(c->id - 1)->uses.insert(tmp.uses.begin(), tmp.uses.end());
+
+                for(auto& var : pkb->procedures.at(c->proc_name).uses)
+                {
+                    pkb->variables.at(var).used_by.insert(c);
+                }
+                for(auto& var : pkb->procedures.at(c->proc_name).modifies)
+                {
+                    pkb->variables.at(var).modified_by.insert(c);
+                }
             }
         }
     }
@@ -648,7 +649,7 @@ namespace pkb
                 {
                     if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt))
                     {
-                        uses.insert(std::to_string(c->id));
+                        uses.insert(std::to_string(stmt->id));
                     }
                 }
                 break;
@@ -797,12 +798,6 @@ namespace pkb
         {
             processAncestors(pkb, &proc->body);
             reprocessStmtList(pkb, &proc->body);
-        }
-
-        // might not be needed, still exploring
-        for(const auto& proc : program->procedures)
-        {
-            ternaryProcessStmtList(pkb, &proc->body);
         }
 
         for(const auto& proc : program->procedures)
