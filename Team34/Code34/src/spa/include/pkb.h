@@ -102,7 +102,6 @@ namespace pkb
     {
         // this also functions as a unordered_map from (stmt_number - 1) -> Stmt*,
         // and the Stmt knows its own number.
-        // std::vector<simple::ast::Stmt*> statements; // todo: convert this into a vector of Statement.
         std::vector<Statement*> statements;
 
         std::unordered_map<std::string, Procedure> procedures;

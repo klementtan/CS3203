@@ -513,7 +513,7 @@ namespace pkb
             processStmt(pkb, stmt, parent_proc);
     }
 
-    // Secondary processing step to fully populate uses and modifies for nested if/while statements.
+    // Secondary processing step to fully populate uses and modifies for nested if/while, and proc call statements.
     static void reprocessStmtList(ProgramKB* pkb, s_ast::StmtList* list)
     {
         for(const auto& stmt : list->statements)
