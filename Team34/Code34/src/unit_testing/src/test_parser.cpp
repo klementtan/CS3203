@@ -40,16 +40,20 @@ static bool check_expr(zst::str_view sv, zst::str_view expect, Result<Expr*> (*f
     }
 }
 
-static bool check_err(const std::string in, const std::string msg)
+static bool check_prog(zst::str_view sv, zst::str_view expect)
 {
-    auto prog = parseProgram(in);
-    if(prog.error().compare(msg) == 0)
+    auto prog = parseProgram(sv);
+    if(prog.ok() && prog.unwrap()->toProgFormat() == expect)
+    {
+        return true;
+    }
+    else if(!prog.ok() && prog.error() == expect)
     {
         return true;
     }
     else {
-        zpr::fprintln(
-            stderr, "Invalid test case\ngiven sv: {}, given expectation: {}, obtained res: {}", in, msg, prog.error());
+        zpr::fprintln(stderr, "Invalid test case\ngiven sv: {}, given expectation: {}, obtained res: {}", sv, expect,
+            prog.ok() ? prog.unwrap()->toProgFormat() : prog.error());
         return false;
     }
 }
@@ -148,7 +152,7 @@ TEST_CASE("Parse program")
         )";
         std::string out = "invalid token '['";
 
-        req(check_err(in, out));
+        req(check_prog(in, out));
         req(prog.error().compare(out) == 0);
     }
     */
@@ -160,7 +164,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out = "unexpected token '*' at beginning of statement";
-        req(check_err(in, out));
+        req(check_prog(in, out));
     }
     SECTION("Invalid procedure syntax")
     {
@@ -170,7 +174,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out = "expected at least one statement between '{' and '}'";
-        req(check_err(in, out));
+        req(check_prog(in, out));
 
         std::string in2 = R"(
             procedure {
@@ -178,7 +182,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out2 = "expected identifier after 'procedure' keyword";
-        req(check_err(in2, out2));
+        req(check_prog(in2, out2));
 
         std::string in3 = R"(
             procedure A(a) {
@@ -186,7 +190,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out3 = "expected '{'";
-        req(check_err(in3, out3));
+        req(check_prog(in3, out3));
 
         std::string in4 = R"(
             Procedure A {
@@ -194,7 +198,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out4 = "expected 'procedure' to define a procedure (found 'Procedure')";
-        req(check_err(in4, out4));
+        req(check_prog(in4, out4));
 
         
         std::string in5 = R"(
@@ -206,7 +210,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out5 = "expected '=' after identifier";
-        req(check_err(in5, out5));
+        req(check_prog(in5, out5));
     }
     SECTION("Error for invalid read syntax")
     {
@@ -216,7 +220,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out = "expected identifier after 'read'";
-        req(check_err(in, out));
+        req(check_prog(in, out));
 
         std::string in2 = R"(
             procedure A {
@@ -224,7 +228,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out2 = "expected semicolon after statement";
-        req(check_err(in2, out2));
+        req(check_prog(in2, out2));
     }
 
 
@@ -236,7 +240,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out = "expected identifier after 'print'";
-        req(check_err(in, out));
+        req(check_prog(in, out));
 
         std::string in2 = R"(
             procedure A {
@@ -244,7 +248,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out2 = "expected semicolon after statement";
-        req(check_err(in2, out2));
+        req(check_prog(in2, out2));
     }
     SECTION("Error for invalid call syntax")
     {
@@ -254,7 +258,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out = "expected identifier after 'call'";
-        req(check_err(in, out));
+        req(check_prog(in, out));
 
         std::string in2 = R"(
             procedure A {
@@ -262,7 +266,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out2 = "expected semicolon after statement";
-        req(check_err(in2, out2));
+        req(check_prog(in2, out2));
     }
     SECTION("Error for invalid call syntax")
     {
@@ -272,7 +276,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out = "expected identifier after 'call'";
-        req(check_err(in, out));
+        req(check_prog(in, out));
 
         std::string in2 = R"(
             procedure A {
@@ -280,7 +284,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out2 = "expected semicolon after statement";
-        req(check_err(in2, out2));
+        req(check_prog(in2, out2));
     }
     SECTION("Error for invalid while syntax")
     {
@@ -291,7 +295,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out = "expected at least one statement between '{' and '}'";
-        req(check_err(in, out));
+        req(check_prog(in, out));
 
         std::string in2 = R"(
             procedure A {
@@ -300,7 +304,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out2 = "invalid binary operator ')'";
-        req(check_err(in2, out2));
+        req(check_prog(in2, out2));
 
         std::string in3 = R"(
             procedure A {
@@ -310,7 +314,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out3 = "invalid binary operator ')'";
-        req(check_err(in3, out3));
+        req(check_prog(in3, out3));
 
         std::string in4 = R"(
             procedure A {
@@ -319,7 +323,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out4 = "expected '(' after 'while'";
-        req(check_err(in4, out4));
+        req(check_prog(in4, out4));
         /*
         std::string in4 = R"(
         procedure A {
@@ -349,7 +353,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out = "expected at least one statement between '{' and '}'";
-        req(check_err(in, out));
+        req(check_prog(in, out));
 
         std::string in2 = R"(
             procedure A {
@@ -358,7 +362,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out2 = "invalid binary operator ')'";
-        req(check_err(in2, out2));
+        req(check_prog(in2, out2));
 
         std::string in3 = R"(
             procedure A {
@@ -367,7 +371,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out3 = "expected '(' after 'if'";
-        req(check_err(in3, out3));
+        req(check_prog(in3, out3));
         
         std::string in4 = R"(
             procedure A {
@@ -376,7 +380,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out4 = "expected 'then' after condition for 'if'";
-        req(check_err(in4, out4));
+        req(check_prog(in4, out4));
 
         std::string in5 = R"(
             procedure A {
@@ -386,7 +390,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out5 = "'else' clause is mandatory";
-        req(check_err(in5, out5));
+        req(check_prog(in5, out5));
 
 
         std::string in6 = R"(
@@ -397,7 +401,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out6 = "expected at least one statement between '{' and '}'";
-        req(check_err(in6, out6));
+        req(check_prog(in6, out6));
 
         std::string in7 = R"(
             procedure A {
@@ -409,7 +413,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out7 = "expected '{'";
-        req(check_err(in7, out7));
+        req(check_prog(in7, out7));
     }
     SECTION("Error for invalid assignment")
     {
@@ -419,7 +423,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out = "expected semicolon after statement";
-        req(check_err(in, out));
+        req(check_prog(in, out));
         /*
         std::string in2 = R"(
             procedure A {
@@ -427,7 +431,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out2 = "multi-digit integer literal cannot start with 0";
-        req(check_err(in2, out2));
+        req(check_prog(in2, out2));
         req(prog2.error().compare(out2) == 0);*/
         /*
         std::string in3 = R"(
@@ -437,7 +441,7 @@ TEST_CASE("Parse program")
         )";
         std::string out3 = "multi-digit integer literal cannot start with 0";
 
-        req(check_err(in3, out3));
+        req(check_prog(in3, out3));
         zpr::fprintln(stdout, "begin{}end", prog3.error());
         req(prog3.error().compare(out3) == 0);
         */
@@ -450,7 +454,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out = "invalid start of expression with '>'";
-        req(check_err(in, out));
+        req(check_prog(in, out));
 
         std::string in2 = R"(
             procedure A {
@@ -458,7 +462,7 @@ TEST_CASE("Parse program")
             }
         )";
         std::string out2 = "expected '=' after identifier";
-        req(check_err(in2, out2));
+        req(check_prog(in2, out2));
     }
     SECTION("Bad formatting")
     {
@@ -549,7 +553,7 @@ procedure b
     d = 3;
 }
 )";
-        req(parseProgram(in).unwrap()->toProgFormat().compare(in) == 0);
+        req(check_prog(in, in));
 
 
         std::string in2 = R"(procedure a
@@ -562,7 +566,7 @@ procedure b
     d = 3;
 }
 )";
-        req(parseProgram(in2).unwrap()->toProgFormat().compare(in2) == 0);
+        req(check_prog(in2, in2));
 
         std::string in3 = R"(procedure a
 {
@@ -574,7 +578,7 @@ procedure b
     }
 }
 )";
-        req(parseProgram(in3).unwrap()->toProgFormat().compare(in3) == 0);
+        req(check_prog(in3, in3));
     }
 
     SECTION("Standalone if stmt and combination of if and while") // at 3 different positions
@@ -593,7 +597,7 @@ procedure b
     d = 3;
 }
 )";
-        req(parseProgram(in).unwrap()->toProgFormat().compare(in) == 0);
+        req(check_prog(in, in));
 
         std::string in2 = R"(procedure a
 {
@@ -615,7 +619,7 @@ procedure b
     d = 3;
 }
 )";
-        req(parseProgram(in2).unwrap()->toProgFormat().compare(in2) == 0);
+        req(check_prog(in2, in2));
 
         std::string in3 = R"(procedure a
 {
@@ -640,7 +644,7 @@ procedure b
     }
 }
 )";
-        req(parseProgram(in3).unwrap()->toProgFormat().compare(in3) == 0);
+        req(check_prog(in3, in3));
     }
 
     SECTION("2-level nesting of if and while and separate if/while inside a nest if/while")
@@ -664,7 +668,7 @@ procedure b
     }
 }
 )";
-        req(parseProgram(in).unwrap()->toProgFormat().compare(in) == 0);
+        req(check_prog(in, in));
 
 
         std::string in2 = R"(procedure a
@@ -678,7 +682,7 @@ procedure b
     }
 }
 )";
-        req(parseProgram(in2).unwrap()->toProgFormat().compare(in2) == 0);
+        req(check_prog(in2, in2));
 
         std::string in3 = R"(procedure a
 {
@@ -702,7 +706,7 @@ procedure b
     }
 }
 )";
-        req(parseProgram(in3).unwrap()->toProgFormat().compare(in3) == 0);
+        req(check_prog(in3, in3));
 
         std::string in4 = R"(procedure a
 {
@@ -734,7 +738,7 @@ procedure b
     }
 }
 )";
-        req(parseProgram(in4).unwrap()->toProgFormat().compare(in4) == 0);
+        req(check_prog(in4, in4));
     }
 
 
@@ -819,7 +823,7 @@ procedure b
     }
 }
 )";
-        req(parseProgram(in).unwrap()->toProgFormat().compare(in) == 0);
+        req(check_prog(in, in));
     }
 
     SECTION("Permutations of more than 4 levels of nesting and Permutations of separate if/while in both nested levels") // 8 perms
@@ -884,6 +888,6 @@ procedure b
     }
 }
 )";
-        req(parseProgram(in).unwrap()->toProgFormat().compare(in) == 0);
+        req(check_prog(in, in));
     }
 }
