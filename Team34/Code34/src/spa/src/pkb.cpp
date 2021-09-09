@@ -568,7 +568,8 @@ namespace pkb
         }
     }
 
-    zst::Result<bool, std::string> UsesModifies::isUses(const simple::ast::StatementNum& stmt_num, const std::string& var)
+    zst::Result<bool, std::string> UsesModifies::isUses(
+        const simple::ast::StatementNum& stmt_num, const std::string& var)
     {
         if(this->variables.find(var) == this->variables.end() || stmt_num > this->statements.size())
         {
