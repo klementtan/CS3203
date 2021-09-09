@@ -7,8 +7,8 @@
 
 #include <zst.h>
 
-#include "ast.h"
-#include "pql/ast.h"
+#include "pql/parser/ast.h"
+#include "simple/ast.h"
 
 namespace pkb
 {

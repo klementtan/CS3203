@@ -1,4 +1,4 @@
-// simple_parser.h
+// parser.h
 // contains definitions for simple-parsing related code, namely the lexer & parser.
 
 #pragma once
@@ -63,6 +63,7 @@ namespace simple::parser
 
     using TT = TokenType;
 
+    void eat_whitespace(zst::str_view& sv);
     Token getNextToken(zst::str_view& sv);
     Token peekNextToken(zst::str_view sv);
 }

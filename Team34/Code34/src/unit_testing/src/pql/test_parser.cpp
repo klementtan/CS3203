@@ -6,7 +6,7 @@
 #include "catch.hpp"
 #include <zst.h>
 
-#include "pql/parser.h"
+#include "pql/parser/parser.h"
 
 
 TEST_CASE("Basic Query")

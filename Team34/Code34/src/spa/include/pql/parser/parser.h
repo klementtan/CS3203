@@ -5,7 +5,7 @@
 
 #include <zst.h>
 #include <vector>
-#include "pql/ast.h"
+#include "ast.h"
 
 namespace pql::parser
 {
