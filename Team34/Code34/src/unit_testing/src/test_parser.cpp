@@ -6,8 +6,8 @@
 #include <zst.h>
 
 
-#include "ast.h"
-#include "simple_parser.h"
+#include "simple/ast.h"
+#include "simple/parser.h"
 #include "simple/parser.cpp"
 
 using namespace simple::parser;
