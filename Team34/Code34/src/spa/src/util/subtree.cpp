@@ -22,7 +22,7 @@ namespace util
         {
             s_ast::BinaryOp* binary1 = dynamic_cast<s_ast::BinaryOp*>(e1);
             return binary1 && binary0->op == binary1->op && _eq(binary0->lhs, binary1->lhs) &&
-                    _eq(binary0->rhs, binary1->rhs);
+                  _eq(binary0->rhs, binary1->rhs);
         }
 
         return false;
