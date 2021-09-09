@@ -4,7 +4,7 @@ namespace util
 {
     namespace s_ast = simple::ast;
 
-    bool exact_match(s_ast::Expr* subtree, s_ast::Expr* tree)
+    bool exactMatch(s_ast::Expr* subtree, s_ast::Expr* tree)
     {
         if(s_ast::VarRef* var0 = dynamic_cast<s_ast::VarRef*>(subtree))
         {
@@ -21,20 +21,20 @@ namespace util
         if(s_ast::BinaryOp* binary0 = dynamic_cast<s_ast::BinaryOp*>(subtree))
         {
             s_ast::BinaryOp* binary1 = dynamic_cast<s_ast::BinaryOp*>(tree);
-            return binary1 && binary0->op == binary1->op && exact_match(binary0->lhs, binary1->lhs) &&
-                   exact_match(binary0->rhs, binary1->rhs);
+            return binary1 && binary0->op == binary1->op && exactMatch(binary0->lhs, binary1->lhs) &&
+                   exactMatch(binary0->rhs, binary1->rhs);
         }
 
         return false;
     }
 
-    bool partial_match(s_ast::Expr* subtree, s_ast::Expr* tree)
+    bool partialMatch(s_ast::Expr* subtree, s_ast::Expr* tree)
     {
-        if(exact_match(subtree, tree))
+        if(exactMatch(subtree, tree))
             return true;
 
         if(s_ast::BinaryOp* binary_tree = dynamic_cast<s_ast::BinaryOp*>(tree))
-            return partial_match(subtree, binary_tree->lhs) || partial_match(subtree, binary_tree->rhs);
+            return partialMatch(subtree, binary_tree->lhs) || partialMatch(subtree, binary_tree->rhs);
 
         return false;
     }

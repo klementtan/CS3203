@@ -59,38 +59,38 @@ TEST_CASE("pattern matching on trees")
 
     SECTION("testing positive exact matching tests")
     {
-        req(exact_match(trees[0], trees[0]));
-        req(exact_match(trees[0], subtrees[2]));
-        req(exact_match(subtrees[3], subtrees[3]));
+        req(exactMatch(trees[0], trees[0]));
+        req(exactMatch(trees[0], subtrees[2]));
+        req(exactMatch(subtrees[3], subtrees[3]));
     }
 
     SECTION("testing negative exact matching tests")
     {
-        req(!exact_match(subtrees[0], trees[0]));
-        req(!exact_match(subtrees[0], subtrees[3]));
-        req(!exact_match(subtrees[3], subtrees[6]));
+        req(!exactMatch(subtrees[0], trees[0]));
+        req(!exactMatch(subtrees[0], subtrees[3]));
+        req(!exactMatch(subtrees[3], subtrees[6]));
     }
 
     SECTION("testing positive partial matching tests")
     {
-        req(partial_match(subtrees[0], trees[0]));
-        req(partial_match(subtrees[2], trees[1]));
-        req(partial_match(subtrees[4], trees[1]));
-        req(partial_match(subtrees[6], trees[2]));
-        req(partial_match(subtrees[8], trees[2]));
+        req(partialMatch(subtrees[0], trees[0]));
+        req(partialMatch(subtrees[2], trees[1]));
+        req(partialMatch(subtrees[4], trees[1]));
+        req(partialMatch(subtrees[6], trees[2]));
+        req(partialMatch(subtrees[8], trees[2]));
     }
 
     SECTION("testing negative partial matching tests")
     {
-        req(!partial_match(subtrees[1], trees[0]));
-        req(!partial_match(subtrees[1], trees[1]));
-        req(!partial_match(subtrees[3], trees[0]));
-        req(!partial_match(subtrees[3], trees[1]));
-        req(!partial_match(subtrees[5], trees[1]));
-        req(!partial_match(subtrees[5], trees[2]));
-        req(!partial_match(subtrees[6], trees[0]));
-        req(!partial_match(subtrees[6], trees[1]));
-        req(!partial_match(subtrees[7], trees[1]));
-        req(!partial_match(subtrees[7], trees[2]));
+        req(!partialMatch(subtrees[1], trees[0]));
+        req(!partialMatch(subtrees[1], trees[1]));
+        req(!partialMatch(subtrees[3], trees[0]));
+        req(!partialMatch(subtrees[3], trees[1]));
+        req(!partialMatch(subtrees[5], trees[1]));
+        req(!partialMatch(subtrees[5], trees[2]));
+        req(!partialMatch(subtrees[6], trees[0]));
+        req(!partialMatch(subtrees[6], trees[1]));
+        req(!partialMatch(subtrees[7], trees[1]));
+        req(!partialMatch(subtrees[7], trees[2]));
     }
 }
