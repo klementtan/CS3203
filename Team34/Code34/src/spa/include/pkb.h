@@ -98,7 +98,7 @@ namespace pkb
         std::string missingProc(std::vector<simple::ast::Procedure*> procs);
     };
 
-    struct ProgramKB
+    struct UsesModifies
     {
         // this also functions as a unordered_map from (stmt_number - 1) -> Stmt*,
         // and the Stmt knows its own number.
@@ -107,26 +107,6 @@ namespace pkb
 
         std::unordered_map<std::string, Procedure> procedures;
         std::unordered_map<std::string, Variable> variables;
-
-
-        std::vector<simple::ast::Stmt*> while_statements;
-        std::vector<simple::ast::Stmt*> if_statements;
-
-        CallGraph proc_calls;
-
-        std::vector<Follows*> follows;
-
-        bool isFollows(simple::ast::StatementNum fst, simple::ast::StatementNum snd);
-        bool isFollowsT(simple::ast::StatementNum fst, simple::ast::StatementNum snd);
-        std::unordered_set<simple::ast::StatementNum> getFollowsTList(
-            simple::ast::StatementNum fst, simple::ast::StatementNum snd);
-
-        std::unordered_map<simple::ast::StatementNum, simple::ast::StatementNum> _direct_parents;
-        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _ancestors;
-
-        bool isParent(simple::ast::StatementNum, simple::ast::StatementNum);
-        bool isParentT(simple::ast::StatementNum, simple::ast::StatementNum);
-        std::unordered_set<simple::ast::StatementNum> getAncestorsOf(simple::ast::StatementNum);
 
         // For queries of type Uses(3, "x")
         zst::Result<bool, std::string> isUses(const simple::ast::StatementNum& stmt_num, const std::string& var);
@@ -153,6 +133,30 @@ namespace pkb
         // Returns the Statement numbers of queries of type Modifies(a/pn/s/p, "x")
         zst::Result<std::unordered_set<std::string>, std::string> getModifies(
             const pql::ast::DESIGN_ENT& type, const std::string& var);
+    };
+
+    struct ProgramKB
+    {
+        std::vector<simple::ast::Stmt*> while_statements;
+        std::vector<simple::ast::Stmt*> if_statements;
+
+        CallGraph proc_calls;
+
+        UsesModifies uses_modifies;
+
+        std::vector<Follows*> follows;
+
+        bool isFollows(simple::ast::StatementNum fst, simple::ast::StatementNum snd);
+        bool isFollowsT(simple::ast::StatementNum fst, simple::ast::StatementNum snd);
+        std::unordered_set<simple::ast::StatementNum> getFollowsTList(
+            simple::ast::StatementNum fst, simple::ast::StatementNum snd);
+
+        std::unordered_map<simple::ast::StatementNum, simple::ast::StatementNum> _direct_parents;
+        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _ancestors;
+
+        bool isParent(simple::ast::StatementNum, simple::ast::StatementNum);
+        bool isParentT(simple::ast::StatementNum, simple::ast::StatementNum);
+        std::unordered_set<simple::ast::StatementNum> getAncestorsOf(simple::ast::StatementNum);
     };
 
     Result<ProgramKB*> processProgram(simple::ast::Program* prog);

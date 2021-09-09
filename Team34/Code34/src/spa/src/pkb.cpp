@@ -29,10 +29,10 @@ namespace pkb
         assert(stmt->id == 0);
 
         stmt->parent_list = parent;
-        stmt->id = pkb->statements.size() + 1;
+        stmt->id = pkb->uses_modifies.statements.size() + 1;
         auto statement = new Statement();
         statement->stmt = stmt;
-        pkb->statements.push_back(statement);
+        pkb->uses_modifies.statements.push_back(statement);
 
         if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt); i)
         {
@@ -425,12 +425,12 @@ namespace pkb
     {
         if(auto vr = dynamic_cast<s_ast::VarRef*>(expr))
         {
-            pkb->variables[vr->name].used_by.insert(parent_stmt);
-            pkb->variables[vr->name].used_by_procs.insert(parent_proc);
+            pkb->uses_modifies.variables[vr->name].used_by.insert(parent_stmt);
+            pkb->uses_modifies.variables[vr->name].used_by_procs.insert(parent_proc);
 
-            pkb->procedures[parent_proc->name].uses.insert(vr->name);
+            pkb->uses_modifies.procedures[parent_proc->name].uses.insert(vr->name);
 
-            pkb->statements[parent_stmt->id - 1]->uses.insert(vr->name);
+            pkb->uses_modifies.statements[parent_stmt->id - 1]->uses.insert(vr->name);
         }
         else if(auto cc = dynamic_cast<s_ast::Constant*>(expr))
         {
@@ -469,37 +469,37 @@ namespace pkb
         }
         else if(auto a = dynamic_cast<s_ast::AssignStmt*>(stmt)) // prolly add the uses and modifies inside
         {
-            pkb->variables[a->lhs].modified_by.insert(stmt);
-            pkb->variables[a->lhs].modified_by_procs.insert(parent_proc);
+            pkb->uses_modifies.variables[a->lhs].modified_by.insert(stmt);
+            pkb->uses_modifies.variables[a->lhs].modified_by_procs.insert(parent_proc);
 
-            pkb->procedures[parent_proc->name].modifies.insert(a->lhs);
+            pkb->uses_modifies.procedures[parent_proc->name].modifies.insert(a->lhs);
 
-            pkb->statements[a->id - 1]->modifies.insert(a->lhs);
+            pkb->uses_modifies.statements[a->id - 1]->modifies.insert(a->lhs);
 
             processExpr(pkb, a->rhs, a, parent_proc);
         }
         else if(auto r = dynamic_cast<s_ast::ReadStmt*>(stmt))
         {
-            pkb->variables[r->var_name].modified_by.insert(stmt);
-            pkb->variables[r->var_name].modified_by_procs.insert(parent_proc);
+            pkb->uses_modifies.variables[r->var_name].modified_by.insert(stmt);
+            pkb->uses_modifies.variables[r->var_name].modified_by_procs.insert(parent_proc);
 
-            pkb->statements[r->id - 1]->modifies.insert(r->var_name);
+            pkb->uses_modifies.statements[r->id - 1]->modifies.insert(r->var_name);
 
-            pkb->procedures[parent_proc->name].modifies.insert(r->var_name);
+            pkb->uses_modifies.procedures[parent_proc->name].modifies.insert(r->var_name);
         }
         else if(auto p = dynamic_cast<s_ast::PrintStmt*>(stmt))
         {
-            pkb->variables[p->var_name].used_by.insert(stmt);
-            pkb->variables[p->var_name].used_by_procs.insert(parent_proc);
+            pkb->uses_modifies.variables[p->var_name].used_by.insert(stmt);
+            pkb->uses_modifies.variables[p->var_name].used_by_procs.insert(parent_proc);
 
-            pkb->statements[p->id - 1]->uses.insert(p->var_name);
+            pkb->uses_modifies.statements[p->id - 1]->uses.insert(p->var_name);
 
-            pkb->procedures[parent_proc->name].uses.insert(p->var_name);
+            pkb->uses_modifies.procedures[parent_proc->name].uses.insert(p->var_name);
         }
         else if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt))
         {
-            pkb->procedures[parent_proc->name].calls.insert(c->proc_name);
-            pkb->procedures[c->proc_name].called_by.insert(parent_proc->name);
+            pkb->uses_modifies.procedures[parent_proc->name].calls.insert(c->proc_name);
+            pkb->uses_modifies.procedures[c->proc_name].called_by.insert(parent_proc->name);
         }
         else
         {
@@ -525,15 +525,17 @@ namespace pkb
 
                 for(const auto& child_stmt : i->true_case.statements)
                 {
-                    auto& tmp = pkb->statements.at(child_stmt->id - 1);
-                    pkb->statements.at(stmt->id - 1)->modifies.insert(tmp->modifies.begin(), tmp->modifies.end());
-                    pkb->statements.at(stmt->id - 1)->uses.insert(tmp->uses.begin(), tmp->uses.end());
+                    auto& tmp = pkb->uses_modifies.statements.at(child_stmt->id - 1);
+                    pkb->uses_modifies.statements.at(stmt->id - 1)
+                        ->modifies.insert(tmp->modifies.begin(), tmp->modifies.end());
+                    pkb->uses_modifies.statements.at(stmt->id - 1)->uses.insert(tmp->uses.begin(), tmp->uses.end());
                 }
                 for(const auto& child_stmt : i->false_case.statements)
                 {
-                    auto& tmp = pkb->statements.at(child_stmt->id - 1);
-                    pkb->statements.at(stmt->id - 1)->modifies.insert(tmp->modifies.begin(), tmp->modifies.end());
-                    pkb->statements.at(stmt->id - 1)->uses.insert(tmp->uses.begin(), tmp->uses.end());
+                    auto& tmp = pkb->uses_modifies.statements.at(child_stmt->id - 1);
+                    pkb->uses_modifies.statements.at(stmt->id - 1)
+                        ->modifies.insert(tmp->modifies.begin(), tmp->modifies.end());
+                    pkb->uses_modifies.statements.at(stmt->id - 1)->uses.insert(tmp->uses.begin(), tmp->uses.end());
                 }
             }
             else if(auto w = dynamic_cast<s_ast::WhileLoop*>(stmt))
@@ -542,30 +544,31 @@ namespace pkb
 
                 for(const auto& child_stmt : w->body.statements)
                 {
-                    auto& tmp = pkb->statements.at(child_stmt->id - 1);
-                    pkb->statements.at(stmt->id - 1)->modifies.insert(tmp->modifies.begin(), tmp->modifies.end());
-                    pkb->statements.at(stmt->id - 1)->uses.insert(tmp->uses.begin(), tmp->uses.end());
+                    auto& tmp = pkb->uses_modifies.statements.at(child_stmt->id - 1);
+                    pkb->uses_modifies.statements.at(stmt->id - 1)
+                        ->modifies.insert(tmp->modifies.begin(), tmp->modifies.end());
+                    pkb->uses_modifies.statements.at(stmt->id - 1)->uses.insert(tmp->uses.begin(), tmp->uses.end());
                 }
             }
             else if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt))
             {
-                auto& tmp = pkb->procedures.at(c->proc_name);
-                pkb->statements.at(c->id - 1)->modifies.insert(tmp.modifies.begin(), tmp.modifies.end());
-                pkb->statements.at(c->id - 1)->uses.insert(tmp.uses.begin(), tmp.uses.end());
+                auto& tmp = pkb->uses_modifies.procedures.at(c->proc_name);
+                pkb->uses_modifies.statements.at(c->id - 1)->modifies.insert(tmp.modifies.begin(), tmp.modifies.end());
+                pkb->uses_modifies.statements.at(c->id - 1)->uses.insert(tmp.uses.begin(), tmp.uses.end());
 
-                for(auto& var : pkb->procedures.at(c->proc_name).uses)
+                for(auto& var : pkb->uses_modifies.procedures.at(c->proc_name).uses)
                 {
-                    pkb->variables.at(var).used_by.insert(c);
+                    pkb->uses_modifies.variables.at(var).used_by.insert(c);
                 }
-                for(auto& var : pkb->procedures.at(c->proc_name).modifies)
+                for(auto& var : pkb->uses_modifies.procedures.at(c->proc_name).modifies)
                 {
-                    pkb->variables.at(var).modified_by.insert(c);
+                    pkb->uses_modifies.variables.at(var).modified_by.insert(c);
                 }
             }
         }
     }
 
-    zst::Result<bool, std::string> ProgramKB::isUses(const simple::ast::StatementNum& stmt_num, const std::string& var)
+    zst::Result<bool, std::string> UsesModifies::isUses(const simple::ast::StatementNum& stmt_num, const std::string& var)
     {
         if(this->variables.find(var) == this->variables.end() || stmt_num > this->statements.size())
         {
@@ -582,7 +585,7 @@ namespace pkb
         }
     }
 
-    zst::Result<bool, std::string> ProgramKB::isUses(const std::string& proc, const std::string& var)
+    zst::Result<bool, std::string> UsesModifies::isUses(const std::string& proc, const std::string& var)
     {
         if(this->variables.find(var) == this->variables.end() || this->procedures.find(proc) == this->procedures.end())
         {
@@ -591,7 +594,7 @@ namespace pkb
         return Ok(this->procedures.at(proc).uses.count(var) > 0);
     }
 
-    zst::Result<std::unordered_set<std::string>, std::string> ProgramKB::getUsesVars(
+    zst::Result<std::unordered_set<std::string>, std::string> UsesModifies::getUsesVars(
         const simple::ast::StatementNum& stmt_num)
     {
         if(stmt_num > this->statements.size())
@@ -601,7 +604,7 @@ namespace pkb
         return Ok(this->statements.at(stmt_num - 1)->uses);
     }
 
-    zst::Result<std::unordered_set<std::string>, std::string> ProgramKB::getUsesVars(const std::string& var)
+    zst::Result<std::unordered_set<std::string>, std::string> UsesModifies::getUsesVars(const std::string& var)
     {
         if(this->procedures.find(var) == this->procedures.end())
         {
@@ -610,7 +613,7 @@ namespace pkb
         return Ok(this->procedures.at(var).uses);
     }
 
-    zst::Result<std::unordered_set<std::string>, std::string> ProgramKB::getUses(
+    zst::Result<std::unordered_set<std::string>, std::string> UsesModifies::getUses(
         const pql::ast::DESIGN_ENT& type, const std::string& var)
     {
         if(this->variables.find(var) == this->variables.end())
@@ -666,7 +669,7 @@ namespace pkb
         return Ok(uses);
     }
 
-    zst::Result<bool, std::string> ProgramKB::isModifies(
+    zst::Result<bool, std::string> UsesModifies::isModifies(
         const simple::ast::StatementNum& stmt_num, const std::string& var)
     {
         if(this->variables.find(var) == this->variables.end() || stmt_num > this->statements.size())
@@ -684,7 +687,7 @@ namespace pkb
         }
     }
 
-    zst::Result<bool, std::string> ProgramKB::isModifies(const std::string& proc, const std::string& var)
+    zst::Result<bool, std::string> UsesModifies::isModifies(const std::string& proc, const std::string& var)
     {
         if(this->variables.find(var) == this->variables.end() || this->procedures.find(proc) == this->procedures.end())
         {
@@ -693,7 +696,7 @@ namespace pkb
         return Ok(this->procedures.at(proc).modifies.count(var) > 0);
     }
 
-    zst::Result<std::unordered_set<std::string>, std::string> ProgramKB::getModifiesVars(
+    zst::Result<std::unordered_set<std::string>, std::string> UsesModifies::getModifiesVars(
         const simple::ast::StatementNum& stmt_num)
     {
         if(stmt_num > this->statements.size())
@@ -703,7 +706,7 @@ namespace pkb
         return Ok(this->statements.at(stmt_num - 1)->modifies);
     }
 
-    zst::Result<std::unordered_set<std::string>, std::string> ProgramKB::getModifiesVars(const std::string& var)
+    zst::Result<std::unordered_set<std::string>, std::string> UsesModifies::getModifiesVars(const std::string& var)
     {
         if(this->procedures.find(var) == this->procedures.end())
         {
@@ -712,7 +715,7 @@ namespace pkb
         return Ok(this->procedures.at(var).modifies);
     }
 
-    zst::Result<std::unordered_set<std::string>, std::string> ProgramKB::getModifies(
+    zst::Result<std::unordered_set<std::string>, std::string> UsesModifies::getModifies(
         const pql::ast::DESIGN_ENT& type, const std::string& var)
     {
         if(this->variables.find(var) == this->variables.end())
@@ -779,10 +782,10 @@ namespace pkb
         {
             collectStmtList(pkb, &proc->body);
 
-            if(pkb->procedures.find(proc->name) != pkb->procedures.end())
+            if(pkb->uses_modifies.procedures.find(proc->name) != pkb->uses_modifies.procedures.end())
                 util::error("pkb", "procedure '{}' is already defined", proc->name);
 
-            pkb->procedures[proc->name].ast_proc = proc;
+            pkb->uses_modifies.procedures[proc->name].ast_proc = proc;
         }
 
         // do a second pass to populate the follows vector and parent, uses, modifies hashmap.
