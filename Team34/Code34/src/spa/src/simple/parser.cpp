@@ -71,7 +71,7 @@ namespace simple::parser
             ps->next();
             auto ret = parseExpr(ps);
             if(ps->next() != TT::RParen)
-                return ErrFmt("expected ')'");
+                return ErrFmt("expected ')' to match opening '('");
 
             return ret;
         }
@@ -90,6 +90,10 @@ namespace simple::parser
             vr->name = ps->next().text.str();
 
             return Ok(vr);
+        }
+        else if(ps->peek() == TT::EndOfFile)
+        {
+            return ErrFmt("unexpected end of input");
         }
         else
         {
@@ -116,7 +120,11 @@ namespace simple::parser
 
             auto next = get_precedence(ps->peek());
             if(next > prec)
+            {
                 rhs = parseRhs(ps, rhs.unwrap(), prec + 1);
+                if(!rhs)
+                    return rhs;
+            }
 
             auto binop = new BinaryOp();
             binop->lhs = lhs;
@@ -135,7 +143,7 @@ namespace simple::parser
             return pri;
     }
 
-    static Result<Expr*> parseCondExpr(ParserState* ps);
+    static Result<Expr*> parseCondExpr(ParserState* ps, int paren_nesting = 0);
 
 
     // parse `(cond_expr) && (cond_expr)` and friends.
@@ -150,18 +158,17 @@ namespace simple::parser
         else if(tok == TT::LogicalOr)
             op = "||";
         else
-            return ErrFmt("expected either '&&' or '||', found '{}'", tok.text);
-
+            return ErrFmt("expected either '&&' or '||', found '{}' instead", tok.text);
 
         if(auto n = ps->next(); n != TT::LParen)
-            return ErrFmt("expected '(' after '{}', found '{}'", n.text, op);
+            return ErrFmt("expected '(' after '{}', found '{}' instead", op, n.text);
 
         auto rhs = parseCondExpr(ps);
         if(!rhs.ok())
             return Err(rhs.error());
 
-        if(auto n = ps->next(); n != TT::LParen)
-            return ErrFmt("expected ')' after expression, found '{}'", n.text);
+        if(auto n = ps->next(); n != TT::RParen)
+            return ErrFmt("expected ')' after expression, found '{}' instead", n.text);
 
         auto ret = new BinaryOp();
         ret->lhs = lhs;
@@ -189,7 +196,7 @@ namespace simple::parser
         else if(tok == TT::EqualsTo)
             op = "==";
         else
-            return ErrFmt("invalid binary operator '{}'", tok.text);
+            return ErrFmt("invalid relational operator '{}'", tok.text);
 
         auto rhs = parseExpr(ps);
         if(!rhs)
@@ -205,16 +212,16 @@ namespace simple::parser
 
 
 
-    static Result<Expr*> parseCondExpr(ParserState* ps)
+    static Result<Expr*> parseCondExpr(ParserState* ps, int paren_nesting)
     {
         if(ps->peek() == TT::Exclamation)
         {
             ps->next();
-            if(ps->next() != TT::LParen)
-                return ErrFmt("expected '(' after '!'");
+            if(auto n = ps->next(); n != TT::LParen)
+                return ErrFmt("expected '(' after '!', found '{}' instead", n.text);
 
             auto ret = new UnaryOp();
-            if(auto cond = parseCondExpr(ps); cond.ok())
+            if(auto cond = parseCondExpr(ps, paren_nesting + 1); cond.ok())
                 ret->expr = cond.unwrap();
             else
                 return cond;
@@ -227,6 +234,16 @@ namespace simple::parser
         }
         else if(ps->peek() == TT::LParen)
         {
+            // consume the paren
+            ps->next();
+
+
+            auto is_relational_expr = [](Expr* expr) -> bool {
+                if(auto x = dynamic_cast<BinaryOp*>(expr); x && BinaryOp::isRelational(x->op))
+                    return true;
+                return false;
+            };
+
             /*
                 due to the poor design of this "simple" grammar, parsing becomes complicated.
                 it would be easy if conditional expressions were just normal expressions, but NOOoOOOooo
@@ -243,38 +260,39 @@ namespace simple::parser
                 handle the case where it's actually a rel_expr inside the '()'.
             */
 
-            auto is_relational = [](auto tok) -> bool {
-                return tok == TT::LAngle || tok == TT::RAngle || tok == TT::EqualsTo || tok == TT::NotEqual ||
-                       tok == TT::LessEqual || tok == TT::GreaterEqual;
-            };
+            auto lhs = parseCondExpr(ps, paren_nesting + 1);
+            if(!lhs)
+                return lhs;
 
-            auto is_logical = [](auto tok) -> bool {
-                return tok == TT::LogicalAnd || tok == TT::LogicalOr;
-            };
-
-            // consume the paren
-            ps->next();
-            auto lhs = parseCondExpr(ps);
             if(auto n = ps->next(); n != TT::RParen)
                 return ErrFmt("expected ')', found '{}'", n.text);
 
+            // continue parsing an expression if we can...
+            if(auto n = ps->peek(); n != TT::RParen && get_precedence(n) != -1)
+                lhs = parseRhs(ps, lhs.unwrap(), 0);
+
             // now for some hackery...
-            if(ps->peek() == TT::RParen)
+            if(ps->peek() == TT::RParen && paren_nesting > 0)
             {
                 // we are in a nested '()', so just return here.
                 return lhs;
             }
-            else if(is_relational(ps->peek()))
+            else if(BinaryOp::isRelational(ps->peek().text))
             {
-                return lhs.flatmap([&ps](auto lhs) -> auto { return parseRelationalExpr(ps, lhs); });
+                return lhs.flatmap([&ps, &is_relational_expr ](auto lhs) -> auto {
+                    if(is_relational_expr(lhs))
+                        return Result<Expr*>(ErrFmt("relational operators cannot be chained"));
+
+                    return parseRelationalExpr(ps, lhs);
+                });
             }
-            else if(is_logical(ps->peek()))
+            else if(BinaryOp::isConditional(ps->peek().text))
             {
                 return lhs.flatmap([&ps](auto lhs) -> auto { return parseBinaryCondExpr(ps, lhs); });
             }
             else
             {
-                return ErrFmt("expected an operator after ')', found '{}'", ps->peek().text);
+                return ErrFmt("expected a conditional/relational operator after ')', found '{}'", ps->peek().text);
             }
         }
         else
@@ -284,7 +302,7 @@ namespace simple::parser
                 return lhs;
 
             // peek the next token. if it's a closing paren, then we defer to the higher-level.
-            if(ps->peek() == TT::RParen)
+            if(ps->peek() == TT::RParen && paren_nesting > 0)
                 return lhs;
 
             // this *has* to be a rel_expr (since cond_exprs must be parenthesised)
@@ -333,8 +351,8 @@ namespace simple::parser
         else
             return Err(cond.error());
 
-        if(ps->next() != TT::RParen)
-            return ErrFmt("expected ')'");
+        if(auto n = ps->next(); n != TT::RParen)
+            return ErrFmt("expected ')' after conditional, found '{}' instead", n.text);
 
         if(auto then = ps->next(); then != TT::Identifier || then.text != KW_Then)
             return ErrFmt("expected 'then' after condition for 'if'");
@@ -367,8 +385,8 @@ namespace simple::parser
         else
             return Err(cond.error());
 
-        if(ps->next() != TT::RParen)
-            return ErrFmt("expected ')'");
+        if(auto n = ps->next(); n != TT::RParen)
+            return ErrFmt("expected ')' after conditional, found '{}' instead", n.text);
 
         if(auto body = parseStatementList(ps); body.ok())
             ret->body = body.unwrap();
@@ -381,8 +399,8 @@ namespace simple::parser
     static Result<Stmt*> parseStmt(ParserState* ps)
     {
         auto check_semicolon = [](ParserState* ps, auto ret) -> zst::Result<Stmt*, std::string> {
-            if(ps->next() != TT::Semicolon)
-                return ErrFmt("expected semicolon after statement");
+            if(auto n = ps->next(); n != TT::Semicolon)
+                return ErrFmt("expected semicolon after statement, found '{}' instead", n.text);
             else
                 return Ok(ret);
         };
@@ -458,7 +476,7 @@ namespace simple::parser
         if(auto name = ps->next(); name == TT::Identifier)
             proc->name = name.text.str();
         else
-            return ErrFmt("expected identifier after 'procedure' keyword");
+            return ErrFmt("expected identifier after 'procedure'");
 
         if(auto body = parseStatementList(ps); body.ok())
             proc->body = body.unwrap();
@@ -488,6 +506,8 @@ namespace simple::parser
     {
         auto ps = ParserState { input };
         auto ret = parseExpr(&ps);
+        if(!ret)
+            return ret;
 
         if(auto tmp = ps.next(); tmp != TT::EndOfFile)
             return ErrFmt("unexpected token '{}' after expression", tmp.text);

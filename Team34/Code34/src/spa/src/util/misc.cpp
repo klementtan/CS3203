@@ -7,6 +7,6 @@ namespace zst
 {
     [[noreturn]] void error_and_exit(const char* msg, size_t n)
     {
-        util::error("???", "{}", zst::str_view(msg, n));
+        throw std::runtime_error(zst::str_view(msg, n).str());
     }
 }

@@ -63,7 +63,6 @@ namespace simple::parser
 
     using TT = TokenType;
 
-    void eat_whitespace(zst::str_view& sv);
     Token getNextToken(zst::str_view& sv);
     Token peekNextToken(zst::str_view sv);
 }
