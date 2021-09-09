@@ -34,8 +34,7 @@ namespace util
             return true;
 
         if(s_ast::BinaryOp* binary_tree = dynamic_cast<s_ast::BinaryOp*>(tree))
-            return partial_match(subtree, binary_tree->lhs) || 
-                   partial_match(subtree, binary_tree->rhs);
+            return partial_match(subtree, binary_tree->lhs) || partial_match(subtree, binary_tree->rhs);
 
         return false;
     }
