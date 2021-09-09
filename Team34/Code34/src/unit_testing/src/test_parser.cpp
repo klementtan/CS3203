@@ -51,7 +51,8 @@ static bool check_prog(zst::str_view sv, zst::str_view expect)
     {
         return true;
     }
-    else {
+    else
+    {
         zpr::fprintln(stderr, "Invalid test case\ngiven sv: {}, given expectation: {}, obtained res: {}", sv, expect,
             prog.ok() ? prog.unwrap()->toProgFormat() : prog.error());
         return false;
@@ -67,7 +68,7 @@ TEST_CASE("Parse expr")
         req(check_expr("a = 2;", "a", &parseExpr));
         req(check_expr("a * 2;", "(a * 2)", &parseExpr));
     }
-    SECTION("Invalid cases") 
+    SECTION("Invalid cases")
     {
         req(check_expr("*aa)", "invalid start of expression with '*'", &parseExpr));
     }
@@ -200,7 +201,7 @@ TEST_CASE("Parse program")
         std::string out4 = "expected 'procedure' to define a procedure (found 'Procedure')";
         req(check_prog(in4, out4));
 
-        
+
         std::string in5 = R"(
             procedure A {
                 a = 4;
@@ -325,7 +326,7 @@ TEST_CASE("Parse program")
         )";
         std::string out4 = "expected '(' after 'while'";
         req(check_prog(in4, out4));
-        
+
         std::string in5 = R"(
         procedure A {
             while (v + x * y + z * t < 10) {
@@ -350,9 +351,9 @@ TEST_CASE("Parse program")
         )";
         std::string out6 = "expected ')' after '('";
         req(check_prog(in6, out6));
-        
+
     }
-    
+
 
     SECTION("Error for invalid if syntax")
     {
@@ -384,7 +385,7 @@ TEST_CASE("Parse program")
         )";
         std::string out3 = "expected '(' after 'if'";
         req(check_prog(in3, out3));
-        
+
         std::string in4 = R"(
             procedure A {
                 if (a == 2) {
@@ -421,7 +422,7 @@ TEST_CASE("Parse program")
                     a = 5;
                 } else if (a == 7) {
                     a = 6;
-                } 
+                }
             }
         )";
         std::string out7 = "expected '{'";
@@ -499,62 +500,63 @@ TEST_CASE("Parse program")
     }
 }
 
-TEST_CASE("Sample tests for parse program") {
+TEST_CASE("Sample tests for parse program")
+{
     SECTION("Assignments")
     {
-/*
-        std::string in = R"(
-            procedure a
+        /*
+                std::string in = R"(
+                    procedure a
+                    {
+                        a1 = x + z;
+                        a2 = x * z;
+                        a3 = x + y + z;
+                        a4 = x + z * 5;
+                        a5 = z * 5 + x;
+                        a6 = (x + z) * 5;
+                        a7 = v + x * y + z * t;
+                        while (v + x * y + z * t < 10) {
+                            x = 0;
+                        }
+                    }
+                    procedure b
+                    {
+                        if ( ((1==b) && (b == 1)) || (c == 1)) then {
+                            a = 2;
+                        } else {
+                            a = 0;
+                        }
+                    }
+                )";
+                std::string out = R"(procedure a
+        {
+            a1 = (x + z);
+            a2 = (x * z);
+            a3 = ((x + y) + z);
+            a4 = (x + (z * 5));
+            a5 = ((z * 5) + x);
+            a6 = ((x + z) * 5);
+            a7 = ((v + (x * y)) + (z * t));
+            while(((v + (x * y)) + (z * t)) < 10)
             {
-                a1 = x + z;
-                a2 = x * z;
-                a3 = x + y + z;
-                a4 = x + z * 5;
-                a5 = z * 5 + x;
-                a6 = (x + z) * 5;
-                a7 = v + x * y + z * t;
-                while (v + x * y + z * t < 10) {
-                    x = 0;
-                }
+                x = 0;
             }
-            procedure b
-            {
-                if ( ((1==b) && (b == 1)) || (c == 1)) then {
-                    a = 2;
-                } else {
-                    a = 0;
-                }
-            }
-        )";
-        std::string out = R"(procedure a
-{
-    a1 = (x + z);
-    a2 = (x * z);
-    a3 = ((x + y) + z);
-    a4 = (x + (z * 5));
-    a5 = ((z * 5) + x);
-    a6 = ((x + z) * 5);
-    a7 = ((v + (x * y)) + (z * t));
-    while(((v + (x * y)) + (z * t)) < 10)
-    {
-        x = 0;
-    }
-}
-procedure b
-{
-    if(((1 == b) && (b == 1)) || (c == 1)) then
-    {
-        a = 2;
-    }
-    else
-    {
-        a = 0;
-    }
-}
-)";
-        req(check_prog(in, out));
- */
         }
+        procedure b
+        {
+            if(((1 == b) && (b == 1)) || (c == 1)) then
+            {
+                a = 2;
+            }
+            else
+            {
+                a = 0;
+            }
+        }
+        )";
+                req(check_prog(in, out));
+         */
+    }
 
     // 8 categories mentioned in tut. Combined some of the sections.
     SECTION("Standalone while loops") // at 3 different positions
@@ -842,7 +844,8 @@ procedure b
         req(check_prog(in, in));
     }
 
-    SECTION("Permutations of more than 4 levels of nesting and Permutations of separate if/while in both nested levels") // 8 perms
+    SECTION(
+        "Permutations of more than 4 levels of nesting and Permutations of separate if/while in both nested levels") // 8 perms
     {
         std::string in = R"(procedure a
 {
