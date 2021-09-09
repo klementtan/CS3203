@@ -43,7 +43,15 @@ static bool check_expr(zst::str_view sv, zst::str_view expect, Result<Expr*> (*f
 static bool check_err(const std::string in, const std::string msg)
 {
     auto prog = parseProgram(in);
-    return prog.error().compare(msg) == 0;
+    if(prog.error().compare(msg) == 0)
+    {
+        return true;
+    }
+    else {
+        zpr::fprintln(
+            stderr, "Invalid test case\ngiven sv: {}, given expectation: {}, obtained res: {}", in, msg, prog.error());
+        return false;
+    }
 }
 
 // start from the bottom
@@ -278,7 +286,7 @@ TEST_CASE("Parse program")
     {
         std::string in = R"(
             procedure A {
-                while ( a == 1 ) {
+                while ((a == 1 ) {
                 }
             }
         )";
