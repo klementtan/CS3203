@@ -8,7 +8,7 @@
 
 bool Test::run() const
 {
-    std::string actual { };
+    std::string actual {};
     std::string expected = this->expected.str();
 
     bool ok = false;
