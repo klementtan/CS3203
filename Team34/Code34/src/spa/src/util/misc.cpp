@@ -1,5 +1,7 @@
 // misc.cpp
 
+#include <exception>
+
 #include <zst.h>
 #include "util.h"
 
