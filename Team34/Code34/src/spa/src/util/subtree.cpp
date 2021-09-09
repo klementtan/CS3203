@@ -21,8 +21,8 @@ namespace util
         if(s_ast::BinaryOp* binary0 = dynamic_cast<s_ast::BinaryOp*>(e0))
         {
             s_ast::BinaryOp* binary1 = dynamic_cast<s_ast::BinaryOp*>(e1);
-            return binary1 && binary0->op == binary1->op &&
-                _eq(binary0->lhs, binary1->lhs) && _eq(binary0->rhs, binary1->rhs);
+            return binary1 && binary0->op == binary1->op && _eq(binary0->lhs, binary1->lhs) &&
+                _eq(binary0->rhs, binary1->rhs);
         }
 
         return false;
