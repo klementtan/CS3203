@@ -286,7 +286,7 @@ TEST_CASE("Parse program")
     {
         std::string in = R"(
             procedure A {
-                while ((a == 1 ) {
+                while (a == 1 ) {
                 }
             }
         )";
@@ -304,12 +304,22 @@ TEST_CASE("Parse program")
 
         std::string in3 = R"(
             procedure A {
+                while ( a ) {
+                    a = 3;
+                }
+            }
+        )";
+        std::string out3 = "invalid binary operator ')'";
+        req(check_err(in3, out3));
+
+        std::string in4 = R"(
+            procedure A {
                 while a == 2 {
                 }
             }
         )";
-        std::string out3 = "expected '(' after 'while'";
-        req(check_err(in3, out3));
+        std::string out4 = "expected '(' after 'while'";
+        req(check_err(in4, out4));
         /*
         std::string in4 = R"(
         procedure A {
