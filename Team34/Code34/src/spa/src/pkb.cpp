@@ -270,7 +270,8 @@ namespace pkb
         {
             for(auto& callee : a.second)
             {
-                if(std::find_if(procs.begin(), procs.end(), [&callee](const auto& p) {return p->name == callee;}) == procs.end())
+                if(std::find_if(procs.begin(), procs.end(), [&callee](const auto& p) { return p->name == callee; }) ==
+                    procs.end())
                 {
                     return callee;
                 }
