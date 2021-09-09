@@ -95,7 +95,7 @@ namespace pkb
         bool dfs(std::string a, std::unordered_map<std::string, std::unordered_set<std::string>>* adj,
             std::unordered_set<std::string>* visited);
         bool cycleExists();
-        std::string missingProc(std::unordered_map<std::string, Procedure>* procs);
+        std::string missingProc(std::vector<simple::ast::Procedure*> procs);
     };
 
     struct ProgramKB

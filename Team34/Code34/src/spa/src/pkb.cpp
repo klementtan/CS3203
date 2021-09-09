@@ -264,13 +264,13 @@ namespace pkb
         return false;
     }
 
-    std::string CallGraph::missingProc(std::unordered_map<std::string, Procedure>* procs)
+    std::string CallGraph::missingProc(std::vector<s_ast::Procedure*> procs)
     {
         for(auto& a : adj)
         {
             for(auto& callee : a.second)
             {
-                if(procs->find(callee) == procs->end())
+                if(std::find_if(procs.begin(), procs.end(), [&callee](const auto& p) {return p->name == callee;}) == procs.end())
                 {
                     return callee;
                 }
@@ -807,7 +807,7 @@ namespace pkb
 
         if(pkb->proc_calls.cycleExists())
             return ErrFmt("Cyclic or recursive calls are not allowed");
-        if(auto a = pkb->proc_calls.missingProc(&(pkb->procedures)); a != "")
+        if(auto a = pkb->proc_calls.missingProc(program->procedures); a != "")
             return ErrFmt("Procedure '{}' is undefined", a);
         return Ok(pkb);
     }
