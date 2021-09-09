@@ -1,6 +1,6 @@
 // misc.cpp
 
-#include <exception>
+#include <stdexcept>
 
 #include <zst.h>
 #include "util.h"
