@@ -119,7 +119,6 @@ namespace simple::ast
     struct Procedure
     {
         std::string toString() const;
-
         std::string name;
         StmtList body;
     };
@@ -127,6 +126,7 @@ namespace simple::ast
     struct Program
     {
         std::string toString() const;
+        std::string toProgFormat() const;
         std::vector<Procedure*> procedures;
     };
 }

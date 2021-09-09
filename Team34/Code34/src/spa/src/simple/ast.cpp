@@ -3,6 +3,7 @@
 
 #include <zpr.h>
 #include <zst.h>
+#include <string>
 
 #include "simple/ast.h"
 
@@ -59,7 +60,7 @@ namespace simple::ast
 
     std::string WhileLoop::toString(int nesting) const
     {
-        return zpr::sprint("{}while{}\n{}\n", zpr::w(nesting * INDENT_WIDTH)(""), this->condition->toString(),
+        return zpr::sprint("{}while{}\n{}", zpr::w(nesting * INDENT_WIDTH)(""), this->condition->toString(),
             this->body.toString(nesting));
     }
 
@@ -88,7 +89,40 @@ namespace simple::ast
         std::string ret;
         for(const auto& proc : this->procedures)
             ret += proc->toString();
-
         return ret;
+    }
+
+    template <typename T>
+    T remove_gutter(T beg, T end)
+    {
+        T dest = beg;
+        T itr = beg;
+        int i = GUTTER_WIDTH;
+        while(itr + 1 != end && i)
+        {
+            itr++;
+            i--;
+        }
+        for(; itr != end; ++itr)
+        {
+            *(dest++) = *itr;
+            if(*itr == '\n')
+            {
+                int i = GUTTER_WIDTH;
+                while(itr + 1 != end && i)
+                {
+                    itr++;
+                    i--;
+                }
+            }
+        }
+        return dest;
+    }
+
+    std::string Program::toProgFormat() const
+    {
+        std::string str = this->toString();
+        str.erase(remove_gutter(str.begin(), str.end()), str.end());
+        return str;
     }
 }
