@@ -8,7 +8,7 @@
 
 namespace simple::parser
 {
-    static void eat_whitespace(zst::str_view& sv)
+    void eat_whitespace(zst::str_view& sv)
     {
         while(!sv.empty() && (sv[0] == '\n' || sv[0] == '\r' || sv[0] == '\t' || sv[0] == ' '))
             sv.remove_prefix(1);
