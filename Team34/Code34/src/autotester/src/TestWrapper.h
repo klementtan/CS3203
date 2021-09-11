@@ -3,6 +3,7 @@
 
 #include <list>
 #include <string>
+#include "pkb.h"
 
 // include your other headers here
 #include "AbstractWrapper.h"
@@ -16,7 +17,9 @@ public:
     virtual void parse(std::string filename);
     virtual void evaluate(std::string query, std::list<std::string>& results);
 
+
 private:
+    pkb::ProgramKB* pkb;
 };
 
 #endif

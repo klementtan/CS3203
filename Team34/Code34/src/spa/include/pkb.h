@@ -1,6 +1,8 @@
 // PKB.h
 // contains definitions for all the program knowledge base structures
 
+#pragma once
+
 #include <unordered_map>
 #include <unordered_set>
 #include <zst.h>
@@ -57,6 +59,7 @@ namespace pkb
         std::unordered_map<std::string, simple::ast::VarRef*> _vars;
 
         simple::ast::VarRef* getVar(const std::string&);
+        std::unordered_map<std::string, simple::ast::VarRef*> getVars();
         bool hasVar(const std::string&);
         void setVar(const std::string&, simple::ast::VarRef*);
 
@@ -147,6 +150,7 @@ namespace pkb
 
         bool isFollows(simple::ast::StatementNum fst, simple::ast::StatementNum snd);
         bool isFollowsT(simple::ast::StatementNum fst, simple::ast::StatementNum snd);
+        Follows* getFollows(simple::ast::StatementNum fst);
         std::unordered_set<simple::ast::StatementNum> getFollowsTList(
             simple::ast::StatementNum fst, simple::ast::StatementNum snd);
 

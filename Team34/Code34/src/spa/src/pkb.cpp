@@ -298,6 +298,12 @@ namespace pkb
 
         return this->follows[fst - 1]->after.count(snd) > 0;
     }
+    Follows* ProgramKB::getFollows(simple::ast::StatementNum fst)
+    {
+        if(fst > this->follows.size() || fst < 1)
+            util::error("pkb", "StatementNum out of range.");
+        return this->follows[fst - 1];
+    }
 
     // Takes in two 1-indexed StatementNums. Allows for 0 to be used as a wildcard on 1 of the parameters.
     std::unordered_set<s_ast::StatementNum> ProgramKB::getFollowsTList(s_ast::StatementNum fst, s_ast::StatementNum snd)
