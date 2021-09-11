@@ -40,7 +40,6 @@ namespace pkb
 
         if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt); i)
         {
-            pkb->if_statements.push_back(stmt);
             collectStmtList(pkb, &i->true_case);
             collectStmtList(pkb, &i->false_case);
             i->true_case.parent_statement = stmt;
@@ -48,7 +47,6 @@ namespace pkb
         }
         else if(auto w = dynamic_cast<s_ast::WhileLoop*>(stmt); w)
         {
-            pkb->while_statements.push_back(stmt);
             collectStmtList(pkb, &w->body);
             w->body.parent_statement = stmt;
         }
