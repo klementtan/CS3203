@@ -312,15 +312,10 @@ namespace pkb
     // Takes in two 1-indexed StatementNums. Allows for 0 to be used as a wildcard on 1 of the parameters.
     std::unordered_set<s_ast::StatementNum> ProgramKB::getFollowsTList(s_ast::StatementNum fst, s_ast::StatementNum snd)
     {
-<<<<<<< HEAD
-        if(fst > this->follows.size() || snd > this->follows.size() || fst < 0 || snd < 0)
-            throw pkb::exception::PkbException("pkb::eval", "StatementNum out of range.");
-=======
         // note: no need to check for < 0 since StatementNum is unsigned
         if(fst > this->follows.size() || snd > this->follows.size())
             throw pkb::exception::PkbException("pkb::eval", "StatementNum out of range.");
 
->>>>>>> 23672806e5ca1fd04b67a1a86d417e3fff64cf10
         if((fst < 1 && snd < 1) || (fst != 0 && snd != 0))
             throw pkb::exception::PkbException("pkb::eval", "Only 1 wildcard is to be used.");
 
@@ -554,6 +549,14 @@ namespace pkb
                         ->modifies.insert(tmp->modifies.begin(), tmp->modifies.end());
                     pkb->uses_modifies.statements.at(stmt->id - 1)->uses.insert(tmp->uses.begin(), tmp->uses.end());
                 }
+                for(auto& var : pkb->uses_modifies.statements.at(i->id - 1)->uses)
+                {
+                    pkb->uses_modifies.variables.at(var).used_by.insert(i);
+                }
+                for(auto& var : pkb->uses_modifies.statements.at(i->id - 1)->modifies)
+                {
+                    pkb->uses_modifies.variables.at(var).modified_by.insert(i);
+                }
             }
             else if(auto w = dynamic_cast<s_ast::WhileLoop*>(stmt))
             {
@@ -565,6 +568,14 @@ namespace pkb
                     pkb->uses_modifies.statements.at(stmt->id - 1)
                         ->modifies.insert(tmp->modifies.begin(), tmp->modifies.end());
                     pkb->uses_modifies.statements.at(stmt->id - 1)->uses.insert(tmp->uses.begin(), tmp->uses.end());
+                }
+                for(auto& var : pkb->uses_modifies.statements.at(w->id - 1)->uses)
+                {
+                    pkb->uses_modifies.variables.at(var).used_by.insert(w);
+                }
+                for(auto& var : pkb->uses_modifies.statements.at(w->id - 1)->modifies)
+                {
+                    pkb->uses_modifies.variables.at(var).modified_by.insert(w);
                 }
             }
             else if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt))
@@ -665,6 +676,20 @@ namespace pkb
                         uses.insert(std::to_string(stmt->id));
                 }
                 break;
+            case pql::ast::DESIGN_ENT::IF:
+                for(auto& stmt : stmt_list)
+                {
+                    if(dynamic_cast<s_ast::IfStmt*>(stmt))
+                        uses.insert(std::to_string(stmt->id));
+                }
+                break;
+            case pql::ast::DESIGN_ENT::WHILE:
+                for(auto& stmt : stmt_list)
+                {
+                    if(dynamic_cast<s_ast::WhileLoop*>(stmt))
+                        uses.insert(std::to_string(stmt->id));
+                }
+                break;
             case pql::ast::DESIGN_ENT::PROCEDURE:
                 for(auto& proc : this->variables.at(var).used_by_procs)
                     uses.insert(proc->name);
@@ -754,6 +779,20 @@ namespace pkb
                 for(auto& stmt : stmt_list)
                 {
                     if(dynamic_cast<s_ast::ProcCall*>(stmt))
+                        modifies.insert(std::to_string(stmt->id));
+                }
+                break;
+            case pql::ast::DESIGN_ENT::IF:
+                for(auto& stmt : stmt_list)
+                {
+                    if(dynamic_cast<s_ast::IfStmt*>(stmt))
+                        modifies.insert(std::to_string(stmt->id));
+                }
+                break;
+            case pql::ast::DESIGN_ENT::WHILE:
+                for(auto& stmt : stmt_list)
+                {
+                    if(dynamic_cast<s_ast::WhileLoop*>(stmt))
                         modifies.insert(std::to_string(stmt->id));
                 }
                 break;
