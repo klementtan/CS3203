@@ -286,7 +286,7 @@ namespace pkb
     {
         // thinking of more elegant ways of handling this hmm
         if(fst > this->follows.size() || snd > this->follows.size() || fst < 1 || snd < 1)
-            util::error("pkb", "StatementNum out of range.");
+            throw pkb::exception::PkbException("pkb::eval", "StatementNum out of range.");
 
         return this->follows[fst - 1]->directly_after == snd;
     }
@@ -295,7 +295,7 @@ namespace pkb
     bool ProgramKB::isFollowsT(s_ast::StatementNum fst, s_ast::StatementNum snd)
     {
         if(fst > this->follows.size() || snd > this->follows.size() || fst < 1 || snd < 1)
-            util::error("pkb", "StatementNum out of range.");
+            throw pkb::exception::PkbException("pkb::eval", "StatementNum out of range.");
 
         return this->follows[fst - 1]->after.count(snd) > 0;
     }
@@ -310,9 +310,9 @@ namespace pkb
     std::unordered_set<s_ast::StatementNum> ProgramKB::getFollowsTList(s_ast::StatementNum fst, s_ast::StatementNum snd)
     {
         if(fst > this->follows.size() || snd > this->follows.size() || fst < 0 || snd < 0)
-            util::error("pkb", "StatementNum out of range.");
+            throw pkb::exception::PkbException("pkb::eval", "StatementNum out of range.");
         if((fst < 1 && snd < 1) || (fst != 0 && snd != 0))
-            util::error("pkb", "Only 1 wildcard is to be used.");
+            throw pkb::exception::PkbException("pkb::eval", "Only 1 wildcard is to be used.");
 
         if(fst == 0)
         {
