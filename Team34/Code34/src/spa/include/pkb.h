@@ -135,9 +135,6 @@ namespace pkb
 
     struct ProgramKB
     {
-        std::vector<simple::ast::Stmt*> while_statements;
-        std::vector<simple::ast::Stmt*> if_statements;
-
         CallGraph proc_calls;
 
         UsesModifies uses_modifies;

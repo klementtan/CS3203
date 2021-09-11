@@ -40,7 +40,6 @@ namespace pkb
 
         if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt); i)
         {
-            pkb->if_statements.push_back(stmt);
             collectStmtList(pkb, &i->true_case);
             collectStmtList(pkb, &i->false_case);
             i->true_case.parent_statement = stmt;
@@ -48,7 +47,6 @@ namespace pkb
         }
         else if(auto w = dynamic_cast<s_ast::WhileLoop*>(stmt); w)
         {
-            pkb->while_statements.push_back(stmt);
             collectStmtList(pkb, &w->body);
             w->body.parent_statement = stmt;
         }
@@ -549,6 +547,14 @@ namespace pkb
                         ->modifies.insert(tmp->modifies.begin(), tmp->modifies.end());
                     pkb->uses_modifies.statements.at(stmt->id - 1)->uses.insert(tmp->uses.begin(), tmp->uses.end());
                 }
+                for(auto& var : pkb->uses_modifies.statements.at(i->id - 1)->uses)
+                {
+                    pkb->uses_modifies.variables.at(var).used_by.insert(i);
+                }
+                for(auto& var : pkb->uses_modifies.statements.at(i->id - 1)->modifies)
+                {
+                    pkb->uses_modifies.variables.at(var).modified_by.insert(i);
+                }
             }
             else if(auto w = dynamic_cast<s_ast::WhileLoop*>(stmt))
             {
@@ -560,6 +566,14 @@ namespace pkb
                     pkb->uses_modifies.statements.at(stmt->id - 1)
                         ->modifies.insert(tmp->modifies.begin(), tmp->modifies.end());
                     pkb->uses_modifies.statements.at(stmt->id - 1)->uses.insert(tmp->uses.begin(), tmp->uses.end());
+                }
+                for(auto& var : pkb->uses_modifies.statements.at(w->id - 1)->uses)
+                {
+                    pkb->uses_modifies.variables.at(var).used_by.insert(w);
+                }
+                for(auto& var : pkb->uses_modifies.statements.at(w->id - 1)->modifies)
+                {
+                    pkb->uses_modifies.variables.at(var).modified_by.insert(w);
                 }
             }
             else if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt))
@@ -660,6 +674,20 @@ namespace pkb
                         uses.insert(std::to_string(stmt->id));
                 }
                 break;
+            case pql::ast::DESIGN_ENT::IF:
+                for(auto& stmt : stmt_list)
+                {
+                    if(dynamic_cast<s_ast::IfStmt*>(stmt))
+                        uses.insert(std::to_string(stmt->id));
+                }
+                break;
+            case pql::ast::DESIGN_ENT::WHILE:
+                for(auto& stmt : stmt_list)
+                {
+                    if(dynamic_cast<s_ast::WhileLoop*>(stmt))
+                        uses.insert(std::to_string(stmt->id));
+                }
+                break;
             case pql::ast::DESIGN_ENT::PROCEDURE:
                 for(auto& proc : this->variables.at(var).used_by_procs)
                     uses.insert(proc->name);
@@ -749,6 +777,20 @@ namespace pkb
                 for(auto& stmt : stmt_list)
                 {
                     if(dynamic_cast<s_ast::ProcCall*>(stmt))
+                        modifies.insert(std::to_string(stmt->id));
+                }
+                break;
+            case pql::ast::DESIGN_ENT::IF:
+                for(auto& stmt : stmt_list)
+                {
+                    if(dynamic_cast<s_ast::IfStmt*>(stmt))
+                        modifies.insert(std::to_string(stmt->id));
+                }
+                break;
+            case pql::ast::DESIGN_ENT::WHILE:
+                for(auto& stmt : stmt_list)
+                {
+                    if(dynamic_cast<s_ast::WhileLoop*>(stmt))
                         modifies.insert(std::to_string(stmt->id));
                 }
                 break;
