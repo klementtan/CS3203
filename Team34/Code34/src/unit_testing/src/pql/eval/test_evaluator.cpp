@@ -214,7 +214,7 @@ TEST_CASE("Follows* clause")
         auto query = pql::parser::parsePQL("stmt a;\n"
                                            "Select a such that Follows* (_,a)");
         auto eval = new pql::eval::Evaluator(pkb, query);
-        auto result = eval -> evaluate();
+        auto result = eval->evaluate();
         auto result_s = std::unordered_set<std::string>(result.begin(), result.end());
         REQUIRE(result_s.size() == 2);
         REQUIRE(result_s.count("2"));
@@ -236,7 +236,7 @@ TEST_CASE("Follows* clause")
         auto query = pql::parser::parsePQL("stmt a;\n"
                                            "Select a such that Follows* (_,_)");
         auto eval = new pql::eval::Evaluator(pkb, query);
-        auto result = eval -> evaluate();
+        auto result = eval->evaluate();
         auto result_s = std::unordered_set<std::string>(result.begin(), result.end());
         REQUIRE(result_s.size() == 3);
         REQUIRE(result_s.count("1"));
@@ -258,7 +258,7 @@ TEST_CASE("Follows* clause")
         auto query = pql::parser::parsePQL("stmt a;\n"
                                            "Select a such that Follows* (1,a)");
         auto eval = new pql::eval::Evaluator(pkb, query);
-        auto result = eval -> evaluate();
+        auto result = eval->evaluate();
         auto result_s = std::unordered_set<std::string>(result.begin(), result.end());
         REQUIRE(result_s.size() == 2);
         REQUIRE(result_s.count("2"));
@@ -281,7 +281,7 @@ TEST_CASE("Follows* clause")
         auto query = pql::parser::parsePQL("stmt a;\n"
                                            "Select a such that Follows* (a,3)");
         auto eval = new pql::eval::Evaluator(pkb, query);
-        auto result = eval -> evaluate();
+        auto result = eval->evaluate();
         auto result_s = std::unordered_set<std::string>(result.begin(), result.end());
         REQUIRE(result_s.size() == 2);
         REQUIRE(result_s.count("1"));
@@ -303,7 +303,7 @@ TEST_CASE("Follows* clause")
         auto query = pql::parser::parsePQL("stmt a, b;\n"
                                            "Select b such that Follows* (a,b)");
         auto eval = new pql::eval::Evaluator(pkb, query);
-        auto result = eval -> evaluate();
+        auto result = eval->evaluate();
         auto result_s = std::unordered_set<std::string>(result.begin(), result.end());
         REQUIRE(result_s.size() == 2);
         REQUIRE(result_s.count("2"));
