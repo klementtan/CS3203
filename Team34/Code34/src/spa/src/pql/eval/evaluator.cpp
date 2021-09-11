@@ -469,7 +469,67 @@ namespace pql::eval
             }
         }
     }
-    void Evaluator::handleUsesP(const ast::UsesP* uses_p) { }
+
+    void Evaluator::handleUsesP(const ast::UsesP* rel)
+    {
+        assert(rel);
+        auto user_name = dynamic_cast<ast::EntName*>(rel->user);
+        auto user_decl = dynamic_cast<ast::DeclaredEnt*>(rel->user);
+        auto user_all  = dynamic_cast<ast::AllEnt*>(rel->user);
+        auto ent_name = dynamic_cast<ast::EntName*>(rel->ent);
+        auto ent_decl = dynamic_cast<ast::DeclaredEnt*>(rel->ent);
+        auto ent_all  = dynamic_cast<ast::AllEnt*>(rel->ent);
+
+        // this should not happen, since Uses(_, foo) is invalid according to the specs
+        if(user_all)
+            throw PqlException("pql::eval", "first argument of Uses cannot be '_'");
+
+        if(user_name && ent_name)
+        {
+            util::log("pql::eval", "Processing UsesP(EntName, EntName)");
+            if(!m_pkb->isUses(user_name->name, ent_name->name))
+                throw PqlException("pql::eval", "{} is always false", rel->toString(), ent_name->name);
+        }
+        else if(user_name && ent_decl)
+        {
+            util::log("pql::eval", "Processing UsesP(EntName, DeclaredStmt)");
+            auto used_vars = m_pkb->getUsesVars(user_name);
+            if(used_vars.empty())
+                throw PqlException("pql::eval", "{} is always false; {} doesn't use any variables", rel->toString());
+
+            std::unordered_set<table::Entry> new_domain { };
+            auto old_domain = m_table->getDomain(ent_decl->declaration);
+
+            for(const auto& var : used_vars)
+                new_domain.insert(table::Entry(ent_decl->declaration, var));
+
+            m_table->upsertDomains(ent_decl->declaration, table::entry_set_intersect(old_domain, new_domain));
+        }
+        else if(user_name && ent_all)
+        {
+            util::log("pql::eval", "Processing UsesP(EntName, _)");
+            auto used_vars = m_pkb->getUsesVars(user_name);
+            if(used_vars.empty())
+                throw PqlException("pql::eval", "{} is always false; {} doesn't use any variables", rel->toString());
+
+            // success.
+        }
+
+        else if(user_decl && ent_name)
+        {
+        }
+        else if(user_decl && ent_decl)
+        {
+        }
+        else if(user_decl && ent_all)
+        {
+        }
+        else
+        {
+            throw PqlException("pql::eval", "unreachable");
+        }
+    }
+
     void Evaluator::handleUsesS(const ast::UsesS* uses_p) { }
 
     void Evaluator::handleModifiesP(const ast::ModifiesP* modifies_p)
