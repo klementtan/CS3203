@@ -1,5 +1,8 @@
-#include <cassert>
+// pkb.cpp
+
 #include <queue>
+#include <cassert>
+#include <algorithm>
 
 #include <zpr.h>
 #include <zst.h>
@@ -308,7 +311,7 @@ namespace pkb
     // Takes in two 1-indexed StatementNums. Allows for 0 to be used as a wildcard on 1 of the parameters.
     std::unordered_set<s_ast::StatementNum> ProgramKB::getFollowsTList(s_ast::StatementNum fst, s_ast::StatementNum snd)
     {
-        if(fst > this->follows.size() || snd > this->follows.size() || fst < 0 || snd < 0)
+        if(fst > this->follows.size() || snd > this->follows.size())
             util::error("pkb", "StatementNum out of range.");
         if((fst < 1 && snd < 1) || (fst != 0 && snd != 0))
             util::error("pkb", "Only 1 wildcard is to be used.");
@@ -438,7 +441,7 @@ namespace pkb
 
             pkb->uses_modifies.statements[parent_stmt->id - 1]->uses.insert(vr->name);
         }
-        else if(auto cc = dynamic_cast<s_ast::Constant*>(expr))
+        else if(dynamic_cast<s_ast::Constant*>(expr))
         {
             // do nothing
         }
@@ -634,41 +637,33 @@ namespace pkb
             case pql::ast::DESIGN_ENT::ASSIGN:
                 for(auto& stmt : stmt_list)
                 {
-                    if(auto a = dynamic_cast<s_ast::AssignStmt*>(stmt))
-                    {
+                    if(dynamic_cast<s_ast::AssignStmt*>(stmt))
                         uses.insert(std::to_string(stmt->id));
-                    }
                 }
                 break;
             case pql::ast::DESIGN_ENT::PRINT:
                 for(auto& stmt : stmt_list)
                 {
-                    if(auto pn = dynamic_cast<s_ast::PrintStmt*>(stmt))
-                    {
+                    if(dynamic_cast<s_ast::PrintStmt*>(stmt))
                         uses.insert(std::to_string(stmt->id));
-                    }
                 }
                 break;
             case pql::ast::DESIGN_ENT::STMT:
                 for(auto& stmt : stmt_list)
-                {
                     uses.insert(std::to_string(stmt->id));
-                }
+
                 break;
             case pql::ast::DESIGN_ENT::CALL:
                 for(auto& stmt : stmt_list)
                 {
-                    if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt))
-                    {
+                    if(dynamic_cast<s_ast::ProcCall*>(stmt))
                         uses.insert(std::to_string(stmt->id));
-                    }
                 }
                 break;
             case pql::ast::DESIGN_ENT::PROCEDURE:
                 for(auto& proc : this->variables.at(var).used_by_procs)
-                {
                     uses.insert(proc->name);
-                }
+
                 break;
             default:
                 return ErrFmt("Invalid statement type.");
@@ -736,19 +731,15 @@ namespace pkb
             case pql::ast::DESIGN_ENT::ASSIGN:
                 for(auto& stmt : stmt_list)
                 {
-                    if(auto a = dynamic_cast<s_ast::AssignStmt*>(stmt))
-                    {
+                    if(dynamic_cast<s_ast::AssignStmt*>(stmt))
                         modifies.insert(std::to_string(stmt->id));
-                    }
                 }
                 break;
             case pql::ast::DESIGN_ENT::READ:
                 for(auto& stmt : stmt_list)
                 {
-                    if(auto r = dynamic_cast<s_ast::ReadStmt*>(stmt))
-                    {
+                    if(dynamic_cast<s_ast::ReadStmt*>(stmt))
                         modifies.insert(std::to_string(stmt->id));
-                    }
                 }
                 break;
             case pql::ast::DESIGN_ENT::STMT:
@@ -760,17 +751,14 @@ namespace pkb
             case pql::ast::DESIGN_ENT::CALL:
                 for(auto& stmt : stmt_list)
                 {
-                    if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt))
-                    {
+                    if(dynamic_cast<s_ast::ProcCall*>(stmt))
                         modifies.insert(std::to_string(stmt->id));
-                    }
                 }
                 break;
             case pql::ast::DESIGN_ENT::PROCEDURE:
                 for(auto& proc : this->variables.at(var).modified_by_procs)
-                {
                     modifies.insert(proc->name);
-                }
+
                 break;
             default:
                 return ErrFmt("Invalid statement type.");

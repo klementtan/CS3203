@@ -5,3 +5,4 @@ reformat.sh
 Makefile
 objs/
 out.xml
+*.ps1
