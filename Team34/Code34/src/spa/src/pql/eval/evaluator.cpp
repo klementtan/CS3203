@@ -472,6 +472,8 @@ namespace pql::eval
 
     void Evaluator::handleUsesP(const ast::UsesP* rel)
     {
+        using PqlException = pql::exception::PqlException;
+
         assert(rel);
         auto user_name = dynamic_cast<ast::EntName*>(rel->user);
         auto user_decl = dynamic_cast<ast::DeclaredEnt*>(rel->user);
@@ -487,13 +489,15 @@ namespace pql::eval
         if(user_name && ent_name)
         {
             util::log("pql::eval", "Processing UsesP(EntName, EntName)");
-            if(!m_pkb->isUses(user_name->name, ent_name->name))
+            if(!m_pkb->uses_modifies.isUses(user_name->name, ent_name->name))
                 throw PqlException("pql::eval", "{} is always false", rel->toString(), ent_name->name);
+
+            return;
         }
         else if(user_name && ent_decl)
         {
             util::log("pql::eval", "Processing UsesP(EntName, DeclaredStmt)");
-            auto used_vars = m_pkb->getUsesVars(user_name);
+            auto used_vars = m_pkb->uses_modifies.getUsesVars(user_name->name);
             if(used_vars.empty())
                 throw PqlException("pql::eval", "{} is always false; {} doesn't use any variables", rel->toString());
 
@@ -504,15 +508,17 @@ namespace pql::eval
                 new_domain.insert(table::Entry(ent_decl->declaration, var));
 
             m_table->upsertDomains(ent_decl->declaration, table::entry_set_intersect(old_domain, new_domain));
+            return;
         }
         else if(user_name && ent_all)
         {
             util::log("pql::eval", "Processing UsesP(EntName, _)");
-            auto used_vars = m_pkb->getUsesVars(user_name);
+            auto used_vars = m_pkb->uses_modifies.getUsesVars(user_name->name);
             if(used_vars.empty())
                 throw PqlException("pql::eval", "{} is always false; {} doesn't use any variables", rel->toString());
 
             // success.
+            return;
         }
 
         else if(user_decl && ent_name)
@@ -524,10 +530,8 @@ namespace pql::eval
         else if(user_decl && ent_all)
         {
         }
-        else
-        {
-            throw PqlException("pql::eval", "unreachable");
-        }
+
+        throw PqlException("pql::eval", "unreachable");
     }
 
     void Evaluator::handleUsesS(const ast::UsesS* uses_p) { }
