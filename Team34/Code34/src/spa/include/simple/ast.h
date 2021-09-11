@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include <zst.h>
 #include <vector>
 #include <string>
 
@@ -20,7 +21,7 @@ namespace simple::ast
 
         Stmt* parent_statement = nullptr;
 
-        std::string toString(int nesting) const;
+        std::string toString(int nesting, bool compact = false) const;
     };
 
     struct Expr
@@ -32,7 +33,7 @@ namespace simple::ast
     struct Stmt
     {
         virtual ~Stmt();
-        virtual std::string toString(int nesting) const = 0;
+        virtual std::string toString(int nesting, bool compact = false) const = 0;
 
         StmtList* parent_list = 0;
         StatementNum id = 0;
@@ -59,6 +60,9 @@ namespace simple::ast
 
         // TODO: make this an enumeration
         std::string op;
+
+        static bool isRelational(zst::str_view op);
+        static bool isConditional(zst::str_view op);
     };
 
     struct UnaryOp : Expr
@@ -71,7 +75,7 @@ namespace simple::ast
 
     struct IfStmt : Stmt
     {
-        virtual std::string toString(int nesting) const override;
+        virtual std::string toString(int nesting, bool compact = false) const override;
 
         Expr* condition = 0;
 
@@ -81,14 +85,14 @@ namespace simple::ast
 
     struct ProcCall : Stmt
     {
-        virtual std::string toString(int nesting) const override;
+        virtual std::string toString(int nesting, bool compact = false) const override;
 
         std::string proc_name;
     };
 
     struct WhileLoop : Stmt
     {
-        virtual std::string toString(int nesting) const override;
+        virtual std::string toString(int nesting, bool compact = false) const override;
 
         Expr* condition = 0;
         StmtList body;
@@ -96,7 +100,7 @@ namespace simple::ast
 
     struct AssignStmt : Stmt
     {
-        virtual std::string toString(int nesting) const override;
+        virtual std::string toString(int nesting, bool compact = false) const override;
 
         std::string lhs;
         Expr* rhs = 0;
@@ -104,28 +108,28 @@ namespace simple::ast
 
     struct ReadStmt : Stmt
     {
-        virtual std::string toString(int nesting) const override;
+        virtual std::string toString(int nesting, bool compact = false) const override;
 
         std::string var_name;
     };
 
     struct PrintStmt : Stmt
     {
-        virtual std::string toString(int nesting) const override;
+        virtual std::string toString(int nesting, bool compact = false) const override;
 
         std::string var_name;
     };
 
     struct Procedure
     {
-        std::string toString() const;
+        std::string toString(bool compact = false) const;
         std::string name;
         StmtList body;
     };
 
     struct Program
     {
-        std::string toString() const;
+        std::string toString(bool compact = false) const;
         std::string toProgFormat() const;
         std::vector<Procedure*> procedures;
     };

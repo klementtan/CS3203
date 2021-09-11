@@ -48,6 +48,7 @@ namespace pql::ast
 
         std::string name;
         DESIGN_ENT design_ent;
+        bool operator==(const Declaration& other) const;
     };
 
     /** Abstract class for Statement Reference. */
@@ -262,4 +263,20 @@ namespace pql::ast
         DeclarationList* declarations = nullptr;
         std::string toString() const;
     };
-} // pqlast
+} // pql::ast
+
+namespace std
+{
+    template <>
+    struct hash<pql::ast::Declaration>
+    {
+        size_t operator()(pql::ast::Declaration& d) const
+        {
+            // http://stackoverflow.com/a/1646913/126995
+            size_t res = 17;
+            res = res * 31 + std::hash<std::string>()(d.name);
+            res = res * 31 + std::hash<pql::ast::DESIGN_ENT>()(d.design_ent);
+            return res;
+        }
+    };
+}

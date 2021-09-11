@@ -67,7 +67,9 @@ namespace pql::parser
                 "pql::parser", "expected variable name to be an identifier but received {} instead.", var.text);
         }
         util::log("pql::parser", "Adding declaration {} to declaration list", var.text);
-        declaration_list->declarations[var.text.str()] = new pql::ast::Declaration { var.text.str(), ent };
+        auto declaration = new pql::ast::Declaration { var.text.str(), ent };
+        util::log("pql::parser", "Adding {} to declaration list", declaration->toString());
+        declaration_list->declarations[var.text.str()] = declaration;
     }
 
     // Process the next tokens as the start of an entity declaration and insert declarations into declaration_list
@@ -336,6 +338,7 @@ namespace pql::parser
             throw pql::exception::PqlException(
                 "pql::parser", "Expected ')' at the end of 'Follows' instead of {}", tok.text);
         }
+        util::log("pql::parser", "Parsed: {}", follows->toString());
 
         return follows;
     }
@@ -564,7 +567,7 @@ namespace pql::parser
         {
             throw pql::exception::PqlException("pql::parser", "Such That clause should start with 'such that'");
         }
-        util::log("pql::parser", "Parsing such that clause");
+        util::log("pql::parser", "Parsing such that clause. Remaining {}", ps->stream);
         auto* such_that = new ast::SuchThatCl {};
 
         // TODO(iteration 2): Handle AND condition here
@@ -624,6 +627,7 @@ namespace pql::parser
 
     pql::ast::Query* parsePQL(zst::str_view input)
     {
+        util::log("pql::parer", "Parsing input {}", input);
         auto ps = ParserState { input };
         auto query = new pql::ast::Query();
         auto declaration_list = new pql::ast::DeclarationList();
