@@ -29,8 +29,8 @@ TEST_CASE("DeclarationList")
         { "bar", declaration2 } };
     pql::ast::DeclarationList* declaration_list = new pql::ast::DeclarationList { declarations };
     require(declaration_list->toString() == "DeclarationList[\n"
-                                            "\tname:foo, declaration:Declaration(ent:assign, name:foo)\n"
                                             "\tname:bar, declaration:Declaration(ent:procedure, name:bar)\n"
+                                            "\tname:foo, declaration:Declaration(ent:assign, name:foo)\n"
                                             "]");
 }
 
@@ -343,7 +343,7 @@ TEST_CASE("Query")
 
     /** Initialize pattern*/
     pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, true, "x+y" };
-    pql::ast::Declaration* declaration3 = new pql::ast::Declaration { "buz", pql::ast::DESIGN_ENT::ASSIGN };
+    pql::ast::Declaration* declaration3 = new pql::ast::Declaration { "buzz", pql::ast::DESIGN_ENT::ASSIGN };
     pql::ast::DeclaredEnt declared_ent2;
     declared_ent2.declaration = declaration3;
     pql::ast::EntRef* ent2 = &declared_ent2;
@@ -362,16 +362,19 @@ TEST_CASE("Query")
 
     pql::ast::Query query { &select, &declaration_list };
     INFO(query.toString());
-    require(query.toString() == "Query(select:Select(such_that:SuchThatCl[\n"
+
+    constexpr auto expected = "Query(select:Select(such_that:SuchThatCl[\n"
                                 "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:"
                                 "bar)), ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))\n"
                                 "], pattern:PatternCl[\n"
-                                "\tPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:buz)), "
-                                "assignment_declaration:Declaration(ent:assign, name:buz), expr_spec:ExprSpec"
+                                "\tPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:buzz)), "
+                                "assignment_declaration:Declaration(ent:assign, name:buzz), expr_spec:ExprSpec"
                                 "(any_before:true, any_after:true, expr:x+y))\n"
                                 "], ent:Declaration(ent:assign, name:foo)), declarations:DeclarationList[\n"
-                                "\tname:foo, declaration:Declaration(ent:assign, name:foo)\n"
                                 "\tname:bar, declaration:Declaration(ent:assign, name:bar)\n"
-                                "\tname:buzz, declaration:Declaration(ent:assign, name:buz)\n"
-                                "])");
+                                "\tname:buzz, declaration:Declaration(ent:assign, name:buzz)\n"
+                                "\tname:foo, declaration:Declaration(ent:assign, name:foo)\n"
+                                "])";
+
+    require(query.toString() == expected);
 }
