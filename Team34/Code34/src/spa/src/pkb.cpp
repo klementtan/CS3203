@@ -9,6 +9,7 @@
 
 #include "simple/ast.h"
 #include "pkb.h"
+#include "pkb/exception.h"
 #include "util.h"
 
 namespace pkb
@@ -577,58 +578,55 @@ namespace pkb
         }
     }
 
-    zst::Result<bool, std::string> UsesModifies::isUses(
-        const simple::ast::StatementNum& stmt_num, const std::string& var)
+    bool UsesModifies::isUses(const simple::ast::StatementNum& stmt_num, const std::string& var)
     {
         if(this->variables.find(var) == this->variables.end() || stmt_num > this->statements.size())
         {
-            return ErrFmt("Invalid query parameters.");
+            throw pkb::exception::PkbException("pkb::eval", "Invalid query parameters.");
         }
         auto& stmt = this->statements.at(stmt_num - 1);
         if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt->stmt))
         {
-            return Ok(this->procedures[c->proc_name].uses.count(var) > 0);
+            return this->procedures[c->proc_name].uses.count(var) > 0;
         }
         else
         {
-            return Ok(stmt->uses.count(var) > 0);
+            return stmt->uses.count(var) > 0;
         }
     }
 
-    zst::Result<bool, std::string> UsesModifies::isUses(const std::string& proc, const std::string& var)
+    bool UsesModifies::isUses(const std::string& proc, const std::string& var)
     {
         if(this->variables.find(var) == this->variables.end() || this->procedures.find(proc) == this->procedures.end())
         {
-            return ErrFmt("Invalid query parameters.");
+            throw pkb::exception::PkbException("pkb::eval", "Invalid query parameters.");
         }
-        return Ok(this->procedures.at(proc).uses.count(var) > 0);
+        return this->procedures.at(proc).uses.count(var) > 0;
     }
 
-    zst::Result<std::unordered_set<std::string>, std::string> UsesModifies::getUsesVars(
-        const simple::ast::StatementNum& stmt_num)
+    std::unordered_set<std::string> UsesModifies::getUsesVars(const simple::ast::StatementNum& stmt_num)
     {
         if(stmt_num > this->statements.size())
         {
-            return ErrFmt("Invalid statement number.");
+            throw pkb::exception::PkbException("pkb::eval", "Invalid statement number.");
         }
-        return Ok(this->statements.at(stmt_num - 1)->uses);
+        return this->statements.at(stmt_num - 1)->uses;
     }
 
-    zst::Result<std::unordered_set<std::string>, std::string> UsesModifies::getUsesVars(const std::string& var)
+    std::unordered_set<std::string> UsesModifies::getUsesVars(const std::string& var)
     {
         if(this->procedures.find(var) == this->procedures.end())
         {
-            util::error("pkb", "Procedure not found.");
+            throw pkb::exception::PkbException("pkb::eval", "Procedure not found.");
         }
-        return Ok(this->procedures.at(var).uses);
+        return this->procedures.at(var).uses;
     }
 
-    zst::Result<std::unordered_set<std::string>, std::string> UsesModifies::getUses(
-        const pql::ast::DESIGN_ENT& type, const std::string& var)
+    std::unordered_set<std::string> UsesModifies::getUses(const pql::ast::DESIGN_ENT& type, const std::string& var)
     {
         if(this->variables.find(var) == this->variables.end())
         {
-            util::error("pkb", "Variable not found.");
+            throw pkb::exception::PkbException("pkb::eval", "Variable not found.");
         }
         std::unordered_set<std::string> uses;
         auto& stmt_list = this->variables.at(var).used_by;
@@ -666,63 +664,60 @@ namespace pkb
 
                 break;
             default:
-                return ErrFmt("Invalid statement type.");
+                throw pkb::exception::PkbException("pkb::eval", "Invalid statement type.");
         }
-        return Ok(uses);
+        return uses;
     }
 
-    zst::Result<bool, std::string> UsesModifies::isModifies(
-        const simple::ast::StatementNum& stmt_num, const std::string& var)
+    bool UsesModifies::isModifies(const simple::ast::StatementNum& stmt_num, const std::string& var)
     {
         if(this->variables.find(var) == this->variables.end() || stmt_num > this->statements.size())
         {
-            return ErrFmt("Invalid query parameters.");
+            throw pkb::exception::PkbException("pkb::eval", "Invalid query parameters.");
         }
         auto& stmt = this->statements.at(stmt_num - 1);
         if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt->stmt))
         {
-            return Ok(this->procedures[c->proc_name].modifies.count(var) > 0);
+            return this->procedures[c->proc_name].modifies.count(var) > 0;
         }
         else
         {
-            return Ok(stmt->modifies.count(var) > 0);
+            return stmt->modifies.count(var) > 0;
         }
     }
 
-    zst::Result<bool, std::string> UsesModifies::isModifies(const std::string& proc, const std::string& var)
+    bool UsesModifies::isModifies(const std::string& proc, const std::string& var)
     {
         if(this->variables.find(var) == this->variables.end() || this->procedures.find(proc) == this->procedures.end())
         {
-            return ErrFmt("Invalid query parameters.");
+            throw pkb::exception::PkbException("pkb::eval", "Invalid query parameters.");
         }
-        return Ok(this->procedures.at(proc).modifies.count(var) > 0);
+        return this->procedures.at(proc).modifies.count(var) > 0;
     }
 
-    zst::Result<std::unordered_set<std::string>, std::string> UsesModifies::getModifiesVars(
-        const simple::ast::StatementNum& stmt_num)
+    std::unordered_set<std::string> UsesModifies::getModifiesVars(const simple::ast::StatementNum& stmt_num)
     {
         if(stmt_num > this->statements.size())
         {
-            return ErrFmt("Invalid statement number.");
+            throw pkb::exception::PkbException("pkb::eval", "Invalid statement number.");
         }
-        return Ok(this->statements.at(stmt_num - 1)->modifies);
+        return this->statements.at(stmt_num - 1)->modifies;
     }
 
-    zst::Result<std::unordered_set<std::string>, std::string> UsesModifies::getModifiesVars(const std::string& var)
+    std::unordered_set<std::string> UsesModifies::getModifiesVars(const std::string& var)
     {
         if(this->procedures.find(var) == this->procedures.end())
         {
-            util::error("pkb", "Procedure not found.");
+            throw pkb::exception::PkbException("pkb::eval", "Procedure not found.");
         }
-        return Ok(this->procedures.at(var).modifies);
+        return this->procedures.at(var).modifies;
     }
 
-    zst::Result<std::unordered_set<std::string>, std::string> UsesModifies::getModifies(
-        const pql::ast::DESIGN_ENT& type, const std::string& var)
+    std::unordered_set<std::string> UsesModifies::getModifies(const pql::ast::DESIGN_ENT& type, const std::string& var)
     {
         if(this->variables.find(var) == this->variables.end())
         {
-            util::error("pkb", "Variable not found.");
+            throw pkb::exception::PkbException("pkb::eval", "Variable not found.");
         }
         std::unordered_set<std::string> modifies;
         auto& stmt_list = this->variables.at(var).modified_by;
@@ -761,9 +756,9 @@ namespace pkb
 
                 break;
             default:
-                return ErrFmt("Invalid statement type.");
+                throw pkb::exception::PkbException("pkb::eval", "Invalid statement type.");
         }
-        return Ok(modifies);
+        return modifies;
     }
     // End of Uses and Modifies Methods
 
