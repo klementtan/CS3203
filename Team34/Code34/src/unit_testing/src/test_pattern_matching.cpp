@@ -47,7 +47,11 @@ TEST_CASE("pattern matching on trees")
 {
     auto prog = parseProgram(sample_source).unwrap();
     auto kb = processProgram(prog).unwrap();
-    auto stmts = kb->statements;
+    std::vector<Stmt*> stmts {};
+    {
+        for(const auto& s : kb->uses_modifies.statements)
+            stmts.push_back(s->stmt);
+    }
 
     std::vector<Expr*> trees;
     for(int i = 3; i < 6; i++)
