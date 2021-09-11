@@ -50,17 +50,14 @@ namespace pql::ast
         // for the sake of testing (since toString() is really only used in testing), we
         // need a consistent ordering of all these unordered_maps...
         std::vector<std::pair<std::string, const Declaration*>> decls;
-        for(const auto& [ name, decl ] : this->declarations)
+        for(const auto& [name, decl] : this->declarations)
             decls.emplace_back(name, decl);
 
-        std::sort(decls.begin(), decls.end(), [](auto& a, auto& b) -> bool {
-            return a.first < b.first;
-        });
+        std::sort(decls.begin(), decls.end(), [](auto& a, auto& b) -> bool { return a.first < b.first; });
 
-        for(const auto& [ name, decl ] : decls)
+        for(const auto& [name, decl] : decls)
         {
-            ret += zpr::sprint("\tname:{}, declaration:{}\n", name,
-                decl ? decl->toString() : "nullptr");
+            ret += zpr::sprint("\tname:{}, declaration:{}\n", name, decl ? decl->toString() : "nullptr");
         }
         ret += "]";
         return ret;

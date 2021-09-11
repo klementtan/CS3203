@@ -364,17 +364,17 @@ TEST_CASE("Query")
     INFO(query.toString());
 
     constexpr auto expected = "Query(select:Select(such_that:SuchThatCl[\n"
-                                "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:"
-                                "bar)), ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))\n"
-                                "], pattern:PatternCl[\n"
-                                "\tPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:buzz)), "
-                                "assignment_declaration:Declaration(ent:assign, name:buzz), expr_spec:ExprSpec"
-                                "(any_before:true, any_after:true, expr:x+y))\n"
-                                "], ent:Declaration(ent:assign, name:foo)), declarations:DeclarationList[\n"
-                                "\tname:bar, declaration:Declaration(ent:assign, name:bar)\n"
-                                "\tname:buzz, declaration:Declaration(ent:assign, name:buzz)\n"
-                                "\tname:foo, declaration:Declaration(ent:assign, name:foo)\n"
-                                "])";
+                              "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:"
+                              "bar)), ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))\n"
+                              "], pattern:PatternCl[\n"
+                              "\tPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:buzz)), "
+                              "assignment_declaration:Declaration(ent:assign, name:buzz), expr_spec:ExprSpec"
+                              "(any_before:true, any_after:true, expr:x+y))\n"
+                              "], ent:Declaration(ent:assign, name:foo)), declarations:DeclarationList[\n"
+                              "\tname:bar, declaration:Declaration(ent:assign, name:bar)\n"
+                              "\tname:buzz, declaration:Declaration(ent:assign, name:buzz)\n"
+                              "\tname:foo, declaration:Declaration(ent:assign, name:foo)\n"
+                              "])";
 
     require(query.toString() == expected);
 }
