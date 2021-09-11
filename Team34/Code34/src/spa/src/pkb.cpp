@@ -312,7 +312,8 @@ namespace pkb
     // Takes in two 1-indexed StatementNums. Allows for 0 to be used as a wildcard on 1 of the parameters.
     std::unordered_set<s_ast::StatementNum> ProgramKB::getFollowsTList(s_ast::StatementNum fst, s_ast::StatementNum snd)
     {
-        if(fst > this->follows.size() || snd > this->follows.size() || fst < 0 || snd < 0)
+        // note: no need to check for < 0 since StatementNum is unsigned
+        if(fst > this->follows.size() || snd > this->follows.size())
             throw pkb::exception::PkbException("pkb::eval", "StatementNum out of range.");
 
         if((fst < 1 && snd < 1) || (fst != 0 && snd != 0))
