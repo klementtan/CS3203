@@ -187,42 +187,42 @@ namespace zst
 		{
 			using value_type = CharType;
 
-			str_view() : ptr(nullptr), len(0) { }
-			str_view(const value_type* p, size_t l) : ptr(p), len(l) { }
+			constexpr str_view() : ptr(nullptr), len(0) { }
+			constexpr str_view(const value_type* p, size_t l) : ptr(p), len(l) { }
 
 			template <size_t N>
-			str_view(const value_type (&s)[N]) : ptr(s), len(N - 1) { }
+			constexpr str_view(const value_type (&s)[N]) : ptr(s), len(N - 1) { }
 
 			template <typename T, typename = typename detail::enable_if<
 				detail::is_same<char, value_type>::value &&
 				detail::is_same<const char*, T>::value
 			>::type>
-			str_view(T s) : ptr(s), len(strlen(s)) { }
+			constexpr str_view(T s) : ptr(s), len(strlen(s)) { }
 
-			str_view(str_view&&) = default;
-			str_view(const str_view&) = default;
-			str_view& operator= (str_view&&) = default;
-			str_view& operator= (const str_view&) = default;
+			constexpr str_view(str_view&&) = default;
+			constexpr str_view(const str_view&) = default;
+			constexpr str_view& operator= (str_view&&) = default;
+			constexpr str_view& operator= (const str_view&) = default;
 
-			inline bool operator== (const str_view& other) const
+			constexpr inline bool operator== (const str_view& other) const
 			{
 				return (this->len == other.len) &&
 					(this->ptr == other.ptr || (memcmp(this->ptr, other.ptr, detail::min(this->len, other.len)) == 0)
 				);
 			}
 
-			inline bool operator!= (const str_view& other) const
+			constexpr inline bool operator!= (const str_view& other) const
 			{
 				return !(*this == other);
 			}
 
-			inline const value_type* begin() const { return this->ptr; }
-			inline const value_type* end() const { return this->ptr + len; }
+			constexpr inline const value_type* begin() const { return this->ptr; }
+			constexpr inline const value_type* end() const { return this->ptr + len; }
 
-			inline size_t length() const { return this->len; }
-			inline size_t size() const { return this->len; }
-			inline bool empty() const { return this->len == 0; }
-			inline const value_type* data() const { return this->ptr; }
+			constexpr inline size_t length() const { return this->len; }
+			constexpr inline size_t size() const { return this->len; }
+			constexpr inline bool empty() const { return this->len == 0; }
+			constexpr inline const value_type* data() const { return this->ptr; }
 
 			inline str_view<uint8_t> bytes() const { return str_view<uint8_t>(reinterpret_cast<const uint8_t*>(this->ptr), this->len); }
 
@@ -394,7 +394,25 @@ namespace zst
 			inline bool operator== (const std::basic_string<C>& other, str_view<C> sv) { return sv == str_view<C>(other); }
 
 			template <typename C>
+			inline bool operator== (str_view<C> sv, const std::basic_string<C>& other) { return sv == str_view<C>(other); }
+
+			template <typename C>
+			inline bool operator== (const std::basic_string_view<C>& other, str_view<C> sv) { return sv == str_view<C>(other); }
+
+			template <typename C>
+			inline bool operator== (str_view<C> sv, const std::basic_string_view<C>& other) { return sv == str_view<C>(other); }
+
+			template <typename C>
+			inline bool operator!= (const std::basic_string<C>& other, str_view<C> sv) { return sv != str_view<C>(other); }
+
+			template <typename C>
+			inline bool operator!= (str_view<C> sv, const std::basic_string<C>& other) { return sv != str_view<C>(other); }
+
+			template <typename C>
 			inline bool operator!= (std::basic_string_view<C> other, str_view<C> sv) { return sv != str_view<C>(other); }
+
+			template <typename C>
+			inline bool operator!= (str_view<C> sv, std::basic_string_view<C> other) { return sv != str_view<C>(other); }
 		#endif // ZST_USE_STD
 
 		template <typename C> inline const C* begin(const str_view<C>& sv) { return sv.begin(); }
