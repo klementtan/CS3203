@@ -32,8 +32,10 @@ namespace pql::eval::table
                 break;
             case ast::DESIGN_ENT::PROCEDURE:
                 this->m_type = EntryType::kProc;
+                break;
             case ast::DESIGN_ENT::CONSTANT:
                 this->m_type = EntryType::kConst;
+                break;
             default:
                 throw exception::PqlException(
                     "pql::eval::table::Entry", "Entry for {} should be instantiated using stmt num instead of string");
