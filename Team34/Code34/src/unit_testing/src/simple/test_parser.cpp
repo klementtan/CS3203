@@ -247,7 +247,7 @@ TEST_CASE("statement parsing -- assignments")
         TEST_PROG_OK(BEGIN "if = 1;" END, BEGIN "if = 1;" END);
         TEST_PROG_OK(BEGIN "then = 1;" END, BEGIN "then = 1;" END);
         TEST_PROG_OK(BEGIN "else = 1;" END, BEGIN "else = 1;" END);
-        TEST_PROG_OK(BEGIN "call = 1;" END, BEGIN "call = 1" END);
+        TEST_PROG_OK(BEGIN "call = 1;" END, BEGIN "call = 1;" END);
         TEST_PROG_OK(BEGIN "read = 1;" END, BEGIN "read = 1;" END);
         TEST_PROG_OK(BEGIN "print = 1;" END, BEGIN "print = 1;" END);
         TEST_PROG_OK(BEGIN "while = 1;" END, BEGIN "while = 1;" END);
@@ -256,9 +256,9 @@ TEST_CASE("statement parsing -- assignments")
         TEST_PROG_OK(BEGIN "if = then;" END, BEGIN "if = then;" END);
         TEST_PROG_OK(BEGIN "then = else;" END, BEGIN "then = else;" END);
         TEST_PROG_OK(BEGIN "else = call;" END, BEGIN "else = call;" END);
-        TEST_PROG_OK(BEGIN "call = read;" END, BEGIN "call = read" END);
+        TEST_PROG_OK(BEGIN "call = read;" END, BEGIN "call = read;" END);
         TEST_PROG_OK(BEGIN "read = print;" END, BEGIN "read = print;" END);
-        TEST_PROG_OK(BEGIN "print = dwhile;" END, BEGIN "print = 1;" END);
+        TEST_PROG_OK(BEGIN "print = while;" END, BEGIN "print = while;" END);
         TEST_PROG_OK(BEGIN "while = procedure;" END, BEGIN "while = procedure;" END);
         TEST_PROG_OK(BEGIN "procedure = if;" END, BEGIN "procedure = if;" END);
     }
