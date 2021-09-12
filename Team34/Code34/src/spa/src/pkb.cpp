@@ -305,7 +305,7 @@ namespace pkb
     Follows* ProgramKB::getFollows(simple::ast::StatementNum fst)
     {
         if(fst > this->follows.size() || fst < 1)
-            util::error("pkb", "StatementNum out of range.");
+            throw pkb::exception::PkbException("pkb::eval", "StatementNum out of range.");
         return this->follows[fst - 1];
     }
 
@@ -606,8 +606,8 @@ namespace pkb
         {
             if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt))
             {
-                reprocessStmtList(pkb, &i->true_case, NULL);
-                reprocessStmtList(pkb, &i->false_case, NULL);
+                reprocessStmtList(pkb, &i->true_case, proc);
+                reprocessStmtList(pkb, &i->false_case, proc);
 
                 for(const auto& child_stmt : i->true_case.statements)
                 {
@@ -634,7 +634,7 @@ namespace pkb
             }
             else if(auto w = dynamic_cast<s_ast::WhileLoop*>(stmt))
             {
-                reprocessStmtList(pkb, &w->body, NULL);
+                reprocessStmtList(pkb, &w->body, proc);
 
                 for(const auto& child_stmt : w->body.statements)
                 {
@@ -663,14 +663,14 @@ namespace pkb
                 for(auto& var : pkb->uses_modifies.procedures.at(c->proc_name).uses)
                 {
                     pkb->uses_modifies.variables.at(var).used_by.insert(c);
+                    pkb->uses_modifies.variables.at(var).used_by_procs.insert(proc);
                 }
                 for(auto& var : pkb->uses_modifies.procedures.at(c->proc_name).modifies)
                 {
                     pkb->uses_modifies.variables.at(var).modified_by.insert(c);
+                    pkb->uses_modifies.variables.at(var).modified_by_procs.insert(proc);
                 }
-            }
-            if(proc != NULL)
-            {
+
                 auto& stmt_rs = pkb->uses_modifies.statements.at(stmt->id - 1);
                 pkb->uses_modifies.procedures.at(proc->name).uses.insert(stmt_rs->uses.begin(), stmt_rs->uses.end());
                 pkb->uses_modifies.procedures.at(proc->name)
@@ -776,7 +776,6 @@ namespace pkb
             case pql::ast::DESIGN_ENT::PROCEDURE:
                 for(auto& proc : this->variables.at(var).used_by_procs)
                     uses.insert(proc->name);
-
                 break;
             default:
                 throw pkb::exception::PkbException("pkb::eval", "Invalid statement type.");
