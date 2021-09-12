@@ -1,3 +1,4 @@
+// evaluator.cpp
 
 #include <algorithm>
 #include "pql/eval/evaluator.h"
@@ -470,119 +471,6 @@ namespace pql::eval
         }
     }
 
-    void Evaluator::handleUsesP(const ast::UsesP* rel)
-    {
-        using PqlException = pql::exception::PqlException;
-
-        assert(rel);
-        auto proc_name = dynamic_cast<ast::EntName*>(rel->user);
-        auto proc_decl = dynamic_cast<ast::DeclaredEnt*>(rel->user);
-        auto proc_all = dynamic_cast<ast::AllEnt*>(rel->user);
-        auto var_name = dynamic_cast<ast::EntName*>(rel->ent);
-        auto var_decl = dynamic_cast<ast::DeclaredEnt*>(rel->ent);
-        auto var_all = dynamic_cast<ast::AllEnt*>(rel->ent);
-
-        // this should not happen, since Uses(_, foo) is invalid according to the specs
-        if(proc_all)
-            throw PqlException("pql::eval", "first argument of Uses cannot be '_'");
-
-        if(proc_decl && proc_decl->declaration->design_ent != ast::DESIGN_ENT::PROCEDURE)
-            throw PqlException("pql::eval", "entity for first argument of Uses must be a procedure");
-
-        if(var_decl && var_decl->declaration->design_ent != ast::DESIGN_ENT::VARIABLE)
-            throw PqlException("pql::eval", "entity for second argument of Uses must be a variable");
-
-
-        if(proc_name && var_name)
-        {
-            util::log("pql::eval", "Processing UsesP(EntName, EntName)");
-            if(!m_pkb->uses_modifies.isUses(proc_name->name, var_name->name))
-                throw PqlException("pql::eval", "{} is always false", rel->toString(), var_name->name);
-        }
-        else if(proc_name && var_decl)
-        {
-            util::log("pql::eval", "Processing UsesP(EntName, DeclaredStmt)");
-            auto used_vars = m_pkb->uses_modifies.getUsesVars(proc_name->name);
-            if(used_vars.empty())
-                throw PqlException("pql::eval", "{} is always false; {} doesn't use any variables", rel->toString());
-
-            std::unordered_set<table::Entry> new_domain {};
-
-            for(const auto& var : used_vars)
-                new_domain.insert(table::Entry(var_decl->declaration, var));
-
-            auto old_domain = m_table->getDomain(var_decl->declaration);
-            m_table->upsertDomains(var_decl->declaration, table::entry_set_intersect(old_domain, new_domain));
-        }
-        else if(proc_name && var_all)
-        {
-            util::log("pql::eval", "Processing UsesP(EntName, _)");
-            auto used_vars = m_pkb->uses_modifies.getUsesVars(proc_name->name);
-            if(used_vars.empty())
-                throw PqlException("pql::eval", "{} is always false; {} doesn't use any variables", rel->toString());
-        }
-
-        else if(proc_decl && var_name)
-        {
-            util::log("pql::eval", "Processing UsesP(DeclaredStmt, EntName)");
-
-            auto procs_using = m_pkb->uses_modifies.getUses(ast::DESIGN_ENT::PROCEDURE, var_name->name);
-            if(procs_using.empty())
-                throw PqlException(
-                    "pql::eval", "{} is always false; {} no procedure uses '{}'", rel->toString(), var_name->name);
-
-            std::unordered_set<table::Entry> new_domain {};
-            for(const auto& proc_name : procs_using)
-                new_domain.insert(table::Entry(proc_decl->declaration, proc_name));
-
-            auto old_domain = m_table->getDomain(proc_decl->declaration);
-            m_table->upsertDomains(proc_decl->declaration, table::entry_set_intersect(old_domain, new_domain));
-        }
-        else if(proc_decl && var_decl)
-        {
-            util::log("pql::eval", "Processing UsesP(DeclaredStmt, DeclaredStmt)");
-            for(const auto& entry : m_table->getDomain(proc_decl->declaration))
-            {
-                auto proc_used_vars = m_pkb->uses_modifies.getUsesVars(entry.getVal());
-                if(proc_used_vars.empty())
-                    continue;
-
-                auto proc_entry = table::Entry(proc_decl->declaration, entry.getVal());
-                for(const auto& var_name : proc_used_vars)
-                {
-                    auto var_entry = table::Entry(var_decl->declaration, var_name);
-                    util::log("pql::eval", "{} adds Join({}, {}),", rel->toString(), proc_entry.toString(),
-                        var_entry.toString());
-
-                    m_table->addJoin(proc_entry, var_entry);
-                }
-            }
-        }
-        else if(proc_decl && var_all)
-        {
-            util::log("pql::eval", "Processing UsesP(DeclaredStmt, _)");
-            std::unordered_set<table::Entry> new_domain {};
-
-            for(const auto& entry : m_table->getDomain(proc_decl->declaration))
-            {
-                auto proc_used_vars = m_pkb->uses_modifies.getUsesVars(entry.getVal());
-                if(proc_used_vars.empty())
-                    continue;
-
-                new_domain.insert(entry);
-            }
-
-            m_table->upsertDomains(proc_decl->declaration,
-                table::entry_set_intersect(new_domain, m_table->getDomain(proc_decl->declaration)));
-        }
-        else
-        {
-            throw PqlException("pql::eval", "unreachable");
-        }
-    }
-
-    void Evaluator::handleUsesS(const ast::UsesS* uses_p) { }
-
     void Evaluator::handleModifiesP(const ast::ModifiesP* modifies_p)
     {
         assert(modifies_p);
@@ -743,7 +631,7 @@ namespace pql::eval
             {
                 std::unordered_set<std::string> ent_names =
                     this->m_pkb->uses_modifies.getModifiesVars(entry.getStmtNum());
-                for(std::string ent_name : ent_names)
+                for(const auto& ent_name : ent_names)
                 {
                     table::Entry mod_entry = table::Entry(mod_declared->declaration, entry.getStmtNum());
                     table::Entry ent_entry = table::Entry(ent_declared->declaration, ent_name);
@@ -769,7 +657,7 @@ namespace pql::eval
             {
                 std::unordered_set<table::Entry> curr_domain;
                 std::unordered_set<table::Entry> prev_domain = m_table->getDomain(mod_declared->declaration);
-                for(std::string stmt_num_str : modifier_candidates)
+                for(const auto& stmt_num_str : modifier_candidates)
                 {
                     simple::ast::StatementNum stmt_num = atoi(stmt_num_str.c_str());
                     auto entry = table::Entry(mod_declared->declaration, stmt_num);
