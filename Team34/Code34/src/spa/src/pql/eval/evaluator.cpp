@@ -727,6 +727,4 @@ namespace pql::eval
             }
         }
     }
-    void Evaluator::handleParent(const ast::Parent* parent) { }
-    void Evaluator::handleParentT(const ast::ParentT* parent_t) { }
 }
