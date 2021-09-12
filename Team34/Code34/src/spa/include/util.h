@@ -9,11 +9,13 @@
 #include <string>
 
 #include <zpr.h>
-
+#include "simple/ast.h"
 
 // misc stuff
 namespace util
 {
+    namespace s_ast = simple::ast;
+
     static constexpr const char* LOG_OUTPUT_FILE = "debug.log";
 
     std::string readEntireFile(const char* path);
@@ -41,4 +43,7 @@ namespace util
 
         exit(1);
     }
+
+    bool exactMatch(s_ast::Expr*, s_ast::Expr*);
+    bool partialMatch(s_ast::Expr*, s_ast::Expr*);
 }

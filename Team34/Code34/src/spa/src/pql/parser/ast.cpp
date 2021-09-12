@@ -1,5 +1,7 @@
 // pqlast.cpp
 
+#include <algorithm>
+
 #include <zpr.h>
 #include <zst.h>
 
@@ -45,10 +47,17 @@ namespace pql::ast
     {
         std::string ret { "DeclarationList[\n" };
 
-        for(const auto& name_declaration : this->declarations)
+        // for the sake of testing (since toString() is really only used in testing), we
+        // need a consistent ordering of all these unordered_maps...
+        std::vector<std::pair<std::string, const Declaration*>> decls;
+        for(const auto& [name, decl] : this->declarations)
+            decls.emplace_back(name, decl);
+
+        std::sort(decls.begin(), decls.end(), [](auto& a, auto& b) -> bool { return a.first < b.first; });
+
+        for(const auto& [name, decl] : decls)
         {
-            ret += zpr::sprint("\tname:{}, declaration:{}\n", name_declaration.first,
-                name_declaration.second ? name_declaration.second->toString() : "nullptr");
+            ret += zpr::sprint("\tname:{}, declaration:{}\n", name, decl ? decl->toString() : "nullptr");
         }
         ret += "]";
         return ret;
@@ -154,8 +163,8 @@ namespace pql::ast
 
     std::string ExprSpec::toString() const
     {
-        return zpr::sprint(
-            "ExprSpec(any_before:{}, any_after:{}, expr:{})", this->any_before, this->any_after, this->expr);
+        return zpr::sprint("ExprSpec(any_before:{}, any_after:{}, expr:{})", this->any_before, this->any_after,
+            this->expr ? this->expr->toString() : "nullptr");
     }
 
     std::string AssignPatternCond::toString() const

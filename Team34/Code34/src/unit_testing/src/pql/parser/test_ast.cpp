@@ -6,6 +6,7 @@
 #include "catch.hpp"
 
 #include "pql/parser/ast.h"
+#include "simple/ast.h"
 #include <iostream>
 #include <unordered_map>
 #include "util.h"
@@ -18,7 +19,7 @@ static void require(bool b)
 TEST_CASE("Declaration")
 {
     pql::ast::Declaration* declaration = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
-    require(declaration->toString() == "Declaration(ent:assign, name:foo)");
+    REQUIRE(declaration->toString() == "Declaration(ent:assign, name:foo)");
 }
 
 TEST_CASE("DeclarationList")
@@ -28,9 +29,9 @@ TEST_CASE("DeclarationList")
     std::unordered_map<std::string, pql::ast::Declaration*> declarations = { { "foo", declaration1 },
         { "bar", declaration2 } };
     pql::ast::DeclarationList* declaration_list = new pql::ast::DeclarationList { declarations };
-    require(declaration_list->toString() == "DeclarationList[\n"
-                                            "\tname:foo, declaration:Declaration(ent:assign, name:foo)\n"
+    REQUIRE(declaration_list->toString() == "DeclarationList[\n"
                                             "\tname:bar, declaration:Declaration(ent:procedure, name:bar)\n"
+                                            "\tname:foo, declaration:Declaration(ent:assign, name:foo)\n"
                                             "]");
 }
 
@@ -40,7 +41,7 @@ TEST_CASE("DeclaredStmt")
     pql::ast::DeclaredStmt delcared_stmt;
     delcared_stmt.declaration = declaration;
     pql::ast::StmtRef* stmt = &delcared_stmt;
-    require(stmt->toString() == "DeclaredStmt(declaration: Declaration(ent:assign, name:foo))");
+    REQUIRE(stmt->toString() == "DeclaredStmt(declaration: Declaration(ent:assign, name:foo))");
 }
 
 TEST_CASE("StmtId")
@@ -48,14 +49,14 @@ TEST_CASE("StmtId")
     pql::ast::StmtId stmt_id;
     stmt_id.id = 1;
     pql::ast::StmtRef* stmt = &stmt_id;
-    require(stmt->toString() == "StmtId(id:1)");
+    REQUIRE(stmt->toString() == "StmtId(id:1)");
 }
 
 TEST_CASE("AllStmt")
 {
     pql::ast::AllStmt all_stmt;
     pql::ast::StmtRef* stmt = &all_stmt;
-    require(stmt->toString() == "AllStmt(name: _)");
+    REQUIRE(stmt->toString() == "AllStmt(name: _)");
 }
 
 TEST_CASE("DeclaredEnt")
@@ -64,7 +65,7 @@ TEST_CASE("DeclaredEnt")
     pql::ast::DeclaredEnt declared_ent;
     declared_ent.declaration = declaration;
     pql::ast::EntRef* ent = &declared_ent;
-    require(ent->toString() == "DeclaredEnt(declaration:Declaration(ent:assign, name:foo))");
+    REQUIRE(ent->toString() == "DeclaredEnt(declaration:Declaration(ent:assign, name:foo))");
 }
 
 TEST_CASE("EntName")
@@ -72,7 +73,7 @@ TEST_CASE("EntName")
     pql::ast::EntName ent_name;
     ent_name.name = "foo";
     pql::ast::EntRef* ent = &ent_name;
-    require(ent->toString() == "EntName(name:foo)");
+    REQUIRE(ent->toString() == "EntName(name:foo)");
 }
 
 TEST_CASE("AllEnt")
@@ -80,7 +81,7 @@ TEST_CASE("AllEnt")
     pql::ast::AllEnt all_ent;
     pql::ast::EntRef* ent = &all_ent;
     INFO(ent->toString());
-    require(ent->toString() == "AllEnt(name: _)");
+    REQUIRE(ent->toString() == "AllEnt(name: _)");
 }
 
 TEST_CASE("ModifiesS")
@@ -102,7 +103,7 @@ TEST_CASE("ModifiesS")
     relationship.ent = ent;
     relationship.modifier = stmt;
     INFO(relationship.toString())
-    require(relationship.toString() ==
+    REQUIRE(relationship.toString() ==
             "ModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:bar)),"
             " ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))");
 }
@@ -126,7 +127,7 @@ TEST_CASE("UsesS")
     relationship.ent = ent;
     relationship.user = stmt;
     INFO(relationship.toString());
-    require(relationship.toString() == "UsesS(user: DeclaredStmt(declaration: Declaration(ent:assign, name:bar)), "
+    REQUIRE(relationship.toString() == "UsesS(user: DeclaredStmt(declaration: Declaration(ent:assign, name:bar)), "
                                        "ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))");
 }
 
@@ -149,7 +150,7 @@ TEST_CASE("Parent")
     relationship.parent = stmt1;
     relationship.child = stmt2;
     INFO(relationship.toString());
-    require(relationship.toString() == "Parent(parent:DeclaredStmt(declaration: Declaration(ent:assign, name:foo)),"
+    REQUIRE(relationship.toString() == "Parent(parent:DeclaredStmt(declaration: Declaration(ent:assign, name:foo)),"
                                        " child:DeclaredStmt(declaration: Declaration(ent:assign, name:bar)))");
 }
 
@@ -172,7 +173,7 @@ TEST_CASE("ParentT")
     relationship.ancestor = stmt1;
     relationship.descendant = stmt2;
     INFO(relationship.toString());
-    require(relationship.toString() == "ParentT(ancestor:DeclaredStmt(declaration: Declaration(ent:assign, name:foo)), "
+    REQUIRE(relationship.toString() == "ParentT(ancestor:DeclaredStmt(declaration: Declaration(ent:assign, name:foo)), "
                                        "descendant:DeclaredStmt(declaration: Declaration(ent:assign, name:bar)))");
 }
 
@@ -195,7 +196,7 @@ TEST_CASE("Follows")
     relationship.directly_before = stmt1;
     relationship.directly_after = stmt2;
     INFO(relationship.toString());
-    require(relationship.toString() == "Follows(directly_before:DeclaredStmt(declaration: Declaration(ent:assign, "
+    REQUIRE(relationship.toString() == "Follows(directly_before:DeclaredStmt(declaration: Declaration(ent:assign, "
                                        "name:foo)), directly_after:DeclaredStmt(declaration: Declaration(ent:assign, "
                                        "name:bar)))");
 }
@@ -219,20 +220,36 @@ TEST_CASE("FollowsT")
     relationship.before = stmt1;
     relationship.after = stmt2;
     INFO(relationship.toString());
-    require(relationship.toString() == "FollowsT(before:DeclaredStmt(declaration: Declaration(ent:assign, name:foo)), "
+    REQUIRE(relationship.toString() == "FollowsT(before:DeclaredStmt(declaration: Declaration(ent:assign, name:foo)), "
                                        "afterDeclaredStmt(declaration: Declaration(ent:assign, name:bar)))");
 }
 
 TEST_CASE("ExprSpec")
 {
-    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, true, "x+y" };
+    simple::ast::BinaryOp* expr = new simple::ast::BinaryOp {};
+    simple::ast::VarRef* lhs = new simple::ast::VarRef {};
+    lhs->name = "x";
+    simple::ast::VarRef* rhs = new simple::ast::VarRef {};
+    rhs->name = "y";
+    expr->lhs = lhs;
+    expr->rhs = rhs;
+    expr->op = "+";
+    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, true, expr };
 
-    require(expr_spec->toString() == "ExprSpec(any_before:true, any_after:true, expr:x+y)");
+    REQUIRE(expr_spec->toString() == "ExprSpec(any_before:true, any_after:true, expr:(x + y))");
 }
 
 TEST_CASE("PatternCl")
 {
-    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, true, "x+y" };
+    simple::ast::BinaryOp* expr = new simple::ast::BinaryOp {};
+    simple::ast::VarRef* lhs = new simple::ast::VarRef {};
+    lhs->name = "x";
+    simple::ast::VarRef* rhs = new simple::ast::VarRef {};
+    rhs->name = "y";
+    expr->lhs = lhs;
+    expr->rhs = rhs;
+    expr->op = "+";
+    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, true, expr };
 
     pql::ast::Declaration* declaration = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
     pql::ast::DeclaredEnt declared_ent;
@@ -245,10 +262,10 @@ TEST_CASE("PatternCl")
     assign_pattern_cond->expr_spec = expr_spec;
     pql::ast::PatternCl* pattern_cl = new pql::ast::PatternCl { { assign_pattern_cond } };
     INFO(pattern_cl->toString());
-    require(pattern_cl->toString() == "PatternCl[\n"
+    REQUIRE(pattern_cl->toString() == "PatternCl[\n"
                                       "\tPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)), "
                                       "assignment_declaration:Declaration(ent:assign, name:foo), expr_spec:ExprSpec"
-                                      "(any_before:true, any_after:true, expr:x+y))\n"
+                                      "(any_before:true, any_after:true, expr:(x + y)))\n"
                                       "]");
 }
 
@@ -273,7 +290,7 @@ TEST_CASE("SuchThat")
 
     pql::ast::SuchThatCl such_that_cl = { { &relationship } };
     INFO(such_that_cl.toString());
-    require(such_that_cl.toString() == "SuchThatCl[\n"
+    REQUIRE(such_that_cl.toString() == "SuchThatCl[\n"
                                        "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:"
                                        "bar)), ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))\n"
                                        "]");
@@ -299,7 +316,15 @@ TEST_CASE("Select")
     pql::ast::SuchThatCl* such_that_cl = new pql::ast::SuchThatCl { { &relationship } };
 
     /** Initialize pattern*/
-    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, true, "x+y" };
+    simple::ast::BinaryOp* expr = new simple::ast::BinaryOp {};
+    simple::ast::VarRef* lhs = new simple::ast::VarRef {};
+    lhs->name = "x";
+    simple::ast::VarRef* rhs = new simple::ast::VarRef {};
+    rhs->name = "y";
+    expr->lhs = lhs;
+    expr->rhs = rhs;
+    expr->op = "+";
+    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, true, expr };
     pql::ast::Declaration* declaration3 = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
     pql::ast::DeclaredEnt declared_ent2;
     declared_ent2.declaration = declaration3;
@@ -312,13 +337,13 @@ TEST_CASE("Select")
 
     pql::ast::Select select { such_that_cl, pattern_cl, declaration1 };
     INFO(select.toString());
-    require(select.toString() == "Select(such_that:SuchThatCl[\n"
+    REQUIRE(select.toString() == "Select(such_that:SuchThatCl[\n"
                                  "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:"
                                  "bar)), ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))\n"
                                  "], pattern:PatternCl[\n"
                                  "\tPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)), "
                                  "assignment_declaration:Declaration(ent:assign, name:foo), expr_spec:ExprSpec"
-                                 "(any_before:true, any_after:true, expr:x+y))\n"
+                                 "(any_before:true, any_after:true, expr:(x + y)))\n"
                                  "], ent:Declaration(ent:assign, name:foo))");
 }
 
@@ -342,8 +367,16 @@ TEST_CASE("Query")
     pql::ast::SuchThatCl* such_that_cl = new pql::ast::SuchThatCl { { &relationship } };
 
     /** Initialize pattern*/
-    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, true, "x+y" };
-    pql::ast::Declaration* declaration3 = new pql::ast::Declaration { "buz", pql::ast::DESIGN_ENT::ASSIGN };
+    simple::ast::BinaryOp* expr = new simple::ast::BinaryOp {};
+    simple::ast::VarRef* lhs = new simple::ast::VarRef {};
+    lhs->name = "x";
+    simple::ast::VarRef* rhs = new simple::ast::VarRef {};
+    rhs->name = "y";
+    expr->lhs = lhs;
+    expr->rhs = rhs;
+    expr->op = "+";
+    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, true, expr };
+    pql::ast::Declaration* declaration3 = new pql::ast::Declaration { "buzz", pql::ast::DESIGN_ENT::ASSIGN };
     pql::ast::DeclaredEnt declared_ent2;
     declared_ent2.declaration = declaration3;
     pql::ast::EntRef* ent2 = &declared_ent2;
@@ -362,16 +395,19 @@ TEST_CASE("Query")
 
     pql::ast::Query query { &select, &declaration_list };
     INFO(query.toString());
-    require(query.toString() == "Query(select:Select(such_that:SuchThatCl[\n"
-                                "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:"
-                                "bar)), ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))\n"
-                                "], pattern:PatternCl[\n"
-                                "\tPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:buz)), "
-                                "assignment_declaration:Declaration(ent:assign, name:buz), expr_spec:ExprSpec"
-                                "(any_before:true, any_after:true, expr:x+y))\n"
-                                "], ent:Declaration(ent:assign, name:foo)), declarations:DeclarationList[\n"
-                                "\tname:foo, declaration:Declaration(ent:assign, name:foo)\n"
-                                "\tname:bar, declaration:Declaration(ent:assign, name:bar)\n"
-                                "\tname:buzz, declaration:Declaration(ent:assign, name:buz)\n"
-                                "])");
+
+    constexpr auto expected = "Query(select:Select(such_that:SuchThatCl[\n"
+                              "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:"
+                              "bar)), ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))\n"
+                              "], pattern:PatternCl[\n"
+                              "\tPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:buzz)), "
+                              "assignment_declaration:Declaration(ent:assign, name:buzz), expr_spec:ExprSpec"
+                              "(any_before:true, any_after:true, expr:(x + y)))\n"
+                              "], ent:Declaration(ent:assign, name:foo)), declarations:DeclarationList[\n"
+                              "\tname:bar, declaration:Declaration(ent:assign, name:bar)\n"
+                              "\tname:buzz, declaration:Declaration(ent:assign, name:buzz)\n"
+                              "\tname:foo, declaration:Declaration(ent:assign, name:foo)\n"
+                              "])";
+
+    REQUIRE(query.toString() == expected);
 }
