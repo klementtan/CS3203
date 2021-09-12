@@ -405,7 +405,16 @@ namespace simple::parser
                 return Ok(ret);
         };
 
-        if(auto tok = ps->next(); tok == TT::Identifier && tok.text == KW_Read)
+        // this just needs 1 token of lookahead; if the next token is a '=', then
+        // this is an assignment, and the identifier on the left is a variable -- even
+        // if it's a keyword.
+        auto tok = ps->next();
+        auto match_keyword_if_not_assign = [&ps](const Token& tok, const auto& keyword) -> bool {
+            return (tok == TT::Identifier && ps->peek() != TT::Equal && tok.text == keyword);
+        };
+
+
+        if(match_keyword_if_not_assign(tok, KW_Read))
         {
             auto read = new ReadStmt();
             if(auto name = ps->next(); name != TT::Identifier)
@@ -415,7 +424,7 @@ namespace simple::parser
 
             return check_semicolon(ps, read);
         }
-        else if(tok == TT::Identifier && tok.text == KW_Print)
+        else if(match_keyword_if_not_assign(tok, KW_Print))
         {
             auto print = new PrintStmt();
             if(auto name = ps->next(); name != TT::Identifier)
@@ -425,7 +434,7 @@ namespace simple::parser
 
             return check_semicolon(ps, print);
         }
-        else if(tok == TT::Identifier && tok.text == KW_Call)
+        else if(match_keyword_if_not_assign(tok, KW_Call))
         {
             auto call = new ProcCall();
             if(auto name = ps->next(); name != TT::Identifier)
@@ -435,11 +444,11 @@ namespace simple::parser
 
             return check_semicolon(ps, call);
         }
-        else if(tok == TT::Identifier && tok.text == KW_If)
+        else if(match_keyword_if_not_assign(tok, KW_If))
         {
             return parseIfStmt(ps);
         }
-        else if(tok == TT::Identifier && tok.text == KW_While)
+        else if(match_keyword_if_not_assign(tok, KW_While))
         {
             return parseWhileLoop(ps);
         }
