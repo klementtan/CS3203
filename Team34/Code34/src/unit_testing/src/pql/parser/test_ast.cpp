@@ -11,11 +11,6 @@
 #include <unordered_map>
 #include "util.h"
 
-static void require(bool b)
-{
-    REQUIRE(b);
-}
-
 TEST_CASE("Declaration")
 {
     pql::ast::Declaration* declaration = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
@@ -234,9 +229,9 @@ TEST_CASE("ExprSpec")
     expr->lhs = lhs;
     expr->rhs = rhs;
     expr->op = "+";
-    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, true, expr };
+    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, expr };
 
-    REQUIRE(expr_spec->toString() == "ExprSpec(any_before:true, any_after:true, expr:(x + y))");
+    REQUIRE(expr_spec->toString() == "ExprSpec(is_subexpr:true, expr:(x + y))");
 }
 
 TEST_CASE("PatternCl")
@@ -249,7 +244,7 @@ TEST_CASE("PatternCl")
     expr->lhs = lhs;
     expr->rhs = rhs;
     expr->op = "+";
-    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, true, expr };
+    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, expr };
 
     pql::ast::Declaration* declaration = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
     pql::ast::DeclaredEnt declared_ent;
@@ -265,7 +260,7 @@ TEST_CASE("PatternCl")
     REQUIRE(pattern_cl->toString() == "PatternCl[\n"
                                       "\tPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)), "
                                       "assignment_declaration:Declaration(ent:assign, name:foo), expr_spec:ExprSpec"
-                                      "(any_before:true, any_after:true, expr:(x + y)))\n"
+                                      "(is_subexpr:true, expr:(x + y)))\n"
                                       "]");
 }
 
@@ -324,7 +319,7 @@ TEST_CASE("Select")
     expr->lhs = lhs;
     expr->rhs = rhs;
     expr->op = "+";
-    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, true, expr };
+    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, expr };
     pql::ast::Declaration* declaration3 = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
     pql::ast::DeclaredEnt declared_ent2;
     declared_ent2.declaration = declaration3;
@@ -343,7 +338,7 @@ TEST_CASE("Select")
                                  "], pattern:PatternCl[\n"
                                  "\tPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)), "
                                  "assignment_declaration:Declaration(ent:assign, name:foo), expr_spec:ExprSpec"
-                                 "(any_before:true, any_after:true, expr:(x + y)))\n"
+                                 "(is_subexpr:true, expr:(x + y)))\n"
                                  "], ent:Declaration(ent:assign, name:foo))");
 }
 
@@ -375,7 +370,7 @@ TEST_CASE("Query")
     expr->lhs = lhs;
     expr->rhs = rhs;
     expr->op = "+";
-    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, true, expr };
+    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, expr };
     pql::ast::Declaration* declaration3 = new pql::ast::Declaration { "buzz", pql::ast::DESIGN_ENT::ASSIGN };
     pql::ast::DeclaredEnt declared_ent2;
     declared_ent2.declaration = declaration3;
@@ -402,7 +397,7 @@ TEST_CASE("Query")
                               "], pattern:PatternCl[\n"
                               "\tPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:buzz)), "
                               "assignment_declaration:Declaration(ent:assign, name:buzz), expr_spec:ExprSpec"
-                              "(any_before:true, any_after:true, expr:(x + y)))\n"
+                              "(is_subexpr:true, expr:(x + y)))\n"
                               "], ent:Declaration(ent:assign, name:foo)), declarations:DeclarationList[\n"
                               "\tname:bar, declaration:Declaration(ent:assign, name:bar)\n"
                               "\tname:buzz, declaration:Declaration(ent:assign, name:buzz)\n"

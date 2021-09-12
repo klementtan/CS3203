@@ -17,7 +17,7 @@ namespace pql::parser
         RParen,
 
         Asterisk,
-        Undersocre,
+        Underscore,
         Semicolon,
         DoubleQuotes,
         Comma,

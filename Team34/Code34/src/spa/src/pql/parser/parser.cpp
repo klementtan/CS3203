@@ -116,7 +116,7 @@ namespace pql::parser
     pql::ast::EntRef* parse_ent_ref(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         Token tok = ps->next();
-        if(tok.type == TT::Undersocre)
+        if(tok.type == TT::Underscore)
         {
             return new ast::AllEnt {};
         }
@@ -157,7 +157,7 @@ namespace pql::parser
     pql::ast::StmtRef* parse_stmt_ref(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         Token tok = ps->next();
-        if(tok.type == TT::Undersocre)
+        if(tok.type == TT::Underscore)
         {
             return new ast::AllStmt {};
         }
@@ -215,23 +215,23 @@ namespace pql::parser
     {
         auto* expr_spec = new ast::ExprSpec {};
 
-        if(ps->peek_one().type == TT::Undersocre)
+        bool is_subexpr = false;
+        if(ps->peek_one() == TT::Underscore)
         {
             ps->next();
-            expr_spec->any_before = true;
+            is_subexpr = true;
         }
 
-        if(ps->peek_one().type == TT::DoubleQuotes)
-        {
+        if(ps->peek_one() == TT::DoubleQuotes)
             expr_spec->expr = parse_expr(ps);
-        }
 
-        if(ps->peek_one().type == TT::Undersocre)
+        if(is_subexpr)
         {
-            ps->next();
-            expr_spec->any_after = true;
+            if(ps->next() != TT::Underscore)
+                throw pql::exception::PqlException("pql::parser", "expected '_' in subexpression pattern");
         }
 
+        expr_spec->is_subexpr = is_subexpr;
         return expr_spec;
     }
 
@@ -416,7 +416,7 @@ namespace pql::parser
             return true;
         }
 
-        if(tok.type == TT::Undersocre)
+        if(tok.type == TT::Underscore)
         {
             // All entity refs are statements
             return true;

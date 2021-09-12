@@ -107,8 +107,7 @@ TEST_CASE("Pattern Query")
     REQUIRE(assign_pattern_cond->assignment_declaration == a_declaration);
     REQUIRE(dynamic_cast<pql::ast::EntName*>(assign_pattern_cond->ent)->name == "normSq");
     pql::ast::ExprSpec* expr_spec = assign_pattern_cond->expr_spec;
-    REQUIRE(expr_spec->any_before == true);
-    REQUIRE(expr_spec->any_after == true);
+    REQUIRE(expr_spec->is_subexpr == true);
     auto* expr = dynamic_cast<simple::ast::BinaryOp*>(expr_spec->expr);
     REQUIRE(expr);
     REQUIRE(expr->op == "*");
