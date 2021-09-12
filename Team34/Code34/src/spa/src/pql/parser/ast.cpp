@@ -163,8 +163,8 @@ namespace pql::ast
 
     std::string ExprSpec::toString() const
     {
-        return zpr::sprint("ExprSpec(is_subexpr:{}, expr:{})", this->is_subexpr,
-            this->expr ? this->expr->toString() : "nullptr");
+        return zpr::sprint(
+            "ExprSpec(is_subexpr:{}, expr:{})", this->is_subexpr, this->expr ? this->expr->toString() : "nullptr");
     }
 
     std::string AssignPatternCond::toString() const
