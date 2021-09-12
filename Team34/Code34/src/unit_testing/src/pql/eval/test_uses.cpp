@@ -76,7 +76,8 @@ TEST_CASE("UsesP(Decl, Name)")
     auto result = eval.evaluate();
     std::unordered_set<std::string> result_s(result.begin(), result.end());
 
-    REQUIRE(result_s.size() == 2);
+    REQUIRE(result_s.size() == 3);
+    REQUIRE(result_s.count("main"));
     REQUIRE(result_s.count("printResults"));
     REQUIRE(result_s.count("computeCentroid"));
 }
