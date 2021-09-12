@@ -2,8 +2,11 @@
 
 #include "pql/parser/parser.h"
 #include "pql/exception.h"
+#include "simple/parser.h"
 #include <unordered_set>
 #include <util.h>
+#include <zpr.h>
+#include <zst.h>
 
 namespace pql::parser
 {
@@ -185,22 +188,27 @@ namespace pql::parser
     }
 
     // Extract out the expression between the double quotes in expression specification.
-    zst::str_view parse_expr(ParserState* ps)
+    simple::ast::Expr* parse_expr(ParserState* ps)
     {
         if(ps->next().type != TT::DoubleQuotes)
         {
             throw pql::exception::PqlException("pql::parser", "Expect expression to start with double quotes(\")");
         }
 
-        // TODO(#42): Build simple_parser::ast::Expr instead of str_view
-        zst::str_view expr = extractTillQuotes(ps->stream);
+        zst::str_view expr_str = extractTillQuotes(ps->stream);
 
         if(ps->next().type != TT::DoubleQuotes)
         {
             throw pql::exception::PqlException("pql::parser", "Expect expression to  with double quotes(\")");
         }
 
-        return expr;
+        zst::Result<simple::ast::Expr*, std::string> expr_result = simple::parser::parseExpression(expr_str);
+        if(!expr_result.ok())
+        {
+            throw pql::exception::PqlException("pql::parser", "Invalid expression provided: {}", expr_str);
+        }
+
+        return expr_result.unwrap();
     }
 
     pql::ast::ExprSpec* parse_expr_spec(ParserState* ps)
@@ -215,7 +223,7 @@ namespace pql::parser
 
         if(ps->peek_one().type == TT::DoubleQuotes)
         {
-            expr_spec->expr = parse_expr(ps).str();
+            expr_spec->expr = parse_expr(ps);
         }
 
         if(ps->peek_one().type == TT::Undersocre)

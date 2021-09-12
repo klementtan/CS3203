@@ -109,5 +109,13 @@ TEST_CASE("Pattern Query")
     pql::ast::ExprSpec* expr_spec = assign_pattern_cond->expr_spec;
     REQUIRE(expr_spec->any_before == true);
     REQUIRE(expr_spec->any_after == true);
-    REQUIRE(expr_spec->expr == "cenX * cenX");
+    auto* expr = dynamic_cast<simple::ast::BinaryOp*>(expr_spec->expr);
+    REQUIRE(expr);
+    REQUIRE(expr->op == "*");
+    auto* lhs = dynamic_cast<simple::ast::VarRef*>(expr->lhs);
+    REQUIRE(lhs);
+    REQUIRE(lhs->name == "cenX");
+    auto* rhs = dynamic_cast<simple::ast::VarRef*>(expr->rhs);
+    REQUIRE(rhs);
+    REQUIRE(rhs->name == "cenX");
 }
