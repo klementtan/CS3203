@@ -525,7 +525,7 @@ TEST_CASE("ModifiesP clause")
         REQUIRE(result_s.count("y"));
 
         // TODO(#73): Test transitive property through call statement
-        /**
+
         prog = simple::parser::parseProgram(in);
         pkb = pkb::processProgram(prog.unwrap()).unwrap();
 
@@ -534,7 +534,7 @@ TEST_CASE("ModifiesP clause")
         eval = new pql::eval::Evaluator(pkb, query);
         result = eval->evaluate();
         result_s = std::unordered_set<std::string>(result.begin(), result.end());
-        REQUIRE(result_s.size() == 6);
+        REQUIRE(result_s.size() == 7);
         REQUIRE(result_s.count("x"));
         REQUIRE(result_s.count("y"));
         REQUIRE(result_s.count("count"));
@@ -542,7 +542,6 @@ TEST_CASE("ModifiesP clause")
         REQUIRE(result_s.count("cenY"));
         REQUIRE(result_s.count("flag"));
         REQUIRE(result_s.count("normSq"));
-        */
     }
     SECTION("ModifiesP(EntName, AllEnt)")
     {

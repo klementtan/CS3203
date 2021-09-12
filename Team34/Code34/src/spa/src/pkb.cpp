@@ -303,7 +303,7 @@ namespace pkb
     Follows* ProgramKB::getFollows(simple::ast::StatementNum fst)
     {
         if(fst > this->follows.size() || fst < 1)
-            util::error("pkb", "StatementNum out of range.");
+            throw pkb::exception::PkbException("pkb::eval", "StatementNum out of range.");
         return this->follows[fst - 1];
     }
 
