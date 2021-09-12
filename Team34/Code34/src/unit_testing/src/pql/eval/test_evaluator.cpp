@@ -4,6 +4,7 @@
 
 #define CATCH_CONFIG_FAST_COMPILE
 #include "catch.hpp"
+#include <iostream>
 
 #include "pql/parser/parser.h"
 #include "pql/eval/evaluator.h"
@@ -308,5 +309,449 @@ TEST_CASE("Follows* clause")
         REQUIRE(result_s.size() == 2);
         REQUIRE(result_s.count("2"));
         REQUIRE(result_s.count("3"));
+    }
+}
+
+
+TEST_CASE("ModifiesP clause")
+{
+    SECTION("ModifiesP(DeclaredEnt, DeclaredEnt)")
+    {
+        constexpr const auto in = R"(
+            procedure main {
+              flag = 0;
+              call computeCentroid;
+              call printResults;
+            }
+            procedure readPoint {
+                read x;
+                read y;
+            }
+            procedure printResults {
+                print flag;
+                print cenX;
+                print cenY;
+                print normSq;
+            }
+            procedure computeCentroid {
+                count = 0;
+                cenX = 0;
+                cenY = 0;
+                call readPoint;
+                while ((x != 0) && (y != 0)) {
+                    count = count + 1;
+                    cenX = cenX + x;
+                    cenY = cenY + y;
+                    call readPoint;
+                }
+                if (count == 0) then {
+                    flag = 1;
+                } else {
+                    cenX = cenX / count;
+                    cenY = cenY / count;
+                }
+                normSq = cenX * cenX + cenY * cenY;
+            }
+        )";
+
+        auto prog = simple::parser::parseProgram(in);
+        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+
+        pql::ast::Query* query = pql::parser::parsePQL("procedure p;\n"
+                                                       "variable v;\n"
+                                                       "Select p such that Modifies (p,v)");
+        auto eval = new pql::eval::Evaluator(pkb, query);
+        std::list<std::string> result = eval->evaluate();
+        std::unordered_set<std::string> result_s(result.begin(), result.end());
+        REQUIRE(result_s.size() == 3);
+        REQUIRE(result_s.count("main"));
+        REQUIRE(result_s.count("readPoint"));
+        REQUIRE(result_s.count("computeCentroid"));
+    }
+    SECTION("ModifiesP(DeclaredEnt, DeclaredEnt)")
+    {
+        constexpr const auto in = R"(
+            procedure main {
+              flag = 0;
+              call computeCentroid;
+              call printResults;
+            }
+            procedure readPoint {
+                read x;
+                read y;
+            }
+            procedure printResults {
+                print flag;
+                print cenX;
+                print cenY;
+                print normSq;
+            }
+            procedure computeCentroid {
+                count = 0;
+                cenX = 0;
+                cenY = 0;
+                call readPoint;
+                while ((x != 0) && (y != 0)) {
+                    count = count + 1;
+                    cenX = cenX + x;
+                    cenY = cenY + y;
+                    call readPoint;
+                }
+                if (count == 0) then {
+                    flag = 1;
+                } else {
+                    cenX = cenX / count;
+                    cenY = cenY / count;
+                }
+                normSq = cenX * cenX + cenY * cenY;
+            }
+        )";
+
+        auto prog = simple::parser::parseProgram(in);
+        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+
+        pql::ast::Query* query = pql::parser::parsePQL("procedure p;\n"
+                                                       "Select p such that Modifies (p,\"flag\")");
+        auto eval = new pql::eval::Evaluator(pkb, query);
+        std::list<std::string> result = eval->evaluate();
+        std::unordered_set<std::string> result_s(result.begin(), result.end());
+        REQUIRE(result_s.size() == 2);
+        REQUIRE(result_s.count("main"));
+        REQUIRE(result_s.count("computeCentroid"));
+    }
+    SECTION("ModifiesP(DeclaredEnt, AllEnt)")
+    {
+        constexpr const auto in = R"(
+            procedure main {
+              flag = 0;
+              call computeCentroid;
+              call printResults;
+            }
+            procedure readPoint {
+                read x;
+                read y;
+            }
+            procedure printResults {
+                print flag;
+                print cenX;
+                print cenY;
+                print normSq;
+            }
+            procedure computeCentroid {
+                count = 0;
+                cenX = 0;
+                cenY = 0;
+                call readPoint;
+                while ((x != 0) && (y != 0)) {
+                    count = count + 1;
+                    cenX = cenX + x;
+                    cenY = cenY + y;
+                    call readPoint;
+                }
+                if (count == 0) then {
+                    flag = 1;
+                } else {
+                    cenX = cenX / count;
+                    cenY = cenY / count;
+                }
+                normSq = cenX * cenX + cenY * cenY;
+            }
+        )";
+
+        auto prog = simple::parser::parseProgram(in);
+        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+
+        // Follows(DeclaredStmt, AllStmt)
+        pql::ast::Query* query = pql::parser::parsePQL("procedure p;\n"
+                                                       "Select p such that Modifies (p,_)");
+        auto eval = new pql::eval::Evaluator(pkb, query);
+        std::list<std::string> result = eval->evaluate();
+        std::unordered_set<std::string> result_s(result.begin(), result.end());
+        REQUIRE(result_s.size() == 3);
+        REQUIRE(result_s.count("main"));
+        REQUIRE(result_s.count("readPoint"));
+        REQUIRE(result_s.count("computeCentroid"));
+    }
+
+    SECTION("ModifiesP(EntName, DeclaredEnt)")
+    {
+        constexpr const auto in = R"(
+            procedure main {
+              flag = 0;
+              call computeCentroid;
+              call printResults;
+            }
+            procedure readPoint {
+                read x;
+                read y;
+            }
+            procedure printResults {
+                print flag;
+                print cenX;
+                print cenY;
+                print normSq;
+            }
+            procedure computeCentroid {
+                count = 0;
+                cenX = 0;
+                cenY = 0;
+                call readPoint;
+                while ((x != 0) && (y != 0)) {
+                    count = count + 1;
+                    cenX = cenX + x;
+                    cenY = cenY + y;
+                    call readPoint;
+                }
+                if (count == 0) then {
+                    flag = 1;
+                } else {
+                    cenX = cenX / count;
+                    cenY = cenY / count;
+                }
+                normSq = cenX * cenX + cenY * cenY;
+            }
+        )";
+
+        auto prog = simple::parser::parseProgram(in);
+        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+
+        pql::ast::Query* query = pql::parser::parsePQL("variable v;\n"
+                                                       "Select v such that Modifies (\"readPoint\", v)");
+        auto eval = new pql::eval::Evaluator(pkb, query);
+        std::list<std::string> result = eval->evaluate();
+        std::unordered_set<std::string> result_s(result.begin(), result.end());
+        REQUIRE(result_s.size() == 2);
+        REQUIRE(result_s.count("x"));
+        REQUIRE(result_s.count("y"));
+
+        // TODO(#73): Test transitive property through call statement
+        /**
+        prog = simple::parser::parseProgram(in);
+        pkb = pkb::processProgram(prog.unwrap()).unwrap();
+
+        query = pql::parser::parsePQL("variable v;\n"
+                                      "Select v such that Modifies (\"main\", v)");
+        eval = new pql::eval::Evaluator(pkb, query);
+        result = eval->evaluate();
+        result_s = std::unordered_set<std::string>(result.begin(), result.end());
+        REQUIRE(result_s.size() == 6);
+        REQUIRE(result_s.count("x"));
+        REQUIRE(result_s.count("y"));
+        REQUIRE(result_s.count("count"));
+        REQUIRE(result_s.count("cenX"));
+        REQUIRE(result_s.count("cenY"));
+        REQUIRE(result_s.count("flag"));
+        REQUIRE(result_s.count("normSq"));
+        */
+    }
+    SECTION("ModifiesP(EntName, AllEnt)")
+    {
+        constexpr const auto in = R"(
+            procedure main {
+              flag = 0;
+              call computeCentroid;
+              call printResults;
+            }
+            procedure readPoint {
+                read x;
+                read y;
+            }
+            procedure printResults {
+                print flag;
+                print cenX;
+                print cenY;
+                print normSq;
+            }
+            procedure computeCentroid {
+                count = 0;
+                cenX = 0;
+                cenY = 0;
+                call readPoint;
+                while ((x != 0) && (y != 0)) {
+                    count = count + 1;
+                    cenX = cenX + x;
+                    cenY = cenY + y;
+                    call readPoint;
+                }
+                if (count == 0) then {
+                    flag = 1;
+                } else {
+                    cenX = cenX / count;
+                    cenY = cenY / count;
+                }
+                normSq = cenX * cenX + cenY * cenY;
+            }
+        )";
+
+        auto prog = simple::parser::parseProgram(in);
+        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+
+        pql::ast::Query* query = pql::parser::parsePQL("variable v;\n"
+                                                       "Select v such that Modifies (\"readPoint\", _)");
+        auto eval = new pql::eval::Evaluator(pkb, query);
+        std::list<std::string> result = eval->evaluate();
+        std::unordered_set<std::string> result_s(result.begin(), result.end());
+        REQUIRE(result_s.size() == 7);
+        REQUIRE(result_s.count("x"));
+        REQUIRE(result_s.count("y"));
+        REQUIRE(result_s.count("count"));
+        REQUIRE(result_s.count("cenX"));
+        REQUIRE(result_s.count("cenY"));
+        REQUIRE(result_s.count("flag"));
+        REQUIRE(result_s.count("normSq"));
+    }
+    SECTION("ModifiesP(EntName, AllEnt) always fail")
+    {
+        constexpr const auto in = R"(
+            procedure main {
+              flag = 0;
+              call computeCentroid;
+              call printResults;
+            }
+            procedure readPoint {
+                read x;
+                read y;
+            }
+            procedure printResults {
+                print flag;
+                print cenX;
+                print cenY;
+                print normSq;
+            }
+            procedure computeCentroid {
+                count = 0;
+                cenX = 0;
+                cenY = 0;
+                call readPoint;
+                while ((x != 0) && (y != 0)) {
+                    count = count + 1;
+                    cenX = cenX + x;
+                    cenY = cenY + y;
+                    call readPoint;
+                }
+                if (count == 0) then {
+                    flag = 1;
+                } else {
+                    cenX = cenX / count;
+                    cenY = cenY / count;
+                }
+                normSq = cenX * cenX + cenY * cenY;
+            }
+        )";
+
+        auto prog = simple::parser::parseProgram(in);
+        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+
+        pql::ast::Query* query = pql::parser::parsePQL("variable v;\n"
+                                                       "Select v such that Modifies (\"printResults\", _)");
+        auto eval = new pql::eval::Evaluator(pkb, query);
+        CHECK_THROWS_WITH(eval->evaluate(),
+            Catch::Matchers::Contains("ModifiesP(modifier:EntName(name:printResults), ent:AllEnt(name: _)) always "
+                                      "evaluate to false. printResults does not modify any variable."));
+    }
+    SECTION("ModifiesP(EntName, EntName)")
+    {
+        constexpr const auto in = R"(
+            procedure main {
+              flag = 0;
+              call computeCentroid;
+              call printResults;
+            }
+            procedure readPoint {
+                read x;
+                read y;
+            }
+            procedure printResults {
+                print flag;
+                print cenX;
+                print cenY;
+                print normSq;
+            }
+            procedure computeCentroid {
+                count = 0;
+                cenX = 0;
+                cenY = 0;
+                call readPoint;
+                while ((x != 0) && (y != 0)) {
+                    count = count + 1;
+                    cenX = cenX + x;
+                    cenY = cenY + y;
+                    call readPoint;
+                }
+                if (count == 0) then {
+                    flag = 1;
+                } else {
+                    cenX = cenX / count;
+                    cenY = cenY / count;
+                }
+                normSq = cenX * cenX + cenY * cenY;
+            }
+        )";
+
+        auto prog = simple::parser::parseProgram(in);
+        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+
+        pql::ast::Query* query = pql::parser::parsePQL("variable v;\n"
+                                                       "Select v such that Modifies (\"main\", \"flag\")");
+        auto eval = new pql::eval::Evaluator(pkb, query);
+        std::list<std::string> result = eval->evaluate();
+        std::unordered_set<std::string> result_s(result.begin(), result.end());
+        REQUIRE(result_s.size() == 7);
+        REQUIRE(result_s.count("x"));
+        REQUIRE(result_s.count("y"));
+        REQUIRE(result_s.count("count"));
+        REQUIRE(result_s.count("cenX"));
+        REQUIRE(result_s.count("cenY"));
+        REQUIRE(result_s.count("flag"));
+        REQUIRE(result_s.count("normSq"));
+    }
+    SECTION("ModifiesP(EntName, EntName) always fail")
+    {
+        constexpr const auto in = R"(
+            procedure main {
+              flag = 0;
+              call computeCentroid;
+              call printResults;
+            }
+            procedure readPoint {
+                read x;
+                read y;
+            }
+            procedure printResults {
+                print flag;
+                print cenX;
+                print cenY;
+                print normSq;
+            }
+            procedure computeCentroid {
+                count = 0;
+                cenX = 0;
+                cenY = 0;
+                call readPoint;
+                while ((x != 0) && (y != 0)) {
+                    count = count + 1;
+                    cenX = cenX + x;
+                    cenY = cenY + y;
+                    call readPoint;
+                }
+                if (count == 0) then {
+                    flag = 1;
+                } else {
+                    cenX = cenX / count;
+                    cenY = cenY / count;
+                }
+                normSq = cenX * cenX + cenY * cenY;
+            }
+        )";
+
+        auto prog = simple::parser::parseProgram(in);
+        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+
+        pql::ast::Query* query = pql::parser::parsePQL("variable v;\n"
+                                                       "Select v such that Modifies (\"readPoint\", \"flag\")");
+        auto eval = new pql::eval::Evaluator(pkb, query);
+        CHECK_THROWS_WITH(eval->evaluate(),
+            Catch::Matchers::Contains("ModifiesP(modifier:EntName(name:readPoint), ent:EntName(name:flag)) always "
+                                      "evaluate to false. readPoint does not modify flag."));
     }
 }
