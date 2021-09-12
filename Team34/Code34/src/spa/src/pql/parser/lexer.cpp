@@ -81,7 +81,7 @@ namespace pql::parser
             {
                 case '(':   tt = TT::LParen; break;
                 case ')':   tt = TT::RParen; break;
-                case '_':   tt = TT::Undersocre; break;
+                case '_':   tt = TT::Underscore; break;
                 case '"':   tt = TT::DoubleQuotes; break;
                 case ';':   tt = TT::Semicolon; break;
                 case '*':   tt = TT::Asterisk; break;
