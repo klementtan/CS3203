@@ -1,3 +1,4 @@
+// evaluator.cpp
 
 #include <algorithm>
 #include "pql/eval/evaluator.h"
@@ -469,8 +470,6 @@ namespace pql::eval
             }
         }
     }
-    void Evaluator::handleUsesP(const ast::UsesP* uses_p) { }
-    void Evaluator::handleUsesS(const ast::UsesS* uses_p) { }
 
     void Evaluator::handleModifiesP(const ast::ModifiesP* modifies_p)
     {
@@ -632,7 +631,7 @@ namespace pql::eval
             {
                 std::unordered_set<std::string> ent_names =
                     this->m_pkb->uses_modifies.getModifiesVars(entry.getStmtNum());
-                for(std::string ent_name : ent_names)
+                for(const auto& ent_name : ent_names)
                 {
                     table::Entry mod_entry = table::Entry(mod_declared->declaration, entry.getStmtNum());
                     table::Entry ent_entry = table::Entry(ent_declared->declaration, ent_name);
@@ -658,7 +657,7 @@ namespace pql::eval
             {
                 std::unordered_set<table::Entry> curr_domain;
                 std::unordered_set<table::Entry> prev_domain = m_table->getDomain(mod_declared->declaration);
-                for(std::string stmt_num_str : modifier_candidates)
+                for(const auto& stmt_num_str : modifier_candidates)
                 {
                     simple::ast::StatementNum stmt_num = atoi(stmt_num_str.c_str());
                     auto entry = table::Entry(mod_declared->declaration, stmt_num);
