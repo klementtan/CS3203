@@ -207,9 +207,8 @@ namespace pql::ast
         bool any_before = false;
         // Is suffixed by `_`
         bool any_after = false;
-        // The assignment expression on rhs that it should match
-        // TODO: Refactor to use ast::Expr* instead of raw string for easier matching.
-        std::string expr;
+
+        simple::ast::Expr* expr = nullptr;
         std::string toString() const;
     };
 

@@ -9,6 +9,7 @@
 
 #include "simple/ast.h"
 #include "pkb.h"
+#include "pkb/exception.h"
 #include "util.h"
 
 namespace pkb
@@ -39,7 +40,6 @@ namespace pkb
 
         if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt); i)
         {
-            pkb->if_statements.push_back(stmt);
             collectStmtList(pkb, &i->true_case);
             collectStmtList(pkb, &i->false_case);
             i->true_case.parent_statement = stmt;
@@ -47,7 +47,6 @@ namespace pkb
         }
         else if(auto w = dynamic_cast<s_ast::WhileLoop*>(stmt); w)
         {
-            pkb->while_statements.push_back(stmt);
             collectStmtList(pkb, &w->body);
             w->body.parent_statement = stmt;
         }
@@ -288,7 +287,7 @@ namespace pkb
     {
         // thinking of more elegant ways of handling this hmm
         if(fst > this->follows.size() || snd > this->follows.size() || fst < 1 || snd < 1)
-            util::error("pkb", "StatementNum out of range.");
+            throw pkb::exception::PkbException("pkb::eval", "StatementNum out of range.");
 
         return this->follows[fst - 1]->directly_after == snd;
     }
@@ -297,7 +296,7 @@ namespace pkb
     bool ProgramKB::isFollowsT(s_ast::StatementNum fst, s_ast::StatementNum snd)
     {
         if(fst > this->follows.size() || snd > this->follows.size() || fst < 1 || snd < 1)
-            util::error("pkb", "StatementNum out of range.");
+            throw pkb::exception::PkbException("pkb::eval", "StatementNum out of range.");
 
         return this->follows[fst - 1]->after.count(snd) > 0;
     }
@@ -311,10 +310,12 @@ namespace pkb
     // Takes in two 1-indexed StatementNums. Allows for 0 to be used as a wildcard on 1 of the parameters.
     std::unordered_set<s_ast::StatementNum> ProgramKB::getFollowsTList(s_ast::StatementNum fst, s_ast::StatementNum snd)
     {
+        // note: no need to check for < 0 since StatementNum is unsigned
         if(fst > this->follows.size() || snd > this->follows.size())
-            util::error("pkb", "StatementNum out of range.");
+            throw pkb::exception::PkbException("pkb::eval", "StatementNum out of range.");
+
         if((fst < 1 && snd < 1) || (fst != 0 && snd != 0))
-            util::error("pkb", "Only 1 wildcard is to be used.");
+            throw pkb::exception::PkbException("pkb::eval", "Only 1 wildcard is to be used.");
 
         if(fst == 0)
         {
@@ -329,36 +330,14 @@ namespace pkb
         util::error("pkb", "Unexpected error.");
     }
 
-    // Start of parent methods
+    /**
+     * Start of Parent methods
+     */
 
-    // processes the direct parents of statements
-    static void processParent(ProgramKB* pkb, s_ast::StmtList* list, s_ast::StatementNum par)
-    {
-        for(auto stmt : list->statements)
-        {
-            pkb->_direct_parents[stmt->id] = par;
-
-            if(s_ast::IfStmt* if_stmt = dynamic_cast<s_ast::IfStmt*>(stmt))
-            {
-                processParent(pkb, &if_stmt->true_case, stmt->id);
-                if_stmt->true_case.parent_statement = if_stmt;
-
-                processParent(pkb, &if_stmt->false_case, stmt->id);
-                if_stmt->false_case.parent_statement = if_stmt;
-            }
-            else if(s_ast::WhileLoop* while_stmt = dynamic_cast<s_ast::WhileLoop*>(stmt))
-            {
-                processParent(pkb, &while_stmt->body, stmt->id);
-                while_stmt->body.parent_statement = while_stmt;
-            }
-        }
-    }
-
-    // processes the ancestors of statements
+    // processes the parents and ancestors of statements
     static void processAncestors(ProgramKB* pkb, s_ast::StmtList* lst)
     {
-        using StmtPair = std::pair<s_ast::Stmt*, s_ast::Stmt*>;
-        std::queue<StmtPair> q;
+        std::queue<std::pair<s_ast::Stmt*, s_ast::Stmt*>> q;
 
         for(auto stmt : lst->statements)
             q.push({ stmt, nullptr });
@@ -371,16 +350,19 @@ namespace pkb
             if(child == nullptr)
                 continue;
 
-            std::unordered_set<s_ast::StatementNum> anc;
             if(pkb->_ancestors.count(child->id) == 0)
+            {
+                std::unordered_set<s_ast::StatementNum> anc;
                 pkb->_ancestors[child->id] = anc;
+            }
 
-            anc = pkb->_ancestors[child->id];
+            std::unordered_set<s_ast::StatementNum> anc = pkb->_ancestors[child->id];
 
             if(parent != nullptr)
             {
-                std::unordered_set<s_ast::StatementNum> par;
-                for(auto num : par)
+                anc.insert(parent->id);
+                pkb->_direct_parents[child->id] = parent->id;
+                for(auto num : pkb->_ancestors[parent->id])
                     anc.insert(num);
             }
 
@@ -397,15 +379,68 @@ namespace pkb
                 for(auto inner : while_stmt->body.statements)
                     q.push({ inner, child });
             }
+
+            pkb->_ancestors[child->id] = anc;
+        }
+    }
+
+    // processes the children and descendants of statements
+    static void processDescendants(ProgramKB* pkb, s_ast::StmtList* lst)
+    {
+        for(auto stmt : lst->statements)
+        {
+            std::unordered_set<s_ast::StatementNum> chi;
+            std::unordered_set<s_ast::StatementNum> des;
+
+            if(s_ast::IfStmt* if_stmt = dynamic_cast<s_ast::IfStmt*>(stmt))
+            {
+                processDescendants(pkb, &if_stmt->true_case);
+                processDescendants(pkb, &if_stmt->false_case);
+
+                for(auto inner : if_stmt->true_case.statements)
+                {
+                    chi.insert(inner->id);
+                    des.insert(inner->id);
+                    for(auto num : pkb->getDescendantsOf(inner->id))
+                        des.insert(num);
+                }
+
+                for(auto inner : if_stmt->false_case.statements)
+                {
+                    chi.insert(inner->id);
+                    des.insert(inner->id);
+                    for(auto num : pkb->getDescendantsOf(inner->id))
+                        des.insert(num);
+                }
+            }
+            else if(s_ast::WhileLoop* while_stmt = dynamic_cast<s_ast::WhileLoop*>(stmt))
+            {
+                processDescendants(pkb, &while_stmt->body);
+
+                for(auto inner : while_stmt->body.statements)
+                {
+                    chi.insert(inner->id);
+                    des.insert(inner->id);
+                    for(auto num : pkb->getDescendantsOf(inner->id))
+                        des.insert(num);
+                }
+            }
+            else
+            {
+                continue;
+            }
+
+            pkb->_direct_children[stmt->id] = chi;
+            pkb->_descendants[stmt->id] = des;
         }
     }
 
     bool ProgramKB::isParent(s_ast::StatementNum fst, s_ast::StatementNum snd)
     {
-        if(_direct_parents.count(fst) == 0)
+        if(_direct_parents.count(snd) == 0)
             return false;
 
-        return _direct_parents[fst] == snd;
+        return _direct_parents[snd] == fst;
     }
 
     bool ProgramKB::isParentT(s_ast::StatementNum fst, s_ast::StatementNum snd)
@@ -416,20 +451,56 @@ namespace pkb
         return _ancestors[snd].count(fst);
     }
 
+    s_ast::StatementNum ProgramKB::getParentOf(s_ast::StatementNum fst)
+    {
+        // this will return 0 if it has no parent
+        if(_direct_parents.count(fst) == 0)
+            return 0;
+
+        return _direct_parents[fst];
+    }
+
     std::unordered_set<s_ast::StatementNum> ProgramKB::getAncestorsOf(s_ast::StatementNum fst)
     {
-        std::unordered_set<s_ast::StatementNum> anc;
-
         if(_ancestors.count(fst) == 0)
+        {
+            std::unordered_set<s_ast::StatementNum> anc;
             return anc;
+        }
 
         return _ancestors[fst];
     }
 
-    // End of parent methods
+    std::unordered_set<s_ast::StatementNum> ProgramKB::getChildrenOf(s_ast::StatementNum fst)
+    {
+        if(_direct_children.count(fst) == 0)
+        {
+            std::unordered_set<s_ast::StatementNum> chi;
+            return chi;
+        }
 
+        return _direct_children[fst];
+    }
 
-    // Start of Uses and Modifies methods.
+    std::unordered_set<s_ast::StatementNum> ProgramKB::getDescendantsOf(s_ast::StatementNum fst)
+    {
+        if(_descendants.count(fst) == 0)
+        {
+            std::unordered_set<s_ast::StatementNum> des;
+            return des;
+        }
+
+        return _descendants[fst];
+    }
+
+    /**
+     * End of Parent methods
+     */
+
+    /**
+     * Start of Uses and Modifies methods
+     */
+
     static void processExpr(ProgramKB* pkb, s_ast::Expr* expr, s_ast::Stmt* parent_stmt, s_ast::Procedure* parent_proc)
     {
         if(auto vr = dynamic_cast<s_ast::VarRef*>(expr))
@@ -546,6 +617,14 @@ namespace pkb
                         ->modifies.insert(tmp->modifies.begin(), tmp->modifies.end());
                     pkb->uses_modifies.statements.at(stmt->id - 1)->uses.insert(tmp->uses.begin(), tmp->uses.end());
                 }
+                for(auto& var : pkb->uses_modifies.statements.at(i->id - 1)->uses)
+                {
+                    pkb->uses_modifies.variables.at(var).used_by.insert(i);
+                }
+                for(auto& var : pkb->uses_modifies.statements.at(i->id - 1)->modifies)
+                {
+                    pkb->uses_modifies.variables.at(var).modified_by.insert(i);
+                }
             }
             else if(auto w = dynamic_cast<s_ast::WhileLoop*>(stmt))
             {
@@ -557,6 +636,14 @@ namespace pkb
                     pkb->uses_modifies.statements.at(stmt->id - 1)
                         ->modifies.insert(tmp->modifies.begin(), tmp->modifies.end());
                     pkb->uses_modifies.statements.at(stmt->id - 1)->uses.insert(tmp->uses.begin(), tmp->uses.end());
+                }
+                for(auto& var : pkb->uses_modifies.statements.at(w->id - 1)->uses)
+                {
+                    pkb->uses_modifies.variables.at(var).used_by.insert(w);
+                }
+                for(auto& var : pkb->uses_modifies.statements.at(w->id - 1)->modifies)
+                {
+                    pkb->uses_modifies.variables.at(var).modified_by.insert(w);
                 }
             }
             else if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt))
@@ -577,58 +664,55 @@ namespace pkb
         }
     }
 
-    zst::Result<bool, std::string> UsesModifies::isUses(
-        const simple::ast::StatementNum& stmt_num, const std::string& var)
+    bool UsesModifies::isUses(const simple::ast::StatementNum& stmt_num, const std::string& var)
     {
         if(this->variables.find(var) == this->variables.end() || stmt_num > this->statements.size())
         {
-            return ErrFmt("Invalid query parameters.");
+            throw pkb::exception::PkbException("pkb::eval", "Invalid query parameters.");
         }
         auto& stmt = this->statements.at(stmt_num - 1);
         if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt->stmt))
         {
-            return Ok(this->procedures[c->proc_name].uses.count(var) > 0);
+            return this->procedures[c->proc_name].uses.count(var) > 0;
         }
         else
         {
-            return Ok(stmt->uses.count(var) > 0);
+            return stmt->uses.count(var) > 0;
         }
     }
 
-    zst::Result<bool, std::string> UsesModifies::isUses(const std::string& proc, const std::string& var)
+    bool UsesModifies::isUses(const std::string& proc, const std::string& var)
     {
         if(this->variables.find(var) == this->variables.end() || this->procedures.find(proc) == this->procedures.end())
         {
-            return ErrFmt("Invalid query parameters.");
+            throw pkb::exception::PkbException("pkb::eval", "Invalid query parameters.");
         }
-        return Ok(this->procedures.at(proc).uses.count(var) > 0);
+        return this->procedures.at(proc).uses.count(var) > 0;
     }
 
-    zst::Result<std::unordered_set<std::string>, std::string> UsesModifies::getUsesVars(
-        const simple::ast::StatementNum& stmt_num)
+    std::unordered_set<std::string> UsesModifies::getUsesVars(const simple::ast::StatementNum& stmt_num)
     {
         if(stmt_num > this->statements.size())
         {
-            return ErrFmt("Invalid statement number.");
+            throw pkb::exception::PkbException("pkb::eval", "Invalid statement number.");
         }
-        return Ok(this->statements.at(stmt_num - 1)->uses);
+        return this->statements.at(stmt_num - 1)->uses;
     }
 
-    zst::Result<std::unordered_set<std::string>, std::string> UsesModifies::getUsesVars(const std::string& var)
+    std::unordered_set<std::string> UsesModifies::getUsesVars(const std::string& var)
     {
         if(this->procedures.find(var) == this->procedures.end())
         {
-            util::error("pkb", "Procedure not found.");
+            throw pkb::exception::PkbException("pkb::eval", "Procedure not found.");
         }
-        return Ok(this->procedures.at(var).uses);
+        return this->procedures.at(var).uses;
     }
 
-    zst::Result<std::unordered_set<std::string>, std::string> UsesModifies::getUses(
-        const pql::ast::DESIGN_ENT& type, const std::string& var)
+    std::unordered_set<std::string> UsesModifies::getUses(const pql::ast::DESIGN_ENT& type, const std::string& var)
     {
         if(this->variables.find(var) == this->variables.end())
         {
-            util::error("pkb", "Variable not found.");
+            throw pkb::exception::PkbException("pkb::eval", "Variable not found.");
         }
         std::unordered_set<std::string> uses;
         auto& stmt_list = this->variables.at(var).used_by;
@@ -660,69 +744,80 @@ namespace pkb
                         uses.insert(std::to_string(stmt->id));
                 }
                 break;
+            case pql::ast::DESIGN_ENT::IF:
+                for(auto& stmt : stmt_list)
+                {
+                    if(dynamic_cast<s_ast::IfStmt*>(stmt))
+                        uses.insert(std::to_string(stmt->id));
+                }
+                break;
+            case pql::ast::DESIGN_ENT::WHILE:
+                for(auto& stmt : stmt_list)
+                {
+                    if(dynamic_cast<s_ast::WhileLoop*>(stmt))
+                        uses.insert(std::to_string(stmt->id));
+                }
+                break;
             case pql::ast::DESIGN_ENT::PROCEDURE:
                 for(auto& proc : this->variables.at(var).used_by_procs)
                     uses.insert(proc->name);
 
                 break;
             default:
-                return ErrFmt("Invalid statement type.");
+                throw pkb::exception::PkbException("pkb::eval", "Invalid statement type.");
         }
-        return Ok(uses);
+        return uses;
     }
 
-    zst::Result<bool, std::string> UsesModifies::isModifies(
-        const simple::ast::StatementNum& stmt_num, const std::string& var)
+    bool UsesModifies::isModifies(const simple::ast::StatementNum& stmt_num, const std::string& var)
     {
         if(this->variables.find(var) == this->variables.end() || stmt_num > this->statements.size())
         {
-            return ErrFmt("Invalid query parameters.");
+            throw pkb::exception::PkbException("pkb::eval", "Invalid query parameters.");
         }
         auto& stmt = this->statements.at(stmt_num - 1);
         if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt->stmt))
         {
-            return Ok(this->procedures[c->proc_name].modifies.count(var) > 0);
+            return this->procedures[c->proc_name].modifies.count(var) > 0;
         }
         else
         {
-            return Ok(stmt->modifies.count(var) > 0);
+            return stmt->modifies.count(var) > 0;
         }
     }
 
-    zst::Result<bool, std::string> UsesModifies::isModifies(const std::string& proc, const std::string& var)
+    bool UsesModifies::isModifies(const std::string& proc, const std::string& var)
     {
         if(this->variables.find(var) == this->variables.end() || this->procedures.find(proc) == this->procedures.end())
         {
-            return ErrFmt("Invalid query parameters.");
+            throw pkb::exception::PkbException("pkb::eval", "Invalid query parameters.");
         }
-        return Ok(this->procedures.at(proc).modifies.count(var) > 0);
+        return this->procedures.at(proc).modifies.count(var) > 0;
     }
 
-    zst::Result<std::unordered_set<std::string>, std::string> UsesModifies::getModifiesVars(
-        const simple::ast::StatementNum& stmt_num)
+    std::unordered_set<std::string> UsesModifies::getModifiesVars(const simple::ast::StatementNum& stmt_num)
     {
         if(stmt_num > this->statements.size())
         {
-            return ErrFmt("Invalid statement number.");
+            throw pkb::exception::PkbException("pkb::eval", "Invalid statement number.");
         }
-        return Ok(this->statements.at(stmt_num - 1)->modifies);
+        return this->statements.at(stmt_num - 1)->modifies;
     }
 
-    zst::Result<std::unordered_set<std::string>, std::string> UsesModifies::getModifiesVars(const std::string& var)
+    std::unordered_set<std::string> UsesModifies::getModifiesVars(const std::string& var)
     {
         if(this->procedures.find(var) == this->procedures.end())
         {
-            util::error("pkb", "Procedure not found.");
+            throw pkb::exception::PkbException("pkb::eval", "Procedure not found.");
         }
-        return Ok(this->procedures.at(var).modifies);
+        return this->procedures.at(var).modifies;
     }
 
-    zst::Result<std::unordered_set<std::string>, std::string> UsesModifies::getModifies(
-        const pql::ast::DESIGN_ENT& type, const std::string& var)
+    std::unordered_set<std::string> UsesModifies::getModifies(const pql::ast::DESIGN_ENT& type, const std::string& var)
     {
         if(this->variables.find(var) == this->variables.end())
         {
-            util::error("pkb", "Variable not found.");
+            throw pkb::exception::PkbException("pkb::eval", "Variable not found.");
         }
         std::unordered_set<std::string> modifies;
         auto& stmt_list = this->variables.at(var).modified_by;
@@ -755,17 +850,34 @@ namespace pkb
                         modifies.insert(std::to_string(stmt->id));
                 }
                 break;
+            case pql::ast::DESIGN_ENT::IF:
+                for(auto& stmt : stmt_list)
+                {
+                    if(dynamic_cast<s_ast::IfStmt*>(stmt))
+                        modifies.insert(std::to_string(stmt->id));
+                }
+                break;
+            case pql::ast::DESIGN_ENT::WHILE:
+                for(auto& stmt : stmt_list)
+                {
+                    if(dynamic_cast<s_ast::WhileLoop*>(stmt))
+                        modifies.insert(std::to_string(stmt->id));
+                }
+                break;
             case pql::ast::DESIGN_ENT::PROCEDURE:
                 for(auto& proc : this->variables.at(var).modified_by_procs)
                     modifies.insert(proc->name);
 
                 break;
             default:
-                return ErrFmt("Invalid statement type.");
+                throw pkb::exception::PkbException("pkb::eval", "Invalid statement type.");
         }
-        return Ok(modifies);
+        return modifies;
     }
-    // End of Uses and Modifies Methods
+
+    /**
+     * End of Uses and Modifies methods
+     */
 
     Result<ProgramKB*> processProgram(s_ast::Program* program)
     {
@@ -787,15 +899,15 @@ namespace pkb
         for(const auto& proc : program->procedures)
         {
             processFollows(pkb, &proc->body);
-            processParent(pkb, &proc->body, -1);
             processStmtList(pkb, &proc->body, proc);
         }
 
-        // do a third pass to populate the ancestors hashmap and to populate uses/modifies for nested if/while
-        // statements
+        // do a third pass to populate the ancestors/descendants hashmap and
+        // to populate uses/modifies for nested if/while statements
         for(const auto& proc : program->procedures)
         {
             processAncestors(pkb, &proc->body);
+            processDescendants(pkb, &proc->body);
             reprocessStmtList(pkb, &proc->body);
         }
 

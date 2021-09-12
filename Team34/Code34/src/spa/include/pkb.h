@@ -111,37 +111,30 @@ namespace pkb
         std::unordered_map<std::string, Variable> variables;
 
         // For queries of type Uses(3, "x")
-        zst::Result<bool, std::string> isUses(const simple::ast::StatementNum& stmt_num, const std::string& var);
+        bool isUses(const simple::ast::StatementNum& stmt_num, const std::string& var);
         // For queries of type Uses("main", "x")
-        zst::Result<bool, std::string> isUses(const std::string& proc, const std::string& var);
+        bool isUses(const std::string& proc, const std::string& var);
         // For queries of type Uses(3, _)
-        zst::Result<std::unordered_set<std::string>, std::string> getUsesVars(
-            const simple::ast::StatementNum& stmt_num);
+        std::unordered_set<std::string> getUsesVars(const simple::ast::StatementNum& stmt_num);
         // For queries of type Uses("main", _)
-        zst::Result<std::unordered_set<std::string>, std::string> getUsesVars(const std::string& var);
+        std::unordered_set<std::string> getUsesVars(const std::string& var);
         // Returns the Statement numbers of queries of type Uses(a/r/s/p, "x")
-        zst::Result<std::unordered_set<std::string>, std::string> getUses(
-            const pql::ast::DESIGN_ENT& type, const std::string& var);
+        std::unordered_set<std::string> getUses(const pql::ast::DESIGN_ENT& type, const std::string& var);
 
         // For queries of type Modifies(3, "x")
-        zst::Result<bool, std::string> isModifies(const simple::ast::StatementNum& stmt_num, const std::string& var);
+        bool isModifies(const simple::ast::StatementNum& stmt_num, const std::string& var);
         // For queries of type Modifies("main", "x")
-        zst::Result<bool, std::string> isModifies(const std::string& proc, const std::string& var);
+        bool isModifies(const std::string& proc, const std::string& var);
         // For queries of type Modifies(3, _)
-        zst::Result<std::unordered_set<std::string>, std::string> getModifiesVars(
-            const simple::ast::StatementNum& stmt_num);
+        std::unordered_set<std::string> getModifiesVars(const simple::ast::StatementNum& stmt_num);
         // For queries of type Modifies("main", _)
-        zst::Result<std::unordered_set<std::string>, std::string> getModifiesVars(const std::string& var);
+        std::unordered_set<std::string> getModifiesVars(const std::string& var);
         // Returns the Statement numbers of queries of type Modifies(a/pn/s/p, "x")
-        zst::Result<std::unordered_set<std::string>, std::string> getModifies(
-            const pql::ast::DESIGN_ENT& type, const std::string& var);
+        std::unordered_set<std::string> getModifies(const pql::ast::DESIGN_ENT& type, const std::string& var);
     };
 
     struct ProgramKB
     {
-        std::vector<simple::ast::Stmt*> while_statements;
-        std::vector<simple::ast::Stmt*> if_statements;
-
         CallGraph proc_calls;
 
         UsesModifies uses_modifies;
@@ -156,10 +149,15 @@ namespace pkb
 
         std::unordered_map<simple::ast::StatementNum, simple::ast::StatementNum> _direct_parents;
         std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _ancestors;
+        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _direct_children;
+        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _descendants;
 
         bool isParent(simple::ast::StatementNum, simple::ast::StatementNum);
         bool isParentT(simple::ast::StatementNum, simple::ast::StatementNum);
+        simple::ast::StatementNum getParentOf(simple::ast::StatementNum);
         std::unordered_set<simple::ast::StatementNum> getAncestorsOf(simple::ast::StatementNum);
+        std::unordered_set<simple::ast::StatementNum> getChildrenOf(simple::ast::StatementNum);
+        std::unordered_set<simple::ast::StatementNum> getDescendantsOf(simple::ast::StatementNum);
     };
 
     Result<ProgramKB*> processProgram(simple::ast::Program* prog);
