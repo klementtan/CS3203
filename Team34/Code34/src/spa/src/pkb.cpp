@@ -594,14 +594,14 @@ namespace pkb
     }
 
     // Secondary processing step to fully populate uses and modifies for nested if/while, and proc call statements.
-    static void reprocessStmtList(ProgramKB* pkb, s_ast::StmtList* list)
+    static void reprocessStmtList(ProgramKB* pkb, s_ast::StmtList* list, s_ast::Procedure* proc)
     {
         for(const auto& stmt : list->statements)
         {
             if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt))
             {
-                reprocessStmtList(pkb, &i->true_case);
-                reprocessStmtList(pkb, &i->false_case);
+                reprocessStmtList(pkb, &i->true_case, NULL);
+                reprocessStmtList(pkb, &i->false_case, NULL);
 
                 for(const auto& child_stmt : i->true_case.statements)
                 {
@@ -628,7 +628,7 @@ namespace pkb
             }
             else if(auto w = dynamic_cast<s_ast::WhileLoop*>(stmt))
             {
-                reprocessStmtList(pkb, &w->body);
+                reprocessStmtList(pkb, &w->body, NULL);
 
                 for(const auto& child_stmt : w->body.statements)
                 {
@@ -649,6 +649,8 @@ namespace pkb
             else if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt))
             {
                 auto& tmp = pkb->uses_modifies.procedures.at(c->proc_name);
+                // This is an inefficient quick fix, will change to callgraph bottom-up traversal once im free
+                reprocessStmtList(pkb, &tmp.ast_proc->body, tmp.ast_proc);
                 pkb->uses_modifies.statements.at(c->id - 1)->modifies.insert(tmp.modifies.begin(), tmp.modifies.end());
                 pkb->uses_modifies.statements.at(c->id - 1)->uses.insert(tmp.uses.begin(), tmp.uses.end());
 
@@ -660,6 +662,13 @@ namespace pkb
                 {
                     pkb->uses_modifies.variables.at(var).modified_by.insert(c);
                 }
+            }
+            if(proc != NULL)
+            {
+                auto& stmt_rs = pkb->uses_modifies.statements.at(stmt->id - 1);
+                pkb->uses_modifies.procedures.at(proc->name).uses.insert(stmt_rs->uses.begin(), stmt_rs->uses.end());
+                pkb->uses_modifies.procedures.at(proc->name)
+                    .modifies.insert(stmt_rs->modifies.begin(), stmt_rs->modifies.end());
             }
         }
     }
@@ -883,6 +892,16 @@ namespace pkb
     {
         auto pkb = new ProgramKB();
 
+        for(const auto& proc : program->procedures)
+        {
+            processCallGraph(pkb, &proc->body, &proc->name);
+        }
+
+        if(pkb->proc_calls.cycleExists())
+            return ErrFmt("Cyclic or recursive calls are not allowed");
+        if(auto a = pkb->proc_calls.missingProc(program->procedures); a != "")
+            return ErrFmt("Procedure '{}' is undefined", a);
+
         // do a first pass to number all the statements, set the
         // parent stmtlist, and collect all the procedures.
         for(const auto& proc : program->procedures)
@@ -907,19 +926,10 @@ namespace pkb
         for(const auto& proc : program->procedures)
         {
             processAncestors(pkb, &proc->body);
+            reprocessStmtList(pkb, &proc->body, proc);
             processDescendants(pkb, &proc->body);
-            reprocessStmtList(pkb, &proc->body);
         }
 
-        for(const auto& proc : program->procedures)
-        {
-            processCallGraph(pkb, &proc->body, &proc->name);
-        }
-
-        if(pkb->proc_calls.cycleExists())
-            return ErrFmt("Cyclic or recursive calls are not allowed");
-        if(auto a = pkb->proc_calls.missingProc(program->procedures); a != "")
-            return ErrFmt("Procedure '{}' is undefined", a);
         return Ok(pkb);
     }
 }

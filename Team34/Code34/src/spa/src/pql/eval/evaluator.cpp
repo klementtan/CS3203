@@ -70,7 +70,6 @@ namespace pql::eval
         }
         util::log("pql::eval", "Adding {} procedures to {} initial domain", m_pkb->uses_modifies.procedures.size(),
             declaration->toString());
-        // TODO: Check with pkb team if this is the right way to access all procedures
         for(auto [name, proc] : m_pkb->uses_modifies.procedures)
         {
             util::log("pql::eval", "Adding {} to initial proc domain", name);

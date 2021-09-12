@@ -19,7 +19,6 @@ namespace pkb
 
     struct Procedure
     {
-        std::string name;
         simple::ast::Procedure* ast_proc = 0;
 
         std::unordered_set<std::string> uses;
@@ -43,8 +42,6 @@ namespace pkb
 
     struct Variable
     {
-        std::string name;
-
         // a procedure isn't really a statement, so we need to keep two
         // separate lists for this.
         std::unordered_set<simple::ast::Stmt*> used_by;
