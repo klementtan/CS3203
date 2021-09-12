@@ -51,7 +51,8 @@ namespace pql::eval
 
             auto parent_sid = dynamic_cast<ast::StmtId*>(rel->parent)->id;
             if(m_pkb->getChildrenOf(parent_sid).empty())
-                throw PqlException("pql::eval", "{} is always false ('{}' has no children)", rel->toString(), parent_sid);
+                throw PqlException(
+                    "pql::eval", "{} is always false ('{}' has no children)", rel->toString(), parent_sid);
         }
 
         else if(is_parent_decl && is_child_sid)
@@ -65,11 +66,10 @@ namespace pql::eval
             if(!parent_id.has_value())
                 throw PqlException("pql::eval", "{} is always false ('{}' has no parent)", rel->toString(), child_sid);
 
-            std::unordered_set<table::Entry> new_domain {
-                table::Entry(parent_decl, parent_id.value())
-            };
+            std::unordered_set<table::Entry> new_domain { table::Entry(parent_decl, parent_id.value()) };
 
-            m_table->upsertDomains(parent_decl, table::entry_set_intersect(new_domain, m_table->getDomain(parent_decl)));
+            m_table->upsertDomains(
+                parent_decl, table::entry_set_intersect(new_domain, m_table->getDomain(parent_decl)));
         }
         else if(is_parent_decl && is_child_decl)
         {
@@ -105,7 +105,8 @@ namespace pql::eval
                 new_domain.emplace(parent_decl, entry.getStmtNum());
             }
 
-            m_table->upsertDomains(parent_decl, table::entry_set_intersect(new_domain, m_table->getDomain(parent_decl)));
+            m_table->upsertDomains(
+                parent_decl, table::entry_set_intersect(new_domain, m_table->getDomain(parent_decl)));
         }
 
         else if(is_parent_wildcard && is_child_sid)
