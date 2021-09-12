@@ -74,7 +74,7 @@ namespace pql::eval
         for(auto [name, proc] : m_pkb->uses_modifies.procedures)
         {
             util::log("pql::eval", "Adding {} to initial proc domain", name);
-            domain.insert(table::Entry(declaration, proc.name));
+            domain.insert(table::Entry(declaration, proc.ast_proc->name));
         }
         return domain;
     }

@@ -19,7 +19,6 @@ namespace pkb
 
     struct Procedure
     {
-        std::string name;
         simple::ast::Procedure* ast_proc = 0;
 
         std::unordered_set<std::string> uses;
