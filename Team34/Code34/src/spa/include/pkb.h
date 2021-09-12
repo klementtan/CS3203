@@ -114,7 +114,7 @@ namespace pkb
         // For queries of type Uses(3, _)
         std::unordered_set<std::string> getUsesVars(const simple::ast::StatementNum& stmt_num);
         // For queries of type Uses("main", _)
-        std::unordered_set<std::string> getUsesVars(const std::string& var);
+        std::unordered_set<std::string> getUsesVars(const std::string& proc);
         // Returns the Statement numbers of queries of type Uses(a/r/s/p, "x")
         std::unordered_set<std::string> getUses(const pql::ast::DESIGN_ENT& type, const std::string& var);
 
