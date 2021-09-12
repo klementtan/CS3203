@@ -24,13 +24,12 @@ namespace pql::eval
         auto* ent_all = dynamic_cast<ast::AllEnt*>(modifies_p->ent);
         if(mod_all)
         {
-            throw PqlException(
-                "pql::eval", "Modifier of ModifiesP cannot be '_': {}", modifies_p->toString());
+            throw PqlException("pql::eval", "Modifier of ModifiesP cannot be '_': {}", modifies_p->toString());
         }
         if(mod_declared && (mod_declared->declaration->design_ent != ast::DESIGN_ENT::PROCEDURE))
         {
-            throw PqlException("pql::eval",
-                "Declared modifier of ModifiesP can only be of type PROCEDURE: {}", modifies_p->toString());
+            throw PqlException("pql::eval", "Declared modifier of ModifiesP can only be of type PROCEDURE: {}",
+                modifies_p->toString());
         }
         if(ent_declared && (ent_declared->declaration->design_ent != ast::DESIGN_ENT::VARIABLE))
         {
@@ -61,9 +60,8 @@ namespace pql::eval
                 m_pkb->uses_modifies.getModifies(mod_declared->declaration->design_ent, ent_name->name);
             if(modifier_candidates.empty())
             {
-                throw PqlException("pql::eval",
-                    "{} will always evaluate to false. No procedures modifies {}", modifies_p->toString(),
-                    ent_name->name);
+                throw PqlException("pql::eval", "{} will always evaluate to false. No procedures modifies {}",
+                    modifies_p->toString(), ent_name->name);
             }
             else
             {
@@ -114,9 +112,8 @@ namespace pql::eval
             util::log("pql::eval", "Processing ModifiesP(EntName, AllEnt)");
             if(m_pkb->uses_modifies.getModifiesVars(mod_name->name).empty())
             {
-                throw PqlException("pql::eval",
-                    "{} always evaluate to false. {} does not modify any variable.", modifies_p->toString(),
-                    mod_name->name);
+                throw PqlException("pql::eval", "{} always evaluate to false. {} does not modify any variable.",
+                    modifies_p->toString(), mod_name->name);
             }
             else
             {
@@ -150,8 +147,7 @@ namespace pql::eval
         auto* ent_all = dynamic_cast<ast::AllEnt*>(modifies_s->ent);
         if(mod_all)
         {
-            throw PqlException(
-                "pql::eval", "Modifier of ModifiesS cannot be '_': {}", modifies_s->toString());
+            throw PqlException("pql::eval", "Modifier of ModifiesS cannot be '_': {}", modifies_s->toString());
         }
         if(mod_declared && (ast::kStmtDesignEntities.count(mod_declared->declaration->design_ent) == 0))
         {
@@ -189,9 +185,8 @@ namespace pql::eval
                 m_pkb->uses_modifies.getModifies(mod_declared->declaration->design_ent, ent_name->name);
             if(modifier_candidates.empty())
             {
-                throw PqlException("pql::eval",
-                    "{} will always evaluate to false. No statements modifies {}", modifies_s->toString(),
-                    ent_name->name);
+                throw PqlException("pql::eval", "{} will always evaluate to false. No statements modifies {}",
+                    modifies_s->toString(), ent_name->name);
             }
             else
             {
@@ -261,9 +256,8 @@ namespace pql::eval
             }
             else
             {
-                throw PqlException("pql::eval",
-                    "StatementNum: {} always evaluate to false. {} does not modify {}.", modifies_s->toString(),
-                    mod_stmt_id->id, ent_name->name);
+                throw PqlException("pql::eval", "StatementNum: {} always evaluate to false. {} does not modify {}.",
+                    modifies_s->toString(), mod_stmt_id->id, ent_name->name);
             }
         }
     }

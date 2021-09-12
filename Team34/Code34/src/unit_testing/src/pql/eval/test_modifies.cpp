@@ -101,7 +101,7 @@ TEST_CASE("ModifiesP clause")
         auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
 
         auto query = pql::parser::parsePQL("variable v;\n"
-                                      "Select v such that Modifies (\"main\", v)");
+                                           "Select v such that Modifies (\"main\", v)");
 
         auto eval = new pql::eval::Evaluator(pkb, query);
         auto result = eval->evaluate();

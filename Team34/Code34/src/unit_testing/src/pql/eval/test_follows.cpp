@@ -283,5 +283,3 @@ TEST_CASE("Follows* clause")
         REQUIRE(result_s.count("3"));
     }
 }
-
-

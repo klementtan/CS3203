@@ -33,8 +33,7 @@ namespace pql::eval
             }
             else
             {
-                throw PqlException(
-                    "pql::eval", "{} will always evaluate to false", follows->toString());
+                throw PqlException("pql::eval", "{} will always evaluate to false", follows->toString());
             }
         }
         if(bef_stmt_id && aft_all)
@@ -42,8 +41,7 @@ namespace pql::eval
             util::log("pql::eval", "Processing Follows(StmtId,_)");
             if(m_pkb->getFollows(bef_stmt_id->id)->after.empty())
             {
-                throw PqlException(
-                    "pql::eval", "{} will always evaluate to false", follows->toString());
+                throw PqlException("pql::eval", "{} will always evaluate to false", follows->toString());
             }
             else
             {
@@ -56,9 +54,8 @@ namespace pql::eval
             util::log("pql::eval", "Processing Follows(StmtId,DeclaredStmt)");
             if(m_pkb->getFollows(bef_stmt_id->id)->after.empty())
             {
-                throw PqlException("pql::eval",
-                    "{} will always evaluate to false. No statement directly after {}", follows->toString(),
-                    bef_stmt_id->toString());
+                throw PqlException("pql::eval", "{} will always evaluate to false. No statement directly after {}",
+                    follows->toString(), bef_stmt_id->toString());
             }
             else
             {
@@ -75,8 +72,7 @@ namespace pql::eval
             util::log("pql::eval", "Processing Follows(_,StmtId)");
             if(m_pkb->getFollows(aft_stmt_id->id)->before.empty())
             {
-                throw PqlException(
-                    "pql::eval", "{} will always evaluate to false", follows->toString());
+                throw PqlException("pql::eval", "{} will always evaluate to false", follows->toString());
             }
             else
             {
@@ -188,8 +184,7 @@ namespace pql::eval
             }
             else
             {
-                throw PqlException(
-                    "pql::eval", "{} will always evaluate to false", follows_t->toString());
+                throw PqlException("pql::eval", "{} will always evaluate to false", follows_t->toString());
             }
         }
         if(bef_stmt_id && aft_all)
@@ -197,8 +192,7 @@ namespace pql::eval
             util::log("pql::eval", "Processing Follows*(StmtId,_)");
             if(m_pkb->getFollows(bef_stmt_id->id)->after.empty())
             {
-                throw PqlException(
-                    "pql::eval", "{} will always evaluate to false", follows_t->toString());
+                throw PqlException("pql::eval", "{} will always evaluate to false", follows_t->toString());
             }
             else
             {
@@ -211,9 +205,8 @@ namespace pql::eval
             util::log("pql::eval", "Processing Follows*(StmtId,DeclaredStmt)");
             if(m_pkb->getFollows(bef_stmt_id->id)->after.empty())
             {
-                throw PqlException("pql::eval",
-                    "{} will always evaluate to false. No statement directly after {}", follows_t->toString(),
-                    bef_stmt_id->toString());
+                throw PqlException("pql::eval", "{} will always evaluate to false. No statement directly after {}",
+                    follows_t->toString(), bef_stmt_id->toString());
             }
             else
             {
@@ -233,8 +226,7 @@ namespace pql::eval
             util::log("pql::eval", "Processing Follows*(_,StmtId)");
             if(m_pkb->getFollows(aft_stmt_id->id)->before.empty())
             {
-                throw PqlException(
-                    "pql::eval", "{} will always evaluate to false", follows_t->toString());
+                throw PqlException("pql::eval", "{} will always evaluate to false", follows_t->toString());
             }
             else
             {
