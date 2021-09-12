@@ -64,7 +64,7 @@ namespace pql::ast
                     for(const auto& entry : tbl->getDomain(var_decl))
                     {
                         auto var_name = entry.getVal();
-                        if(var_name == it->getVal())
+                        if(var_name == assign_stmt->lhs)
                             tbl->addJoin(*it, entry);
                     }
                 }
