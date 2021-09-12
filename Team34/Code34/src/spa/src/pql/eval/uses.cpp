@@ -25,10 +25,12 @@ namespace pql::eval
         if(is_proc_all)
             throw PqlException("pql::eval", "first argument of Uses cannot be '_'");
 
-        if(is_proc_decl && dynamic_cast<ast::DeclaredEnt*>(rel->user)->declaration->design_ent != ast::DESIGN_ENT::PROCEDURE)
+        if(is_proc_decl &&
+            dynamic_cast<ast::DeclaredEnt*>(rel->user)->declaration->design_ent != ast::DESIGN_ENT::PROCEDURE)
             throw PqlException("pql::eval", "entity for first argument of Uses must be a procedure");
 
-        if(is_var_decl && dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration->design_ent != ast::DESIGN_ENT::VARIABLE)
+        if(is_var_decl &&
+            dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration->design_ent != ast::DESIGN_ENT::VARIABLE)
             throw PqlException("pql::eval", "entity for second argument of Uses must be a variable");
 
 
@@ -153,10 +155,12 @@ namespace pql::eval
         if(dynamic_cast<ast::EntName*>(rel->user))
             throw PqlException("pql::eval", "UsesS should not have an entity name as its first argument");
 
-        if(is_var_decl && dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration->design_ent != ast::DESIGN_ENT::VARIABLE)
+        if(is_var_decl &&
+            dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration->design_ent != ast::DESIGN_ENT::VARIABLE)
             throw PqlException("pql::eval", "entity for second argument of Uses must be a variable");
 
-        if(is_user_decl && (ast::kStmtDesignEntities.count(dynamic_cast<ast::DeclaredStmt*>(rel->user)->declaration->design_ent) == 0))
+        if(is_user_decl &&
+            (ast::kStmtDesignEntities.count(dynamic_cast<ast::DeclaredStmt*>(rel->user)->declaration->design_ent) == 0))
             throw PqlException("pql::eval", "first argument for UsesS must be a statement entity");
 
         if(is_user_sid && is_var_name)
@@ -179,8 +183,8 @@ namespace pql::eval
             for(const auto& var : m_pkb->uses_modifies.getUsesVars(user_sid->id))
                 new_domain.insert(table::Entry(var_decl->declaration, var));
 
-            m_table->upsertDomains(var_decl->declaration, table::entry_set_intersect(new_domain,
-                m_table->getDomain(var_decl->declaration)));
+            m_table->upsertDomains(var_decl->declaration,
+                table::entry_set_intersect(new_domain, m_table->getDomain(var_decl->declaration)));
         }
         else if(is_user_sid && is_var_all)
         {
@@ -199,10 +203,11 @@ namespace pql::eval
             std::unordered_set<table::Entry> new_domain {};
 
             for(const auto& var : m_pkb->uses_modifies.getUses(user_decl->declaration->design_ent, var_name->name))
-                new_domain.insert(table::Entry(user_decl->declaration, static_cast<simple::ast::StatementNum>(std::stoi(var))));
+                new_domain.insert(
+                    table::Entry(user_decl->declaration, static_cast<simple::ast::StatementNum>(std::stoi(var))));
 
-            m_table->upsertDomains(user_decl->declaration, table::entry_set_intersect(new_domain,
-                m_table->getDomain(user_decl->declaration)));
+            m_table->upsertDomains(user_decl->declaration,
+                table::entry_set_intersect(new_domain, m_table->getDomain(user_decl->declaration)));
         }
         else if(is_user_decl && is_var_decl)
         {
