@@ -16,13 +16,12 @@ namespace pql::eval
         assert(rel);
         bool is_proc_name = dynamic_cast<ast::EntName*>(rel->user);
         bool is_proc_decl = dynamic_cast<ast::DeclaredEnt*>(rel->user);
-        bool is_proc_all = dynamic_cast<ast::AllEnt*>(rel->user);
         bool is_var_name = dynamic_cast<ast::EntName*>(rel->ent);
         bool is_var_decl = dynamic_cast<ast::DeclaredEnt*>(rel->ent);
         bool is_var_all = dynamic_cast<ast::AllEnt*>(rel->ent);
 
         // this should not happen, since Uses(_, foo) is invalid according to the specs
-        if(is_proc_all)
+        if(dynamic_cast<ast::AllEnt*>(rel->user) || dynamic_cast<ast::AllStmt*>(rel->user))
             throw PqlException("pql::eval", "first argument of Uses cannot be '_'");
 
         if(is_proc_decl &&
@@ -57,7 +56,7 @@ namespace pql::eval
             std::unordered_set<table::Entry> new_domain {};
 
             for(const auto& var : used_vars)
-                new_domain.insert(table::Entry(var_decl->declaration, var));
+                new_domain.emplace(var_decl->declaration, var);
 
             auto old_domain = m_table->getDomain(var_decl->declaration);
             m_table->upsertDomains(var_decl->declaration, table::entry_set_intersect(old_domain, new_domain));
@@ -86,7 +85,7 @@ namespace pql::eval
 
             std::unordered_set<table::Entry> new_domain {};
             for(const auto& proc_name : procs_using)
-                new_domain.insert(table::Entry(proc_decl->declaration, proc_name));
+                new_domain.emplace(proc_decl->declaration, proc_name);
 
             auto old_domain = m_table->getDomain(proc_decl->declaration);
             m_table->upsertDomains(proc_decl->declaration, table::entry_set_intersect(old_domain, new_domain));
@@ -149,7 +148,7 @@ namespace pql::eval
         bool is_var_all = dynamic_cast<ast::AllEnt*>(rel->ent);
 
         // this should not happen, since Uses(_, foo) is invalid according to the specs
-        if(dynamic_cast<ast::AllEnt*>(rel->user))
+        if(dynamic_cast<ast::AllEnt*>(rel->user) || dynamic_cast<ast::AllStmt*>(rel->user))
             throw PqlException("pql::eval", "first argument of Uses cannot be '_'");
 
         if(dynamic_cast<ast::EntName*>(rel->user))
@@ -181,7 +180,7 @@ namespace pql::eval
             std::unordered_set<table::Entry> new_domain {};
 
             for(const auto& var : m_pkb->uses_modifies.getUsesVars(user_sid->id))
-                new_domain.insert(table::Entry(var_decl->declaration, var));
+                new_domain.emplace(var_decl->declaration, var);
 
             m_table->upsertDomains(var_decl->declaration,
                 table::entry_set_intersect(new_domain, m_table->getDomain(var_decl->declaration)));
@@ -202,9 +201,8 @@ namespace pql::eval
             util::log("pql::eval", "Processing UsesS(DeclaredStmt, EntName)");
             std::unordered_set<table::Entry> new_domain {};
 
-            for(const auto& var : m_pkb->uses_modifies.getUses(user_decl->declaration->design_ent, var_name->name))
-                new_domain.insert(
-                    table::Entry(user_decl->declaration, static_cast<simple::ast::StatementNum>(std::stoi(var))));
+            for(const auto& stmt : m_pkb->uses_modifies.getUses(user_decl->declaration->design_ent, var_name->name))
+                new_domain.emplace(user_decl->declaration, static_cast<simple::ast::StatementNum>(std::stoi(stmt)));
 
             m_table->upsertDomains(user_decl->declaration,
                 table::entry_set_intersect(new_domain, m_table->getDomain(user_decl->declaration)));
@@ -237,7 +235,7 @@ namespace pql::eval
             std::unordered_set<table::Entry> new_domain {};
             for(const auto& entry : m_table->getDomain(user_decl->declaration))
             {
-                auto used_vars = m_pkb->uses_modifies.getUsesVars(entry.getVal());
+                auto used_vars = m_pkb->uses_modifies.getUsesVars(entry.getStmtNum());
                 if(used_vars.empty())
                     continue;
 
