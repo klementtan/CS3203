@@ -467,7 +467,7 @@ namespace pkb
     std::unordered_set<s_ast::StatementNum> ProgramKB::getAncestorsOf(s_ast::StatementNum fst)
     {
         if(_ancestors.count(fst) == 0)
-            return { };
+            return {};
 
         return _ancestors[fst];
     }
@@ -475,7 +475,7 @@ namespace pkb
     std::unordered_set<s_ast::StatementNum> ProgramKB::getChildrenOf(s_ast::StatementNum fst)
     {
         if(_direct_children.count(fst) == 0)
-            return { };
+            return {};
 
         return _direct_children[fst];
     }
@@ -483,7 +483,7 @@ namespace pkb
     std::unordered_set<s_ast::StatementNum> ProgramKB::getDescendantsOf(s_ast::StatementNum fst)
     {
         if(_descendants.count(fst) == 0)
-            return { };
+            return {};
 
         return _descendants[fst];
     }
