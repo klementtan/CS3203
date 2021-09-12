@@ -146,10 +146,4 @@ namespace pql::eval
                 handleParentT(parent_t);
         }
     }
-
-    bool Evaluator::thereExistsFollows(pkb::ProgramKB* pkb)
-    {
-        return std::any_of(
-            pkb->follows.begin(), pkb->follows.end(), [](pkb::Follows* follows) { return !follows->after.empty(); });
-    }
 }

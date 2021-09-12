@@ -33,7 +33,6 @@ namespace pql::eval
         void handleParent(const ast::Parent* parent);
         void handleParentT(const ast::ParentT* parent_t);
 
-        static bool thereExistsFollows(pkb::ProgramKB* pkb);
         std::unordered_set<table::Entry> getInitialDomainVar(ast::Declaration* declaration);
         std::unordered_set<table::Entry> getInitialDomainProc(ast::Declaration* declaration);
         std::unordered_set<table::Entry> getInitialDomainStmt(ast::Declaration* declaration);
