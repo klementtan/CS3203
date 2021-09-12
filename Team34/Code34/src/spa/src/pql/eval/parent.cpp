@@ -126,6 +126,8 @@ namespace pql::eval
 
                 new_domain.emplace(child_decl, entry.getStmtNum());
             }
+
+            m_table->upsertDomains(child_decl, table::entry_set_intersect(new_domain, m_table->getDomain(child_decl)));
         }
         else if(is_parent_wildcard && is_child_wildcard)
         {
@@ -256,6 +258,8 @@ namespace pql::eval
 
                 new_domain.emplace(child_decl, entry.getStmtNum());
             }
+
+            m_table->upsertDomains(child_decl, table::entry_set_intersect(new_domain, m_table->getDomain(child_decl)));
         }
         else if(is_parent_wildcard && is_child_wildcard)
         {
