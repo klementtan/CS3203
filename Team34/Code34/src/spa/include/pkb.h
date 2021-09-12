@@ -5,7 +5,7 @@
 
 #include <unordered_map>
 #include <unordered_set>
-#include <zst.h>
+#include <optional>
 
 #include <zst.h>
 
@@ -151,7 +151,9 @@ namespace pkb
 
         bool isParent(simple::ast::StatementNum, simple::ast::StatementNum);
         bool isParentT(simple::ast::StatementNum, simple::ast::StatementNum);
-        simple::ast::StatementNum getParentOf(simple::ast::StatementNum);
+
+        std::optional<simple::ast::StatementNum> getParentOf(simple::ast::StatementNum);
+
         std::unordered_set<simple::ast::StatementNum> getAncestorsOf(simple::ast::StatementNum);
         std::unordered_set<simple::ast::StatementNum> getChildrenOf(simple::ast::StatementNum);
         std::unordered_set<simple::ast::StatementNum> getDescendantsOf(simple::ast::StatementNum);
