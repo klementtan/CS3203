@@ -508,7 +508,7 @@ namespace pql::eval
             if(used_vars.empty())
                 throw PqlException("pql::eval", "{} is always false; {} doesn't use any variables", rel->toString());
 
-            std::unordered_set<table::Entry> new_domain { };
+            std::unordered_set<table::Entry> new_domain {};
 
             for(const auto& var : used_vars)
                 new_domain.insert(table::Entry(var_decl->declaration, var));
