@@ -1,0 +1,325 @@
+1 - Follows has 2 inputs, statement s1 and statement s2. Permutations of 8 different types (6 types of stmt).
+assign a, a1;
+Select a1 such that Follows (a, a1)
+2, 7, 9, 12, 15, 20, 22, 25, 31, 37, 44, 51, 57
+5000
+2 - assign x read
+assign a;read re1;
+Select re1 such that Follows (a, re1)
+3, 16, 26, 32, 38, 45, 52, 58
+5000
+3 - assign x print
+assign a;print pn1;
+Select pn1 such that Follows (a, pn1)
+none
+5000
+4 - assign x if
+assign a;if ifs1;
+Select ifs1 such that Follows (a, ifs1)
+none
+5000
+5 - assign x while
+assign a;while w1;
+Select w1 such that Follows (a, w1)
+none
+5000
+6 - assign x call
+assign a;call cl1;
+Select cl1 such that Follows (a, cl1)
+none
+5000
+7 - assign x wildcard
+assign a;
+Select a such that Follows (a, _)
+1, 2, 6, 8, 11, 14, 15, 19, 21, 24, 25, 30, 31, 36, 37, 43, 44, 50, 51, 56, 57
+5000
+8 - assign x stmt number
+assign a;
+Select a such that Follows (a, 4)
+none
+5000
+9 - read x assign
+read re;assign a1;
+Select a1 such that Follows (re, a1)
+none
+5000
+10 - read x read
+read re;read re1;
+Select re1 such that Follows (re, re1)
+none
+5000
+11 - read x print
+read re;print pn1;
+Select pn1 such that Follows (re, pn1)
+4, 17, 27, 33, 39, 46, 53, 59, 65, 69
+5000
+12 - read x if
+read re;if ifs1;
+Select ifs1 such that Follows (re, ifs1)
+none
+5000
+13 - read x while
+read re;while w1;
+Select w1 such that Follows (re, w1)
+none
+5000
+14 - read x call
+read re;call cl1;
+Select cl1 such that Follows (re, cl1)
+none
+5000
+15 - read x wildcard
+read re;
+Select re such that Follows (re, _)
+3, 16, 26, 32, 38, 45, 52, 58, 64, 68
+5000
+16 - read x stmt number
+read re;
+Select re such that Follows (re, 4)
+3
+5000
+17 - print x assign
+print pn;assign a1;
+Select a1 such that Follows (pn, a1)
+70
+5000
+18 - print x read
+print pn;read re1;
+Select re1 such that Follows (pn, re1)
+none
+5000
+19 - print x print
+print pn;print pn1;
+Select pn1 such that Follows (pn, pn1)
+none
+5000
+20 - print x if
+print pn;if ifs1;
+Select ifs1 such that Follows (pn, ifs1)
+5, 18
+5000
+21 - print x while
+print pn;while w1;
+Select w1 such that Follows (pn, w1)
+none
+5000
+22 - print x call
+print pn;call cl1;
+Select cl1 such that Follows (pn, cl1)
+28, 34, 40, 47, 54, 60, 66
+5000
+23 - print x wildcard
+print pn;
+Select pn such that Follows (pn, _)
+4, 17, 27, 33, 39, 46, 53, 59, 65, 69
+5000
+24 - print x stmt number
+print pn;
+Select pn such that Follows (pn, 4)
+21
+5000
+25 - if x assign
+if ifs;assign a1;
+Select a1 such that Follows (ifs, a1)
+14
+5000
+26 - if x read
+if ifs;read re1;
+Select re1 such that Follows (ifs, re1)
+15
+5000
+27 - if x print
+if ifs;print pn1;
+Select pn1 such that Follows (ifs, pn1)
+16
+5000
+28 - if x if
+if ifs;if ifs1;
+Select ifs1 such that Follows (ifs, ifs1)
+17
+5000
+29 - if x while
+if ifs;while w1;
+Select w1 such that Follows (ifs, w1)
+10, 23, 49
+5000
+30 - if x call
+if ifs;call cl1;
+Select cl1 such that Follows (ifs, cl1)
+none
+5000
+31 - if x wildcard
+if ifs;
+Select ifs such that Follows (ifs, _)
+5, 18, 29
+5000
+32 - if x stmt number
+if ifs;
+Select ifs such that Follows (ifs, 4)
+none
+5000
+33 - while x assign
+while w;assign a1;
+Select a1 such that Follows (w, a1)
+none
+5000
+34 - while x read
+while w;read re1;
+Select re1 such that Follows (w, re1)
+none
+5000
+35 - while x print
+while w;print pn1;
+Select pn1 such that Follows (w, pn1)
+none
+5000
+36 - while x if
+while w;if ifs1;
+Select ifs1 such that Follows (w, ifs1)
+none
+5000
+37 - while x while
+while w;while w1;
+Select w1 such that Follows (w, w1)
+none
+5000
+38 - while x call
+while w;call cl1;
+Select cl1 such that Follows (w, cl1)
+13, 26
+5000
+39 - while x wildcard
+while w;
+Select w such that Follows (w, _)
+10, 23
+5000
+40 - while x stmt number
+while w;
+Select w such that Follows (w, 4)
+none
+5000
+41 - call x assign
+call cl;assign a1;
+Select a1 such that Follows (cl, a1)
+14
+5000
+42 - call x read
+call cl;read re1;
+Select re1 such that Follows (cl, re1)
+none
+5000
+43 - call x print
+call cl;print pn1;
+Select pn1 such that Follows (cl, pn1)
+none
+5000
+44 - call x if
+call cl;if ifs1;
+Select ifs1 such that Follows (cl, ifs1)
+29, 41
+5000
+45 - call x while
+call cl;while w1;
+Select w1 such that Follows (cl, w1)
+35, 55
+5000
+46 - call x call
+call cl;call cl1;
+Select cl1 such that Follows (cl, cl1)
+none
+5000
+47 - call x wildcard
+call cl;
+Select cl such that Follows (cl, _)
+13, 28, 34, 40, 54
+5000
+48 - call x stmt number
+call cl;
+Select 4 such that Follows (cl, 4)
+none
+5000
+49 - wildcard x assign
+assign a1;
+Select a1 such that Follows (_, a1)
+2, 7, 9, 12, 14, 15, 20, 22, 25, 31, 37, 44, 51, 57, 70
+5000
+50 - wildcard x read
+read re1;
+Select re1 such that Follows (_, re1)
+3, 16, 26, 32, 38, 45, 52, 58
+5000
+51 - wildcard x print
+print pn1;
+Select pn1 such that Follows (_, pn1)
+4, 17, 27, 33, 39, 46, 53, 59, 65, 69
+5000
+52 - wildcard x if
+if ifs1;
+Select ifs1 such that Follows (_, ifs1)
+5, 18, 29, 41
+5000
+53 - wildcard x while
+while w1;
+Select w1 such that Follows (_, w1)
+10, 23, 35, 49, 55
+5000
+54 - wildcard x call
+call cl1;
+Select cl1 such that Follows (_, cl1)
+13, 28, 34, 40, 47, 54, 60, 61, 66
+5000
+55 - wildcard x wildcard
+stmt s;
+Select s such that Follows (_, _)
+1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73
+5000
+56 - wildcard x stmt number
+stmt s;
+Select s such that Follows (_, 4)
+1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73
+5000
+57 - stmt number x assign
+assign a1;
+Select a1 such that Follows (2, a1)
+none
+5000
+58 - stmt number x read
+read re1;
+Select re1 such that Follows (2, re1)
+3
+5000
+59 - stmt number x print
+print pn1;
+Select pn1 such that Follows (2, pn1)
+none
+5000
+60 - stmt number x if
+if ifs1;
+Select ifs1 such that Follows (2, ifs1)
+none
+5000
+61 - stmt number x while
+while w1;
+Select w1 such that Follows (2, w1)
+none
+5000
+62 - stmt number x call
+call cl1;
+Select cl1 such that Follows (2, cl1)
+none
+5000
+63 - stmt number x wildcard
+stmt s;
+Select s such that Follows (2, _)
+1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 27, 28
+5000
+64 - stmt number x stmt number
+stmt s;
+Select s such that Follows (2, 4)
+none
+5000
+65 - invalid follows
+stmt s; variable v;
+Select s such that Follows (2, v)
+none
+5000
