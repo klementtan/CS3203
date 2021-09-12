@@ -1,9 +1,7 @@
-// ast.cpp
-// simply a file where the definitions of AST helper methods sit.
+// stringify.cpp
 
 #include <zpr.h>
 #include <zst.h>
-#include <string>
 
 #include "simple/ast.h"
 

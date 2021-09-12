@@ -43,7 +43,4 @@ namespace util
 
         exit(1);
     }
-
-    bool exactMatch(s_ast::Expr*, s_ast::Expr*);
-    bool partialMatch(s_ast::Expr*, s_ast::Expr*);
 }

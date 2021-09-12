@@ -17,7 +17,7 @@ namespace pkb
 
 namespace pql::eval::table
 {
-    struct Table;
+    class Table;
 }
 
 namespace pql::ast

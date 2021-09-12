@@ -44,30 +44,37 @@ namespace pql::ast
             if(this->expr_spec->expr != nullptr)
             {
                 if(this->expr_spec->is_subexpr)
-                    ;
+                    should_erase |= !s_ast::partialMatch(this->expr_spec->expr, assign_stmt->rhs);
                 else
-                    ;
+                    should_erase |= !s_ast::exactMatch(this->expr_spec->expr, assign_stmt->rhs);
             }
 
-
-
-
-            if(is_var_name)
+            // don't do extra work if we're already going to yeet this
+            if(!should_erase)
             {
-                auto var_name = dynamic_cast<EntName*>(this->ent)->name;
-                should_erase |= (assign_stmt->lhs != var_name);
-            }
-            else if(!should_erase && is_var_decl)
-            {
-
-            }
-            else if(is_var_wild)
-            {
-                // do nothing
-            }
-            else
-            {
-                throw PqlException("pql::eval", "unreachable");
+                if(is_var_name)
+                {
+                    auto var_name = dynamic_cast<EntName*>(this->ent)->name;
+                    should_erase |= (assign_stmt->lhs != var_name);
+                }
+                else if(is_var_decl)
+                {
+                    auto var_decl = dynamic_cast<DeclaredEnt*>(this->ent)->declaration;
+                    for(const auto& entry : tbl->getDomain(var_decl))
+                    {
+                        auto var_name = entry.getVal();
+                        if(var_name == it->getVal())
+                            tbl->addJoin(*it, entry);
+                    }
+                }
+                else if(is_var_wild)
+                {
+                    // do nothing
+                }
+                else
+                {
+                    throw PqlException("pql::eval", "unreachable: invalid entity type");
+                }
             }
 
             if(should_erase)
@@ -75,5 +82,7 @@ namespace pql::ast
             else
                 ++it;
         }
+
+        tbl->upsertDomains(this->assignment_declaration, domain);
     }
 }
