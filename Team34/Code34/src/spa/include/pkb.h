@@ -138,6 +138,9 @@ namespace pkb
 
         std::vector<Follows*> follows;
 
+        bool followsRelationExists();
+        bool parentRelationExists();
+
         bool isFollows(simple::ast::StatementNum fst, simple::ast::StatementNum snd);
         bool isFollowsT(simple::ast::StatementNum fst, simple::ast::StatementNum snd);
         Follows* getFollows(simple::ast::StatementNum fst);
@@ -157,6 +160,11 @@ namespace pkb
         std::unordered_set<simple::ast::StatementNum> getAncestorsOf(simple::ast::StatementNum);
         std::unordered_set<simple::ast::StatementNum> getChildrenOf(simple::ast::StatementNum);
         std::unordered_set<simple::ast::StatementNum> getDescendantsOf(simple::ast::StatementNum);
+
+
+
+        bool m_follows_exists = false;
+        bool m_parent_exists = false;
     };
 
     Result<ProgramKB*> processProgram(simple::ast::Program* prog);

@@ -163,6 +163,7 @@ namespace pkb
                     follows->directly_after = stmt_list[j]->id;
                 }
                 follows->after.insert(stmt_list[j]->id);
+                pkb->m_follows_exists = true;
             }
 
             for(size_t k = 0; k < i; k++)
@@ -172,6 +173,7 @@ namespace pkb
                     follows->directly_before = stmt_list[k]->id;
                 }
                 follows->before.insert(stmt_list[k]->id);
+                pkb->m_follows_exists = true;
             }
 
             if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt); i)
@@ -360,6 +362,8 @@ namespace pkb
 
             if(parent != nullptr)
             {
+                pkb->m_parent_exists = true;
+
                 anc.insert(parent->id);
                 pkb->_direct_parents[child->id] = parent->id;
                 for(auto num : pkb->_ancestors[parent->id])
@@ -483,6 +487,17 @@ namespace pkb
 
         return _descendants[fst];
     }
+
+    bool ProgramKB::followsRelationExists()
+    {
+        return this->m_follows_exists;
+    }
+
+    bool ProgramKB::parentRelationExists()
+    {
+        return this->m_parent_exists;
+    }
+
 
     /**
      * End of Parent methods

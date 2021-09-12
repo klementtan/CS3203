@@ -269,3 +269,26 @@ TEST_CASE("Uses(_, *)")
 
     CHECK_THROWS_WITH(eval.evaluate(), Catch::Matchers::Contains("first argument of Uses cannot be '_'"));
 }
+
+
+TEST_CASE("no follows")
+{
+    auto prog = simple::parser::parseProgram("procedure a { x = 1; }");
+    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+
+    auto query = pql::parser::parsePQL("variable v;\nSelect v such that Follows(_, _)");
+    auto eval = pql::eval::Evaluator(pkb, query);
+
+    CHECK_THROWS_WITH(eval.evaluate(), Catch::Matchers::Contains("always evaluate to false"));
+}
+
+TEST_CASE("no parent")
+{
+    auto prog = simple::parser::parseProgram("procedure a { x = 1; }");
+    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+
+    auto query = pql::parser::parsePQL("variable v;\nSelect v such that Parent(_, _)");
+    auto eval = pql::eval::Evaluator(pkb, query);
+
+    CHECK_THROWS_WITH(eval.evaluate(), Catch::Matchers::Contains("always false"));
+}
