@@ -438,8 +438,9 @@ namespace pql::parser
             throw pql::exception::PqlException("pql::parser", "{} was not previously declared", tok.text);
         }
 
-        // Check if the reference to previously declared entity is a statement.
-        return declaration_list->declarations.find(tok.text.str())->second->design_ent == ast::DESIGN_ENT::STMT;
+        // Check if the reference to previously declared entity is a stmt.
+        return ast::kStmtDesignEntities.count(declaration_list->declarations.find(tok.text.str())->second->design_ent) >
+               0;
     }
 
     ast::Uses* parse_uses(ParserState* ps, const pql::ast::DeclarationList* declaration_list)

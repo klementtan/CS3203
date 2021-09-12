@@ -178,7 +178,8 @@ namespace pql::eval::table
         std::vector<std::unordered_map<ast::Declaration*, Entry>> tables = getTablePerm();
         for(auto table : tables)
         {
-            util::log("pql::eval::table", "Checking if table fulfill all join condition: {}", printTablePerm(table));
+            util::log("pql::eval::table", "Checking if table fulfill all {} join condition: {}", m_joins.size(),
+                printTablePerm(table));
             bool is_valid = true;
             for(const auto& join : m_joins)
             {
@@ -197,6 +198,10 @@ namespace pql::eval::table
                     {
                         continue;
                     }
+                    assert(actual_entry_a == expected_entry_a);
+                    assert(actual_entry_b == expected_entry_b);
+                    util::log("pql::eval::table", "Found a valid Join({}={}, {}={}) ", decl_ptr_a->toString(),
+                        actual_entry_a.toString(), decl_ptr_b->toString(), actual_entry_b.toString());
                     has_valid_join = true;
                     break;
                 }
@@ -208,6 +213,7 @@ namespace pql::eval::table
             }
             if(is_valid)
             {
+                util::log("pql::eval::table", "Found valid table perm {}", printTablePerm(table));
                 Entry entry = table.find(ret_decl)->second;
                 result.push_back(
                     entry.getType() == EntryType::kStmt ? std::to_string(entry.getStmtNum()) : entry.getVal());

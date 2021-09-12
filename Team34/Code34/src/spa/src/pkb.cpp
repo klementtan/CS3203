@@ -808,7 +808,7 @@ namespace pkb
     {
         if(this->procedures.find(var) == this->procedures.end())
         {
-            throw pkb::exception::PkbException("pkb::eval", "Procedure not found.");
+            throw pkb::exception::PkbException("pkb::eval", "Procedure {} not found.", var);
         }
         return this->procedures.at(var).modifies;
     }
