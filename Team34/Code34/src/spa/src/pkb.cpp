@@ -892,6 +892,16 @@ namespace pkb
     {
         auto pkb = new ProgramKB();
 
+        for(const auto& proc : program->procedures)
+        {
+            processCallGraph(pkb, &proc->body, &proc->name);
+        }
+
+        if(pkb->proc_calls.cycleExists())
+            return ErrFmt("Cyclic or recursive calls are not allowed");
+        if(auto a = pkb->proc_calls.missingProc(program->procedures); a != "")
+            return ErrFmt("Procedure '{}' is undefined", a);
+
         // do a first pass to number all the statements, set the
         // parent stmtlist, and collect all the procedures.
         for(const auto& proc : program->procedures)
@@ -920,15 +930,6 @@ namespace pkb
             processDescendants(pkb, &proc->body);
         }
 
-        for(const auto& proc : program->procedures)
-        {
-            processCallGraph(pkb, &proc->body, &proc->name);
-        }
-
-        if(pkb->proc_calls.cycleExists())
-            return ErrFmt("Cyclic or recursive calls are not allowed");
-        if(auto a = pkb->proc_calls.missingProc(program->procedures); a != "")
-            return ErrFmt("Procedure '{}' is undefined", a);
         return Ok(pkb);
     }
 }
