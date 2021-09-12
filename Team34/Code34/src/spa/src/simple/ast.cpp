@@ -184,43 +184,6 @@ namespace simple::ast
         return ret;
     }
 
-    template <typename T>
-    T remove_gutter(T beg, T end)
-    {
-        T dest = beg;
-        T itr = beg;
-        int i = GUTTER_WIDTH;
-        while(itr + 1 != end && i)
-        {
-            itr++;
-            i--;
-        }
-        for(; itr != end; ++itr)
-        {
-            *(dest++) = *itr;
-            if(*itr == '\n')
-            {
-                int i = GUTTER_WIDTH;
-                while(itr + 1 != end && i)
-                {
-                    itr++;
-                    i--;
-                }
-            }
-        }
-        return dest;
-    }
-
-    std::string Program::toProgFormat() const
-    {
-        std::string str = this->toString();
-        str.erase(remove_gutter(str.begin(), str.end()), str.end());
-        return str;
-    }
-
-
-
-
     bool BinaryOp::isRelational(zst::str_view op)
     {
         return op == "<" || op == ">" || op == ">=" || op == "<=" || op == "==" || op == "!=";

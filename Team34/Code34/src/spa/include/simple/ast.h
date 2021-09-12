@@ -130,7 +130,6 @@ namespace simple::ast
     struct Program
     {
         std::string toString(bool compact = false) const;
-        std::string toProgFormat() const;
         std::vector<Procedure*> procedures;
     };
 }

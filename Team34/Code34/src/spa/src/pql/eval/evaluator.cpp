@@ -113,13 +113,19 @@ namespace pql::eval
             m_table->upsertDomains(decl_ptr, getInitialDomain(decl_ptr));
         }
     }
+
     std::list<std::string> Evaluator::evaluate()
     {
         util::log("pql::eval", "Evaluating query: {}", m_query->toString());
         processDeclarations(m_query->declarations);
         util::log("pql::eval", "Table after initial processing of declaration: {}", m_table->toString());
+
         if(m_query->select->such_that)
             handleSuchThat(m_query->select->such_that);
+
+        if(m_query->select->pattern)
+            this->handlePattern(m_query->select->pattern);
+
         util::log("pql::eval", "Table after processing of such that: {}", m_table->toString());
         return this->m_table->getResult(m_query->select->ent);
     }

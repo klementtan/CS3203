@@ -225,7 +225,8 @@ namespace pql::parser
         if(ps->peek_one() == TT::DoubleQuotes)
             expr_spec->expr = parse_expr(ps);
 
-        if(is_subexpr)
+        // '_' itself is valid as well, so don't expect '__'
+        if(is_subexpr && expr_spec->expr != nullptr)
         {
             if(ps->next() != TT::Underscore)
                 throw pql::exception::PqlException("pql::parser", "expected '_' in subexpression pattern");
