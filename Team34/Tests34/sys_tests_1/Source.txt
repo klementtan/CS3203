@@ -1,0 +1,113 @@
+procedure A {
+	a = 1;
+	b = v;
+	read c;
+	print d;
+	if (e == f) then {
+		j = 2;
+		k = l;
+	} else {
+		m = 3;
+		n = o;
+	}
+	while (g == h) {
+		p = 4;
+		q = r;
+	}
+	call B;
+
+	a1 = 1;
+	b1 = v;
+	read c1;
+	print d1;
+	if (e1 == f1) then {
+		j1 = 2;
+		k1 = l;
+	} else {
+		m1 = 3;
+		n1 = o;
+	}
+	while (g1 == h1) {
+		p1 = 4;
+		q1 = r;
+		read d0;
+		print e0;
+		call Extra;
+		if (e1 == f1) then {
+			a1 = b1;
+			c1 = 1;
+			read d1;
+			print e1;
+			call Extra;
+			while (((a1) + 1) == 2 * (2*4*(1+2+4+4/2))) {
+				a2 = b2;
+				c2 = 2;
+				read d2;
+				print e2;
+				call Extra2;
+				if (((((a)))+1==3)&&((a+b)==3)) then {
+					ff = 99;
+				} else {
+					a3 = b3;
+					c3 = 3;
+					read d3;
+					print e3;
+					call Extra3;
+				}
+			}
+		} else {
+			n1 = y * (2) + x * (a + 1) * b;
+		}
+		while ( ((1==1)|| (2==c)) && (xxx== 222)) {
+			a3 = b3;
+			c3 = 3;
+			read d3;
+			print e3;
+			call UsesAndModifies;
+			while ( a== 2) {
+				a3 = b3;
+				c3 = 3;
+				read d3;
+				print e3;
+				call UsesAndModifies2;
+			}
+		}
+	}
+	call C;
+}
+
+procedure B {
+	s = t;
+}
+
+procedure C {
+	a = 1;
+}
+
+procedure UsesAndModifies {
+	read r1;
+	print p1;
+	call UsesAndModifies2;
+}
+
+procedure UsesAndModifies2 {
+	call UsesAndModifies3;
+}
+
+procedure UsesAndModifies3 {
+	read r2;
+	print p2;
+	n1 = v + x * y + z * t;
+}
+
+procedure Extra {
+	zzz = 999;
+}
+
+procedure Extra2 {
+	zzzz = 9999;
+}
+
+procedure Extra3 {
+	zzzzz = 99999;
+}

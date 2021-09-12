@@ -163,6 +163,7 @@ namespace pkb
                     follows->directly_after = stmt_list[j]->id;
                 }
                 follows->after.insert(stmt_list[j]->id);
+                pkb->m_follows_exists = true;
             }
 
             for(size_t k = 0; k < i; k++)
@@ -172,6 +173,7 @@ namespace pkb
                     follows->directly_before = stmt_list[k]->id;
                 }
                 follows->before.insert(stmt_list[k]->id);
+                pkb->m_follows_exists = true;
             }
 
             if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt); i)
@@ -360,6 +362,8 @@ namespace pkb
 
             if(parent != nullptr)
             {
+                pkb->m_parent_exists = true;
+
                 anc.insert(parent->id);
                 pkb->_direct_parents[child->id] = parent->id;
                 for(auto num : pkb->_ancestors[parent->id])
@@ -451,11 +455,11 @@ namespace pkb
         return _ancestors[snd].count(fst);
     }
 
-    s_ast::StatementNum ProgramKB::getParentOf(s_ast::StatementNum fst)
+    std::optional<s_ast::StatementNum> ProgramKB::getParentOf(s_ast::StatementNum fst)
     {
         // this will return 0 if it has no parent
         if(_direct_parents.count(fst) == 0)
-            return 0;
+            return std::nullopt;
 
         return _direct_parents[fst];
     }
@@ -463,10 +467,7 @@ namespace pkb
     std::unordered_set<s_ast::StatementNum> ProgramKB::getAncestorsOf(s_ast::StatementNum fst)
     {
         if(_ancestors.count(fst) == 0)
-        {
-            std::unordered_set<s_ast::StatementNum> anc;
-            return anc;
-        }
+            return {};
 
         return _ancestors[fst];
     }
@@ -474,10 +475,7 @@ namespace pkb
     std::unordered_set<s_ast::StatementNum> ProgramKB::getChildrenOf(s_ast::StatementNum fst)
     {
         if(_direct_children.count(fst) == 0)
-        {
-            std::unordered_set<s_ast::StatementNum> chi;
-            return chi;
-        }
+            return {};
 
         return _direct_children[fst];
     }
@@ -485,13 +483,21 @@ namespace pkb
     std::unordered_set<s_ast::StatementNum> ProgramKB::getDescendantsOf(s_ast::StatementNum fst)
     {
         if(_descendants.count(fst) == 0)
-        {
-            std::unordered_set<s_ast::StatementNum> des;
-            return des;
-        }
+            return {};
 
         return _descendants[fst];
     }
+
+    bool ProgramKB::followsRelationExists()
+    {
+        return this->m_follows_exists;
+    }
+
+    bool ProgramKB::parentRelationExists()
+    {
+        return this->m_parent_exists;
+    }
+
 
     /**
      * End of Parent methods

@@ -1,0 +1,325 @@
+1 - Parent* has 2 inputs, statement s1 and statement s2. Permutations of 8 different types (6 types of stmt).
+assign a, a1;
+Select a1 such that Parent* (a, a1)
+none
+5000
+2 - assign x read
+assign a;read re1;
+Select re1 such that Parent* (a, re1)
+none
+5000
+3 - assign x print
+assign a;print pn1;
+Select pn1 such that Parent* (a, pn1)
+none
+5000
+4 - assign x if
+assign a;if ifs1;
+Select ifs1 such that Parent* (a, ifs1)
+none
+5000
+5 - assign x while
+assign a;while w1;
+Select w1 such that Parent* (a, w1)
+none
+5000
+6 - assign x call
+assign a;call cl1;
+Select cl1 such that Parent* (a, cl1)
+none
+5000
+7 - assign x wildcard
+assign a;
+Select a such that Parent* (a, _)
+none
+5000
+8 - assign x stmt number
+assign a;
+Select a such that Parent* (a, 4)
+none
+5000
+9 - read x assign
+read re;assign a1;
+Select a1 such that Parent* (re, a1)
+none
+5000
+10 - read x read
+read re;read re1;
+Select re1 such that Parent* (re, re1)
+none
+5000
+11 - read x print
+read re;print pn1;
+Select pn1 such that Parent* (re, pn1)
+none
+5000
+12 - read x if
+read re;if ifs1;
+Select ifs1 such that Parent* (re, ifs1)
+none
+5000
+13 - read x while
+read re;while w1;
+Select w1 such that Parent* (re, w1)
+none
+5000
+14 - read x call
+read re;call cl1;
+Select cl1 such that Parent* (re, cl1)
+none
+5000
+15 - read x wildcard
+read re;
+Select re such that Parent* (re, _)
+none
+5000
+16 - read x stmt number
+read re;
+Select re such that Parent* (re, 4)
+none
+5000
+17 - print x assign
+print pn;assign a1;
+Select a1 such that Parent* (pn, a1)
+none
+5000
+18 - print x read
+print pn;read re1;
+Select re1 such that Parent* (pn, re1)
+none
+5000
+19 - print x print
+print pn;print pn1;
+Select pn1 such that Parent* (pn, pn1)
+none
+5000
+20 - print x if
+print pn;if ifs1;
+Select ifs1 such that Parent* (pn, ifs1)
+none
+5000
+21 - print x while
+print pn;while w1;
+Select w1 such that Parent* (pn, w1)
+none
+5000
+22 - print x call
+print pn;call cl1;
+Select cl1 such that Parent* (pn, cl1)
+none
+5000
+23 - print x wildcard
+print pn;
+Select pn such that Parent* (pn, _)
+none
+5000
+24 - print x stmt number
+print pn;
+Select pn such that Parent* (pn, 4)
+none
+5000
+25 - if x assign
+if ifs;assign a1;
+Select a1 such that Parent* (ifs, a1)
+6, 7, 8, 9, 19, 20, 21, 22, 30, 31, 36, 37, 42, 43, 44, 48
+5000
+26 - if x read
+if ifs;read re1;
+Select re1 such that Parent* (ifs, re1)
+32, 38, 45
+5000
+27 - if x print
+if ifs;print pn1;
+Select pn1 such that Parent* (ifs, pn1)
+33, 39, 46
+5000
+28 - if x if
+if ifs;if ifs1;
+Select ifs1 such that Parent* (ifs, ifs1)
+41
+5000
+29 - if x while
+if ifs;while w1;
+Select w1 such that Parent* (ifs, w1)
+35
+5000
+30 - if x call
+if ifs;call cl1;
+Select cl1 such that Parent* (ifs, cl1)
+34, 40, 47
+5000
+31 - if x wildcard
+if ifs;
+Select ifs such that Parent* (ifs, _)
+5, 18, 29, 41
+5000
+32 - if x stmt number
+if ifs;
+Select ifs such that Parent* (ifs, 4)
+none
+5000
+33 - while x assign
+while w;assign a1;
+Select a1 such that Parent* (w, a1)
+11, 12, 24, 25, 30, 31, 36, 37, 42, 43, 44, 48, 50, 51, 56, 57
+5000
+34 - while x read
+while w;read re1;
+Select re1 such that Parent* (w, re1)
+26, 32, 38, 45, 52, 58
+5000
+35 - while x print
+while w;print pn1;
+Select pn1 such that Parent* (w, pn1)
+27, 33, 39, 46, 53, 59
+5000
+36 - while x if
+while w;if ifs1;
+Select ifs1 such that Parent* (w, ifs1)
+29, 41
+5000
+37 - while x while
+while w;while w1;
+Select w1 such that Parent* (w, w1)
+35, 49, 55
+5000
+38 - while x call
+while w;call cl1;
+Select cl1 such that Parent* (w, cl1)
+28, 34, 40, 47, 54, 60
+5000
+39 - while x wildcard
+while w;
+Select w such that Parent* (w, _)
+10, 23, 35, 49, 55
+5000
+40 - while x stmt number
+while w;
+Select w such that Parent* (w, 4)
+none
+5000
+41 - call x assign
+call cl;assign a1;
+Select a1 such that Parent* (cl, a1)
+none
+5000
+42 - call x read
+call cl;read re1;
+Select re1 such that Parent* (cl, re1)
+none
+5000
+43 - call x print
+call cl;print pn1;
+Select pn1 such that Parent* (cl, pn1)
+none
+5000
+44 - call x if
+call cl;if ifs1;
+Select ifs1 such that Parent* (cl, ifs1)
+none
+5000
+45 - call x while
+call cl;while w1;
+Select w1 such that Parent* (cl, w1)
+none
+5000
+46 - call x call
+call cl;call cl1;
+Select cl1 such that Parent* (cl, cl1)
+none
+5000
+47 - call x wildcard
+call cl;
+Select cl such that Parent* (cl, _)
+none
+5000
+48 - call x stmt number
+call cl;
+Select 4 such that Parent* (cl, 4)
+none
+5000
+49 - wildcard x assign
+assign a1;
+Select a1 such that Parent* (_, a1)
+6, 7, 8, 9, 11, 12, 19, 20, 21, 22, 24, 25, 30, 31, 36, 37, 42, 43, 44, 48, 50, 51, 56, 57
+5000
+50 - wildcard x read
+read re1;
+Select re1 such that Parent* (_, re1)
+26, 32, 38, 45, 52, 58
+5000
+51 - wildcard x print
+print pn1;
+Select pn1 such that Parent* (_, pn1)
+27, 33, 39, 46, 53, 59
+5000
+52 - wildcard x if
+if ifs1;
+Select ifs1 such that Parent* (_, ifs1)
+29, 41
+5000
+53 - wildcard x while
+while w1;
+Select w1 such that Parent* (_, w1)
+35, 49, 55
+5000
+54 - wildcard x call
+call cl1;
+Select cl1 such that Parent* (_, cl1)
+28, 34, 40, 47, 54, 60
+5000
+55 - wildcard x wildcard
+stmt s;
+Select s such that Parent* (_, _)
+1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73
+5000
+56 - wildcard x stmt number
+stmt s;
+Select s such that Parent* (_, 4)
+none
+5000
+57 - stmt number x assign
+assign a1;
+Select a1 such that Parent* (2, a1)
+none
+5000
+58 - stmt number x read
+read re1;
+Select re1 such that Parent* (2, re1)
+none
+5000
+59 - stmt number x print
+print pn1;
+Select pn1 such that Parent* (2, pn1)
+none
+5000
+60 - stmt number x if
+if ifs1;
+Select ifs1 such that Parent* (2, ifs1)
+none
+5000
+61 - stmt number x while
+while w1;
+Select w1 such that Parent* (2, w1)
+none
+5000
+62 - stmt number x call
+call cl1;
+Select cl1 such that Parent* (2, cl1)
+none
+5000
+63 - stmt number x wildcard
+stmt s;
+Select s such that Parent* (2, _)
+none
+5000
+64 - stmt number x stmt number
+stmt s;
+Select s such that Parent* (2, 4)
+none
+5000
+65 - invalid Parent*
+stmt s; variable v;
+Select s such that Parent* (2, v)
+none
+5000

@@ -208,12 +208,11 @@ namespace pql::ast
     /** Expression Specification: pattern segment  of an assignment pattern. */
     struct ExprSpec
     {
-        // Is prefixed by `_`
-        bool any_before = false;
-        // Is suffixed by `_`
-        bool any_after = false;
+        // whether this is surrounded by '_'s
+        bool is_subexpr = false;
 
         simple::ast::Expr* expr = nullptr;
+
         std::string toString() const;
     };
 
@@ -267,6 +266,7 @@ namespace pql::ast
         DeclarationList* declarations = nullptr;
         std::string toString() const;
     };
+
 } // pql::ast
 
 namespace std

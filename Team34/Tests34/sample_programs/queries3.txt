@@ -1,0 +1,86 @@
+1 - all tests here are obtained from cs3203 test 1.
+stmt s, s1; assign a, a1; while w; if ifs; variable v, v1; 
+procedure p, q; constant c; read re; print pn; call cl;
+Select s such that Follows (12, s)
+15
+5000
+2 - comment
+stmt s, s1; assign a, a1; while w; if ifs; variable v, v1; 
+procedure p, q; constant c; read re; print pn; call cl;
+Select s such that Follows* (1, s)
+2, 3, 4, 5, 6
+5000
+3 - comment
+stmt s, s1; assign a, a1; while w; if ifs; variable v, v1; 
+procedure p, q; constant c; read re; print pn; call cl;
+Select s such that Parent (s, 11)
+7
+5000
+4 - comment
+stmt s, s1; assign a, a1; while w; if ifs; variable v, v1; 
+procedure p, q; constant c; read re; print pn; call cl;
+Select s such that Parent* (_, s)
+7, 8, 9, 10, 11, 13, 14
+5000
+5 - comment
+stmt s, s1; assign a, a1; while w; if ifs; variable v, v1; 
+procedure p, q; constant c; read re; print pn; call cl;
+Select v such that Modifies (7, v)
+main, computeCentroid, readPoint
+x, i, z
+5000
+6 - comment
+stmt s, s1; assign a, a1; while w; if ifs; variable v, v1; 
+procedure p, q; constant c; read re; print pn; call cl;
+Select v such that Uses (3, v)
+x, y, v, i
+5000
+7 - comment
+stmt s, s1; assign a, a1; while w; if ifs; variable v, v1; 
+procedure p, q; constant c; read re; print pn; call cl;
+Select a pattern a (_, "z+x")
+8, 11
+5000
+8 - comment
+stmt s, s1; assign a, a1; while w; if ifs; variable v, v1; 
+procedure p, q; constant c; read re; print pn; call cl;
+Select a pattern a (_, _"(x+2)"_)
+2, 14
+5000
+9 - comment
+stmt s, s1; assign a, a1; while w; if ifs; variable v, v1; 
+procedure p, q; constant c; read re; print pn; call cl;
+Select v pattern a (v, _"x"_)
+y, z, i
+5000
+10 - comment
+stmt s, s1; assign a, a1; while w; if ifs; variable v, v1; 
+procedure p, q; constant c; read re; print pn; call cl;
+Select a such that Uses (a, v) pattern a1 (v1, _"x"_)
+2, 4, 8, 9, 10, 11, 13, 14
+5000
+11 - comment
+stmt s, s1; assign a, a1; while w; if ifs; variable v, v1; 
+procedure p, q; constant c; read re; print pn; call cl;
+Select a such that Uses (a, v) pattern a (v, _"x"_)
+11, 14
+5000
+12 - comment
+stmt s, s1; assign a, a1; while w; if ifs; variable v, v1; 
+procedure p, q; constant c; read re; print pn; call cl;
+Select v such that Uses (a, v) pattern a (v1, _"x"_)
+x, y, z
+5000
+13 - comment
+stmt s, s1; assign a, a1; while w; if ifs; variable v, v1; 
+procedure p, q; constant c; read re; print pn; call cl;
+Select s such that Next* (10, s)
+6, 7, 8, 9, 10, 11
+5000
+14 - comment
+stmt s, s1; assign a, a1; while w; if ifs; variable v, v1; 
+procedure p, q; constant c; read re; print pn; call cl;
+Select <a, c> with a.stmt# = c.value 
+2 2, 4 4, 10 10
+5000
+

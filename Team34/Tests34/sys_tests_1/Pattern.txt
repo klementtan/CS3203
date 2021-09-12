@@ -1,0 +1,95 @@
+1 - invalid pattern (single _)
+assign a;
+Select a pattern a(_,_"1")
+none
+5000
+2 - invalid pattern (single _)
+assign a;
+Select a pattern a(_,"1"_)
+none
+5000
+3 - invalid pattern (invalid token/no match)
+assign a;
+Select a pattern a(_,_"@1"_)
+none
+5000
+4 - valid complete match
+assign a;
+Select a pattern a(_,"y * (2) + x * (a + 1) * b")
+48
+5000
+5 - invalid complete match due to missing ()
+assign a;
+Select a pattern a(_,"y * (2) + x * a + 1 * b")
+none
+5000
+6 - valid complete match with () removed
+assign a;call cl1;
+Select a pattern a(_,"y * 2 + x * (a + 1) * b")
+48
+5000
+7 - valid complete match with constant only
+assign a;call cl1;
+Select a pattern a(_,"1")
+1, 14, 31, 63
+5000
+8 - complete match with variable only
+assign a;variable v;
+Select a pattern a(v,"v")
+2, 15
+5000
+9 - complete match with an always true pattern
+assign a, a1;
+Select a1 pattern a(_,"y * (2) + x * a + 1 * b")
+none
+5000
+10 - valid lowest layer sub match
+assign a;
+Select a pattern a(_,_"a + 1"_)
+48
+5000
+11 - valid 2 layers sub match
+assign a;
+Select a pattern a(_,_"(a + 1) * b"_)
+none
+5000
+12 - valid submatch with messed up formatting
+assign a;
+Select a pattern a(_,_"(a+1  )*b  "_)
+none
+5000
+13 - valid submatch with complete match pattern
+assign a;
+Select a pattern a(_,_"y * (2) + x * (a + 1) * b"_)
+48
+5000
+14 - invalid submatch due to wrong precedence
+assign a;
+Select a pattern a(_,_"1 * b"_)
+none
+5000
+15 - invalid submatch due to additional element
+assign a;
+Select a pattern a(_,_"y * (2) + x * (a + 1) * b + 1"_)
+none
+5000
+16 - valid variable only submatch
+assign a;variable v;
+Select a pattern a(v,_"v"_)
+2, 15, 70
+5000
+17 - valid constant only submatch
+assign a;
+Select a pattern a(_,_"2"_)
+6, 19, 37, 48
+5000
+18 - if pattern
+if i;
+Select i pattern i(_,_,_)
+5, 18, 29, 41
+5000
+19 - while pattern
+while w;
+Select w pattern w(_,_)
+10, 23, 35, 49, 55
+5000
