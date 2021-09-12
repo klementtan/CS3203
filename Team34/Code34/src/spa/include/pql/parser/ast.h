@@ -4,6 +4,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <string>
 #include "simple/ast.h"
@@ -26,6 +27,10 @@ namespace pql::ast
         CONSTANT,
         PROCEDURE
     };
+
+    // Set of all statement design entities
+    const std::unordered_set<DESIGN_ENT> kStmtDesignEntities = { DESIGN_ENT::STMT, DESIGN_ENT::READ, DESIGN_ENT::PRINT,
+        DESIGN_ENT::CALL, DESIGN_ENT::WHILE, DESIGN_ENT::IF, DESIGN_ENT::ASSIGN };
 
     // Maps string representation of design ent to enum representation of it. ie: {"if": DESIGN_ENT::IF}
     extern const std::unordered_map<std::string, DESIGN_ENT> DESIGN_ENT_MAP;
@@ -207,9 +212,8 @@ namespace pql::ast
         bool any_before = false;
         // Is suffixed by `_`
         bool any_after = false;
-        // The assignment expression on rhs that it should match
-        // TODO: Refactor to use ast::Expr* instead of raw string for easier matching.
-        std::string expr;
+
+        simple::ast::Expr* expr = nullptr;
         std::string toString() const;
     };
 

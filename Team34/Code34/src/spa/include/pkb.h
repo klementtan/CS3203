@@ -148,10 +148,15 @@ namespace pkb
 
         std::unordered_map<simple::ast::StatementNum, simple::ast::StatementNum> _direct_parents;
         std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _ancestors;
+        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _direct_children;
+        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _descendants;
 
         bool isParent(simple::ast::StatementNum, simple::ast::StatementNum);
         bool isParentT(simple::ast::StatementNum, simple::ast::StatementNum);
+        simple::ast::StatementNum getParentOf(simple::ast::StatementNum);
         std::unordered_set<simple::ast::StatementNum> getAncestorsOf(simple::ast::StatementNum);
+        std::unordered_set<simple::ast::StatementNum> getChildrenOf(simple::ast::StatementNum);
+        std::unordered_set<simple::ast::StatementNum> getDescendantsOf(simple::ast::StatementNum);
     };
 
     Result<ProgramKB*> processProgram(simple::ast::Program* prog);

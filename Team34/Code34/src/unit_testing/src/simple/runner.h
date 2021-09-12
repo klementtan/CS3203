@@ -36,8 +36,8 @@ struct Test
     }
 };
 
-#define TEST_EXPR_OK(input, expected) REQUIRE(Test::expr(true, input, expected).run())
-#define TEST_EXPR_ERR(input, expected) REQUIRE(Test::expr(false, input, expected).run())
+#define TEST_EXPR_OK(input, expected) CHECK(Test::expr(true, input, expected).run())
+#define TEST_EXPR_ERR(input, expected) CHECK(Test::expr(false, input, expected).run())
 
-#define TEST_PROG_OK(input, expected) REQUIRE(Test::program(true, input, expected).run())
-#define TEST_PROG_ERR(input, expected) REQUIRE(Test::program(false, input, expected).run())
+#define TEST_PROG_OK(input, expected) CHECK(Test::program(true, input, expected).run())
+#define TEST_PROG_ERR(input, expected) CHECK(Test::program(false, input, expected).run())

@@ -56,7 +56,7 @@ namespace pql::eval
         for(auto [name, var] : m_pkb->uses_modifies.variables)
         {
             util::log("pql::eval", "Adding {} to initial var domain", name);
-            domain.insert(table::Entry(declaration, var.name));
+            domain.insert(table::Entry(declaration, name));
         }
         return domain;
     }
@@ -70,11 +70,10 @@ namespace pql::eval
         }
         util::log("pql::eval", "Adding {} procedures to {} initial domain", m_pkb->uses_modifies.procedures.size(),
             declaration->toString());
-        // TODO: Check with pkb team if this is the right way to access all procedures
         for(auto [name, proc] : m_pkb->uses_modifies.procedures)
         {
             util::log("pql::eval", "Adding {} to initial proc domain", name);
-            domain.insert(table::Entry(declaration, proc.ast_proc->name));
+            domain.insert(table::Entry(declaration, name));
         }
         return domain;
     }
@@ -472,7 +471,137 @@ namespace pql::eval
     }
     void Evaluator::handleUsesP(const ast::UsesP* uses_p) { }
     void Evaluator::handleUsesS(const ast::UsesS* uses_p) { }
-    void Evaluator::handleModifiesP(const ast::ModifiesP* modifies_p) { }
+
+    void Evaluator::handleModifiesP(const ast::ModifiesP* modifies_p)
+    {
+        assert(modifies_p);
+        assert(modifies_p->ent);
+        assert(modifies_p->modifier);
+        auto* mod_declared = dynamic_cast<ast::DeclaredEnt*>(modifies_p->modifier);
+        auto* mod_name = dynamic_cast<ast::EntName*>(modifies_p->modifier);
+        auto* mod_all = dynamic_cast<ast::AllEnt*>(modifies_p->modifier);
+        auto* ent_declared = dynamic_cast<ast::DeclaredEnt*>(modifies_p->ent);
+        auto* ent_name = dynamic_cast<ast::EntName*>(modifies_p->ent);
+        auto* ent_all = dynamic_cast<ast::AllEnt*>(modifies_p->ent);
+        if(mod_all)
+        {
+            throw exception::PqlException(
+                "pql::eval", "Modifier of ModifiesP cannot be '_': {}", modifies_p->toString());
+        }
+        if(mod_declared && (mod_declared->declaration->design_ent != ast::DESIGN_ENT::PROCEDURE))
+        {
+            throw exception::PqlException("pql::eval",
+                "Declared modifier of ModifiesP can only be of type PROCEDURE: {}", modifies_p->toString());
+        }
+        if(ent_declared && (ent_declared->declaration->design_ent != ast::DESIGN_ENT::VARIABLE))
+        {
+            throw exception::PqlException(
+                "pql::eval", "Entity being modified must be of type VARIABLE: {}", modifies_p->toString());
+        }
+        if(mod_declared && ent_declared)
+        {
+            util::log("pql::eval", "Processing ModifiesP(DeclaredEnt, DeclaredEnt)");
+            for(const table::Entry& entry : m_table->getDomain(mod_declared->declaration))
+            {
+                std::unordered_set<std::string> ent_names = this->m_pkb->uses_modifies.getModifiesVars(entry.getVal());
+                for(std::string ent_name : ent_names)
+                {
+                    table::Entry mod_entry = table::Entry(mod_declared->declaration, entry.getVal());
+                    table::Entry ent_entry = table::Entry(ent_declared->declaration, ent_name);
+                    util::log("pql::eval", "{} adds Join({},{}),", modifies_p->toString(), mod_entry.toString(),
+                        ent_entry.toString());
+                    m_table->addJoin(mod_entry, ent_entry);
+                }
+            }
+        }
+        if(mod_declared && ent_name)
+        {
+            util::log("pql::eval", "Processing ModifiesP(DeclaredEnt, EntName)");
+
+            std::unordered_set<std::string> modifier_candidates =
+                m_pkb->uses_modifies.getModifies(mod_declared->declaration->design_ent, ent_name->name);
+            if(modifier_candidates.empty())
+            {
+                throw pql::exception::PqlException("pql::eval",
+                    "{} will always evaluate to false. No procedures modifies {}", modifies_p->toString(),
+                    ent_name->name);
+            }
+            else
+            {
+                std::unordered_set<table::Entry> curr_domain;
+                std::unordered_set<table::Entry> prev_domain = m_table->getDomain(mod_declared->declaration);
+                for(std::string proc_name : modifier_candidates)
+                {
+                    auto entry = table::Entry(mod_declared->declaration, proc_name);
+                    curr_domain.insert(entry);
+                    util::log("pql::eval", "{} adds {} to curr domain", modifies_p->toString(), entry.toString());
+                }
+                m_table->upsertDomains(mod_declared->declaration, table::entry_set_intersect(prev_domain, curr_domain));
+            }
+        }
+        if(mod_declared && ent_all)
+        {
+            util::log("pql::eval", "Processing ModifiesP(DeclaredEnt, _)");
+            std::unordered_set<table::Entry> curr_domain;
+            std::unordered_set<table::Entry> prev_domain = m_table->getDomain(mod_declared->declaration);
+            for(const table::Entry& entry : m_table->getDomain(mod_declared->declaration))
+            {
+                std::string proc_name = entry.getVal();
+                if(!m_pkb->uses_modifies.getModifiesVars(proc_name).empty())
+                {
+                    curr_domain.insert(entry);
+                    util::log("pql::eval", "{} adds {} to curr domain", modifies_p->toString(), entry.toString());
+                }
+            }
+            m_table->upsertDomains(mod_declared->declaration, table::entry_set_intersect(prev_domain, curr_domain));
+        }
+        if(mod_name && ent_declared)
+        {
+            util::log("pql::eval", "Processing ModifiesP(EntName, DeclaredEnt)");
+            std::unordered_set<std::string> var_candidates = m_pkb->uses_modifies.getModifiesVars(mod_name->name);
+            std::unordered_set<table::Entry> curr_domain;
+            std::unordered_set<table::Entry> prev_domain = m_table->getDomain(ent_declared->declaration);
+            for(const std::string& var : var_candidates)
+            {
+                util::log("pql::eval", "Adding {} modifies {}", mod_name->name, var);
+                auto entry = table::Entry(ent_declared->declaration, var);
+                curr_domain.insert(entry);
+                util::log("pql::eval", "{} adds {} to curr domain", modifies_p->toString(), entry.toString());
+            }
+            m_table->upsertDomains(ent_declared->declaration, table::entry_set_intersect(curr_domain, prev_domain));
+        }
+        if(mod_name && ent_all)
+        {
+            util::log("pql::eval", "Processing ModifiesP(EntName, AllEnt)");
+            if(m_pkb->uses_modifies.getModifiesVars(mod_name->name).empty())
+            {
+                throw exception::PqlException("pql::eval",
+                    "{} always evaluate to false. {} does not modify any variable.", modifies_p->toString(),
+                    mod_name->name);
+            }
+            else
+            {
+                for(auto c : m_pkb->uses_modifies.getModifiesVars(mod_name->name))
+                {
+                    util::log("pql::eval", "Temp {}", c);
+                }
+                util::log("pql::eval", "{} always evaluate to true.", modifies_p->toString());
+            }
+        }
+        if(mod_name && ent_name)
+        {
+            util::log("pql::eval", "Processing ModifiesP(EntName, EntName)");
+            if(m_pkb->uses_modifies.getModifiesVars(mod_name->name).count(ent_name->name) > 0)
+            {
+                util::log("pql::eval", "{} always evaluate to true.", modifies_p->toString());
+            }
+            else
+            {
+                throw exception::PqlException("pql::eval", "{} always evaluate to false. {} does not modify {}.",
+                    modifies_p->toString(), mod_name->name, ent_name->name);
+            }
+        }
+    }
     void Evaluator::handleModifiesS(const ast::ModifiesS* modifies_s) { }
     void Evaluator::handleParent(const ast::Parent* parent) { }
     void Evaluator::handleParentT(const ast::ParentT* parent_t) { }

@@ -38,6 +38,10 @@ TEST_CASE("expression parsing -- basic operators")
         TEST_EXPR_OK("(a * a)", "(a * a)");
         TEST_EXPR_OK("(((((a * b)))))", "(a * b)");
         TEST_EXPR_OK("(((((((((a)))) * ((((b)))))))))", "(a * b)");
+
+        // keywords can be used as variables
+        TEST_EXPR_OK("if + while - read + then / else * print % call + procedure",
+            "((((if + while) - read) + (((then / else) * print) % call)) + procedure)");
     }
 
     SECTION("negative cases")
@@ -91,203 +95,257 @@ TEST_CASE("expression parsing -- precedence")
 // TODO: missing test cases for ensuring parser returns correct AST nodes
 TEST_CASE("expression parsing -- ast types") { }
 
-TEST_CASE("expression parsing -- relational") {
+
+
 #define BEGIN "procedure foo{if("
 #define END ")then{a = 1;}else{a = 0;}}"
-
-    SECTION("positive cases") { TEST_PROG_OK(BEGIN "1 > 2" END, BEGIN "1 > 2" END);
-TEST_PROG_OK(BEGIN "1 < 2" END, BEGIN "1 < 2" END);
-TEST_PROG_OK(BEGIN "1 == 2" END, BEGIN "1 == 2" END);
-TEST_PROG_OK(BEGIN "1 != 2" END, BEGIN "1 != 2" END);
-TEST_PROG_OK(BEGIN "1 <= 2" END, BEGIN "1 <= 2" END);
-TEST_PROG_OK(BEGIN "1 >= 2" END, BEGIN "1 >= 2" END);
-}
-
-SECTION("negative cases")
+TEST_CASE("expression parsing -- relational")
 {
-    TEST_PROG_ERR(BEGIN "1 < 2 < 3" END, "expected ')' after conditional, found '<' instead");
-    TEST_PROG_ERR(BEGIN "1 < 2 > 3" END, "expected ')' after conditional, found '>' instead");
-    TEST_PROG_ERR(BEGIN "1 == 2 != 3" END, "expected ')' after conditional, found '!=' instead");
-    TEST_PROG_ERR(BEGIN "(z == y) < x" END, "relational operators cannot be chained");
-    TEST_PROG_ERR(BEGIN "(z == y) < x < y" END, "relational operators cannot be chained");
-    TEST_PROG_ERR(BEGIN "(z == y) < (x < y)" END, "relational operators cannot be chained");
-}
+    SECTION("positive cases")
+    {
+        TEST_PROG_OK(BEGIN "1 > 2" END, BEGIN "1 > 2" END);
+        TEST_PROG_OK(BEGIN "1 < 2" END, BEGIN "1 < 2" END);
+        TEST_PROG_OK(BEGIN "1 == 2" END, BEGIN "1 == 2" END);
+        TEST_PROG_OK(BEGIN "1 != 2" END, BEGIN "1 != 2" END);
+        TEST_PROG_OK(BEGIN "1 <= 2" END, BEGIN "1 <= 2" END);
+        TEST_PROG_OK(BEGIN "1 >= 2" END, BEGIN "1 >= 2" END);
+    }
 
+    SECTION("negative cases")
+    {
+        TEST_PROG_ERR(BEGIN "1 < 2 < 3" END, "expected ')' after conditional, found '<' instead");
+        TEST_PROG_ERR(BEGIN "1 < 2 > 3" END, "expected ')' after conditional, found '>' instead");
+        TEST_PROG_ERR(BEGIN "1 == 2 != 3" END, "expected ')' after conditional, found '!=' instead");
+        TEST_PROG_ERR(BEGIN "(z == y) < x" END, "relational operators cannot be chained");
+        TEST_PROG_ERR(BEGIN "(z == y) < x < y" END, "relational operators cannot be chained");
+        TEST_PROG_ERR(BEGIN "(z == y) < (x < y)" END, "relational operators cannot be chained");
+    }
+}
 #undef BEGIN
 #undef END
-}
 
-TEST_CASE("expression parsing -- conditional") {
+
+
 #define BEGIN "procedure foo{if("
 #define END ")then{a = 1;}else{a = 0;}}"
-
-    SECTION("positive cases") { TEST_PROG_OK(BEGIN "!(x == 1)" END, BEGIN "!(x == 1)" END);
-TEST_PROG_OK(BEGIN "!(!(x > 0))" END, BEGIN "!(!(x > 0))" END);
-TEST_PROG_OK(BEGIN "!((((x < 69))))" END, BEGIN "!(x < 69)" END);
-
-TEST_PROG_OK(BEGIN "v + x * y + z * t < 10" END, BEGIN "((v + (x * y)) + (z * t)) < 10" END);
-
-TEST_PROG_OK(BEGIN "((v + (x * y)) / (z * t)) < 10" END, BEGIN "((v + (x * y)) / (z * t)) < 10" END);
-TEST_PROG_OK(BEGIN "((v + (x * y)) + (z * t) - 3) < 10" END, BEGIN "(((v + (x * y)) + (z * t)) - 3) < 10" END);
-TEST_PROG_OK(BEGIN "(((v + (x * y)) + 1) - 4) < 10" END, BEGIN "(((v + (x * y)) + 1) - 4) < 10" END);
-
-TEST_PROG_OK(BEGIN "10 > 4 + (((v + (x * y)) + 1) - 4)" END, BEGIN "10 > (4 + (((v + (x * y)) + 1) - 4))" END);
-
-TEST_PROG_OK(BEGIN "(((1 + 2))) / 4 > ((10))" END, BEGIN "((1 + 2) / 4) > 10" END);
-
-TEST_PROG_OK(BEGIN "(1 == 2) && (!(2 == 1))" END, BEGIN "(1 == 2) && (!(2 == 1))" END);
-TEST_PROG_OK(BEGIN "(x != y) || (p >= q)" END, BEGIN "(x != y) || (p >= q)" END);
-TEST_PROG_OK(BEGIN "((1 == 2) && (2 == 1)) || (2 == 2)" END, BEGIN "((1 == 2) && (2 == 1)) || (2 == 2)" END);
-}
-
-SECTION("negative cases")
+TEST_CASE("expression parsing -- conditional")
 {
-    TEST_PROG_ERR(BEGIN "x" END, "invalid relational operator ')'");
+    SECTION("positive cases")
+    {
+        TEST_PROG_OK(BEGIN "!(x == 1)" END, BEGIN "!(x == 1)" END);
+        TEST_PROG_OK(BEGIN "!(!(x > 0))" END, BEGIN "!(!(x > 0))" END);
+        TEST_PROG_OK(BEGIN "!((((x < 69))))" END, BEGIN "!(x < 69)" END);
 
-    TEST_PROG_ERR(BEGIN "1 == 2 && (2 == 1) && (x <= y)" END, "expected ')' after conditional, found '&&' instead");
-    TEST_PROG_ERR(BEGIN "(1 == 2) && (2 == 1) || (x <= y)" END, "expected ')' after conditional, found '||' instead");
+        TEST_PROG_OK(BEGIN "v + x * y + z * t < 10" END, BEGIN "((v + (x * y)) + (z * t)) < 10" END);
 
-    TEST_PROG_ERR(BEGIN "(1 == 2) &&" END, "expected '(' after '&&', found ')' instead");
+        TEST_PROG_OK(BEGIN "((v + (x * y)) / (z * t)) < 10" END, BEGIN "((v + (x * y)) / (z * t)) < 10" END);
+        TEST_PROG_OK(BEGIN "((v + (x * y)) + (z * t) - 3) < 10" END, BEGIN "(((v + (x * y)) + (z * t)) - 3) < 10" END);
+        TEST_PROG_OK(BEGIN "(((v + (x * y)) + 1) - 4) < 10" END, BEGIN "(((v + (x * y)) + 1) - 4) < 10" END);
 
-    TEST_PROG_ERR(BEGIN "!x" END, "expected '(' after '!', found 'x' instead");
-    TEST_PROG_ERR(BEGIN "!!(x)" END, "expected '(' after '!', found '!' instead");
+        TEST_PROG_OK(BEGIN "10 > 4 + (((v + (x * y)) + 1) - 4)" END, BEGIN "10 > (4 + (((v + (x * y)) + 1) - 4))" END);
+
+        TEST_PROG_OK(BEGIN "(((1 + 2))) / 4 > ((10))" END, BEGIN "((1 + 2) / 4) > 10" END);
+
+        TEST_PROG_OK(BEGIN "(1 == 2) && (!(2 == 1))" END, BEGIN "(1 == 2) && (!(2 == 1))" END);
+        TEST_PROG_OK(BEGIN "(x != y) || (p >= q)" END, BEGIN "(x != y) || (p >= q)" END);
+        TEST_PROG_OK(BEGIN "((1 == 2) && (2 == 1)) || (2 == 2)" END, BEGIN "((1 == 2) && (2 == 1)) || (2 == 2)" END);
+    }
+
+    SECTION("negative cases")
+    {
+        TEST_PROG_ERR(BEGIN "x" END, "invalid relational operator ')'");
+
+        TEST_PROG_ERR(BEGIN "1 == 2 && (2 == 1) && (x <= y)" END, "expected ')' after conditional, found '&&' instead");
+        TEST_PROG_ERR(
+            BEGIN "(1 == 2) && (2 == 1) || (x <= y)" END, "expected ')' after conditional, found '||' instead");
+
+        TEST_PROG_ERR(BEGIN "(1 == 2) &&" END, "expected '(' after '&&', found ')' instead");
+
+        TEST_PROG_ERR(BEGIN "!x" END, "expected '(' after '!', found 'x' instead");
+        TEST_PROG_ERR(BEGIN "!!(x)" END, "expected '(' after '!', found '!' instead");
+    }
 }
-
 #undef BEGIN
 #undef END
-}
 
-TEST_CASE("statement parsing -- basic") {
+
+
+
 #define BEGIN "procedure foo{"
 #define END "}"
 
-    SECTION("positive cases") { TEST_PROG_OK(BEGIN "print x;" END, BEGIN "print x;" END);
-TEST_PROG_OK(BEGIN "print x    ;" END, BEGIN "print x;" END);
-}
-
-SECTION("negative cases")
+TEST_CASE("statement parsing -- basic")
 {
-    TEST_PROG_ERR(BEGIN "print x;;;;" END, "unexpected token ';' at beginning of statement");
-    TEST_PROG_ERR(BEGIN ";" END, "unexpected token ';' at beginning of statement");
-    TEST_PROG_ERR(BEGIN "*x = 3;" END, "unexpected token '*' at beginning of statement");
-}
+    SECTION("positive cases")
+    {
+        TEST_PROG_OK(BEGIN "print x;" END, BEGIN "print x;" END);
+        TEST_PROG_OK(BEGIN "print x    ;" END, BEGIN "print x;" END);
+    }
 
+    SECTION("negative cases")
+    {
+        TEST_PROG_ERR(BEGIN "print x;;;;" END, "unexpected token ';' at beginning of statement");
+        TEST_PROG_ERR(BEGIN ";" END, "unexpected token ';' at beginning of statement");
+        TEST_PROG_ERR(BEGIN "*x = 3;" END, "unexpected token '*' at beginning of statement");
+    }
+}
 #undef BEGIN
 #undef END
-}
 
-TEST_CASE("statement parsing -- print/read/call") {
+
+
+
 #define BEGIN "procedure foo{"
 #define END "}"
 
-    SECTION("positive cases") { TEST_PROG_OK(BEGIN "print x;" END, BEGIN "print x;" END);
-TEST_PROG_OK(BEGIN "read x;" END, BEGIN "read x;" END);
-TEST_PROG_OK(BEGIN "call x;" END, BEGIN "call x;" END);
-}
-
-SECTION("negative cases")
+TEST_CASE("statement parsing -- print/read/call")
 {
-    TEST_PROG_ERR(BEGIN "print 1;" END, "expected identifier after 'print'");
-    TEST_PROG_ERR(BEGIN "read 1;" END, "expected identifier after 'read'");
-    TEST_PROG_ERR(BEGIN "call 1;" END, "expected identifier after 'call'");
+    SECTION("positive cases")
+    {
+        TEST_PROG_OK(BEGIN "print x;" END, BEGIN "print x;" END);
+        TEST_PROG_OK(BEGIN "read x;" END, BEGIN "read x;" END);
+        TEST_PROG_OK(BEGIN "call x;" END, BEGIN "call x;" END);
+    }
 
-    TEST_PROG_ERR(BEGIN "print (1);" END, "expected identifier after 'print'");
-    TEST_PROG_ERR(BEGIN "read (1);" END, "expected identifier after 'read'");
-    TEST_PROG_ERR(BEGIN "call (1);" END, "expected identifier after 'call'");
+    SECTION("negative cases")
+    {
+        TEST_PROG_ERR(BEGIN "print 1;" END, "expected identifier after 'print'");
+        TEST_PROG_ERR(BEGIN "read 1;" END, "expected identifier after 'read'");
+        TEST_PROG_ERR(BEGIN "call 1;" END, "expected identifier after 'call'");
 
-    TEST_PROG_ERR(BEGIN "print x + y;" END, "expected semicolon after statement, found '+' instead");
-    TEST_PROG_ERR(BEGIN "read x = 3;" END, "expected semicolon after statement, found '=' instead");
-    TEST_PROG_ERR(BEGIN "call x();" END, "expected semicolon after statement, found '(' instead");
+        TEST_PROG_ERR(BEGIN "print (1);" END, "expected identifier after 'print'");
+        TEST_PROG_ERR(BEGIN "read (1);" END, "expected identifier after 'read'");
+        TEST_PROG_ERR(BEGIN "call (1);" END, "expected identifier after 'call'");
+
+        TEST_PROG_ERR(BEGIN "print x + y;" END, "expected semicolon after statement, found '+' instead");
+        TEST_PROG_ERR(BEGIN "read x = 3;" END, "expected semicolon after statement, found '=' instead");
+        TEST_PROG_ERR(BEGIN "call x();" END, "expected semicolon after statement, found '(' instead");
+    }
 }
-
 #undef BEGIN
 #undef END
-}
 
-TEST_CASE("statement parsing -- assignments") {
+
+
+
 #define BEGIN "procedure foo{"
 #define END "}"
-
-    SECTION("positive cases") { TEST_PROG_OK(BEGIN "x = 1;" END, BEGIN "x = 1;" END);
-TEST_PROG_OK(BEGIN "x = asdf;" END, BEGIN "x = asdf;" END);
-TEST_PROG_OK(BEGIN "x = 1 + 2;" END, BEGIN "x = (1 + 2);" END);
-TEST_PROG_OK(BEGIN "x = 1 + 2 * 3 - 4 / 7 % 69;" END, BEGIN "x = ((1 + (2 * 3)) - ((4 / 7) % 69));" END);
-TEST_PROG_OK(BEGIN "x = (((((1 + 2 * 3 - 4 / 7 % 69)))));" END, BEGIN "x = ((1 + (2 * 3)) - ((4 / 7) % 69));" END);
-TEST_PROG_OK(BEGIN "x = (((((p + q) * r - s / t % 69))));" END, BEGIN "x = (((p + q) * r) - ((s / t) % 69));" END);
-}
-
-SECTION("negative cases")
+TEST_CASE("statement parsing -- assignments")
 {
-    TEST_PROG_ERR(BEGIN "x = ;" END, "invalid start of expression with ';'");
-    TEST_PROG_ERR(BEGIN "x = 1 > 2;" END, "expected semicolon after statement, found '>' instead");
-    TEST_PROG_ERR(BEGIN "x = 1 = 2;" END, "expected semicolon after statement, found '=' instead");
-    TEST_PROG_ERR(BEGIN "x = print 69;" END, "expected semicolon after statement, found '69' instead");
-}
+    SECTION("positive cases")
+    {
+        TEST_PROG_OK(BEGIN "x = 1;" END, BEGIN "x = 1;" END);
+        TEST_PROG_OK(BEGIN "x = asdf;" END, BEGIN "x = asdf;" END);
+        TEST_PROG_OK(BEGIN "x = 1 + 2;" END, BEGIN "x = (1 + 2);" END);
+        TEST_PROG_OK(BEGIN "x = 1 + 2 * 3 - 4 / 7 % 69;" END, BEGIN "x = ((1 + (2 * 3)) - ((4 / 7) % 69));" END);
+        TEST_PROG_OK(
+            BEGIN "x = (((((1 + 2 * 3 - 4 / 7 % 69)))));" END, BEGIN "x = ((1 + (2 * 3)) - ((4 / 7) % 69));" END);
+        TEST_PROG_OK(
+            BEGIN "x = (((((p + q) * r - s / t % 69))));" END, BEGIN "x = (((p + q) * r) - ((s / t) % 69));" END);
 
+        // variable names can be keywords.
+        TEST_PROG_OK(BEGIN "if = 1;" END, BEGIN "if = 1;" END);
+        TEST_PROG_OK(BEGIN "then = 1;" END, BEGIN "then = 1;" END);
+        TEST_PROG_OK(BEGIN "else = 1;" END, BEGIN "else = 1;" END);
+        TEST_PROG_OK(BEGIN "call = 1;" END, BEGIN "call = 1;" END);
+        TEST_PROG_OK(BEGIN "read = 1;" END, BEGIN "read = 1;" END);
+        TEST_PROG_OK(BEGIN "print = 1;" END, BEGIN "print = 1;" END);
+        TEST_PROG_OK(BEGIN "while = 1;" END, BEGIN "while = 1;" END);
+        TEST_PROG_OK(BEGIN "procedure = 1;" END, BEGIN "procedure = 1;" END);
+
+        TEST_PROG_OK(BEGIN "if = then;" END, BEGIN "if = then;" END);
+        TEST_PROG_OK(BEGIN "then = else;" END, BEGIN "then = else;" END);
+        TEST_PROG_OK(BEGIN "else = call;" END, BEGIN "else = call;" END);
+        TEST_PROG_OK(BEGIN "call = read;" END, BEGIN "call = read;" END);
+        TEST_PROG_OK(BEGIN "read = print;" END, BEGIN "read = print;" END);
+        TEST_PROG_OK(BEGIN "print = while;" END, BEGIN "print = while;" END);
+        TEST_PROG_OK(BEGIN "while = procedure;" END, BEGIN "while = procedure;" END);
+        TEST_PROG_OK(BEGIN "procedure = if;" END, BEGIN "procedure = if;" END);
+    }
+
+    SECTION("negative cases")
+    {
+        TEST_PROG_ERR(BEGIN "x = ;" END, "invalid start of expression with ';'");
+        TEST_PROG_ERR(BEGIN "x = 1 > 2;" END, "expected semicolon after statement, found '>' instead");
+        TEST_PROG_ERR(BEGIN "x = 1 = 2;" END, "expected semicolon after statement, found '=' instead");
+        TEST_PROG_ERR(BEGIN "x = print 69;" END, "expected semicolon after statement, found '69' instead");
+    }
+}
 #undef BEGIN
 #undef END
-}
 
-TEST_CASE("statement parsing -- blocks") {
+
+
 #define BEGIN "procedure foo{while((2 + 2) == 5){"
 #define END "}}"
 
-    SECTION("positive cases") { TEST_PROG_OK(BEGIN "a=1;" END, BEGIN "a = 1;" END);
-TEST_PROG_OK(BEGIN "a=1;b=2;c=3;" END, BEGIN "a = 1;b = 2;c = 3;" END);
-
-TEST_PROG_OK(BEGIN "while(x == 1){b=2;}c=3;" END, BEGIN "while(x == 1){b = 2;}c = 3;" END);
-TEST_PROG_OK(BEGIN "a=1;while(x == 1){b=2;}c=3;" END, BEGIN "a = 1;while(x == 1){b = 2;}c = 3;" END);
-TEST_PROG_OK(BEGIN "a=1;while(x == 1){b=2;}" END, BEGIN "a = 1;while(x == 1){b = 2;}" END);
-
-
-TEST_PROG_OK(BEGIN "if(x == 1)then{b=2;}else{x=0;}c=3;" END, BEGIN "if(x == 1)then{b = 2;}else{x = 0;}c = 3;" END);
-TEST_PROG_OK(
-    BEGIN "a=1;if(x == 1)then{b=2;}else{x=0;}c=3;" END, BEGIN "a = 1;if(x == 1)then{b = 2;}else{x = 0;}c = 3;" END);
-TEST_PROG_OK(BEGIN "a=1;if(x == 1)then{b=2;}else{x=0;}" END, BEGIN "a = 1;if(x == 1)then{b = 2;}else{x = 0;}" END);
-
-TEST_PROG_OK(BEGIN "while(x == 1){b=2;}c=3;if(x==0)then{c=0;}else{y=0;}while(z==0){p=0;}" END,
-    BEGIN "while(x == 1){b = 2;}c = 3;if(x == 0)then{c = 0;}else{y = 0;}while(z == 0){p = 0;}" END);
-}
-
-SECTION("negative cases")
+TEST_CASE("statement parsing -- blocks")
 {
-    TEST_PROG_ERR(BEGIN "{ }" END, "unexpected token '{' at beginning of statement");
-}
+    SECTION("positive cases")
+    {
+        TEST_PROG_OK(BEGIN "a=1;" END, BEGIN "a = 1;" END);
+        TEST_PROG_OK(BEGIN "a=1;b=2;c=3;" END, BEGIN "a = 1;b = 2;c = 3;" END);
 
+        TEST_PROG_OK(BEGIN "while(x == 1){b=2;}c=3;" END, BEGIN "while(x == 1){b = 2;}c = 3;" END);
+        TEST_PROG_OK(BEGIN "a=1;while(x == 1){b=2;}c=3;" END, BEGIN "a = 1;while(x == 1){b = 2;}c = 3;" END);
+        TEST_PROG_OK(BEGIN "a=1;while(x == 1){b=2;}" END, BEGIN "a = 1;while(x == 1){b = 2;}" END);
+
+
+        TEST_PROG_OK(
+            BEGIN "if(x == 1)then{b=2;}else{x=0;}c=3;" END, BEGIN "if(x == 1)then{b = 2;}else{x = 0;}c = 3;" END);
+        TEST_PROG_OK(BEGIN "a=1;if(x == 1)then{b=2;}else{x=0;}c=3;" END,
+            BEGIN "a = 1;if(x == 1)then{b = 2;}else{x = 0;}c = 3;" END);
+        TEST_PROG_OK(
+            BEGIN "a=1;if(x == 1)then{b=2;}else{x=0;}" END, BEGIN "a = 1;if(x == 1)then{b = 2;}else{x = 0;}" END);
+
+        TEST_PROG_OK(BEGIN "while(x == 1){b=2;}c=3;if(x==0)then{c=0;}else{y=0;}while(z==0){p=0;}" END,
+            BEGIN "while(x == 1){b = 2;}c = 3;if(x == 0)then{c = 0;}else{y = 0;}while(z == 0){p = 0;}" END);
+    }
+
+    SECTION("negative cases")
+    {
+        TEST_PROG_ERR(BEGIN "{ }" END, "unexpected token '{' at beginning of statement");
+    }
+}
 #undef BEGIN
 #undef END
-}
 
-TEST_CASE("statement parsing -- while loop") {
+
 #define BEGIN "procedure foo{"
 #define END "}"
 
-    // the conditional expression tests already covered the actual conditionals, so there's no need to repeat them here.
-    SECTION("positive cases") { TEST_PROG_OK(BEGIN "while(1 < 2) { a = 1; }" END, BEGIN "while(1 < 2){a = 1;}" END);
-}
-
-SECTION("negative cases")
+TEST_CASE("statement parsing -- while loop")
 {
-    TEST_PROG_ERR(BEGIN "while(x) { }" END, "invalid relational operator ')'");
-    TEST_PROG_ERR(BEGIN "while(x - 1) { }" END, "invalid relational operator ')'");
+    // the conditional expression tests already covered the actual conditionals, so there's no need to repeat them here.
+    SECTION("positive cases")
+    {
+        TEST_PROG_OK(BEGIN "while(1 < 2) { a = 1; }" END, BEGIN "while(1 < 2){a = 1;}" END);
+    }
 
-    TEST_PROG_ERR(BEGIN "while() { }" END, "invalid start of expression with ')'");
-    TEST_PROG_ERR(BEGIN "while(2+2==5)" END, "expected '{'");
+    SECTION("negative cases")
+    {
+        TEST_PROG_ERR(BEGIN "while(x) { }" END, "invalid relational operator ')'");
+        TEST_PROG_ERR(BEGIN "while(x - 1) { }" END, "invalid relational operator ')'");
 
-    TEST_PROG_ERR(BEGIN "while 3 > 1 { a = 1; }" END, "expected '(' after 'while'");
+        TEST_PROG_ERR(BEGIN "while() { }" END, "invalid start of expression with ')'");
+        TEST_PROG_ERR(BEGIN "while(2+2==5)" END, "expected '{'");
 
-    TEST_PROG_ERR(BEGIN "while(2 + 2 == 5) { }" END, "expected at least one statement between '{' and '}'");
+        TEST_PROG_ERR(BEGIN "while 3 > 1 { a = 1; }" END, "expected '(' after 'while'");
+
+        TEST_PROG_ERR(BEGIN "while(2 + 2 == 5) { }" END, "expected at least one statement between '{' and '}'");
+    }
 }
-
 #undef BEGIN
 #undef END
-}
+
+
+
+
+#define BEGIN "procedure foo{"
+#define END "}"
 
 TEST_CASE("statement parsing -- if statement")
 {
-#define BEGIN "procedure foo{"
-#define END "}"
-
     // the conditional expression tests already covered the actual conditionals, so there's no need to repeat them here.
     SECTION("positive cases")
     {
@@ -305,10 +363,12 @@ TEST_CASE("statement parsing -- if statement")
         TEST_PROG_ERR(BEGIN "if(2+2==5)then{a=0;}else{}" END, "expected at least one statement between '{' and '}'");
         TEST_PROG_ERR(BEGIN "if(2+2==5)then{a=0;}else if{}" END, "expected '{'");
     }
+}
 
 #undef BEGIN
 #undef END
-}
+
+
 
 
 #define PROC "procedure foo{"
