@@ -498,8 +498,6 @@ namespace pql::eval
             util::log("pql::eval", "Processing UsesP(EntName, EntName)");
             if(!m_pkb->uses_modifies.isUses(proc_name->name, var_name->name))
                 throw PqlException("pql::eval", "{} is always false", rel->toString(), var_name->name);
-
-            return;
         }
         else if(proc_name && var_decl)
         {
@@ -515,7 +513,6 @@ namespace pql::eval
 
             auto old_domain = m_table->getDomain(var_decl->declaration);
             m_table->upsertDomains(var_decl->declaration, table::entry_set_intersect(old_domain, new_domain));
-            return;
         }
         else if(proc_name && var_all)
         {
@@ -523,9 +520,6 @@ namespace pql::eval
             auto used_vars = m_pkb->uses_modifies.getUsesVars(proc_name->name);
             if(used_vars.empty())
                 throw PqlException("pql::eval", "{} is always false; {} doesn't use any variables", rel->toString());
-
-            // success.
-            return;
         }
 
         else if(proc_decl && var_name)
@@ -541,9 +535,8 @@ namespace pql::eval
             for(const auto& proc_name : procs_using)
                 new_domain.insert(table::Entry(proc_decl->declaration, proc_name));
 
-            auto old_domain = m_table->getDomain(var_decl->declaration);
+            auto old_domain = m_table->getDomain(proc_decl->declaration);
             m_table->upsertDomains(proc_decl->declaration, table::entry_set_intersect(old_domain, new_domain));
-            return;
         }
         else if(proc_decl && var_decl)
         {
@@ -582,8 +575,10 @@ namespace pql::eval
             m_table->upsertDomains(proc_decl->declaration,
                 table::entry_set_intersect(new_domain, m_table->getDomain(proc_decl->declaration)));
         }
-
-        throw PqlException("pql::eval", "unreachable");
+        else
+        {
+            throw PqlException("pql::eval", "unreachable");
+        }
     }
 
     void Evaluator::handleUsesS(const ast::UsesS* uses_p) { }
