@@ -81,6 +81,7 @@ namespace pql::eval
             // same strategy as Follows
             auto parent_domain = m_table->getDomain(parent_decl);
             auto new_child_domain = table::Domain {};
+            std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
             for(auto it = parent_domain.begin(); it != parent_domain.end();)
             {
@@ -95,8 +96,8 @@ namespace pql::eval
                 for(auto child_sid : children)
                 {
                     auto c_entry = table::Entry(child_decl, child_sid);
-                    m_table->addJoin(p_entry, c_entry);
                     new_child_domain.insert(c_entry);
+                    allowed_entries.insert({ p_entry, c_entry });
                 }
                 ++it;
             }
@@ -104,6 +105,7 @@ namespace pql::eval
             m_table->upsertDomains(parent_decl, parent_domain);
             m_table->upsertDomains(
                 child_decl, table::entry_set_intersect(new_child_domain, m_table->getDomain(child_decl)));
+            m_table->addJoin(table::Join(parent_decl, child_decl, allowed_entries));
         }
         else if(is_parent_decl && is_child_wildcard)
         {
@@ -232,6 +234,7 @@ namespace pql::eval
 
             auto parent_domain = m_table->getDomain(parent_decl);
             auto new_child_domain = table::Domain {};
+            std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
             for(auto it = parent_domain.begin(); it != parent_domain.end();)
             {
@@ -246,8 +249,8 @@ namespace pql::eval
                 for(auto child_sid : children)
                 {
                     auto c_entry = table::Entry(child_decl, child_sid);
-                    m_table->addJoin(p_entry, c_entry);
                     new_child_domain.insert(c_entry);
+                    allowed_entries.insert({ p_entry, c_entry });
                 }
                 ++it;
             }
@@ -255,6 +258,7 @@ namespace pql::eval
             m_table->upsertDomains(parent_decl, parent_domain);
             m_table->upsertDomains(
                 child_decl, table::entry_set_intersect(new_child_domain, m_table->getDomain(child_decl)));
+            m_table->addJoin(table::Join(parent_decl, child_decl, allowed_entries));
         }
         else if(is_parent_decl && is_child_wildcard)
         {

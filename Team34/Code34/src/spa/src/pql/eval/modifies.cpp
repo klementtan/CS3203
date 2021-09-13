@@ -47,6 +47,7 @@ namespace pql::eval
 
             auto mod_domain = m_table->getDomain(mod_decl);
             auto new_ent_domain = table::Domain {};
+            std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
             for(auto it = mod_domain.begin(); it != mod_domain.end();)
             {
@@ -64,7 +65,7 @@ namespace pql::eval
                     util::log("pql::eval", "{} adds Join({}, {})", rel->toString(), mod_entry.toString(),
                         ent_entry.toString());
 
-                    m_table->addJoin(mod_entry, ent_entry);
+                    allowed_entries.insert({ mod_entry, ent_entry });
                     new_ent_domain.insert(ent_entry);
                 }
                 ++it;
@@ -72,6 +73,7 @@ namespace pql::eval
 
             m_table->upsertDomains(mod_decl, mod_domain);
             m_table->upsertDomains(ent_decl, table::entry_set_intersect(new_ent_domain, m_table->getDomain(ent_decl)));
+            m_table->addJoin(table::Join(mod_decl, ent_decl, allowed_entries));
         }
         else if(is_mod_decl && is_ent_name)
         {
@@ -212,6 +214,7 @@ namespace pql::eval
             auto mod_domain = m_table->getDomain(mod_decl);
             auto new_ent_domain = table::Domain {};
 
+            std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
             for(auto it = mod_domain.begin(); it != mod_domain.end();)
             {
                 auto modified_vars = m_pkb->uses_modifies.getModifiesVars(it->getStmtNum());
@@ -227,8 +230,8 @@ namespace pql::eval
                     auto ent_entry = table::Entry(ent_decl, var_name);
                     util::log("pql::eval", "{} adds Join({}, {}),", rel->toString(), mod_entry.toString(),
                         ent_entry.toString());
+                    allowed_entries.insert({ mod_entry, ent_entry });
 
-                    m_table->addJoin(mod_entry, ent_entry);
                     new_ent_domain.insert(ent_entry);
                 }
                 ++it;
@@ -236,6 +239,7 @@ namespace pql::eval
 
             m_table->upsertDomains(mod_decl, mod_domain);
             m_table->upsertDomains(ent_decl, table::entry_set_intersect(new_ent_domain, m_table->getDomain(ent_decl)));
+            m_table->addJoin(table::Join(mod_decl, ent_decl, allowed_entries));
         }
         else if(is_mod_decl && is_ent_name)
         {
