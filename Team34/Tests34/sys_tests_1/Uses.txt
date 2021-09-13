@@ -1,22 +1,22 @@
 1 - Invalid Uses due to semantically indifferentiable wildcard
 assign a;
 Select a such that Uses (_, "b")
-2, 7, 9, 12, 15, 20, 22, 25, 31, 37, 44, 51, 57
+none
 5000
 2 - Invalid Uses (wrong arg type)
 assign a;
 Select re1 such that Uses (a, "f")
-3, 16, 26, 32, 38, 45, 52, 58
+none
 5000
 3 - assign
 assign a;variable v;
 Select a such that Uses (a, v)
-none
+2,7,9,12,15,20,22,25,30,36,43,48,50,56,62,70
 5000
 4 - assign
 assign a;
 Select a such that Uses (a, "a")
-none
+48
 5000
 5 - assign
 assign a;
@@ -26,7 +26,7 @@ none
 6 - assign
 assign a;
 Select a such that Uses (a, "1")
-1
+none
 5000
 7 - assign
 assign a;
@@ -36,7 +36,7 @@ none
 8 - assign
 assign a;
 Select a such that Uses (a, _)
-none
+2,7,9,12,15,20,22,25,30,36,43,48,50,56,62,70
 5000
 9 - read positive
 read re;
@@ -61,7 +61,7 @@ none
 13 - if (in cond, positive)
 if i;
 Select i such that Uses (i, "a1")
-none
+29
 5000
 14 - if (in cond/body, negative)
 if i;
@@ -71,36 +71,36 @@ none
 15 - if (in body, positive)
 if i;
 Select i such that Uses (i, "a3")
-3, 16
+none
 5000
-16 - if (in cond, positive)
+16 - while (in cond, positive)
 while i;
 Select i such that Uses (i, "2")
 none
 5000
-17 - if (in cond/body, negative)
+17 - while (in cond/body, negative)
 while i;
 Select i such that Uses (i, "a1*level8000")
 none
 5000
-18 - if (in body, positive)
+18 - while (in body, positive)
 while w;
-Select w such that Uses (w, "d2")
-3, 16
+Select w such that Uses (w, "e2")
+23, 35
 5000
 19 - in proc (direct call)
 procedure i;
 Select i such that Uses (i, "p1")
-A UsesAndModifies
+A, UsesAndModifies
 5000
 20 - in proc (indirect call)
 procedure i;
 Select i such that Uses (i, "p2")
-A UsesAndModifies2 UsesAndModifies UsesAndModifies3
+A, UsesAndModifies2, UsesAndModifies, UsesAndModifies3
 5000
 21 - proc call
 call i;
-Select i such that Uses (i, ""p1")
+Select i such that Uses (i, "p1")
 54
 5000
 22 - proc call
