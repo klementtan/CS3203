@@ -2,13 +2,15 @@
 //
 // stores implementation of result table for query
 
-#include "pql/parser/ast.h"
-#include "pql/eval/table.h"
-#include "pql/exception.h"
-#include "zpr.h"
-#include "simple/ast.h"
 #include <cassert>
 #include <unordered_set>
+
+#include "zpr.h"
+
+#include "exceptions.h"
+#include "simple/ast.h"
+#include "pql/parser/ast.h"
+#include "pql/eval/table.h"
 
 namespace pql::eval::table
 {
@@ -37,7 +39,7 @@ namespace pql::eval::table
                 this->m_type = EntryType::kConst;
                 break;
             default:
-                throw exception::PqlException(
+                throw util::PqlException(
                     "pql::eval::table::Entry", "Entry for {} should be instantiated using stmt num instead of string");
         }
     }
@@ -47,7 +49,7 @@ namespace pql::eval::table
             declaration->design_ent == ast::DESIGN_ENT::PROCEDURE ||
             declaration->design_ent == ast::DESIGN_ENT::CONSTANT)
         {
-            throw exception::PqlException(
+            throw util::PqlException(
                 "pql::eval::table::Entry", "Entry for {} should be instantiated using string instead of stmt num");
         }
         this->m_declaration = declaration;
@@ -58,7 +60,7 @@ namespace pql::eval::table
     {
         if(this->m_type == EntryType::kStmt)
         {
-            throw exception::PqlException("pql::eval::table::Entry", "Cannot getVal for statement entry");
+            throw util::PqlException("pql::eval::table::Entry", "Cannot getVal for statement entry");
         }
         return this->m_val;
     }
@@ -66,7 +68,7 @@ namespace pql::eval::table
     {
         if(this->m_type != EntryType::kStmt)
         {
-            throw exception::PqlException("pql::eval::table::Entry", "Cannot getStmtNum for non-statement entry");
+            throw util::PqlException("pql::eval::table::Entry", "Cannot getStmtNum for non-statement entry");
         }
         return this->m_stmt_num;
     }

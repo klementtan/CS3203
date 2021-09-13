@@ -3,11 +3,11 @@
 #include "TestWrapper.h"
 
 // spa
+#include "pkb.h"
 #include "util.h"
+#include "exceptions.h"
 #include "simple/parser.h"
 #include "pql/parser/parser.h"
-#include "pql/exception.h"
-#include "pkb.h"
 #include "pql/eval/evaluator.h"
 
 
@@ -30,10 +30,11 @@ void TestWrapper::evaluate(std::string query, std::list<std::string>& results)
         util::log("pql:ast", "Generated AST: {}", query_ast->toString());
         pql::eval::Evaluator* eval = new pql::eval::Evaluator(this->pkb, query_ast);
         results = eval->evaluate();
-    } catch(const pql::exception::PqlException& e)
+    }
+    catch(const util::Exception& e)
     {
-        // Errores in query should be silently ignored.
-        util::log("pql", "PqlException caught during evaluating query. PqlException: {}", e.what());
+        // Errors in query should be silently ignored.
+        util::log("pql", "exception caught during evaluating query: {}", e.what());
     }
 }
 

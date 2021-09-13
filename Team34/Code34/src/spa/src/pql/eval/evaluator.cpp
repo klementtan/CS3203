@@ -1,10 +1,11 @@
 // evaluator.cpp
 
-#include <algorithm>
-#include "pql/eval/evaluator.h"
 #include <cassert>
+#include <algorithm>
+
+#include "exceptions.h"
 #include "pql/eval/table.h"
-#include "pql/exception.h"
+#include "pql/eval/evaluator.h"
 
 namespace pql::eval
 {
@@ -30,7 +31,7 @@ namespace pql::eval
             return ast::DESIGN_ENT::WHILE;
         if(dynamic_cast<simple::ast::ProcCall*>(stmt))
             return ast::DESIGN_ENT::CALL;
-        throw pql::exception::PqlException("pql::eval", "{} does not have a design ent", stmt->toString(1));
+        throw util::PqlException("pql::eval", "{} does not have a design ent", stmt->toString(1));
     }
 
 
@@ -48,7 +49,7 @@ namespace pql::eval
         std::unordered_set<table::Entry> domain;
         if(declaration->design_ent != ast::DESIGN_ENT::VARIABLE)
         {
-            throw exception::PqlException(
+            throw util::PqlException(
                 "pql::eval", "Cannot get initial domain(var) for non variable declaration {}", declaration->toString());
         }
         util::log("pql::eval", "Adding {} variables to {} initial domain", m_pkb->uses_modifies.variables.size(),
@@ -66,8 +67,8 @@ namespace pql::eval
         std::unordered_set<table::Entry> domain;
         if(declaration->design_ent != ast::DESIGN_ENT::PROCEDURE)
         {
-            throw exception::PqlException("pql::eval",
-                "Cannot get initial domain(proc) for non variable declaration {}", declaration->toString());
+            throw util::PqlException("pql::eval", "Cannot get initial domain(proc) for non variable declaration {}",
+                declaration->toString());
         }
         util::log("pql::eval", "Adding {} procedures to {} initial domain", m_pkb->uses_modifies.procedures.size(),
             declaration->toString());

@@ -3,13 +3,13 @@
 #include <cassert>
 #include <algorithm>
 
-#include "pql/exception.h"
+#include "exceptions.h"
 #include "pql/eval/table.h"
 #include "pql/eval/evaluator.h"
 
 namespace pql::eval
 {
-    using PqlException = pql::exception::PqlException;
+    using PqlException = util::PqlException;
 
     void Evaluator::handleModifiesP(const ast::ModifiesP* modifies_p)
     {

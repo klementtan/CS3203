@@ -39,14 +39,14 @@ jobs:
           if ($lastexitcode -ne 0) { throw "integration tests failed" }
       - name: autotester
         run: |
-          cd Team34
-          Code34/build/src/autotester/Release/autotester.exe Tests34/Sample_source.txt Tests34/Sample_queries.txt out.xml
+          cd Team34/Tests34/sys_tests_1
+          ./run.bat
           if ($lastexitcode -ne 0) { throw "autotester failed" }
       - name: Archive test results
         uses: actions/upload-artifact@v2
         with:
-          name: autotester-report
-          path: Team34/out.xml
+          name: autotester-reports
+          path: Team34/Tests34/sys_tests_1/*.xml
   formatting-check:
     name: Formatting Check
     runs-on: ubuntu-latest
