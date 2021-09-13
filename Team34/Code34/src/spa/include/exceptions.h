@@ -11,7 +11,7 @@ namespace util
 {
     struct Exception : public std::exception
     {
-        virtual ~Exception() { };
+        virtual ~Exception() {};
         virtual const char* what() const noexcept = 0;
     };
 
