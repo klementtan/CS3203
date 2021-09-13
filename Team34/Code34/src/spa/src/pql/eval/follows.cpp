@@ -174,7 +174,7 @@ namespace pql::eval
             // explicitly doing a nested loop.
 
             auto bef_domain = m_table->getDomain(bef_decl);
-            table::Domain aft_domain {};
+            table::Domain new_aft_domain {};
 
             for(auto it = bef_domain.begin(); it != bef_domain.end();)
             {
@@ -188,7 +188,7 @@ namespace pql::eval
                     auto bef_entry = table::Entry(bef_decl, bef_follows->id);
                     auto aft_entry = table::Entry(aft_decl, bef_follows->directly_after);
 
-                    aft_domain.insert(aft_entry);
+                    new_aft_domain.insert(aft_entry);
 
                     util::log("pql::eval", "{} adds Join({}, {})", follows->toString(), bef_entry.toString(),
                         aft_entry.toString());
@@ -199,7 +199,7 @@ namespace pql::eval
             }
 
             m_table->upsertDomains(bef_decl, bef_domain);
-            m_table->upsertDomains(aft_decl, table::entry_set_intersect(aft_domain, m_table->getDomain(aft_decl)));
+            m_table->upsertDomains(aft_decl, table::entry_set_intersect(new_aft_domain, m_table->getDomain(aft_decl)));
         }
         else
         {
@@ -379,7 +379,7 @@ namespace pql::eval
 
             // same strategy as Follows
             auto bef_domain = m_table->getDomain(bef_decl);
-            table::Domain aft_domain {};
+            table::Domain new_aft_domain {};
 
             for(auto it = bef_domain.begin(); it != bef_domain.end();)
             {
@@ -398,7 +398,7 @@ namespace pql::eval
                         util::log("pql::eval", "{} adds Join({}, {})", follows_t->toString(), bef_entry.toString(),
                             aft_entry.toString());
 
-                        aft_domain.insert(aft_entry);
+                        new_aft_domain.insert(aft_entry);
                         m_table->addJoin(bef_entry, aft_entry);
                     }
                     ++it;
@@ -406,7 +406,7 @@ namespace pql::eval
             }
 
             m_table->upsertDomains(bef_decl, bef_domain);
-            m_table->upsertDomains(aft_decl, table::entry_set_intersect(aft_domain, m_table->getDomain(aft_decl)));
+            m_table->upsertDomains(aft_decl, table::entry_set_intersect(new_aft_domain, m_table->getDomain(aft_decl)));
         }
         else
         {
