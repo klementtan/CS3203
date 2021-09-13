@@ -3,15 +3,15 @@
 set -e
 echo "running autotester... (system tests 1)"
 
-if [ ! -v AUTOTESTER_EXE ]; then
+if [[ -z AUTOTESTER_EXE ]]; then
 	AUTOTESTER_EXE=../../Code34/build/src/autotester/autotester
 fi
 
-if [ ! -e $AUTOTESTER_EXE ]; then
+if [[ ! -e $AUTOTESTER_EXE ]]; then
 	AUTOTESTER_EXE=../../Code34/objs/autotester
 fi
 
-if [ ! -e $AUTOTESTER_EXE ]; then
+if [[ ! -e $AUTOTESTER_EXE ]]; then
 	echo "could not find autotester!"
 	exit 1
 fi
