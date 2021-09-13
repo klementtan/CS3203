@@ -42,11 +42,19 @@ jobs:
           cd Team34/Tests34/sys_tests_1
           ./run.bat
           if ($lastexitcode -ne 0) { throw "autotester failed" }
+      - name: show failed tests
+        run: |
+          cd Team34/Tests34/sys_tests_1
+          python parse_result_xml.py sys_tests_1/*.xml > autotester_summary.txt
+          cat autotester_summary.txt
       - name: Archive test results
         uses: actions/upload-artifact@v2
         with:
           name: autotester-reports
-          path: Team34/Tests34/sys_tests_1/*.xml
+          path: |
+            Team34/Tests34/sys_tests_1/*.xml
+            Team34/Tests34/autotester_summary.txt
+
   formatting-check:
     name: Formatting Check
     runs-on: ubuntu-latest
