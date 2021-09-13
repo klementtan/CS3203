@@ -2,6 +2,7 @@
 
 #define CATCH_CONFIG_FAST_COMPILE
 #include "catch.hpp"
+#include "runner.h"
 
 #include "pql/eval/evaluator.h"
 #include "pql/parser/parser.h"
@@ -54,59 +55,17 @@ constexpr const auto test_program_1 = " \
 
 TEST_CASE("Parent(StmtId, StmtId)")
 {
-    auto prog = simple::parser::parseProgram(test_program_1);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("print p;\nSelect p such that Parent(19, 22)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 6);
-    REQUIRE(result_s.count("6"));
-    REQUIRE(result_s.count("7"));
-    REQUIRE(result_s.count("8"));
-    REQUIRE(result_s.count("9"));
-    REQUIRE(result_s.count("25"));
-    REQUIRE(result_s.count("26"));
+    TEST_OK(test_program_1, "print p; Select p such that Parent(19, 22)", 6, 7, 8, 9, 25, 26);
 }
 
 TEST_CASE("Parent(StmtId, Decl)")
 {
-    auto prog = simple::parser::parseProgram(test_program_1);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("assign a;\nSelect a such that Parent(19, a)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 3);
-    REQUIRE(result_s.count("20"));
-    REQUIRE(result_s.count("21"));
-    REQUIRE(result_s.count("22"));
+    TEST_OK(test_program_1, "assign a; Select a such that Parent(19, a)", 20, 21, 22);
 }
 
 TEST_CASE("Parent(StmtId, _)")
 {
-    auto prog = simple::parser::parseProgram(test_program_1);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("print p;\nSelect p such that Parent(19, _)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 6);
-    REQUIRE(result_s.count("6"));
-    REQUIRE(result_s.count("7"));
-    REQUIRE(result_s.count("8"));
-    REQUIRE(result_s.count("9"));
-    REQUIRE(result_s.count("25"));
-    REQUIRE(result_s.count("26"));
+    TEST_OK(test_program_1, "print p; Select p such that Parent(19, _)", 6, 7, 8, 9, 25, 26);
 }
 
 
@@ -114,97 +73,34 @@ TEST_CASE("Parent(StmtId, _)")
 
 TEST_CASE("Parent(Decl, StmtId)")
 {
-    auto prog = simple::parser::parseProgram(test_program_1);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("if i;\nSelect i such that Parent(i, 26)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 1);
-    REQUIRE(result_s.count("24"));
+    TEST_OK(test_program_1, "if i; Select i such that Parent(i, 26)", 24);
 }
 
 TEST_CASE("Parent(Decl, Decl)")
 {
-    auto prog = simple::parser::parseProgram(test_program_1);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("if i; assign a;\nSelect i such that Parent(i, a)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 1);
-    REQUIRE(result_s.count("19"));
+    TEST_OK(test_program_1, "if i; assign a; Select i such that Parent(i, a)", 19);
 }
 
 TEST_CASE("Parent(Decl, _)")
 {
-    auto prog = simple::parser::parseProgram(test_program_1);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("if i;\nSelect i such that Parent(i, _)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 2);
-    REQUIRE(result_s.count("19"));
-    REQUIRE(result_s.count("24"));
+    TEST_OK(test_program_1, "if i; Select i such that Parent(i, _)", 19, 24);
 }
 
 
 
 TEST_CASE("Parent(_, StmtId)")
 {
-    auto prog = simple::parser::parseProgram(test_program_1);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("print p;\nSelect p such that Parent(_, 21)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 6);
-    REQUIRE(result_s.count("6"));
-    REQUIRE(result_s.count("7"));
-    REQUIRE(result_s.count("8"));
-    REQUIRE(result_s.count("9"));
-    REQUIRE(result_s.count("25"));
-    REQUIRE(result_s.count("26"));
+    TEST_OK(test_program_1, "print p; Select p such that Parent(_, 21)", 6, 7, 8, 9, 25, 26);
 }
 
 TEST_CASE("Parent(_, Decl)")
 {
-    auto prog = simple::parser::parseProgram(test_program_1);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("print p;\nSelect p such that Parent(_, p)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 2);
-    REQUIRE(result_s.count("25"));
-    REQUIRE(result_s.count("26"));
+    TEST_OK(test_program_1, "print p; Select p such that Parent(_, p)", 25, 26);
 }
 
 TEST_CASE("Parent(_, _)")
 {
-    auto prog = simple::parser::parseProgram("procedure a { x = 1; }");
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("variable v;\nSelect v such that Parent(_, _)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    CHECK_THROWS_WITH(eval.evaluate(), Catch::Matchers::Contains("always false"));
+    TEST_EMPTY("procedure a { x = 1; }", "variable v; Select v such that Parent(_, _)");
 }
 
 // clang-format off
@@ -252,161 +148,50 @@ constexpr const auto test_program_2 = "\
 
 TEST_CASE("Parent*(StmtId, StmtId)")
 {
-    auto prog = simple::parser::parseProgram(test_program_2);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("print p;\nSelect p such that Parent*(1, 11)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 9);
-    REQUIRE(result_s.count("2"));
-    REQUIRE(result_s.count("4"));
-    REQUIRE(result_s.count("7"));
-    REQUIRE(result_s.count("9"));
-    REQUIRE(result_s.count("11"));
-    REQUIRE(result_s.count("14"));
-    REQUIRE(result_s.count("17"));
-    REQUIRE(result_s.count("20"));
-    REQUIRE(result_s.count("23"));
+    TEST_OK(test_program_2, "print p; Select p such that Parent*(1, 11)", 2, 4, 7, 9, 11, 14, 17, 20, 23);
 }
 
 TEST_CASE("Parent*(StmtId, Decl)")
 {
-    auto prog = simple::parser::parseProgram(test_program_2);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("read r;\nSelect r such that Parent*(8, r)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 2);
-    REQUIRE(result_s.count("19"));
-    REQUIRE(result_s.count("22"));
+    TEST_OK(test_program_2, "read r; Select r such that Parent*(8, r)", 19, 22);
 }
 
 TEST_CASE("Parent*(StmtId, _)")
 {
-    auto prog = simple::parser::parseProgram(test_program_2);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("print p;\nSelect p such that Parent*(8, _)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 9);
-    REQUIRE(result_s.count("2"));
-    REQUIRE(result_s.count("4"));
-    REQUIRE(result_s.count("7"));
-    REQUIRE(result_s.count("9"));
-    REQUIRE(result_s.count("11"));
-    REQUIRE(result_s.count("14"));
-    REQUIRE(result_s.count("17"));
-    REQUIRE(result_s.count("20"));
-    REQUIRE(result_s.count("23"));
+    TEST_OK(test_program_2, "print p; Select p such that Parent*(8, _)", 2, 4, 7, 9, 11, 14, 17, 20, 23);
 }
 
 TEST_CASE("Parent*(Decl, StmtId)")
 {
-    auto prog = simple::parser::parseProgram(test_program_2);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("if i;\nSelect i such that Parent*(i, 20)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 4);
-    REQUIRE(result_s.count("1"));
-    REQUIRE(result_s.count("3"));
-    REQUIRE(result_s.count("10"));
-    REQUIRE(result_s.count("16"));
+    TEST_OK(test_program_2, "if i; Select i such that Parent*(i, 20)", 1, 3, 10, 16);
 }
 
 TEST_CASE("Parent*(Decl, Decl)")
 {
-    auto prog = simple::parser::parseProgram(test_program_2);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("if i; call c;\nSelect i such that Parent*(i, c)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 2);
-    REQUIRE(result_s.count("1"));
-    REQUIRE(result_s.count("3"));
+    TEST_OK(test_program_2, "if i; call c; Select i such that Parent*(i, c)", 1, 3);
 }
 
 TEST_CASE("Parent*(Decl, _)")
 {
-    auto prog = simple::parser::parseProgram(test_program_2);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("while w;\nSelect w such that Parent*(w, _)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 2);
-    REQUIRE(result_s.count("8"));
-    REQUIRE(result_s.count("13"));
+    TEST_OK(test_program_2, "while w; Select w such that Parent*(w, _)", 8, 13);
 }
 
 TEST_CASE("Parent*(_, StmtId)")
 {
-    auto prog = simple::parser::parseProgram(test_program_2);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("while w;\nSelect w such that Parent*(_, 2)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 2);
-    REQUIRE(result_s.count("8"));
-    REQUIRE(result_s.count("13"));
+    TEST_OK(test_program_2, "while w; Select w such that Parent*(_, 2)", 8, 13);
 }
 
 TEST_CASE("Parent*(_, Decl)")
 {
-    auto prog = simple::parser::parseProgram(test_program_2);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("if i;\nSelect i such that Parent*(_, i)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 3);
-    REQUIRE(result_s.count("3"));
-    REQUIRE(result_s.count("10"));
-    REQUIRE(result_s.count("16"));
+    TEST_OK(test_program_2, "if i; Select i such that Parent*(_, i)", 3, 10, 16);
 }
 
 TEST_CASE("Parent*(_, _)")
 {
-    auto prog = simple::parser::parseProgram(test_program_2);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+    TEST_OK(test_program_2, "while w; Select w such that Parent*(_, _)", 8, 13);
+}
 
-    auto query = pql::parser::parsePQL("while w;\nSelect w such that Parent*(_, _)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 2);
-    REQUIRE(result_s.count("8"));
-    REQUIRE(result_s.count("13"));
+TEST_CASE("no parent")
+{
+    TEST_EMPTY("procedure a { x = 1; }", "variable v; Select v such that Parent(_, _)");
 }

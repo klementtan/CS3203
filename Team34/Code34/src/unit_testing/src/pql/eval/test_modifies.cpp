@@ -2,6 +2,7 @@
 
 #define CATCH_CONFIG_FAST_COMPILE
 #include "catch.hpp"
+#include "runner.h"
 
 #include "pql/eval/evaluator.h"
 #include "pql/parser/parser.h"
@@ -46,141 +47,46 @@ constexpr const auto test_program = R"(
 )";
 
 
-TEST_CASE("ModifiesP clause")
+TEST_CASE("ModifiesP(DeclaredEnt, DeclaredEnt)")
 {
-    SECTION("ModifiesP(DeclaredEnt, DeclaredEnt)")
-    {
-        auto prog = simple::parser::parseProgram(test_program);
-        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+    TEST_OK(test_program, "procedure p; variable v; Select p such that Modifies(p, v)", "main", "readPoint",
+        "computeCentroid");
+}
 
-        pql::ast::Query* query = pql::parser::parsePQL("procedure p;\n"
-                                                       "variable v;\n"
-                                                       "Select p such that Modifies (p,v)");
-        auto eval = new pql::eval::Evaluator(pkb, query);
-        std::list<std::string> result = eval->evaluate();
-        std::unordered_set<std::string> result_s(result.begin(), result.end());
-        REQUIRE(result_s.size() == 3);
-        REQUIRE(result_s.count("main"));
-        REQUIRE(result_s.count("readPoint"));
-        REQUIRE(result_s.count("computeCentroid"));
-    }
-    SECTION("ModifiesP(DeclaredEnt, DeclaredEnt)")
-    {
-        auto prog = simple::parser::parseProgram(test_program);
-        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+TEST_CASE("ModifiesP(DeclaredEnt, EntName)")
+{
+    TEST_OK(test_program, "procedure p; Select p such that Modifies(p, \"flag\")", "main", "computeCentroid");
+}
 
-        pql::ast::Query* query = pql::parser::parsePQL("procedure p;\n"
-                                                       "Select p such that Modifies (p,\"flag\")");
-        auto eval = new pql::eval::Evaluator(pkb, query);
-        std::list<std::string> result = eval->evaluate();
-        std::unordered_set<std::string> result_s(result.begin(), result.end());
-        REQUIRE(result_s.size() == 2);
-        REQUIRE(result_s.count("main"));
-        REQUIRE(result_s.count("computeCentroid"));
-    }
-    SECTION("ModifiesP(DeclaredEnt, AllEnt)")
-    {
-        auto prog = simple::parser::parseProgram(test_program);
-        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+TEST_CASE("ModifiesP(DeclaredEnt, _)")
+{
+    TEST_OK(test_program, "procedure p; Select p such that Modifies(p, _)", "main", "readPoint", "computeCentroid");
+}
 
-        // Follows(DeclaredStmt, AllStmt)
-        pql::ast::Query* query = pql::parser::parsePQL("procedure p;\n"
-                                                       "Select p such that Modifies (p,_)");
-        auto eval = new pql::eval::Evaluator(pkb, query);
-        std::list<std::string> result = eval->evaluate();
-        std::unordered_set<std::string> result_s(result.begin(), result.end());
-        REQUIRE(result_s.size() == 3);
-        REQUIRE(result_s.count("main"));
-        REQUIRE(result_s.count("readPoint"));
-        REQUIRE(result_s.count("computeCentroid"));
-    }
+TEST_CASE("ModifiesP(EntName, DeclaredEnt)")
+{
+    TEST_OK(test_program, "variable v; Select v such that Modifies(\"main\", v)", "x", "y", "cenX", "cenY", "count",
+        "flag", "normSq");
+}
 
-    SECTION("ModifiesP(EntName, DeclaredEnt)")
-    {
-        auto prog = simple::parser::parseProgram(test_program);
-        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+TEST_CASE("ModifiesP(EntName, EntName)")
+{
+    TEST_OK(test_program, "variable v; Select v such that Modifies(\"main\", \"flag\")", "x", "y", "cenX", "cenY",
+        "count", "flag", "normSq");
 
-        auto query = pql::parser::parsePQL("variable v;\n"
-                                           "Select v such that Modifies (\"main\", v)");
+    // ModifiesP(modifier:EntName(name:readPoint), ent:EntName(name:flag)) always
+    // evaluate to false. readPoint does not modify flag.
+    TEST_EMPTY(test_program, "variable v; Select v such that Modifies(\"readPoint\", \"flag\")");
+}
 
-        auto eval = new pql::eval::Evaluator(pkb, query);
-        auto result = eval->evaluate();
-        auto result_s = std::unordered_set<std::string>(result.begin(), result.end());
+TEST_CASE("ModifiesP(EntName, _)")
+{
+    TEST_OK(test_program, "variable v; Select v such that Modifies(\"readPoint\", _)", "x", "y", "cenX", "cenY",
+        "count", "flag", "normSq");
 
-        REQUIRE(result_s.size() == 7);
-        REQUIRE(result_s.count("x"));
-        REQUIRE(result_s.count("y"));
-        REQUIRE(result_s.count("count"));
-        REQUIRE(result_s.count("cenX"));
-        REQUIRE(result_s.count("cenY"));
-        REQUIRE(result_s.count("flag"));
-        REQUIRE(result_s.count("normSq"));
-    }
-    SECTION("ModifiesP(EntName, AllEnt)")
-    {
-        auto prog = simple::parser::parseProgram(test_program);
-        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-        pql::ast::Query* query = pql::parser::parsePQL("variable v;\n"
-                                                       "Select v such that Modifies (\"readPoint\", _)");
-        auto eval = new pql::eval::Evaluator(pkb, query);
-        std::list<std::string> result = eval->evaluate();
-        std::unordered_set<std::string> result_s(result.begin(), result.end());
-        REQUIRE(result_s.size() == 7);
-        REQUIRE(result_s.count("x"));
-        REQUIRE(result_s.count("y"));
-        REQUIRE(result_s.count("count"));
-        REQUIRE(result_s.count("cenX"));
-        REQUIRE(result_s.count("cenY"));
-        REQUIRE(result_s.count("flag"));
-        REQUIRE(result_s.count("normSq"));
-    }
-
-    SECTION("ModifiesP(EntName, AllEnt) always fail")
-    {
-        auto prog = simple::parser::parseProgram(test_program);
-        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-        pql::ast::Query* query = pql::parser::parsePQL("variable v;\n"
-                                                       "Select v such that Modifies (\"printResults\", _)");
-        auto eval = new pql::eval::Evaluator(pkb, query);
-        CHECK_THROWS_WITH(eval->evaluate(),
-            Catch::Matchers::Contains("ModifiesP(modifier:EntName(name:printResults), ent:AllEnt(name: _)) always "
-                                      "evaluate to false. printResults does not modify any variable."));
-    }
-
-    SECTION("ModifiesP(EntName, EntName)")
-    {
-        auto prog = simple::parser::parseProgram(test_program);
-        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-        pql::ast::Query* query = pql::parser::parsePQL("variable v;\n"
-                                                       "Select v such that Modifies (\"main\", \"flag\")");
-        auto eval = new pql::eval::Evaluator(pkb, query);
-        std::list<std::string> result = eval->evaluate();
-        std::unordered_set<std::string> result_s(result.begin(), result.end());
-        REQUIRE(result_s.size() == 7);
-        REQUIRE(result_s.count("x"));
-        REQUIRE(result_s.count("y"));
-        REQUIRE(result_s.count("count"));
-        REQUIRE(result_s.count("cenX"));
-        REQUIRE(result_s.count("cenY"));
-        REQUIRE(result_s.count("flag"));
-        REQUIRE(result_s.count("normSq"));
-    }
-
-    SECTION("ModifiesP(EntName, EntName) always fail")
-    {
-        auto prog = simple::parser::parseProgram(test_program);
-        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-        pql::ast::Query* query = pql::parser::parsePQL("variable v;\n"
-                                                       "Select v such that Modifies (\"readPoint\", \"flag\")");
-        auto eval = new pql::eval::Evaluator(pkb, query);
-        CHECK_THROWS_WITH(eval->evaluate(),
-            Catch::Matchers::Contains("ModifiesP(modifier:EntName(name:readPoint), ent:EntName(name:flag)) always "
-                                      "evaluate to false. readPoint does not modify flag."));
-    }
+    // ModifiesP(modifier:EntName(name:printResults), ent:AllEnt(name: _)) always
+    // evaluate to false. printResults does not modify any variable.
+    TEST_EMPTY(test_program, "variable v; Select v such that Modifies(\"printResults\", _)");
 }
 
 
@@ -188,141 +94,40 @@ TEST_CASE("ModifiesP clause")
 
 
 
-TEST_CASE("ModifiesS(...,...)")
+TEST_CASE("ModifiesS(DeclaredStmt, DeclaredEnt)")
 {
-    SECTION("ModifiesS(DeclaredStmt, DeclaredEnt)")
-    {
-        auto prog = simple::parser::parseProgram(test_program);
-        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+    TEST_OK(test_program, "assign a; variable v; Select a such that Modifies(a, v)", 1, 10, 11, 12, 15, 16, 17, 20, 21, 22, 23);
+}
 
-        pql::ast::Query* query = pql::parser::parsePQL("assign a;\n"
-                                                       "variable v;\n"
-                                                       "Select a such that Modifies (a,v)");
-        auto eval = new pql::eval::Evaluator(pkb, query);
-        std::list<std::string> result = eval->evaluate();
-        std::unordered_set<std::string> result_s(result.begin(), result.end());
-        std::unordered_set<std::string> expected_result = { "1", "10", "11", "12", "15", "16", "17", "20", "21", "22",
-            "23" };
-        REQUIRE(result_s.size() == expected_result.size());
-        for(std::string acutal_stmt_num_str : result_s)
-        {
-            INFO(acutal_stmt_num_str);
-            REQUIRE(expected_result.count(acutal_stmt_num_str));
-        }
-    }
-    SECTION("ModifiesS(DeclaredStmt, EntName)")
-    {
-        auto prog = simple::parser::parseProgram(test_program);
-        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+TEST_CASE("ModifiesS(DeclaredStmt, EntName)")
+{
+    TEST_OK(test_program, "assign a; variable v; Select a such that Modifies(a, \"flag\")", 1, 20);
+}
 
-        pql::ast::Query* query = pql::parser::parsePQL("assign a;\n"
-                                                       "variable v;\n"
-                                                       "Select a such that Modifies (a,\"flag\")");
-        auto eval = new pql::eval::Evaluator(pkb, query);
-        std::list<std::string> result = eval->evaluate();
-        std::unordered_set<std::string> result_s(result.begin(), result.end());
-        std::unordered_set<std::string> expected_result = { "1", "20" };
-        REQUIRE(result_s.size() == expected_result.size());
-        for(std::string acutal_stmt_num_str : result_s)
-        {
-            INFO(acutal_stmt_num_str);
-            REQUIRE(expected_result.count(acutal_stmt_num_str));
-        }
-    }
-    SECTION("ModifiesS(DeclaredStmt, AllEnt)")
-    {
-        auto prog = simple::parser::parseProgram(test_program);
-        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+TEST_CASE("ModifiesS(DeclaredStmt, _)")
+{
+    TEST_OK(test_program, "call c; Select c such that Modifies(c, _)", 2, 13, 18);
+}
 
-        pql::ast::Query* query = pql::parser::parsePQL("call c;\n"
-                                                       "Select c such that Modifies (c,_)");
-        auto eval = new pql::eval::Evaluator(pkb, query);
-        std::list<std::string> result = eval->evaluate();
-        std::unordered_set<std::string> result_s(result.begin(), result.end());
-        std::unordered_set<std::string> expected_result = { "2", "13", "18" };
-        REQUIRE(result_s.size() == expected_result.size());
-        for(std::string acutal_stmt_num_str : result_s)
-        {
-            INFO(acutal_stmt_num_str);
-            REQUIRE(expected_result.count(acutal_stmt_num_str));
-        }
-    }
-    SECTION("ModifiesS(StmtId, DeclaredStmt)")
-    {
-        auto prog = simple::parser::parseProgram(test_program);
-        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+TEST_CASE("ModifiesS(StmtId, DeclaredStmt)")
+{
+    TEST_OK(test_program, "variable v; Select v such that Modifies(23, v)", "normSq");
+}
 
-        pql::ast::Query* query = pql::parser::parsePQL("variable v;\n"
-                                                       "Select v such that Modifies (23,v)");
-        auto eval = new pql::eval::Evaluator(pkb, query);
-        std::list<std::string> result = eval->evaluate();
-        std::unordered_set<std::string> result_s(result.begin(), result.end());
-        std::unordered_set<std::string> expected_result = { "normSq" };
-        REQUIRE(result_s.size() == expected_result.size());
-        for(std::string acutal_stmt_num_str : result_s)
-        {
-            INFO(acutal_stmt_num_str);
-            REQUIRE(expected_result.count(acutal_stmt_num_str));
-        }
-    }
+TEST_CASE("ModifiesS(StmtId, _)")
+{
+    TEST_OK(test_program, "variable v; Select v such that Modifies(23, _)", "normSq", "x", "y", "flag", "cenX", "cenY", "count");
 
-    SECTION("ModifiesS(StmtId, AllEnt)")
-    {
-        auto prog = simple::parser::parseProgram(test_program);
-        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+    // ModifiesS(modifier:StmtId(id:3), ent:AnyEnt(name: _)) always evaluate
+    // to false. StatementNum 3 does not modify any variable.
+    TEST_EMPTY(test_program, "variable v; Select v such that Modifies(3, _)");
+}
 
-        pql::ast::Query* query = pql::parser::parsePQL("variable v;\n"
-                                                       "Select v such that Modifies (23,_)");
-        auto eval = new pql::eval::Evaluator(pkb, query);
-        std::list<std::string> result = eval->evaluate();
-        std::unordered_set<std::string> result_s(result.begin(), result.end());
-        std::unordered_set<std::string> expected_result = { "normSq", "x", "y", "flag", "cenX", "cenY", "count" };
-        REQUIRE(result_s.size() == expected_result.size());
-        for(std::string acutal_stmt_num_str : result_s)
-        {
-            INFO(acutal_stmt_num_str);
-            REQUIRE(expected_result.count(acutal_stmt_num_str));
-        }
-    }
+TEST_CASE("ModifiesS(StmtId, EntName)")
+{
+    TEST_OK(test_program, "variable v; Select v such that Modifies(23, \"normSq\")", "normSq", "x", "y", "flag", "cenX", "cenY", "count");
 
-    SECTION("ModifiesS(StmtId, EntName) fails with non modifying statement")
-    {
-        auto prog = simple::parser::parseProgram(test_program);
-        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-        pql::ast::Query* query = pql::parser::parsePQL("variable v;\n"
-                                                       "Select v such that Modifies (3,_)");
-        auto eval = new pql::eval::Evaluator(pkb, query);
-        REQUIRE_THROWS_WITH(eval->evaluate(), "ModifiesS(modifier:StmtId(id:3), ent:AllEnt(name: _)) always evaluate "
-                                              "to false. StatementNum 3 does not modify any variable.");
-    }
-    SECTION("ModifiesS(StmtId, EntName)")
-    {
-        auto prog = simple::parser::parseProgram(test_program);
-        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-        pql::ast::Query* query = pql::parser::parsePQL("variable v;\n"
-                                                       "Select v such that Modifies (23,\"normSq\")");
-        auto eval = new pql::eval::Evaluator(pkb, query);
-        std::list<std::string> result = eval->evaluate();
-        std::unordered_set<std::string> result_s(result.begin(), result.end());
-        std::unordered_set<std::string> expected_result = { "normSq", "x", "y", "flag", "cenX", "cenY", "count" };
-        REQUIRE(result_s.size() == expected_result.size());
-        for(std::string acutal_stmt_num_str : result_s)
-        {
-            INFO(acutal_stmt_num_str);
-            REQUIRE(expected_result.count(acutal_stmt_num_str));
-        }
-    }
-    SECTION("ModifiesS(StmtId, EntName) fails with non modifying statement")
-    {
-        auto prog = simple::parser::parseProgram(test_program);
-        auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-        pql::ast::Query* query = pql::parser::parsePQL("variable v;\n"
-                                                       "Select v such that Modifies (23,\"x\")");
-        auto eval = new pql::eval::Evaluator(pkb, query);
-        REQUIRE_THROWS_WITH(eval->evaluate(), "StatementNum: ModifiesS(modifier:StmtId(id:23), ent:EntName(name:x)) "
-                                              "always evaluate to false. 23 does not modify x.");
-    }
+    // StatementNum: ModifiesS(modifier:StmtId(id:23), ent:EntName(name:x))
+    // always evaluate to false. 23 does not modify x.
+    TEST_EMPTY(test_program, "variable v; Select v such that Modifies(23, \"x\")");
 }

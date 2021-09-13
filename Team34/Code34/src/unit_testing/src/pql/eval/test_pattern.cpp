@@ -2,70 +2,12 @@
 
 #define CATCH_CONFIG_FAST_COMPILE
 #include "catch.hpp"
+#include "runner.h"
 
-#include "pql/eval/evaluator.h"
-#include "pql/parser/parser.h"
-#include "simple/parser.h"
 #include "pkb.h"
-
-struct Runner
-{
-    Runner(bool should_pass, zst::str_view source, zst::str_view query)
-        : m_should_pass(should_pass), m_source(source), m_pkb(nullptr), m_query(query)
-    {
-    }
-
-    Runner(bool should_pass, pkb::ProgramKB* pkb, zst::str_view query)
-        : m_should_pass(should_pass), m_source(""), m_pkb(pkb), m_query(query)
-    {
-    }
-
-
-    std::unordered_set<std::string> run()
-    {
-        if(!m_pkb)
-        {
-            auto prog = simple::parser::parseProgram(m_source).unwrap();
-            m_pkb = pkb::processProgram(prog).unwrap();
-        }
-
-        auto query = pql::parser::parsePQL(m_query);
-        auto eval = pql::eval::Evaluator(m_pkb, query);
-
-        auto res = eval.evaluate();
-        return std::unordered_set<std::string>(res.begin(), res.end());
-    }
-
-    bool m_should_pass;
-    zst::str_view m_source;
-    pkb::ProgramKB* m_pkb;
-    zst::str_view m_query;
-};
-
-static std::string to_string(const char* c)
-{
-    return c;
-}
-
-template <typename T>
-static std::string to_string(T x)
-{
-    return std::to_string(x);
-}
-
-template <typename... Args>
-static std::unordered_set<std::string> make_set(Args&&... args)
-{
-    auto ret = std::unordered_set<std::string> {};
-    (ret.insert(to_string(static_cast<Args&&>(args))), ...);
-
-    return ret;
-}
-
-#define TEST_OK(source, query, ...) CHECK(Runner(true, source, query).run() == make_set(__VA_ARGS__))
-#define TEST_EMPTY(source, query) CHECK(Runner(true, source, query).run() == make_set())
-#define TEST_ERR(source, query, msg) \
-    CHECK_THROWS_WITH(Runner(false, source, query).run(), Catch::Matchers::Contains(msg))
+#include "simple/parser.h"
+#include "pql/parser/parser.h"
+#include "pql/eval/evaluator.h"
 
 constexpr const auto test_program = R"(
     procedure Example {
