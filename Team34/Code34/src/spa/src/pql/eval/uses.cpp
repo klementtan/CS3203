@@ -99,6 +99,7 @@ namespace pql::eval
 
             auto proc_domain = m_table->getDomain(proc_decl);
             auto new_var_domain = table::Domain {};
+            std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
             for(auto it = proc_domain.begin(); it != proc_domain.end();)
             {
@@ -115,8 +116,7 @@ namespace pql::eval
                     auto var_entry = table::Entry(var_decl, var_name);
                     util::log("pql::eval", "{} adds Join({}, {}),", rel->toString(), proc_entry.toString(),
                         var_entry.toString());
-
-                    m_table->addJoin(proc_entry, var_entry);
+                    allowed_entries.insert({ proc_entry, var_entry });
                     new_var_domain.insert(var_entry);
                 }
                 ++it;
@@ -124,6 +124,7 @@ namespace pql::eval
 
             m_table->upsertDomains(proc_decl, proc_domain);
             m_table->upsertDomains(var_decl, table::entry_set_intersect(new_var_domain, m_table->getDomain(var_decl)));
+            m_table->addJoin(table::Join(proc_decl, var_decl, allowed_entries));
         }
         else if(is_proc_decl && is_var_all)
         {
@@ -225,6 +226,7 @@ namespace pql::eval
 
             auto user_domain = m_table->getDomain(user_decl);
             auto new_var_domain = table::Domain {};
+            std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
             for(auto it = user_domain.begin(); it != user_domain.end();)
             {
@@ -241,8 +243,7 @@ namespace pql::eval
                     auto var_entry = table::Entry(var_decl, var_name);
                     util::log("pql::eval", "{} adds Join({}, {}),", rel->toString(), user_entry.toString(),
                         var_entry.toString());
-
-                    m_table->addJoin(user_entry, var_entry);
+                    allowed_entries.insert({ user_entry, var_entry });
                     new_var_domain.insert(var_entry);
                 }
                 ++it;
@@ -250,6 +251,7 @@ namespace pql::eval
 
             m_table->upsertDomains(user_decl, user_domain);
             m_table->upsertDomains(var_decl, table::entry_set_intersect(new_var_domain, m_table->getDomain(var_decl)));
+            m_table->addJoin(table::Join(user_decl, var_decl, allowed_entries));
         }
         else if(is_user_decl && is_var_all)
         {

@@ -116,6 +116,50 @@ namespace pql::eval::table
         }
         return intersect;
     }
+
+    Join::Join(pql::ast::Declaration* decl_a, pql::ast::Declaration* decl_b,
+        std::unordered_set<std::pair<Entry, Entry>> allowed_entries)
+    {
+        if(!decl_a)
+        {
+            throw util::PqlException("pql::eval::table", "Join cannot be instantiated with decl_a=nullptr");
+        }
+        if(!decl_b)
+        {
+            throw util::PqlException("pql::eval::table", "Join cannot be instantiated with decl_b=nullptr");
+        }
+        this->m_decl_a = decl_a;
+        this->m_decl_b = decl_b;
+        this->m_allowed_entries = allowed_entries;
+    }
+
+    pql::ast::Declaration* Join::getDeclA() const
+    {
+        return this->m_decl_a;
+    }
+
+    pql::ast::Declaration* Join::getDeclB() const
+    {
+        return this->m_decl_b;
+    }
+
+    std::unordered_set<std::pair<Entry, Entry>> Join::getAllowedEntries() const
+    {
+        return this->m_allowed_entries;
+    }
+
+    std::string Join::toString() const
+    {
+        std::string ret = zpr::sprint("Join(m_decl_a={}, m_decl_b={}", m_decl_a->toString(), m_decl_b->toString());
+        ret += "\n\tm_allowed_entries=[\n";
+        for(auto [entry_a, entry_b] : m_allowed_entries)
+        {
+            ret += zpr::sprint("(\t\tdecl_a={}, decl_b={})\n", entry_a.toString(), entry_b.toString());
+        }
+        ret += "])";
+        return ret;
+    }
+
     Table::Table() = default;
 
 
@@ -123,12 +167,9 @@ namespace pql::eval::table
     {
         m_domains[decl] = entries;
     }
-    void Table::addJoin(const Entry& a, const Entry& b)
+    void Table::addJoin(const Join& join)
     {
-        std::pair<ast::Declaration*, ast::Declaration*> key = order_join_key(a.getDeclaration(), b.getDeclaration());
-        std::pair<Entry, Entry> val = order_join_val(a, b);
-        util::log("pql::eval", "Adding join");
-        m_joins[key].push_back(val);
+        m_joins.push_back(join);
     }
 
     std::vector<std::unordered_map<ast::Declaration*, Entry>> Table::getTablePerm() const
@@ -183,15 +224,16 @@ namespace pql::eval::table
             util::log("pql::eval::table", "Checking if table fulfill all {} join condition: {}", m_joins.size(),
                 printTablePerm(table));
             bool is_valid = true;
-            for(const auto& join : m_joins)
+            for(const Join& join : m_joins)
             {
-                auto [decl_ptr_a, decl_ptr_b] = join.first;
+                ast::Declaration* decl_ptr_a = join.getDeclA();
+                ast::Declaration* decl_ptr_b = join.getDeclB();
                 assert(table.find(decl_ptr_a) != table.end());
                 assert(table.find(decl_ptr_b) != table.end());
                 Entry actual_entry_a = table.find(decl_ptr_a)->second;
                 Entry actual_entry_b = table.find(decl_ptr_b)->second;
                 bool has_valid_join = false;
-                for(const auto& expected_entry_ab : join.second)
+                for(const auto& expected_entry_ab : join.getAllowedEntries())
                 {
                     // All joins should be have a valid declaration
                     Entry expected_entry_a = expected_entry_ab.first;
@@ -238,14 +280,9 @@ namespace pql::eval::table
         }
         ret += "\t]\n";
         ret += "\tm_joins[\n";
-        for(auto [pair_decl_ptr, entries] : m_joins)
+        for(const Join& join : m_joins)
         {
-            ret += zpr::sprint("\t\tJoin({},{}):[", pair_decl_ptr.first->toString(), pair_decl_ptr.second->toString());
-            for(const auto& pair_entry : entries)
-            {
-                ret += zpr::sprint("({},{}),", pair_entry.first.toString(), pair_entry.second.toString());
-            }
-            ret += "],\n";
+            ret += zpr::sprint("\t\t{}\n", join.toString());
         }
         ret += "\t]\n";
         ret += ")\n";

@@ -41,6 +41,43 @@ procedure bar {
 }
 )";
 
+constexpr const auto prog_3 = R"(
+    procedure main {
+      flag = 0;
+      call computeCentroid;
+      call printResults;
+    }
+    procedure readPoint {
+        read x;
+        read y;
+    }
+    procedure printResults {
+        print flag;
+        print cenX;
+        print cenY;
+        print normSq;
+    }
+    procedure computeCentroid {
+        count = 0;
+        cenX = 0;
+        cenY = 0;
+        call readPoint;
+        while ((x != 0) && (y != 0)) {
+            count = count + 1;
+            cenX = cenX + x;
+            cenY = cenY + y;
+            call readPoint;
+        }
+        if (count == 0) then {
+            flag = 1;
+        } else {
+            cenX = cenX / count;
+            cenY = cenY / count;
+        }
+        normSq = cenX * cenX + cenY * cenY;
+    }
+)";
+
 TEST_CASE("Select pattern assign(name, _)")
 {
     SECTION("positive cases")
@@ -387,5 +424,12 @@ TEST_CASE("Select pattern assign(_, fullexpr)")
         TEST_EMPTY(pkb, R"^(assign a; Select a pattern a(_, "m * n"))^");
         TEST_EMPTY(pkb, R"^(assign a; Select a pattern a(_, "b * c"))^");
         TEST_EMPTY(pkb, R"^(assign a; Select a pattern a(_, "g - h % i"))^");
+    }
+    SECTION("t5")
+    {
+        auto prog = simple::parser::parseProgram(prog_3).unwrap();
+        auto pkb = pkb::processProgram(prog).unwrap();
+        TEST_OK(pkb, R"^(assign a; while w; Select a such that Parent* (w, a) pattern a ("count", _))^", 15);
+        TEST_OK(pkb, R"^(assign a; variable v; Select a such that Uses (a, v) pattern a (v, _"x"_))^", 16);
     }
 }

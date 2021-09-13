@@ -175,6 +175,7 @@ namespace pql::eval
 
             auto bef_domain = m_table->getDomain(bef_decl);
             auto new_aft_domain = table::Domain {};
+            std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
             for(auto it = bef_domain.begin(); it != bef_domain.end();)
             {
@@ -192,13 +193,13 @@ namespace pql::eval
 
                 util::log("pql::eval", "{} adds Join({}, {})", follows->toString(), bef_entry.toString(),
                     aft_entry.toString());
-
-                m_table->addJoin(bef_entry, aft_entry);
+                allowed_entries.insert({ bef_entry, aft_entry });
                 ++it;
             }
 
             m_table->upsertDomains(bef_decl, bef_domain);
             m_table->upsertDomains(aft_decl, table::entry_set_intersect(new_aft_domain, m_table->getDomain(aft_decl)));
+            m_table->addJoin(table::Join(bef_decl, aft_decl, allowed_entries));
         }
         else
         {
@@ -379,6 +380,7 @@ namespace pql::eval
             // same strategy as Follows
             auto bef_domain = m_table->getDomain(bef_decl);
             auto new_aft_domain = table::Domain {};
+            std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
             for(auto it = bef_domain.begin(); it != bef_domain.end();)
             {
@@ -398,13 +400,14 @@ namespace pql::eval
                         aft_entry.toString());
 
                     new_aft_domain.insert(aft_entry);
-                    m_table->addJoin(bef_entry, aft_entry);
+                    allowed_entries.insert({ bef_entry, aft_entry });
                 }
                 ++it;
             }
 
             m_table->upsertDomains(bef_decl, bef_domain);
             m_table->upsertDomains(aft_decl, table::entry_set_intersect(new_aft_domain, m_table->getDomain(aft_decl)));
+            m_table->addJoin(table::Join(bef_decl, aft_decl, allowed_entries));
         }
         else
         {
