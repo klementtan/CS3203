@@ -8,104 +8,109 @@ assign a;
 Select re1 such that Modifies (a, "f")
 none
 5000
-3 - assign
+3 - assign (return a)
 assign a;variable v;
 Select a such that Modifies (a, v)
-1, 2, 6, 7, 8, 9, 11, 12, 14, 15, 19, 20, 21, 22, 24, 25, 30, 31, 36, 37, 42, 43, 44, 48, 50, 51, 56, 57, 62, 63, 69, 70, 71, 72
+1, 2, 6, 7, 8, 9, 11, 12, 14, 15, 19, 20, 21, 22, 24, 25, 30, 31, 36, 37, 42, 43, 44, 48, 50, 51, 56, 57, 62, 63, 70, 71, 72, 73
 5000
-4 - assign
+4 - assign (return v)
+assign a;variable v;
+Select v such that Modifies (a, v)
+a,a1,a2,a3,b,b1,c1,c2,c3,ff,j,j1,k,k1,m,m1,n,n1,p,p1,q,q1,s,zzz,zzzz,zzzzz
+5000
+5 - assign
 assign a;
 Select a such that Modifies (a, "a")
 1, 63
 5000
-5 - assign
+6 - assign
 assign a;
 Select a such that Modifies (a, "8000")
 none
 5000
-6 - assign
+7 - assign
 assign a;
 Select a such that Modifies (a, "1")
 none
 5000
-7 - assign
+8 - assign
 assign a;
 Select a such that Modifies (a, "non-existent")
 none
 5000
-8 - assign
+9 - assign
 assign a;
 Select a such that Modifies (a, _)
-1, 2, 6, 7, 8, 9, 11, 12, 14, 15, 19, 20, 21, 22, 24, 25, 30, 31, 36, 37,3, 69, 70, 71, 72
+1, 2, 6, 7, 8, 9, 11, 12, 14, 15, 19, 20, 21, 22, 24, 25, 30, 31, 36, 37, 42, 70, 71, 72, 43, 44, 48, 50, 51, 56, 57, 62, 63, 73
 5000
-9 - read positive
+10 - read positive
 read re;
 Select re such that Modifies (re, "c1")
 16
 5000
-10 - read negative
+11 - read negative
 read re;
 Select re such that Modifies (re, "level8000")
 none
 5000
-11 - read wild
+12 - read wild
 read re;
 Select re such that Modifies (re, _)
 3, 16, 26, 32, 38, 45, 52, 58, 64, 68
 5000
-12 - read var
+13 - read var
 read re; variable v;
 Select re such that Modifies (re, v)
 3, 16, 26, 32, 38, 45, 52, 58, 64, 68
 5000
-13 - if (in cond, positive)
+14 - if (in cond, positive)
 if i;
 Select i such that Modifies (i, "a1")
 29
 5000
-14 - if (in cond/body, negative)
+15 - if (in cond/body, negative)
 if i;
 Select i such that Modifies (i, "a1*level8000")
 none
 5000
-15 - if (in body, positive)
+16 - if (in body, positive)
 if i;
 Select i such that Modifies (i, "a3")
 29, 41
 5000
-16 - if (in cond, positive)
+17 - if (in cond, positive)
 while i;
 Select i such that Modifies (i, "2")
 none
 5000
-17 - if (in cond/body, negative)
+18 - if (in cond/body, negative)
 while i;
 Select i such that Modifies (i, "a1*level8000")
 none
 5000
-18 - if (in body, positive)
+19 - if (in body, positive)
 while w;
 Select w such that Modifies (w, "d2")
 23, 35
 5000
-19 - in proc (direct call)
+20 - in proc (direct call)
 procedure i;
 Select i such that Modifies (i, "r1")
-A UsesAndModifies
+A, UsesAndModifies
 5000
-20 - in proc (indirect call)
+21 - in proc (indirect call)
 procedure i;
 Select i such that Modifies (i, "r2")
-A UsesAndModifies2 UsesAndModifies UsesAndModifies3
+A, UsesAndModifies2, UsesAndModifies, UsesAndModifies3
 5000
-21 - proc call
+22 - proc call
 call i;
 Select i such that Modifies (i, "r1")
 54
 5000
-22 - proc call
+23 - proc call
 call i;
 Select i such that Modifies (i, "r2")
-54 67 60 66
+54, 60, 66, 67
 5000
 
