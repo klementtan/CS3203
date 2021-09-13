@@ -59,6 +59,24 @@ def iterate_dir(dir):
 			if file.endswith(".xml"):
 				parse_one(os.path.join(root, file))
 
+def parse_results_from_folder(folder):
+	iterate_dir(folder)
+
+def get_failed_tests():
+	return failed_tests
+
+def get_passed_tests():
+	return passed_tests
+
+def get_num_failed():
+	return num_failed
+
+def get_num_passed():
+	return num_passed
+
+
+
+
 def main():
 	if len(sys.argv) < 2:
 		print("usage: ./parse_result_xml.py [-q] <folder|result.xml>...")
@@ -94,7 +112,6 @@ def main():
 		sys.exit(num_failed)
 	else:
 		return
-
 
 if __name__ == "__main__":
 	main()

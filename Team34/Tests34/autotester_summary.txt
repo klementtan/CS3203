@@ -1,0 +1,10 @@
+323/330 tests passed, 7 failed
+test sys_tests_1/output-Follows.xml:
+    24 - print x stmt number
+    25 - if x assign
+    26 - if x read
+    27 - if x print
+    28 - if x if
+test sys_tests_1/output-Pattern.xml:
+    18 - if pattern
+    19 - while pattern
