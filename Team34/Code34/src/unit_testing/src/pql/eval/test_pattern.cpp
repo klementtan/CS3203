@@ -9,49 +9,57 @@
 #include "pql/parser/parser.h"
 #include "pql/eval/evaluator.h"
 
-constexpr const auto test_program = R"(
-    procedure Example {
-        x = 6;
-        y = 18;
-        z = 12;
+constexpr const auto prog_1 = R"(
+procedure Example {
+    x = 6;
+    y = 18;
+    z = 12;
 
-        t1 = x + y + z;
-        t2 = x + y + z - z * z;
-        t3 = y * (w + x) - (w - y * z) - (w - x) - z;
+    t1 = x + y + z;
+    t2 = x + y + z - z * z;
+    t3 = y * (w + x) - (w - y * z) - (w - x) - z;
 
-        t4 = a + b * c - d / e + f * g - h % (i + j - k) * l / ((m - m) * (n + o));
+    t4 = a + b * c - d / e + f * g - h % (i + j - k) * l / ((m - m) * (n + o));
 
-        x = 6 + 1 / 2 - 3;
-        y = 69 * 420 - 123;
-        z = a + (b + c);
+    x = 6 + 1 / 2 - 3;
+    y = 69 * 420 - 123;
+    z = a + (b + c);
 
-        a1 = 5 * (a + 7 + x);
-        a2 = 5 * (a + 7 + x);
-        a3 = 5 * (a + 7 + x);
-        read q;
-    }
+    a1 = 5 * (a + 7 + x);
+    a2 = 5 * (a + 7 + x);
+    a3 = 5 * (a + 7 + x);
+    read q;
+}
 )";
 
+constexpr const auto prog_2 = R"(
+procedure foo {
+    print x;
+}
+procedure bar {
+    print y;
+}
+)";
 
 TEST_CASE("Select pattern assign(name, _)")
 {
     SECTION("positive cases")
     {
-        TEST_OK(test_program, R"(assign a; Select a pattern a("x", _))", 1, 8);
-        TEST_OK(test_program, R"(assign a; Select a pattern a("y", _))", 2, 9);
-        TEST_OK(test_program, R"(assign a; Select a pattern a("z", _))", 3, 10);
+        TEST_OK(prog_1, R"(assign a; Select a pattern a("x", _))", 1, 8);
+        TEST_OK(prog_1, R"(assign a; Select a pattern a("y", _))", 2, 9);
+        TEST_OK(prog_1, R"(assign a; Select a pattern a("z", _))", 3, 10);
     }
 
     SECTION("empty cases")
     {
-        TEST_EMPTY(test_program, "assign a;Select a pattern a(\"q\", _)");
+        TEST_EMPTY(prog_1, "assign a;Select a pattern a(\"q\", _)");
     }
 }
 
 TEST_CASE("Select pattern assign(name, _subexpr_)")
 {
     // we're running a lot of things, so save time here by only processing once
-    auto prog = simple::parser::parseProgram(test_program).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1).unwrap();
     auto pkb = pkb::processProgram(prog).unwrap();
 
     SECTION("xyz")
@@ -133,7 +141,7 @@ TEST_CASE("Select pattern assign(name, _subexpr_)")
 
 TEST_CASE("Select pattern assign(name, fullexpr)")
 {
-    auto prog = simple::parser::parseProgram(test_program).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1).unwrap();
     auto pkb = pkb::processProgram(prog).unwrap();
 
     SECTION("xyz")
@@ -202,17 +210,20 @@ TEST_CASE("Select pattern assign(name, fullexpr)")
 
 TEST_CASE("Select pattern assign(decl, _)")
 {
-    auto prog = simple::parser::parseProgram(test_program).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1).unwrap();
     auto pkb = pkb::processProgram(prog).unwrap();
 
     TEST_OK(pkb, R"^(assign a; variable v; Select a pattern a(v, _))^", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
     TEST_OK(pkb, R"^(assign a; variable v; Select v pattern a(v, _))^", "a1", "a2", "a3", "t1", "t2", "t3", "t4", "x",
         "y", "z");
+
+    TEST_EMPTY(prog_2, "assign a; variable v; Select v pattern a(v, _)");
+    TEST_EMPTY(prog_2, "assign a; variable v; Select a pattern a(v, _)");
 }
 
 TEST_CASE("Select pattern assign(decl, _subexpr_)")
 {
-    auto prog = simple::parser::parseProgram(test_program).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1).unwrap();
     auto pkb = pkb::processProgram(prog).unwrap();
 
     TEST_OK(pkb, R"^(assign a; variable v; Select v pattern a(v, _"6"_))^", "x");
@@ -229,7 +240,7 @@ TEST_CASE("Select pattern assign(decl, _subexpr_)")
 
 TEST_CASE("Select pattern assign(decl, fullexpr)")
 {
-    auto prog = simple::parser::parseProgram(test_program).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1).unwrap();
     auto pkb = pkb::processProgram(prog).unwrap();
 
     TEST_OK(pkb, R"^(assign a; variable v; Select v pattern a(v, "6"))^", "x");
@@ -247,13 +258,13 @@ TEST_CASE("Select pattern assign(decl, fullexpr)")
 
 TEST_CASE("Select pattern assign(_, _)")
 {
-    TEST_OK(test_program, R"^(assign a; Select a pattern a(_, _))^", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
+    TEST_OK(prog_1, R"^(assign a; Select a pattern a(_, _))^", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
 }
 
 
 TEST_CASE("Select pattern assign(_, _subexpr_)")
 {
-    auto prog = simple::parser::parseProgram(test_program).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1).unwrap();
     auto pkb = pkb::processProgram(prog).unwrap();
 
     SECTION("a")
@@ -315,7 +326,7 @@ TEST_CASE("Select pattern assign(_, _subexpr_)")
 
 TEST_CASE("Select pattern assign(_, fullexpr)")
 {
-    auto prog = simple::parser::parseProgram(test_program).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1).unwrap();
     auto pkb = pkb::processProgram(prog).unwrap();
 
     SECTION("xyz")

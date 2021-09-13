@@ -78,6 +78,9 @@ namespace pql::eval
             auto parent_decl = dynamic_cast<ast::DeclaredStmt*>(rel->parent)->declaration;
             auto child_decl = dynamic_cast<ast::DeclaredStmt*>(rel->child)->declaration;
 
+            auto old_domain = m_table->getDomain(parent_decl);
+
+
             for(const auto& entry : m_table->getDomain(parent_decl))
             {
                 auto p_entry = table::Entry(parent_decl, entry.getStmtNum());

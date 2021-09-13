@@ -91,8 +91,8 @@ TEST_CASE("Follows*(DeclaredStmt, DeclaredStmt)")
 {
     TEST_OK(prog_1, "stmt a, b; Select b such that Follows*(a, b)", 2, 3);
 
-    TEST_EMPTY(prog_2, "stmt a, b; Select a such that Follows*(a, b)");
-    TEST_EMPTY(prog_2, "stmt a, b; Select b such that Follows*(a, b)");
+    TEST_EMPTY(prog_2, "stmt c, d; Select c such that Follows*(c, d)");
+    TEST_EMPTY(prog_2, "stmt c, d; Select d such that Follows*(c, d)");
 }
 
 TEST_CASE("no follows")
