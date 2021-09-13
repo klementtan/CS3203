@@ -174,7 +174,7 @@ namespace pql::eval
             // explicitly doing a nested loop.
 
             auto bef_domain = m_table->getDomain(bef_decl);
-            table::Domain new_aft_domain {};
+            auto new_aft_domain = table::Domain {};
 
             for(auto it = bef_domain.begin(); it != bef_domain.end();)
             {
@@ -379,7 +379,7 @@ namespace pql::eval
 
             // same strategy as Follows
             auto bef_domain = m_table->getDomain(bef_decl);
-            table::Domain new_aft_domain {};
+            auto new_aft_domain = table::Domain {};
 
             for(auto it = bef_domain.begin(); it != bef_domain.end();)
             {

@@ -80,7 +80,7 @@ namespace pql::eval
 
             // same strategy as Follows
             auto parent_domain = m_table->getDomain(parent_decl);
-            table::Domain new_child_domain {};
+            auto new_child_domain = table::Domain {};
 
             for(auto it = parent_domain.begin(); it != parent_domain.end();)
             {
@@ -103,7 +103,8 @@ namespace pql::eval
             }
 
             m_table->upsertDomains(parent_decl, parent_domain);
-            m_table->upsertDomains(child_decl, table::entry_set_intersect(new_child_domain, m_table->getDomain(child_decl)));
+            m_table->upsertDomains(
+                child_decl, table::entry_set_intersect(new_child_domain, m_table->getDomain(child_decl)));
         }
         else if(is_parent_decl && is_child_wildcard)
         {
@@ -231,7 +232,7 @@ namespace pql::eval
             auto child_decl = dynamic_cast<ast::DeclaredStmt*>(rel->descendant)->declaration;
 
             auto parent_domain = m_table->getDomain(parent_decl);
-            table::Domain new_child_domain {};
+            auto new_child_domain = table::Domain {};
 
             for(auto it = parent_domain.begin(); it != parent_domain.end();)
             {
@@ -254,7 +255,8 @@ namespace pql::eval
             }
 
             m_table->upsertDomains(parent_decl, parent_domain);
-            m_table->upsertDomains(child_decl, table::entry_set_intersect(new_child_domain, m_table->getDomain(child_decl)));
+            m_table->upsertDomains(
+                child_decl, table::entry_set_intersect(new_child_domain, m_table->getDomain(child_decl)));
         }
         else if(is_parent_decl && is_child_wildcard)
         {
