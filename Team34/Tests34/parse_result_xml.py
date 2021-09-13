@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 from xml.etree import ElementTree as ET
 
@@ -53,13 +54,34 @@ def parse_one(filename):
 			for d in dupes:
 				print(f"    {d} appears more than once")
 
+
+def iterate_dir(dir):
+	for root, dirs, files in os.walk(dir):
+		for file in files:
+			if file.endswith(".xml"):
+				parse_one(os.path.join(root, file))
+
 def main():
 	if len(sys.argv) < 2:
-		print("usage: ./parse_result_xml.py <result.xml>")
+		print("usage: ./parse_result_xml.py [-q] <folder|result.xml>...")
 		sys.exit(1)
 
-	for file in sys.argv[1:]:
-		parse_one(file)
+	inputs = sys.argv[1:]
+
+	quiet = False
+	if sys.argv[1] == "-q":
+		quiet = True
+		inputs = sys.argv[2:]
+
+	if len(inputs) == 0:
+		print("at least one input must be given")
+		sys.exit(1)
+
+	for file in inputs:
+		if os.path.isdir(file):
+			iterate_dir(file)
+		else:
+			parse_one(file)
 
 	print(f"{num_passed}/{num_passed + num_failed} tests passed, {num_failed} failed")
 
@@ -70,7 +92,10 @@ def main():
 		for t in tests:
 			print(f"    {t[0]} - {t[1]}")
 
-	sys.exit(num_failed)
+	if not quiet:
+		sys.exit(num_failed)
+	else:
+		return
 
 
 if __name__ == "__main__":

@@ -45,7 +45,7 @@ jobs:
       - name: show failed tests
         run: |
           cd Team34/Tests34
-          python parse_result_xml.py sys_tests_1/*.xml > autotester_summary.txt
+          python parse_result_xml.py -q sys_tests_1 > autotester_summary.txt
           cat autotester_summary.txt
       - name: Archive test results
         uses: actions/upload-artifact@v2
