@@ -30,7 +30,8 @@ void TestWrapper::evaluate(std::string query, std::list<std::string>& results)
         util::log("pql:ast", "Generated AST: {}", query_ast->toString());
         pql::eval::Evaluator* eval = new pql::eval::Evaluator(this->pkb, query_ast);
         results = eval->evaluate();
-    } catch(const pql::exception::PqlException& e)
+    }
+    catch(const pql::exception::PqlException& e)
     {
         // Errores in query should be silently ignored.
         util::log("pql", "PqlException caught during evaluating query. PqlException: {}", e.what());
