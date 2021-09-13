@@ -61,8 +61,15 @@ namespace pql::ast
                 }
                 else if(is_var_decl)
                 {
+                    // in theory, we also need to check if there aren't any variables, and if so yeet this
+                    // assignment from the domain; however, any valid SIMPLE program has at least one variable,
+                    // so in reality this should not be triggered.
                     auto var_decl = dynamic_cast<DeclaredEnt*>(this->ent)->declaration;
-                    for(const auto& entry : tbl->getDomain(var_decl))
+                    auto var_list = tbl->getDomain(var_decl);
+                    if(var_list.empty())
+                        should_erase |= true;
+
+                    for(const auto& entry : var_list)
                     {
                         auto var_name = entry.getVal();
                         if(var_name == assign_stmt->lhs)

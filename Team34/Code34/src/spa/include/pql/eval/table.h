@@ -76,13 +76,14 @@ namespace std
 }
 namespace pql::eval::table
 {
-    std::unordered_set<Entry> entry_set_intersect(
-        const std::unordered_set<Entry>& a, const std::unordered_set<Entry>& b);
+    using Domain = std::unordered_set<Entry>;
+
+    Domain entry_set_intersect(const Domain& a, const Domain& b);
 
     class Table
     {
     private:
-        std::unordered_map<ast::Declaration*, std::unordered_set<Entry>> m_domains;
+        std::unordered_map<ast::Declaration*, Domain> m_domains;
         // Mapping of <declaration, declaration>: list of corresponding entry
         // All rows must equal to at least one of the entry pair
         std::unordered_map<std::pair<ast::Declaration*, ast::Declaration*>, std::vector<std::pair<Entry, Entry>>>
@@ -113,8 +114,8 @@ namespace pql::eval::table
         [[nodiscard]] std::vector<std::unordered_map<ast::Declaration*, Entry>> getTablePerm() const;
 
     public:
-        void upsertDomains(ast::Declaration* decl, const std::unordered_set<Entry>& entries);
-        std::unordered_set<Entry> getDomain(ast::Declaration* decl) const;
+        void upsertDomains(ast::Declaration* decl, const Domain& entries);
+        Domain getDomain(ast::Declaration* decl) const;
         void addJoin(const Entry& a, const Entry& b);
         Table();
         std::list<std::string> getResult(ast::Declaration* ret_decls);
