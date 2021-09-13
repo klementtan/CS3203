@@ -42,15 +42,11 @@ jobs:
           cd Team34/Tests34/sys_tests_1
           ./run.bat
           if ($lastexitcode -ne 0) { throw "autotester failed" }
-      - name: zip test results
-        run: |
-          cd Team34/Tests34/sys_tests_1
-          zip ../sys_tests_1.zip *.xml
       - name: Archive test results
         uses: actions/upload-artifact@v2
         with:
           name: autotester-reports
-          path: Team34/Tests34/sys_tests_1.zip
+          path: Team34/Tests34/sys_tests_1/*.xml
   formatting-check:
     name: Formatting Check
     runs-on: ubuntu-latest
