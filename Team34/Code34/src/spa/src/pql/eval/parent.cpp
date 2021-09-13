@@ -230,12 +230,31 @@ namespace pql::eval
             auto parent_decl = dynamic_cast<ast::DeclaredStmt*>(rel->ancestor)->declaration;
             auto child_decl = dynamic_cast<ast::DeclaredStmt*>(rel->descendant)->declaration;
 
-            for(const auto& entry : m_table->getDomain(parent_decl))
+            auto parent_domain = m_table->getDomain(parent_decl);
+            table::Domain new_child_domain {};
+
+            for(auto it = parent_domain.begin(); it != parent_domain.end();)
             {
-                auto p_entry = table::Entry(parent_decl, entry.getStmtNum());
-                for(auto child_id : m_pkb->getDescendantsOf(entry.getStmtNum()))
-                    m_table->addJoin(p_entry, table::Entry(child_decl, child_id));
+                auto children = m_pkb->getDescendantsOf(it->getStmtNum());
+                if(children.empty())
+                {
+                    it = parent_domain.erase(it);
+                }
+                else
+                {
+                    auto p_entry = table::Entry(parent_decl, it->getStmtNum());
+                    for(auto child_sid : children)
+                    {
+                        auto c_entry = table::Entry(child_decl, child_sid);
+                        m_table->addJoin(p_entry, c_entry);
+                        new_child_domain.insert(c_entry);
+                    }
+                    ++it;
+                }
             }
+
+            m_table->upsertDomains(parent_decl, parent_domain);
+            m_table->upsertDomains(child_decl, table::entry_set_intersect(new_child_domain, m_table->getDomain(child_decl)));
         }
         else if(is_parent_decl && is_child_wildcard)
         {
