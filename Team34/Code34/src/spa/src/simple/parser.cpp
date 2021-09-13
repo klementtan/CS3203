@@ -78,6 +78,9 @@ namespace simple::parser
         else if(ps->peek() == TT::Number)
         {
             auto num = ps->next().text;
+            if(num.size() > 1 && num[0] == '0')
+                return ErrFmt("multi-digit integer literal cannot start with 0");
+
             auto constant = new Constant();
             for(char c : num)
                 constant->value = 10 * constant->value + (c - '0');

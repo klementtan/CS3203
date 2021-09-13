@@ -330,8 +330,7 @@ namespace pkb
             return this->follows[fst - 1]->after;
         }
 
-        // Should not be reachable.
-        util::error("pkb", "Unexpected error.");
+        throw util::PkbException("pkb", "unreachable code reached");
     }
 
     /**
@@ -535,7 +534,7 @@ namespace pkb
         }
         else
         {
-            util::error("pkb", "unknown expression type");
+            throw util::PkbException("pkb", "unknown expression type");
         }
     }
 
@@ -591,7 +590,7 @@ namespace pkb
         }
         else
         {
-            util::error("pkb", "unknown statement type");
+            throw util::PkbException("pkb", "unknown statement type");
         }
     }
 
@@ -916,7 +915,7 @@ namespace pkb
             collectStmtList(pkb, &proc->body);
 
             if(pkb->uses_modifies.procedures.find(proc->name) != pkb->uses_modifies.procedures.end())
-                util::error("pkb", "procedure '{}' is already defined", proc->name);
+                throw util::PkbException("pkb", "procedure '{}' is already defined", proc->name);
 
             pkb->uses_modifies.procedures[proc->name].ast_proc = proc;
         }

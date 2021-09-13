@@ -9,6 +9,12 @@
 
 namespace util
 {
+    struct Exception : public std::exception
+    {
+        virtual ~Exception() { };
+        virtual const char* what() const noexcept = 0;
+    };
+
     template <typename SubType>
     struct BaseException : public std::exception
     {
@@ -21,7 +27,7 @@ namespace util
             this->message = zpr::sprint(fmt, args...);
         }
 
-        const char* what() const noexcept
+        const char* what() const noexcept override
         {
             return message.c_str();
         }
@@ -37,23 +43,8 @@ namespace util
         using BaseException<PqlException>::BaseException;
     };
 
-#if 0
-    struct PqlException : public std::exception
+    struct ParseException : BaseException<ParseException>
     {
-        std::string message;
-
-    public:
-        template <typename... Args>
-        PqlException(const char* who, const char* fmt, const Args&... args)
-        {
-            util::log(zpr::sprint("{} Exception", who).c_str(), fmt, args...);
-            this->message = zpr::sprint(fmt, args...);
-        }
-
-        const char* what() const throw()
-        {
-            return message.c_str();
-        }
+        using BaseException<ParseException>::BaseException;
     };
-#endif
 }
