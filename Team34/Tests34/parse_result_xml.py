@@ -10,11 +10,11 @@ num_failed = 0
 num_passed = 0
 
 def get_dupes(xs):
-	dupes = []
+	dupes = set()
 	uniq = set()
 	for x in xs:
 		if x in uniq:
-			dupes.append(x)
+			dupes.add(x)
 		else:
 			uniq.add(x)
 	return dupes
@@ -50,10 +50,8 @@ def parse_one(filename):
 		dupes = get_dupes(correct_ans.split(","))
 
 		if len(dupes) > 0:
-			print(f"warning: duplicate results in expected answers for {num} - {name}:")
-			for d in dupes:
-				print(f"    {d} appears more than once")
-
+			print(f"warning: duplicate answers for {filename}/{num} - {name}:")
+			print(f"    {dupes}")
 
 def iterate_dir(dir):
 	for root, dirs, files in os.walk(dir):
