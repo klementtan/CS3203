@@ -32,6 +32,8 @@ namespace pql::ast
         bool is_var_decl = dynamic_cast<DeclaredEnt*>(this->ent);
 
         assert(this->assignment_declaration->design_ent == DESIGN_ENT::ASSIGN);
+        // Stores dependency when pattern a(v, ...)
+        std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
         auto domain = tbl->getDomain(this->assignment_declaration);
         for(auto it = domain.begin(); it != domain.end();)
@@ -51,6 +53,7 @@ namespace pql::ast
                     should_erase |= !s_ast::exactMatch(this->expr_spec->expr, assign_stmt->rhs);
             }
 
+
             // don't do extra work if we're already going to yeet this
             if(!should_erase)
             {
@@ -61,6 +64,7 @@ namespace pql::ast
                 }
                 else if(is_var_decl)
                 {
+                    util::log("pql::eval", "Processing pattern a (v, ...)");
                     // in theory, we also need to check if there aren't any variables, and if so yeet this
                     // assignment from the domain; however, any valid SIMPLE program has at least one variable,
                     // so in reality this should not be triggered.
@@ -73,7 +77,11 @@ namespace pql::ast
                     {
                         auto var_name = entry.getVal();
                         if(var_name == assign_stmt->lhs)
-                            tbl->addJoin(*it, entry);
+                        {
+                            // For 'pattern a (v,...)', when a = i, v must equal to the lhs
+                            // of stmt i
+                            allowed_entries.insert({ *it, entry });
+                        }
                     }
                 }
                 else if(is_var_wild)
@@ -90,6 +98,11 @@ namespace pql::ast
                 it = domain.erase(it);
             else
                 ++it;
+        }
+        if(is_var_decl)
+        {
+            tbl->addJoin(table::Join(
+                assignment_declaration, dynamic_cast<DeclaredEnt*>(this->ent)->declaration, allowed_entries));
         }
 
         tbl->upsertDomains(this->assignment_declaration, domain);
