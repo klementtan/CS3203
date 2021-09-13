@@ -24,6 +24,8 @@ namespace pql::eval
         void preprocessPkb(pkb::ProgramKB* pkb);
         void processDeclarations(const ast::DeclarationList* declaration_list);
         void handleSuchThat(const ast::SuchThatCl* such_that);
+        void handlePattern(const ast::PatternCl* pattern);
+
         void handleFollows(const ast::Follows* follows);
         void handleFollowsT(const ast::FollowsT* follows_t);
         void handleUsesP(const ast::UsesP* uses_p);
@@ -33,7 +35,6 @@ namespace pql::eval
         void handleParent(const ast::Parent* parent);
         void handleParentT(const ast::ParentT* parent_t);
 
-        static bool thereExistsFollows(pkb::ProgramKB* pkb);
         std::unordered_set<table::Entry> getInitialDomainVar(ast::Declaration* declaration);
         std::unordered_set<table::Entry> getInitialDomainProc(ast::Declaration* declaration);
         std::unordered_set<table::Entry> getInitialDomainStmt(ast::Declaration* declaration);

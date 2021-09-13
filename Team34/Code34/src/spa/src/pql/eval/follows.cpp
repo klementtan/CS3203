@@ -83,7 +83,7 @@ namespace pql::eval
         if(bef_all && aft_all)
         {
             util::log("pql::eval", "Processing Follows(_,_)");
-            if(thereExistsFollows(this->m_pkb))
+            if(m_pkb->followsRelationExists())
             {
                 util::log("pql::eval", "{} will always evaluate to true", follows->toString());
                 return;
@@ -237,7 +237,7 @@ namespace pql::eval
         if(bef_all && aft_all)
         {
             util::log("pql::eval", "Processing Follows*(_,_)");
-            if(thereExistsFollows(this->m_pkb))
+            if(m_pkb->followsRelationExists())
             {
                 util::log("pql::eval", "{} will always evaluate to true", follows_t->toString());
                 return;

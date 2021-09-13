@@ -130,7 +130,9 @@ namespace simple::ast
     struct Program
     {
         std::string toString(bool compact = false) const;
-        std::string toProgFormat() const;
         std::vector<Procedure*> procedures;
     };
+
+    bool exactMatch(Expr* subtree, Expr* tree);
+    bool partialMatch(Expr* subtree, Expr* tree);
 }

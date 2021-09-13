@@ -7,7 +7,18 @@
 #include <unordered_set>
 #include <vector>
 #include <string>
+
 #include "simple/ast.h"
+
+namespace pkb
+{
+    struct ProgramKB;
+}
+
+namespace pql::eval::table
+{
+    class Table;
+}
 
 namespace pql::ast
 {
@@ -221,12 +232,15 @@ namespace pql::ast
     {
         virtual ~PatternCond();
         virtual std::string toString() const = 0;
+
+        virtual void evaluate(pkb::ProgramKB* pkb, eval::table::Table* table) const = 0;
     };
 
     /** Assignment pattern condition. ie `assign a; Select a pattern a ("x",_);`*/
     struct AssignPatternCond : PatternCond
     {
         virtual std::string toString() const override;
+        virtual void evaluate(pkb::ProgramKB* pkb, eval::table::Table* table) const override;
 
         EntRef* ent = nullptr;
         Declaration* assignment_declaration = nullptr;

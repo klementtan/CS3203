@@ -6,7 +6,6 @@
 #include "pkb.h"
 #include "util.h"
 
-using namespace util;
 using namespace simple::ast;
 using namespace simple::parser;
 using namespace pkb;
