@@ -182,20 +182,19 @@ namespace pql::eval
                 if(bef_follows->after.empty())
                 {
                     it = bef_domain.erase(it);
+                    continue;
                 }
-                else
-                {
-                    auto bef_entry = table::Entry(bef_decl, bef_follows->id);
-                    auto aft_entry = table::Entry(aft_decl, bef_follows->directly_after);
 
-                    new_aft_domain.insert(aft_entry);
+                auto bef_entry = table::Entry(bef_decl, bef_follows->id);
+                auto aft_entry = table::Entry(aft_decl, bef_follows->directly_after);
 
-                    util::log("pql::eval", "{} adds Join({}, {})", follows->toString(), bef_entry.toString(),
-                        aft_entry.toString());
+                new_aft_domain.insert(aft_entry);
 
-                    m_table->addJoin(bef_entry, aft_entry);
-                    ++it;
-                }
+                util::log("pql::eval", "{} adds Join({}, {})", follows->toString(), bef_entry.toString(),
+                    aft_entry.toString());
+
+                m_table->addJoin(bef_entry, aft_entry);
+                ++it;
             }
 
             m_table->upsertDomains(bef_decl, bef_domain);
@@ -387,22 +386,21 @@ namespace pql::eval
                 if(bef_follows->after.empty())
                 {
                     it = bef_domain.erase(it);
+                    continue;
                 }
-                else
+
+                for(auto aft_stmt_num : bef_follows->after)
                 {
-                    for(auto aft_stmt_num : bef_follows->after)
-                    {
-                        auto bef_entry = table::Entry(bef_decl, bef_follows->id);
-                        auto aft_entry = table::Entry(aft_decl, aft_stmt_num);
+                    auto bef_entry = table::Entry(bef_decl, bef_follows->id);
+                    auto aft_entry = table::Entry(aft_decl, aft_stmt_num);
 
-                        util::log("pql::eval", "{} adds Join({}, {})", follows_t->toString(), bef_entry.toString(),
-                            aft_entry.toString());
+                    util::log("pql::eval", "{} adds Join({}, {})", follows_t->toString(), bef_entry.toString(),
+                        aft_entry.toString());
 
-                        new_aft_domain.insert(aft_entry);
-                        m_table->addJoin(bef_entry, aft_entry);
-                    }
-                    ++it;
+                    new_aft_domain.insert(aft_entry);
+                    m_table->addJoin(bef_entry, aft_entry);
                 }
+                ++it;
             }
 
             m_table->upsertDomains(bef_decl, bef_domain);

@@ -88,18 +88,17 @@ namespace pql::eval
                 if(children.empty())
                 {
                     it = parent_domain.erase(it);
+                    continue;
                 }
-                else
+
+                auto p_entry = table::Entry(parent_decl, it->getStmtNum());
+                for(auto child_sid : children)
                 {
-                    auto p_entry = table::Entry(parent_decl, it->getStmtNum());
-                    for(auto child_sid : children)
-                    {
-                        auto c_entry = table::Entry(child_decl, child_sid);
-                        m_table->addJoin(p_entry, c_entry);
-                        new_child_domain.insert(c_entry);
-                    }
-                    ++it;
+                    auto c_entry = table::Entry(child_decl, child_sid);
+                    m_table->addJoin(p_entry, c_entry);
+                    new_child_domain.insert(c_entry);
                 }
+                ++it;
             }
 
             m_table->upsertDomains(parent_decl, parent_domain);
@@ -240,18 +239,17 @@ namespace pql::eval
                 if(children.empty())
                 {
                     it = parent_domain.erase(it);
+                    continue;
                 }
-                else
+
+                auto p_entry = table::Entry(parent_decl, it->getStmtNum());
+                for(auto child_sid : children)
                 {
-                    auto p_entry = table::Entry(parent_decl, it->getStmtNum());
-                    for(auto child_sid : children)
-                    {
-                        auto c_entry = table::Entry(child_decl, child_sid);
-                        m_table->addJoin(p_entry, c_entry);
-                        new_child_domain.insert(c_entry);
-                    }
-                    ++it;
+                    auto c_entry = table::Entry(child_decl, child_sid);
+                    m_table->addJoin(p_entry, c_entry);
+                    new_child_domain.insert(c_entry);
                 }
+                ++it;
             }
 
             m_table->upsertDomains(parent_decl, parent_domain);

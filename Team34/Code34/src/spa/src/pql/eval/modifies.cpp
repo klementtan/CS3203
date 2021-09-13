@@ -27,17 +27,16 @@ namespace pql::eval
         {
             throw PqlException("pql::eval", "Modifier of ModifiesP cannot be '_': {}", rel->toString());
         }
-        else if(is_mod_decl && (dynamic_cast<ast::DeclaredEnt*>(rel->modifier)->declaration->design_ent !=
-                                   ast::DESIGN_ENT::PROCEDURE))
-        {
-            throw PqlException("pql::eval", "Declared modifier of ModifiesP can only be of type PROCEDURE: {}",
-                rel->toString());
-        }
-        else if(is_ent_decl && (dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration->design_ent !=
-                                   ast::DESIGN_ENT::VARIABLE))
+        else if(is_mod_decl &&
+                (dynamic_cast<ast::DeclaredEnt*>(rel->modifier)->declaration->design_ent != ast::DESIGN_ENT::PROCEDURE))
         {
             throw PqlException(
-                "pql::eval", "Entity being modified must be of type VARIABLE: {}", rel->toString());
+                "pql::eval", "Declared modifier of ModifiesP can only be of type PROCEDURE: {}", rel->toString());
+        }
+        else if(is_ent_decl &&
+                (dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration->design_ent != ast::DESIGN_ENT::VARIABLE))
+        {
+            throw PqlException("pql::eval", "Entity being modified must be of type VARIABLE: {}", rel->toString());
         }
         else if(is_mod_decl && is_ent_decl)
         {
@@ -55,20 +54,20 @@ namespace pql::eval
                 if(modified_vars.empty())
                 {
                     it = mod_domain.erase(it);
+                    continue;
                 }
-                else
-                {
-                    auto mod_entry = table::Entry(mod_decl, it->getVal());
-                    for(const auto& var_name : modified_vars)
-                    {
-                        auto ent_entry = table::Entry(ent_decl, var_name);
-                        util::log("pql::eval", "{} adds Join({}, {})", rel->toString(), mod_entry.toString(), ent_entry.toString());
 
-                        m_table->addJoin(mod_entry, ent_entry);
-                        new_ent_domain.insert(ent_entry);
-                    }
-                    ++it;
+                auto mod_entry = table::Entry(mod_decl, it->getVal());
+                for(const auto& var_name : modified_vars)
+                {
+                    auto ent_entry = table::Entry(ent_decl, var_name);
+                    util::log("pql::eval", "{} adds Join({}, {})", rel->toString(), mod_entry.toString(),
+                        ent_entry.toString());
+
+                    m_table->addJoin(mod_entry, ent_entry);
+                    new_ent_domain.insert(ent_entry);
                 }
+                ++it;
             }
 
             m_table->upsertDomains(mod_decl, mod_domain);
@@ -164,8 +163,8 @@ namespace pql::eval
             }
             else
             {
-                throw PqlException("pql::eval", "{} always evaluate to false. {} does not modify {}.",
-                    rel->toString(), mod_name, ent_name);
+                throw PqlException("pql::eval", "{} always evaluate to false. {} does not modify {}.", rel->toString(),
+                    mod_name, ent_name);
             }
         }
         else
@@ -192,18 +191,16 @@ namespace pql::eval
         {
             throw PqlException("pql::eval", "Modifier of ModifiesS cannot be '_': {}", rel->toString());
         }
-        else if(is_mod_decl &&
-                (ast::kStmtDesignEntities.count(
-                     dynamic_cast<ast::DeclaredStmt*>(rel->modifier)->declaration->design_ent) == 0))
+        else if(is_mod_decl && (ast::kStmtDesignEntities.count(
+                                    dynamic_cast<ast::DeclaredStmt*>(rel->modifier)->declaration->design_ent) == 0))
         {
             throw PqlException(
                 "pql::eval", "Declared modifier of ModifiesS must be a statement type: {}", rel->toString());
         }
-        else if(is_ent_decl && (dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration->design_ent !=
-                                   ast::DESIGN_ENT::VARIABLE))
+        else if(is_ent_decl &&
+                (dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration->design_ent != ast::DESIGN_ENT::VARIABLE))
         {
-            throw PqlException(
-                "pql::eval", "Entity being modified must be of type VARIABLE: {}", rel->toString());
+            throw PqlException("pql::eval", "Entity being modified must be of type VARIABLE: {}", rel->toString());
         }
         else if(is_mod_decl && is_ent_decl)
         {
@@ -221,21 +218,20 @@ namespace pql::eval
                 if(modified_vars.empty())
                 {
                     it = mod_domain.erase(it);
+                    continue;
                 }
-                else
-                {
-                    auto mod_entry = table::Entry(mod_decl, it->getStmtNum());
-                    for(const auto& var_name : modified_vars)
-                    {
-                        auto ent_entry = table::Entry(ent_decl, var_name);
-                        util::log("pql::eval", "{} adds Join({}, {}),", rel->toString(), mod_entry.toString(),
-                            ent_entry.toString());
 
-                        m_table->addJoin(mod_entry, ent_entry);
-                        new_ent_domain.insert(ent_entry);
-                    }
-                    ++it;
+                auto mod_entry = table::Entry(mod_decl, it->getStmtNum());
+                for(const auto& var_name : modified_vars)
+                {
+                    auto ent_entry = table::Entry(ent_decl, var_name);
+                    util::log("pql::eval", "{} adds Join({}, {}),", rel->toString(), mod_entry.toString(),
+                        ent_entry.toString());
+
+                    m_table->addJoin(mod_entry, ent_entry);
+                    new_ent_domain.insert(ent_entry);
                 }
+                ++it;
             }
 
             m_table->upsertDomains(mod_decl, mod_domain);
@@ -313,8 +309,8 @@ namespace pql::eval
             if(m_pkb->uses_modifies.getModifiesVars(mod_stmt_id).empty())
             {
                 throw PqlException("pql::eval",
-                    "{} always evaluate to false. StatementNum {} does not modify any variable.",
-                    rel->toString(), mod_stmt_id);
+                    "{} always evaluate to false. StatementNum {} does not modify any variable.", rel->toString(),
+                    mod_stmt_id);
             }
             else
             {
