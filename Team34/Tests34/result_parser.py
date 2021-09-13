@@ -43,6 +43,16 @@ def parse_one(filename):
 			passed_tests[filename].append((num, name))
 			num_passed += 1
 
+		test_name_str = f"{filename}/{num} - {name}"
+		tmp = query.find("correct")
+		if tmp is None:
+			if query.find("exception") is not None:
+				print(f"warning: {test_name_str} threw exception")
+				continue
+			else:
+				print(f"warning: {test_name_str} has no correct result")
+				continue
+
 		correct_ans = query.find("correct").text
 		if correct_ans is None:
 			continue
@@ -50,7 +60,7 @@ def parse_one(filename):
 		dupes = get_dupes(correct_ans.split(","))
 
 		if len(dupes) > 0:
-			print(f"warning: duplicate answers for {filename}/{num} - {name}:")
+			print(f"warning: duplicate answers for {test_name_str}:")
 			print(f"    {dupes}")
 
 def iterate_dir(dir):
