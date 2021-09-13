@@ -67,8 +67,8 @@ namespace pql::eval
         std::unordered_set<table::Entry> domain;
         if(declaration->design_ent != ast::DESIGN_ENT::PROCEDURE)
         {
-            throw util::PqlException("pql::eval",
-                "Cannot get initial domain(proc) for non variable declaration {}", declaration->toString());
+            throw util::PqlException("pql::eval", "Cannot get initial domain(proc) for non variable declaration {}",
+                declaration->toString());
         }
         util::log("pql::eval", "Adding {} procedures to {} initial domain", m_pkb->uses_modifies.procedures.size(),
             declaration->toString());
