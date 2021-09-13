@@ -3,13 +3,13 @@
 #include <cassert>
 #include <algorithm>
 
-#include "pql/exception.h"
+#include "exceptions.h"
 #include "pql/eval/table.h"
 #include "pql/eval/evaluator.h"
 
 namespace pql::eval
 {
-    using PqlException = pql::exception::PqlException;
+    using PqlException = util::PqlException;
 
     void Evaluator::handleFollows(const ast::Follows* follows)
     {
@@ -90,7 +90,7 @@ namespace pql::eval
             }
             else
             {
-                throw exception::PqlException(
+                throw util::PqlException(
                     "pql::eval", "{} will always evaluate to false. No 2 following statement.", follows->toString());
             }
         }
@@ -244,7 +244,7 @@ namespace pql::eval
             }
             else
             {
-                throw exception::PqlException(
+                throw util::PqlException(
                     "pql::eval", "{} will always evaluate to false. No 2 following statement.", follows_t->toString());
             }
         }

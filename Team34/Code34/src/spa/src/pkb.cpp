@@ -7,10 +7,10 @@
 #include <zpr.h>
 #include <zst.h>
 
-#include "simple/ast.h"
 #include "pkb.h"
-#include "pkb/exception.h"
 #include "util.h"
+#include "simple/ast.h"
+#include "exceptions.h"
 
 namespace pkb
 {
@@ -63,7 +63,8 @@ namespace pkb
     s_ast::VarRef* SymbolTable::getVar(const std::string& str)
     {
         if(!hasVar(str))
-            throw "Key does not exist!";
+            throw util::PkbException("pkb", "variable '{}' does not exist!", str);
+
         return _vars[str];
     }
 
@@ -80,7 +81,8 @@ namespace pkb
     s_ast::Procedure* SymbolTable::getProc(const std::string& str)
     {
         if(!hasProc(str))
-            throw "Key does not exist!";
+            throw util::PkbException("pkb", "procedure '{}' does not exist!", str);
+
         return _procs[str];
     }
 
@@ -289,7 +291,7 @@ namespace pkb
     {
         // thinking of more elegant ways of handling this hmm
         if(fst > this->follows.size() || snd > this->follows.size() || fst < 1 || snd < 1)
-            throw pkb::exception::PkbException("pkb::eval", "StatementNum out of range.");
+            throw util::PkbException("pkb::eval", "StatementNum out of range.");
 
         return this->follows[fst - 1]->directly_after == snd;
     }
@@ -298,14 +300,14 @@ namespace pkb
     bool ProgramKB::isFollowsT(s_ast::StatementNum fst, s_ast::StatementNum snd)
     {
         if(fst > this->follows.size() || snd > this->follows.size() || fst < 1 || snd < 1)
-            throw pkb::exception::PkbException("pkb::eval", "StatementNum out of range.");
+            throw util::PkbException("pkb::eval", "StatementNum out of range.");
 
         return this->follows[fst - 1]->after.count(snd) > 0;
     }
     Follows* ProgramKB::getFollows(simple::ast::StatementNum fst)
     {
         if(fst > this->follows.size() || fst < 1)
-            throw pkb::exception::PkbException("pkb::eval", "StatementNum out of range.");
+            throw util::PkbException("pkb::eval", "StatementNum out of range.");
         return this->follows[fst - 1];
     }
 
@@ -314,10 +316,10 @@ namespace pkb
     {
         // note: no need to check for < 0 since StatementNum is unsigned
         if(fst > this->follows.size() || snd > this->follows.size())
-            throw pkb::exception::PkbException("pkb::eval", "StatementNum out of range.");
+            throw util::PkbException("pkb::eval", "StatementNum out of range.");
 
         if((fst < 1 && snd < 1) || (fst != 0 && snd != 0))
-            throw pkb::exception::PkbException("pkb::eval", "Only 1 wildcard is to be used.");
+            throw util::PkbException("pkb::eval", "Only 1 wildcard is to be used.");
 
         if(fst == 0)
         {
@@ -683,7 +685,7 @@ namespace pkb
     {
         if(this->variables.find(var) == this->variables.end() || stmt_num > this->statements.size())
         {
-            throw pkb::exception::PkbException("pkb::eval", "Invalid query parameters.");
+            throw util::PkbException("pkb::eval", "Invalid query parameters.");
         }
         auto& stmt = this->statements.at(stmt_num - 1);
         if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt->stmt))
@@ -700,7 +702,7 @@ namespace pkb
     {
         if(this->variables.find(var) == this->variables.end() || this->procedures.find(proc) == this->procedures.end())
         {
-            throw pkb::exception::PkbException("pkb::eval", "Invalid query parameters.");
+            throw util::PkbException("pkb::eval", "Invalid query parameters.");
         }
         return this->procedures.at(proc).uses.count(var) > 0;
     }
@@ -709,7 +711,7 @@ namespace pkb
     {
         if(stmt_num > this->statements.size())
         {
-            throw pkb::exception::PkbException("pkb::eval", "Invalid statement number.");
+            throw util::PkbException("pkb::eval", "Invalid statement number.");
         }
         return this->statements.at(stmt_num - 1)->uses;
     }
@@ -718,7 +720,7 @@ namespace pkb
     {
         if(this->procedures.find(var) == this->procedures.end())
         {
-            throw pkb::exception::PkbException("pkb::eval", "Procedure not found.");
+            throw util::PkbException("pkb::eval", "Procedure not found.");
         }
         return this->procedures.at(var).uses;
     }
@@ -727,7 +729,7 @@ namespace pkb
     {
         if(this->variables.find(var) == this->variables.end())
         {
-            throw pkb::exception::PkbException("pkb::eval", "Variable not found.");
+            throw util::PkbException("pkb::eval", "Variable not found.");
         }
         std::unordered_set<std::string> uses;
         auto& stmt_list = this->variables.at(var).used_by;
@@ -778,7 +780,7 @@ namespace pkb
                     uses.insert(proc->name);
                 break;
             default:
-                throw pkb::exception::PkbException("pkb::eval", "Invalid statement type.");
+                throw util::PkbException("pkb::eval", "Invalid statement type.");
         }
         return uses;
     }
@@ -787,7 +789,7 @@ namespace pkb
     {
         if(this->variables.find(var) == this->variables.end() || stmt_num > this->statements.size())
         {
-            throw pkb::exception::PkbException("pkb::eval", "Invalid query parameters.");
+            throw util::PkbException("pkb::eval", "Invalid query parameters.");
         }
         auto& stmt = this->statements.at(stmt_num - 1);
         if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt->stmt))
@@ -804,7 +806,7 @@ namespace pkb
     {
         if(this->variables.find(var) == this->variables.end() || this->procedures.find(proc) == this->procedures.end())
         {
-            throw pkb::exception::PkbException("pkb::eval", "Invalid query parameters.");
+            throw util::PkbException("pkb::eval", "Invalid query parameters.");
         }
         return this->procedures.at(proc).modifies.count(var) > 0;
     }
@@ -813,7 +815,7 @@ namespace pkb
     {
         if(stmt_num > this->statements.size())
         {
-            throw pkb::exception::PkbException("pkb::eval", "Invalid statement number.");
+            throw util::PkbException("pkb::eval", "Invalid statement number.");
         }
         return this->statements.at(stmt_num - 1)->modifies;
     }
@@ -822,7 +824,7 @@ namespace pkb
     {
         if(this->procedures.find(var) == this->procedures.end())
         {
-            throw pkb::exception::PkbException("pkb::eval", "Procedure {} not found.", var);
+            throw util::PkbException("pkb::eval", "Procedure {} not found.", var);
         }
         return this->procedures.at(var).modifies;
     }
@@ -831,7 +833,7 @@ namespace pkb
     {
         if(this->variables.find(var) == this->variables.end())
         {
-            throw pkb::exception::PkbException("pkb::eval", "Variable not found.");
+            throw util::PkbException("pkb::eval", "Variable not found.");
         }
         std::unordered_set<std::string> modifies;
         auto& stmt_list = this->variables.at(var).modified_by;
@@ -884,7 +886,7 @@ namespace pkb
 
                 break;
             default:
-                throw pkb::exception::PkbException("pkb::eval", "Invalid statement type.");
+                throw util::PkbException("pkb::eval", "Invalid statement type.");
         }
         return modifies;
     }

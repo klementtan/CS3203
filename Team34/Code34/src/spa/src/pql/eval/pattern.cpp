@@ -3,11 +3,10 @@
 #include <cassert>
 #include <algorithm>
 
-#include "pql/exception.h"
+#include "exceptions.h"
 #include "pql/eval/table.h"
 #include "pql/eval/evaluator.h"
 
-using PqlException = pql::exception::PqlException;
 
 namespace pql::eval
 {
@@ -23,6 +22,8 @@ namespace pql::ast
 {
     namespace s_ast = simple::ast;
     namespace table = pql::eval::table;
+
+    using PqlException = util::PqlException;
 
     void AssignPatternCond::evaluate(pkb::ProgramKB* pkb, table::Table* tbl) const
     {
