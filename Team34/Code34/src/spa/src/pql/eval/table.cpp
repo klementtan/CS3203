@@ -14,6 +14,7 @@
 
 namespace pql::eval::table
 {
+    std::string rowToString(const std::unordered_map<ast::Declaration*, Entry>& row);
     extern const std::unordered_map<EntryType, std::string> EntryTypeString = {
         { EntryType::kNull, "Null" },
         { EntryType::kStmt, "Stmt" },
@@ -165,27 +166,39 @@ namespace pql::eval::table
 
     void Table::upsertDomains(ast::Declaration* decl, const std::unordered_set<Entry>& entries)
     {
+        util::log("pql::eval::table", "Updating domain of {} with {} entries", decl->toString(), entries.size());
         m_domains[decl] = entries;
     }
     void Table::addJoin(const Join& join)
     {
         m_joins.push_back(join);
     }
+    std::unordered_map<ast::Declaration*, std::vector<Join>> Table::getDeclJoins() const
+    {
+        std::unordered_map<ast::Declaration*, std::vector<Join>> decl_joins;
+        for(const Join& join : m_joins)
+        {
+            decl_joins[join.getDeclA()].emplace_back(join);
+            decl_joins[join.getDeclB()].emplace_back(join);
+        }
+        return decl_joins;
+    }
 
-    std::vector<std::unordered_map<ast::Declaration*, Entry>> Table::getRows() const
+    std::vector<Row> Table::getRows(const std::vector<ast::Declaration*>& decls) const
     {
         std::vector<std::unordered_map<ast::Declaration*, Entry>> ret;
         ret.emplace_back();
 
-        // TODO: Use pruning to reduce search space
-        for(auto [decl, entries] : m_domains)
+        // TODO: Use dfs on Joins to reduce search space
+        for(ast::Declaration* decl : decls)
         {
+            Domain entries = Table::getDomain(decl);
             std::vector<std::unordered_map<ast::Declaration*, Entry>> new_ret;
             for(const Entry& entry : entries)
             {
                 for(const std::unordered_map<ast::Declaration*, Entry>& table_perm : ret)
                 {
-                    util::log("pql::eval::table", "Adding {} for each table perm", entry.toString());
+                    util::log("pql::eval::table", "Adding {} for each row", entry.toString());
                     std::unordered_map<ast::Declaration*, Entry> new_table_perm(table_perm);
                     new_table_perm[decl] = entry;
                     new_ret.push_back(new_table_perm);
@@ -195,34 +208,13 @@ namespace pql::eval::table
         }
         return ret;
     }
-
-    std::unordered_set<Entry> Table::getDomain(ast::Declaration* decl) const
+    std::vector<Row> Table::getValidRows(const std::vector<Row>& candidate_rows) const
     {
-        auto it = m_domains.find(decl);
-        if(it == m_domains.end())
-            return std::unordered_set<Entry>();
-        return it->second;
-    }
-
-    std::string rowToString(const std::unordered_map<ast::Declaration*, Entry>& row)
-    {
-        std::string ret { "Row:[\n" };
-        for(auto [decl_ptr, entry] : row)
-        {
-            ret += zpr::sprint("{}={}\n", decl_ptr->toString(),entry.toString());
-        }
-        ret += "]\n";
-        return ret;
-    }
-
-    std::list<std::string> Table::getResult(ast::Declaration* ret_decl)
-    {
-        std::list<std::string> result;
-        std::vector<std::unordered_map<ast::Declaration*, Entry>> rows = getRows();
-        for(auto row : rows)
+        std::vector<Row> valid_rows;
+        for(auto row : candidate_rows)
         {
             util::log("pql::eval::row", "Checking if row fulfill all {} join condition: {}", m_joins.size(),
-                      rowToString(row));
+                rowToString(row));
             bool is_valid = true;
             for(const Join& join : m_joins)
             {
@@ -257,12 +249,91 @@ namespace pql::eval::table
             }
             if(is_valid)
             {
-                util::log("pql::eval::row", "Found valid row {}", rowToString(row));
-                Entry entry = row.find(ret_decl)->second;
-                result.push_back(
-                    entry.getType() == EntryType::kStmt ? std::to_string(entry.getStmtNum()) : entry.getVal());
+                valid_rows.push_back(row);
             }
         }
+        return valid_rows;
+    }
+
+    std::unordered_set<Entry> Table::getDomain(ast::Declaration* decl) const
+    {
+        auto it = m_domains.find(decl);
+        if(it == m_domains.end())
+            return std::unordered_set<Entry>();
+        return it->second;
+    }
+
+    std::string rowToString(const Row& row)
+    {
+        std::string ret { "Row:[\n" };
+        for(auto [decl_ptr, entry] : row)
+        {
+            ret += zpr::sprint("{}={}\n", decl_ptr->toString(), entry.toString());
+        }
+        ret += "]\n";
+        return ret;
+    }
+
+    bool Table::isValidDomain() const
+    {
+        for(auto [decl, domain] : m_domains)
+        {
+            // All declarations should have at least one entry in domain
+            if(domain.empty())
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    std::list<std::string> Table::getResult(ast::Declaration* ret_decl)
+    {
+        std::unordered_set<Entry> result_entry;
+        std::unordered_map<ast::Declaration*, std::vector<Join>> decl_joins = getDeclJoins();
+
+        // We only need to permutate on decl involded in joins
+        std::vector<ast::Declaration*> join_decls;
+        for(auto [decl, joins] : decl_joins)
+        {
+            join_decls.push_back(decl);
+        }
+        // All domain should be valid
+        if(!isValidDomain())
+            return {};
+
+        std::vector<Row> candidate_rows = getRows(join_decls);
+        std::vector<Row> valid_rows = getValidRows(candidate_rows);
+
+        // There should exist a valid assignment that satisfies all joins even if ret declaration is not
+        // involved in any clause
+        if(valid_rows.empty())
+            return {};
+
+        if(decl_joins.count(ret_decl))
+        {
+            for(const Row& row : valid_rows)
+            {
+                auto it = row.find(ret_decl);
+                // Return decl shold be a column in valid rows;
+                assert(it != row.end());
+                Entry ret_decl_entry = it->second;
+                result_entry.insert(ret_decl_entry);
+            }
+        }
+        else
+        {
+            result_entry = Table::getDomain(ret_decl);
+        }
+
+        std::list<std::string> result;
+
+        for(const Entry& entry : result_entry)
+        {
+            result.push_back(entry.getType() == EntryType::kStmt ? std::to_string(entry.getStmtNum()) : entry.getVal());
+        }
+
         return result;
     }
     std::string Table::toString() const

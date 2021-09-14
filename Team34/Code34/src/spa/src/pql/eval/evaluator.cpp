@@ -54,7 +54,6 @@ namespace pql::eval
         }
         util::log("pql::eval", "Adding {} variables to {} initial domain", m_pkb->uses_modifies.variables.size(),
             declaration->toString());
-        // TODO: Check with pkb team if this is the right way to access all variables
         for(auto [name, var] : m_pkb->uses_modifies.variables)
         {
             util::log("pql::eval", "Adding {} to initial var domain", name);
@@ -121,6 +120,8 @@ namespace pql::eval
         processDeclarations(m_query->declarations);
         util::log("pql::eval", "Table after initial processing of declaration: {}", m_table->toString());
 
+        // All queries should have select clause
+        assert(m_query->select);
         if(m_query->select->such_that)
             handleSuchThat(m_query->select->such_that);
 
@@ -133,6 +134,7 @@ namespace pql::eval
 
     void Evaluator::handleSuchThat(const ast::SuchThatCl* such_that)
     {
+        util::log("pql::eval", "Handling such that:{}", such_that->toString());
         for(ast::RelCond* rel_cond : such_that->rel_conds)
         {
             if(auto follows = dynamic_cast<ast::Follows*>(rel_cond); follows)
