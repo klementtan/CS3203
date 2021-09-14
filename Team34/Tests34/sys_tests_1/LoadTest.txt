@@ -1,0 +1,10 @@
+1 - 20 declaration with no such that.
+assign a1, a2, a3, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20;
+Select a1
+1,11,14,19,21,24,30,36,42,43,48,50,56,6,62,63,70,71,72,73,8,12,15,2,20,22,25,31,37,44,51,57,7,9
+5000
+2 - 20 declaration with such that.
+assign a1, a2, a3, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20; variable v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15;
+Select a1 such that Modifies(a1,v1) pattern a1(v1,_"y"_)
+48,70
+5000
