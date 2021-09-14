@@ -43,6 +43,16 @@ def parse_one(filename):
 			passed_tests[filename].append((num, name))
 			num_passed += 1
 
+		test_name_str = f"{filename}/{num} - {name}"
+		tmp = query.find("correct")
+		if tmp is None:
+			if query.find("exception") is not None:
+				print(f"warning: {test_name_str} threw exception")
+				continue
+			else:
+				print(f"warning: {test_name_str} has no correct result")
+				continue
+
 		correct_ans = query.find("correct").text
 		if correct_ans is None:
 			continue
@@ -50,7 +60,7 @@ def parse_one(filename):
 		dupes = get_dupes(correct_ans.split(","))
 
 		if len(dupes) > 0:
-			print(f"warning: duplicate answers for {filename}/{num} - {name}:")
+			print(f"warning: duplicate answers for {test_name_str}:")
 			print(f"    {dupes}")
 
 def iterate_dir(dir):
@@ -58,6 +68,24 @@ def iterate_dir(dir):
 		for file in files:
 			if file.endswith(".xml"):
 				parse_one(os.path.join(root, file))
+
+def parse_results_from_folder(folder):
+	iterate_dir(folder)
+
+def get_failed_tests():
+	return failed_tests
+
+def get_passed_tests():
+	return passed_tests
+
+def get_num_failed():
+	return num_failed
+
+def get_num_passed():
+	return num_passed
+
+
+
 
 def main():
 	if len(sys.argv) < 2:
@@ -94,7 +122,6 @@ def main():
 		sys.exit(num_failed)
 	else:
 		return
-
 
 if __name__ == "__main__":
 	main()

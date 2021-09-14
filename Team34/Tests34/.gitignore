@@ -1,1 +1,3 @@
 *.xml
+__pycache__
+autotester_summary.txt

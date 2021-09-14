@@ -37,15 +37,14 @@ jobs:
           cd Team34/Code34
           ./build/src/integration_testing/Release/integration_testing.exe
           if ($lastexitcode -ne 0) { throw "integration tests failed" }
-      - name: autotester
+      - name: run autotester
         run: |
-          cd Team34/Tests34/sys_tests_1
-          ./run.bat
+          cd Team34/Tests34
+          python test_runner.py ..\Code34\build\src\autotester\Release\autotester.exe sys_tests_1
           if ($lastexitcode -ne 0) { throw "autotester failed" }
       - name: show failed tests
         run: |
           cd Team34/Tests34
-          python parse_result_xml.py -q sys_tests_1 > autotester_summary.txt
           cat autotester_summary.txt
       - name: Archive test results
         uses: actions/upload-artifact@v2
