@@ -646,6 +646,10 @@ namespace pql::parser
                 insert_declaration(&ps, declaration_list);
             }
         }
+        if(query->select == nullptr)
+        {
+            throw util::PqlException("pql::parser", "All queries should contain a select clause");
+        }
 
         query->declarations = declaration_list;
         util::log("pql::parser", "Completed parsing AST: {}", query->toString());
