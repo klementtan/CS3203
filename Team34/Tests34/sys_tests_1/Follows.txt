@@ -116,27 +116,27 @@ Select pn such that Follows (pn, _)
 24 - print x stmt number
 print pn;
 Select pn such that Follows (pn, 4)
-21
+none
 5000
 25 - if x assign
 if ifs;assign a1;
 Select a1 such that Follows (ifs, a1)
-14
+none
 5000
 26 - if x read
 if ifs;read re1;
 Select re1 such that Follows (ifs, re1)
-15
+none
 5000
 27 - if x print
 if ifs;print pn1;
 Select pn1 such that Follows (ifs, pn1)
-16
+none
 5000
 28 - if x if
 if ifs;if ifs1;
 Select ifs1 such that Follows (ifs, ifs1)
-17
+none
 5000
 29 - if x while
 if ifs;while w1;
