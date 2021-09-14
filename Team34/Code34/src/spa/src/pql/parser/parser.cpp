@@ -595,18 +595,23 @@ namespace pql::parser
         select->ent = ent;
 
         std::vector<Token> clause_tok = ps->peek_two();
+        bool allow_pattern = true;
+        bool allow_such_that = true;
 
-        while(clause_tok[0] == KW_Pattern || clause_tok == KW_SuchThat)
+        // TOOD(#100): Remove single pattern or single such that clause after iteration 1.
+        while((clause_tok[0] == KW_Pattern && allow_pattern) || (clause_tok == KW_SuchThat && allow_such_that))
         {
             if(clause_tok[0] == KW_Pattern)
             {
                 util::log("pql::parser", "Parsing pattern clause");
                 select->pattern = parse_pattern(ps, declaration_list);
+                allow_pattern = false;
             }
             else if(clause_tok == KW_SuchThat)
             {
                 util::log("pql::parser", "Parsing such that clause");
                 select->such_that = parse_such_that(ps, declaration_list);
+                allow_such_that = false;
             }
             clause_tok = ps->peek_two();
         }
@@ -628,6 +633,12 @@ namespace pql::parser
             {
                 util::log("pql::parser", "parsing Select");
                 query->select = parse_select(&ps, declaration_list);
+
+                if(ps.peek_one() != TT::EndOfFile)
+                {
+                    throw util::PqlException(
+                        "pql::parser", "Query should end after a single select clause instead of {}", ps.stream);
+                }
             }
             else
             {
