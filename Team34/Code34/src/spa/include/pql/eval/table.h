@@ -118,7 +118,8 @@ namespace pql::eval::table
         // Mapping of <declaration, declaration>: list of corresponding entry
         // All rows must equal to at least one of the entry pair
         std::vector<Join> m_joins;
-        [[nodiscard]] std::vector<std::unordered_map<ast::Declaration*, Entry>> getTablePerm() const;
+        [[nodiscard]] std::vector<std::unordered_map<ast::Declaration*, Entry>> getRows() const;
+        [[nodiscard]] std::unordered_map<ast::Declaration*, std::vector<Join>> getEntryJoins() const;
 
     public:
         void upsertDomains(ast::Declaration* decl, const Domain& entries);

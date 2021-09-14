@@ -172,7 +172,7 @@ namespace pql::eval::table
         m_joins.push_back(join);
     }
 
-    std::vector<std::unordered_map<ast::Declaration*, Entry>> Table::getTablePerm() const
+    std::vector<std::unordered_map<ast::Declaration*, Entry>> Table::getRows() const
     {
         std::vector<std::unordered_map<ast::Declaration*, Entry>> ret;
         ret.emplace_back();
@@ -204,12 +204,12 @@ namespace pql::eval::table
         return it->second;
     }
 
-    std::string printTablePerm(const std::unordered_map<ast::Declaration*, Entry>& table)
+    std::string rowToString(const std::unordered_map<ast::Declaration*, Entry>& row)
     {
-        std::string ret { "Table Perm:[\n" };
-        for(auto [decl_ptr, entry] : table)
+        std::string ret { "Row:[\n" };
+        for(auto [decl_ptr, entry] : row)
         {
-            ret += zpr::sprint("{}\n", entry.toString());
+            ret += zpr::sprint("{}={}\n", decl_ptr->toString(),entry.toString());
         }
         ret += "]\n";
         return ret;
@@ -218,20 +218,20 @@ namespace pql::eval::table
     std::list<std::string> Table::getResult(ast::Declaration* ret_decl)
     {
         std::list<std::string> result;
-        std::vector<std::unordered_map<ast::Declaration*, Entry>> tables = getTablePerm();
-        for(auto table : tables)
+        std::vector<std::unordered_map<ast::Declaration*, Entry>> rows = getRows();
+        for(auto row : rows)
         {
-            util::log("pql::eval::table", "Checking if table fulfill all {} join condition: {}", m_joins.size(),
-                printTablePerm(table));
+            util::log("pql::eval::row", "Checking if row fulfill all {} join condition: {}", m_joins.size(),
+                      rowToString(row));
             bool is_valid = true;
             for(const Join& join : m_joins)
             {
                 ast::Declaration* decl_ptr_a = join.getDeclA();
                 ast::Declaration* decl_ptr_b = join.getDeclB();
-                assert(table.find(decl_ptr_a) != table.end());
-                assert(table.find(decl_ptr_b) != table.end());
-                Entry actual_entry_a = table.find(decl_ptr_a)->second;
-                Entry actual_entry_b = table.find(decl_ptr_b)->second;
+                assert(row.find(decl_ptr_a) != row.end());
+                assert(row.find(decl_ptr_b) != row.end());
+                Entry actual_entry_a = row.find(decl_ptr_a)->second;
+                Entry actual_entry_b = row.find(decl_ptr_b)->second;
                 bool has_valid_join = false;
                 for(const auto& expected_entry_ab : join.getAllowedEntries())
                 {
@@ -244,7 +244,7 @@ namespace pql::eval::table
                     }
                     assert(actual_entry_a == expected_entry_a);
                     assert(actual_entry_b == expected_entry_b);
-                    util::log("pql::eval::table", "Found a valid Join({}={}, {}={}) ", decl_ptr_a->toString(),
+                    util::log("pql::eval::row", "Found a valid Join({}={}, {}={}) ", decl_ptr_a->toString(),
                         actual_entry_a.toString(), decl_ptr_b->toString(), actual_entry_b.toString());
                     has_valid_join = true;
                     break;
@@ -257,8 +257,8 @@ namespace pql::eval::table
             }
             if(is_valid)
             {
-                util::log("pql::eval::table", "Found valid table perm {}", printTablePerm(table));
-                Entry entry = table.find(ret_decl)->second;
+                util::log("pql::eval::row", "Found valid row {}", rowToString(row));
+                Entry entry = row.find(ret_decl)->second;
                 result.push_back(
                     entry.getType() == EntryType::kStmt ? std::to_string(entry.getStmtNum()) : entry.getVal());
             }
