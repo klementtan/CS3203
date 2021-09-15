@@ -4,7 +4,6 @@
 #include "catch.hpp"
 
 #include <zpr.h>
-#include <zst.h>
 #include "simple/parser.h"
 
 using namespace simple::parser;

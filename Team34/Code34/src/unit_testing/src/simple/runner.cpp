@@ -4,6 +4,7 @@
 #include "catch.hpp"
 
 #include "runner.h"
+#include "exceptions.h"
 #include "simple/parser.h"
 
 bool Test::run() const
@@ -12,25 +13,24 @@ bool Test::run() const
     std::string expected = this->expected.str();
 
     bool ok = false;
-    if(this->whole_prog)
+    try
     {
-        auto res = simple::parser::parseProgram(this->input);
-        if(res.ok())
-            actual = res.unwrap()->toString(/* compact: */ true);
+        if(this->whole_prog)
+        {
+            auto res = simple::parser::parseProgram(this->input);
+            actual = res->toString(/* compact: */ true);
+        }
         else
-            actual = res.error();
-
-        ok = res.ok();
+        {
+            auto res = simple::parser::parseExpression(this->input);
+            actual = res->toString();
+        }
+        ok = true;
     }
-    else
+    catch(const util::Exception& e)
     {
-        auto res = simple::parser::parseExpression(this->input);
-        if(res.ok())
-            actual = res.unwrap()->toString();
-        else
-            actual = res.error();
-
-        ok = res.ok();
+        actual = e.what();
+        ok = false;
     }
 
     if(ok != this->should_pass)

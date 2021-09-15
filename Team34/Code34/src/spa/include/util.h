@@ -9,13 +9,10 @@
 #include <string>
 
 #include <zpr.h>
-#include "simple/ast.h"
 
 // misc stuff
 namespace util
 {
-    namespace s_ast = simple::ast;
-
     static constexpr const char* LOG_OUTPUT_FILE = "debug.log";
 
     std::string readEntireFile(const char* path);
@@ -43,4 +40,9 @@ namespace util
 
         exit(1);
     }
+}
+
+namespace zst
+{
+    using str_view = zpr::tt::str_view;
 }

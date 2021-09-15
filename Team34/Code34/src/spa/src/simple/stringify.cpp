@@ -1,7 +1,6 @@
 // stringify.cpp
 
 #include <zpr.h>
-#include <zst.h>
 
 #include "simple/ast.h"
 

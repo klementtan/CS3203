@@ -3,7 +3,7 @@
 #pragma once
 
 #include <zpr.h>
-#include <zst.h>
+#include "util.h"
 
 struct Test
 {
@@ -15,7 +15,7 @@ struct Test
 
     bool run() const;
 
-    static constexpr Test expr(bool pass, zst::str_view expr, zst::str_view exp)
+    static Test expr(bool pass, zst::str_view expr, zst::str_view exp)
     {
         Test ret {};
         ret.whole_prog = false;
@@ -25,7 +25,7 @@ struct Test
         return ret;
     }
 
-    static constexpr Test program(bool pass, zst::str_view prog, zst::str_view exp)
+    static Test program(bool pass, zst::str_view prog, zst::str_view exp)
     {
         Test ret {};
         ret.whole_prog = true;

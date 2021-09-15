@@ -20,8 +20,8 @@ struct Runner
     {
         if(!m_pkb)
         {
-            auto prog = simple::parser::parseProgram(m_source).unwrap();
-            m_pkb = pkb::processProgram(prog).unwrap();
+            auto prog = simple::parser::parseProgram(m_source);
+            m_pkb = pkb::processProgram(prog);
         }
 
         auto query = pql::parser::parsePQL(m_query);

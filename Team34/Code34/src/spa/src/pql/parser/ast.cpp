@@ -3,7 +3,6 @@
 #include <algorithm>
 
 #include <zpr.h>
-#include <zst.h>
 
 #include "pql/parser/ast.h"
 

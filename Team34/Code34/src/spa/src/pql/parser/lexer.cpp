@@ -1,6 +1,5 @@
 // pql/lexer.cpp
 
-#include <zst.h>
 
 #include "util.h"
 #include "exceptions.h"

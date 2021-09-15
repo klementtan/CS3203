@@ -3,7 +3,6 @@
 #include <unordered_set>
 
 #include <zpr.h>
-#include <zst.h>
 
 #include "util.h"
 #include "exceptions.h"
@@ -204,13 +203,7 @@ namespace pql::parser
             throw PqlException("pql::parser", "Expect expression to  with double quotes(\")");
         }
 
-        zst::Result<simple::ast::Expr*, std::string> expr_result = simple::parser::parseExpression(expr_str);
-        if(!expr_result.ok())
-        {
-            throw PqlException("pql::parser", "Invalid expression provided: {}", expr_str);
-        }
-
-        return expr_result.unwrap();
+        return simple::parser::parseExpression(expr_str);
     }
 
     pql::ast::ExprSpec* parse_expr_spec(ParserState* ps)

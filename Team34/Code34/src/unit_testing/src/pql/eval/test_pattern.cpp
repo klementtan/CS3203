@@ -96,8 +96,8 @@ TEST_CASE("Select pattern assign(name, _)")
 TEST_CASE("Select pattern assign(name, _subexpr_)")
 {
     // we're running a lot of things, so save time here by only processing once
-    auto prog = simple::parser::parseProgram(prog_1).unwrap();
-    auto pkb = pkb::processProgram(prog).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1);
+    auto pkb = pkb::processProgram(prog);
 
     SECTION("xyz")
     {
@@ -178,8 +178,8 @@ TEST_CASE("Select pattern assign(name, _subexpr_)")
 
 TEST_CASE("Select pattern assign(name, fullexpr)")
 {
-    auto prog = simple::parser::parseProgram(prog_1).unwrap();
-    auto pkb = pkb::processProgram(prog).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1);
+    auto pkb = pkb::processProgram(prog);
 
     SECTION("xyz")
     {
@@ -247,8 +247,8 @@ TEST_CASE("Select pattern assign(name, fullexpr)")
 
 TEST_CASE("Select pattern assign(decl, _)")
 {
-    auto prog = simple::parser::parseProgram(prog_1).unwrap();
-    auto pkb = pkb::processProgram(prog).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1);
+    auto pkb = pkb::processProgram(prog);
 
     TEST_OK(pkb, R"^(assign a; variable v; Select a pattern a(v, _))^", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
     TEST_OK(pkb, R"^(assign a; variable v; Select v pattern a(v, _))^", "a1", "a2", "a3", "t1", "t2", "t3", "t4", "x",
@@ -260,8 +260,8 @@ TEST_CASE("Select pattern assign(decl, _)")
 
 TEST_CASE("Select pattern assign(decl, _subexpr_)")
 {
-    auto prog = simple::parser::parseProgram(prog_1).unwrap();
-    auto pkb = pkb::processProgram(prog).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1);
+    auto pkb = pkb::processProgram(prog);
 
     TEST_OK(pkb, R"^(assign a; variable v; Select v pattern a(v, _"6"_))^", "x");
     TEST_OK(pkb, R"^(assign a; variable v; Select v pattern a(v, _"b + c"_))^", "z");
@@ -277,8 +277,8 @@ TEST_CASE("Select pattern assign(decl, _subexpr_)")
 
 TEST_CASE("Select pattern assign(decl, fullexpr)")
 {
-    auto prog = simple::parser::parseProgram(prog_1).unwrap();
-    auto pkb = pkb::processProgram(prog).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1);
+    auto pkb = pkb::processProgram(prog);
 
     TEST_OK(pkb, R"^(assign a; variable v; Select v pattern a(v, "6"))^", "x");
     TEST_OK(pkb, R"^(assign a; variable v; Select v pattern a(v, "18"))^", "y");
@@ -301,8 +301,8 @@ TEST_CASE("Select pattern assign(_, _)")
 
 TEST_CASE("Select pattern assign(_, _subexpr_)")
 {
-    auto prog = simple::parser::parseProgram(prog_1).unwrap();
-    auto pkb = pkb::processProgram(prog).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1);
+    auto pkb = pkb::processProgram(prog);
 
     SECTION("a")
     {
@@ -363,8 +363,8 @@ TEST_CASE("Select pattern assign(_, _subexpr_)")
 
 TEST_CASE("Select pattern assign(_, fullexpr)")
 {
-    auto prog = simple::parser::parseProgram(prog_1).unwrap();
-    auto pkb = pkb::processProgram(prog).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1);
+    auto pkb = pkb::processProgram(prog);
 
     SECTION("xyz")
     {
@@ -427,8 +427,8 @@ TEST_CASE("Select pattern assign(_, fullexpr)")
     }
     SECTION("t5")
     {
-        auto prog = simple::parser::parseProgram(prog_3).unwrap();
-        auto pkb = pkb::processProgram(prog).unwrap();
+        auto prog = simple::parser::parseProgram(prog_3);
+        auto pkb = pkb::processProgram(prog);
         TEST_OK(pkb, R"^(assign a; while w; Select a such that Parent* (w, a) pattern a ("count", _))^", 15);
         TEST_OK(pkb, R"^(assign a; variable v; Select a such that Uses (a, v) pattern a (v, _"x"_))^", 16);
     }
