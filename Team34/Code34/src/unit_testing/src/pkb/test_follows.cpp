@@ -48,8 +48,8 @@ constexpr const auto sample_source = R"(
         x = z + x; } }
 )";
 
-auto prog_parents = parseProgram(sample_source).unwrap();
-auto kb_parents = processProgram(prog_parents).unwrap();
+auto prog_parents = parseProgram(sample_source);
+auto kb_parents = processProgram(prog_parents);
 
 TEST_CASE("Follows(a, b)")
 {

@@ -87,11 +87,11 @@ constexpr const auto trivial_source = R"(
     }
 )";
 
-auto prog1_m = parseProgram(sample_source).unwrap();
-auto kb_sample_m = processProgram(prog1_m).unwrap();
+auto prog1_m = parseProgram(sample_source);
+auto kb_sample_m = processProgram(prog1_m);
 
-auto prog2_m = parseProgram(trivial_source).unwrap();
-auto kb_trivial_m = processProgram(prog2_m).unwrap();
+auto prog2_m = parseProgram(trivial_source);
+auto kb_trivial_m = processProgram(prog2_m);
 
 TEST_CASE("Modifies(DeclaredStmt, DeclaredVar)")
 {

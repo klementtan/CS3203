@@ -5,7 +5,6 @@
 #include <algorithm>
 
 #include <zpr.h>
-#include <zst.h>
 
 #include "pkb.h"
 #include "util.h"
@@ -14,16 +13,7 @@
 
 namespace pkb
 {
-    using zst::Ok;
-    using zst::Err;
-    using zst::ErrFmt;
-
-    template <typename T>
-    using Result = zst::Result<T, std::string>;
     namespace s_ast = simple::ast;
-
-    using zst::Ok;
-    using zst::ErrFmt;
 
     // collection only entails numbering the statements
     static void collectStmtList(ProgramKB* pkb, s_ast::StmtList* list);
@@ -894,19 +884,18 @@ namespace pkb
      * End of Uses and Modifies methods
      */
 
-    Result<ProgramKB*> processProgram(s_ast::Program* program)
+    ProgramKB* processProgram(s_ast::Program* program)
     {
         auto pkb = new ProgramKB();
 
         for(const auto& proc : program->procedures)
-        {
             processCallGraph(pkb, &proc->body, &proc->name);
-        }
 
         if(pkb->proc_calls.cycleExists())
-            return ErrFmt("Cyclic or recursive calls are not allowed");
+            throw util::PkbException("pkb", "Cyclic or recursive calls are not allowed");
+
         if(auto a = pkb->proc_calls.missingProc(program->procedures); a != "")
-            return ErrFmt("Procedure '{}' is undefined", a);
+            throw util::PkbException("pkb", "Procedure '{}' is undefined", a);
 
         // do a first pass to number all the statements, set the
         // parent stmtlist, and collect all the procedures.
@@ -936,6 +925,6 @@ namespace pkb
             processDescendants(pkb, &proc->body);
         }
 
-        return Ok(pkb);
+        return pkb;
     }
 }

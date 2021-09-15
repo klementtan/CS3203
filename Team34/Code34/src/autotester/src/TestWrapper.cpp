@@ -16,8 +16,8 @@ TestWrapper::TestWrapper() { }
 void TestWrapper::parse(std::string filename)
 {
     auto text = util::readEntireFile(filename.c_str());
-    auto program = simple::parser::parseProgram(text).unwrap();
-    this->pkb = pkb::processProgram(program).unwrap();
+    auto program = simple::parser::parseProgram(text);
+    this->pkb = pkb::processProgram(program);
 }
 
 

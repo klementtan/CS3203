@@ -23,7 +23,7 @@ TEST_CASE("No such that")
         )";
 
     auto prog = simple::parser::parseProgram(in);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+    auto pkb = pkb::processProgram(prog);
 
     pql::ast::Query* query = pql::parser::parsePQL("stmt a;\n"
                                                    "Select a");
