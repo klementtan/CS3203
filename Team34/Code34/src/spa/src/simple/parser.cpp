@@ -281,7 +281,8 @@ namespace simple::parser
             }
             else
             {
-                throw util::ParseException("simple::parser", "expected a conditional/relational operator after ')', found '{}'", ps->peek().text);
+                throw util::ParseException("simple::parser",
+                    "expected a conditional/relational operator after ')', found '{}'", ps->peek().text);
             }
         }
         else
@@ -368,9 +369,11 @@ namespace simple::parser
 
     static Stmt* parseStmt(ParserState* ps)
     {
-        auto check_semicolon = [](ParserState* ps, auto ret) -> auto {
+        auto check_semicolon = [](ParserState * ps, auto ret) -> auto
+        {
             if(auto n = ps->next(); n != TT::Semicolon)
-                throw util::ParseException("simple::parser", "expected semicolon after statement, found '{}' instead", n.text);
+                throw util::ParseException(
+                    "simple::parser", "expected semicolon after statement, found '{}' instead", n.text);
             else
                 return ret;
         };
@@ -443,7 +446,8 @@ namespace simple::parser
     static Procedure* parseProcedure(ParserState* ps)
     {
         if(auto kw = ps->next(); kw != TT::Identifier || kw.text != KW_Procedure)
-            throw util::ParseException("simple::parser", "expected 'procedure' to define a procedure (found '{}')", kw.text);
+            throw util::ParseException(
+                "simple::parser", "expected 'procedure' to define a procedure (found '{}')", kw.text);
 
         auto proc = new Procedure();
 
