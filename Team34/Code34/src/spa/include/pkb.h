@@ -138,6 +138,8 @@ namespace pkb
 
         std::vector<Follows*> follows;
 
+        Statement* getStatementAtIndex(simple::ast::StatementNum);
+
         bool followsRelationExists();
         bool parentRelationExists();
 
