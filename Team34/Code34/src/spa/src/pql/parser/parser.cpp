@@ -599,7 +599,7 @@ namespace pql::parser
         bool allow_such_that = true;
 
         // TOOD(#100): Remove single pattern or single such that clause after iteration 1.
-        while((clause_tok[0] == KW_Pattern && allow_pattern) || (clause_tok == KW_SuchThat && allow_such_that))
+        while(((clause_tok[0] == KW_Pattern) && allow_pattern) || ((clause_tok == KW_SuchThat) && allow_such_that))
         {
             if(clause_tok[0] == KW_Pattern)
             {

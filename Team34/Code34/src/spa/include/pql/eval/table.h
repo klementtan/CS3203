@@ -89,6 +89,7 @@ namespace std
 namespace pql::eval::table
 {
     using Domain = std::unordered_set<Entry>;
+    using Row = std::unordered_map<ast::Declaration*, Entry>;
 
     Domain entry_set_intersect(const Domain& a, const Domain& b);
 
@@ -118,7 +119,14 @@ namespace pql::eval::table
         // Mapping of <declaration, declaration>: list of corresponding entry
         // All rows must equal to at least one of the entry pair
         std::vector<Join> m_joins;
-        [[nodiscard]] std::vector<std::unordered_map<ast::Declaration*, Entry>> getTablePerm() const;
+        // Get all possible rows with decls as the column. The value of each entry in the
+        // row will exist in the domain of declaration.
+        [[nodiscard]] std::vector<Row> getRows(const std::vector<ast::Declaration*>& decls) const;
+        // Get the rows in candidate_rows that fulfill all of the joins
+        [[nodiscard]] std::vector<Row> getValidRows(const std::vector<Row>& candidate_rows) const;
+        // Get mapping of declaration to the join that is involved in.
+        [[nodiscard]] std::unordered_map<ast::Declaration*, std::vector<Join>> getDeclJoins() const;
+        [[nodiscard]] bool isValidDomain() const;
 
     public:
         void upsertDomains(ast::Declaration* decl, const Domain& entries);
