@@ -46,26 +46,6 @@ namespace pkb
         std::unordered_set<simple::ast::Procedure*> modified_by_procs;
     };
 
-    struct SymbolTable
-    {
-        std::unordered_map<std::string, simple::ast::VarRef*> _vars;
-
-        simple::ast::VarRef* getVar(const std::string&);
-        std::unordered_map<std::string, simple::ast::VarRef*> getVars();
-        bool hasVar(const std::string&);
-        void setVar(const std::string&, simple::ast::VarRef*);
-
-        std::unordered_map<std::string, simple::ast::Procedure*> _procs;
-
-        simple::ast::Procedure* getProc(const std::string&);
-        bool hasProc(const std::string&);
-        void setProc(const std::string&, simple::ast::Procedure*);
-
-        void populate(simple::ast::Program*);
-        void populate(const simple::ast::StmtList&);
-        void populate(simple::ast::Expr*);
-    };
-
     struct Follows
     {
         simple::ast::StatementNum id = 0;
@@ -153,12 +133,13 @@ namespace pkb
         bool isParentT(simple::ast::StatementNum, simple::ast::StatementNum);
 
         std::optional<simple::ast::StatementNum> getParentOf(simple::ast::StatementNum);
-
         std::unordered_set<simple::ast::StatementNum> getAncestorsOf(simple::ast::StatementNum);
         std::unordered_set<simple::ast::StatementNum> getChildrenOf(simple::ast::StatementNum);
         std::unordered_set<simple::ast::StatementNum> getDescendantsOf(simple::ast::StatementNum);
 
+        std::unordered_set<int> _constants;
 
+        std::unordered_set<int> getConstants();
 
         bool m_follows_exists = false;
         bool m_parent_exists = false;

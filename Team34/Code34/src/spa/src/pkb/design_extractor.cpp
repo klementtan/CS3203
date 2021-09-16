@@ -48,54 +48,6 @@ namespace pkb
             collectStmt(pkb, stmt, list);
     }
 
-    void SymbolTable::populate(s_ast::Program* prog)
-    {
-        for(auto proc : prog->procedures)
-        {
-            setProc(proc->name, proc);
-            populate(proc->body);
-        }
-    }
-
-    void SymbolTable::populate(const s_ast::StmtList& lst)
-    {
-        for(auto stmt : lst.statements)
-        {
-            if(s_ast::IfStmt* if_stmt = dynamic_cast<s_ast::IfStmt*>(stmt))
-            {
-                populate(if_stmt->condition);
-                populate(if_stmt->true_case);
-                populate(if_stmt->false_case);
-            }
-            else if(s_ast::WhileLoop* while_stmt = dynamic_cast<s_ast::WhileLoop*>(stmt))
-            {
-                populate(while_stmt->condition);
-                populate(while_stmt->body);
-            }
-            else if(s_ast::AssignStmt* assign_stmt = dynamic_cast<s_ast::AssignStmt*>(stmt))
-            {
-                populate(assign_stmt->rhs);
-            }
-        }
-    }
-
-    void SymbolTable::populate(s_ast::Expr* expr)
-    {
-        if(s_ast::VarRef* var_ref = dynamic_cast<s_ast::VarRef*>(expr))
-        {
-            setVar(var_ref->name, var_ref);
-        }
-        else if(s_ast::BinaryOp* binary_op = dynamic_cast<s_ast::BinaryOp*>(expr))
-        {
-            populate(binary_op->lhs);
-            populate(binary_op->rhs);
-        }
-        else if(s_ast::UnaryOp* unary_op = dynamic_cast<s_ast::UnaryOp*>(expr))
-        {
-            populate(unary_op->expr);
-        }
-    }
-
     // processes and populates Follows and FollowsT concurrently
     static void processFollows(ProgramKB* pkb, s_ast::StmtList* list)
     {
@@ -350,9 +302,9 @@ namespace pkb
 
             pkb->getStatementAtIndex(parent_stmt->id)->uses.insert(vr->name);
         }
-        else if(dynamic_cast<s_ast::Constant*>(expr))
+        else if(auto c0 = dynamic_cast<s_ast::Constant*>(expr))
         {
-            // do nothing
+            pkb->_constants.insert(c0->value);
         }
         else if(auto bo = dynamic_cast<s_ast::BinaryOp*>(expr))
         {

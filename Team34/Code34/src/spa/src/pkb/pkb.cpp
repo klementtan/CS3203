@@ -24,46 +24,6 @@ namespace pkb
         return this->uses_modifies.statements.at(stmt_no - 1);
     }
 
-    // Start of symbol table methods
-
-    s_ast::VarRef* SymbolTable::getVar(const std::string& str)
-    {
-        if(!hasVar(str))
-            throw util::PkbException("pkb", "variable '{}' does not exist!", str);
-
-        return _vars[str];
-    }
-
-    bool SymbolTable::hasVar(const std::string& str)
-    {
-        return _vars.count(str);
-    }
-
-    void SymbolTable::setVar(const std::string& str, s_ast::VarRef* var)
-    {
-        _vars[str] = var;
-    }
-
-    s_ast::Procedure* SymbolTable::getProc(const std::string& str)
-    {
-        if(!hasProc(str))
-            throw util::PkbException("pkb", "procedure '{}' does not exist!", str);
-
-        return _procs[str];
-    }
-
-    bool SymbolTable::hasProc(const std::string& str)
-    {
-        return _procs.count(str);
-    }
-
-    void SymbolTable::setProc(const std::string& str, s_ast::Procedure* var)
-    {
-        _procs[str] = var;
-    }
-
-    // End of symbol table methods
-
     // Takes in two 1-indexed StatementNums
     bool ProgramKB::isFollows(s_ast::StatementNum fst, s_ast::StatementNum snd)
     {
@@ -175,6 +135,11 @@ namespace pkb
     /**
      * End of Parent methods
      */
+
+    std::unordered_set<int> ProgramKB::getConstants()
+    {
+        return _constants;
+    }
 
     /**
      * Start of Uses and Modifies methods
