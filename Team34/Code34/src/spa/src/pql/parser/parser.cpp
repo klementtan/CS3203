@@ -297,10 +297,15 @@ namespace pql::parser
 
     ast::FollowsT* parse_follows_t(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
     {
-        if(ps->next().text != "Follows" || ps->next().type != TT::Asterisk)
+        auto f = ps->next();
+        auto star = ps->next();
+        auto f_star = zst::str_view(f.text.data(), strlen("Follows*"));
+
+        if(f.text != "Follows" || star != TT::Asterisk || f_star != "Follows*")
         {
             throw PqlException("pql::parser", "FollowsT relationship condition should start with 'Follows*'");
         }
+
         auto* follows_t = new ast::FollowsT {};
         if(Token tok = ps->next(); tok != TT::LParen)
         {
@@ -348,7 +353,11 @@ namespace pql::parser
 
     ast::ParentT* parse_parent_t(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
     {
-        if(ps->next().text != "Parent" || ps->next().type != TT::Asterisk)
+        auto p = ps->next();
+        auto star = ps->next();
+        auto p_star = zst::str_view(p.text.data(), strlen("Parent*"));
+
+        if(p.text != "Parent" || star != TT::Asterisk || p_star != "Parent*")
         {
             throw PqlException("pql::parser", "ParentT relationship condition should start with 'Parent*'");
         }

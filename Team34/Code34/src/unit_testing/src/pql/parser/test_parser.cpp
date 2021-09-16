@@ -145,16 +145,23 @@ TEST_CASE("Parent Query")
 
 TEST_CASE("invalid queries")
 {
+    using namespace pql::parser;
+
     SECTION("duplicate queries")
     {
         auto query = "stmt s; assign s; Select s";
-        REQUIRE_THROWS_WITH(pql::parser::parsePQL(query), Catch::Contains("duplicate declaration 's'"));
+        REQUIRE_THROWS_WITH(parsePQL(query), Catch::Contains("duplicate declaration 's'"));
     }
 
-    SECTION("such-that spacing")
+    SECTION("such-that/parent*/follows* spacing")
     {
-        auto query = "stmt s; Select s such  that Parent(s, _)";
-        REQUIRE_THROWS_WITH(
-            pql::parser::parsePQL(query), Catch::Contains("Such That clause should start with 'such that'"));
+        CHECK_THROWS_WITH(parsePQL("stmt s ; Select s   such    that   Parent(s, _)"),
+            Catch::Contains("Such That clause should start with 'such that'"));
+
+        CHECK_THROWS_WITH(parsePQL("stmt s; Select s such that Follows  *  (s, _)"),
+            Catch::Contains("FollowsT relationship condition should start with 'Follows*'"));
+
+        CHECK_THROWS_WITH(parsePQL("stmt s; Select s such that Parent  *  (s, _)"),
+            Catch::Contains("ParentT relationship condition should start with 'Parent*'"));
     }
 }
