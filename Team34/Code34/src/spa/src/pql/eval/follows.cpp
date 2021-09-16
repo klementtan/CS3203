@@ -24,6 +24,11 @@ namespace pql::eval
         bool is_bef_decl = dynamic_cast<ast::DeclaredStmt*>(follows->directly_before);
         bool is_aft_decl = dynamic_cast<ast::DeclaredStmt*>(follows->directly_after);
 
+        if(is_bef_decl)
+            m_table->addSelectDecl(dynamic_cast<ast::DeclaredStmt*>(follows->directly_before)->declaration);
+        if(is_aft_decl)
+            m_table->addSelectDecl(dynamic_cast<ast::DeclaredStmt*>(follows->directly_after)->declaration);
+
         if(is_bef_stmt_id && is_aft_stmt_id)
         {
             auto bef_stmt_id = dynamic_cast<ast::StmtId*>(follows->directly_before)->id;
@@ -222,6 +227,11 @@ namespace pql::eval
         bool is_aft_all = dynamic_cast<ast::AllStmt*>(follows_t->after);
         bool is_bef_decl = dynamic_cast<ast::DeclaredStmt*>(follows_t->before);
         bool is_aft_decl = dynamic_cast<ast::DeclaredStmt*>(follows_t->after);
+
+        if(is_bef_decl)
+            m_table->addSelectDecl(dynamic_cast<ast::DeclaredStmt*>(follows_t->before)->declaration);
+        if(is_aft_decl)
+            m_table->addSelectDecl(dynamic_cast<ast::DeclaredStmt*>(follows_t->after)->declaration);
 
         if(is_bef_stmt_id && is_aft_stmt_id)
         {

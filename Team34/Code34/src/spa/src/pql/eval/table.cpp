@@ -173,6 +173,12 @@ namespace pql::eval::table
     {
         m_joins.push_back(join);
     }
+
+    void Table::addSelectDecl(ast::Declaration* decl)
+    {
+        assert(decl);
+        m_select_decls.insert(decl);
+    }
     std::unordered_map<ast::Declaration*, std::vector<Join>> Table::getDeclJoins() const
     {
         std::unordered_map<ast::Declaration*, std::vector<Join>> decl_joins;
@@ -274,13 +280,16 @@ namespace pql::eval::table
         return ret;
     }
 
-    bool Table::isValidDomain() const
+    bool Table::hasValidDomain() const
     {
-        for(auto [decl, domain] : m_domains)
+        for(ast::Declaration* decl : m_select_decls)
         {
+            util::log("pql::eval::table", "Checking if {} has non empty domain", decl->toString());
+            std::unordered_set<Entry> domain = getDomain(decl);
             // All declarations should have at least one entry in domain
             if(domain.empty())
             {
+                util::log("pql::eval", "{} has empty domain", decl->toString());
                 return false;
             }
         }
@@ -299,8 +308,9 @@ namespace pql::eval::table
         {
             join_decls.push_back(decl);
         }
-        // All domain should be valid
-        if(!isValidDomain())
+
+        // All domain involved in query should have non-empty domain
+        if(!hasValidDomain())
             return {};
 
         std::vector<Row> candidate_rows = getRows(join_decls);

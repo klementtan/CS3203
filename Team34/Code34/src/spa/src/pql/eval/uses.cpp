@@ -20,6 +20,11 @@ namespace pql::eval
         bool is_var_decl = dynamic_cast<ast::DeclaredEnt*>(rel->ent);
         bool is_var_all = dynamic_cast<ast::AllEnt*>(rel->ent);
 
+        if(is_proc_decl)
+            m_table->addSelectDecl(dynamic_cast<ast::DeclaredEnt*>(rel->user)->declaration);
+        if(is_var_decl)
+            m_table->addSelectDecl(dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration);
+
         // this should not happen, since Uses(_, foo) is invalid according to the specs
         if(dynamic_cast<ast::AllEnt*>(rel->user) || dynamic_cast<ast::AllStmt*>(rel->user))
             throw PqlException("pql::eval", "first argument of Uses cannot be '_'");
@@ -158,6 +163,11 @@ namespace pql::eval
         bool is_var_name = dynamic_cast<ast::EntName*>(rel->ent);
         bool is_var_decl = dynamic_cast<ast::DeclaredEnt*>(rel->ent);
         bool is_var_all = dynamic_cast<ast::AllEnt*>(rel->ent);
+
+        if(is_user_decl)
+            m_table->addSelectDecl(dynamic_cast<ast::DeclaredStmt*>(rel->user)->declaration);
+        if(is_var_decl)
+            m_table->addSelectDecl(dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration);
 
         // this should not happen, since Uses(_, foo) is invalid according to the specs
         if(dynamic_cast<ast::AllEnt*>(rel->user) || dynamic_cast<ast::AllStmt*>(rel->user))
