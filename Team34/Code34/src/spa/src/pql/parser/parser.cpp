@@ -18,6 +18,11 @@ namespace pql::parser
     {
         zst::str_view stream;
 
+        zst::str_view raw_stream() const
+        {
+            return this->stream;
+        }
+
         Token next()
         {
             return getNextToken(this->stream);
@@ -73,6 +78,9 @@ namespace pql::parser
             throw PqlException(
                 "pql::parser", "expected variable name to be an identifier but received {} instead.", var.text);
         }
+        if(declaration_list->declarations.find(var.text.str()) != declaration_list->declarations.end())
+            throw util::PqlException("pql::parser", "duplicate declaration '{}'", var.text);
+
         util::log("pql::parser", "Adding declaration {} to declaration list", var.text);
         auto declaration = new pql::ast::Declaration { var.text.str(), ent };
         util::log("pql::parser", "Adding {} to declaration list", declaration->toString());
@@ -102,7 +110,7 @@ namespace pql::parser
 
         if(pql::ast::DESIGN_ENT_MAP.count(ent_string) == 0)
         {
-            util::log("pql::parser", "Invalid entity provide in declaration {}", ent_string);
+            util::log("pql::parser", "Invalid entity provided in declaration {}", ent_string);
         }
         pql::ast::DESIGN_ENT ent = pql::ast::DESIGN_ENT_MAP.find(ent_string)->second;
         insert_var_to_declarations(ps, declaration_list, ent);
@@ -289,10 +297,15 @@ namespace pql::parser
 
     ast::FollowsT* parse_follows_t(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
     {
-        if(ps->next().text != "Follows" || ps->next().type != TT::Asterisk)
+        auto f = ps->next();
+        auto star = ps->next();
+        auto f_star = zst::str_view(f.text.data(), strlen("Follows*"));
+
+        if(f.text != "Follows" || star != TT::Asterisk || f_star != "Follows*")
         {
             throw PqlException("pql::parser", "FollowsT relationship condition should start with 'Follows*'");
         }
+
         auto* follows_t = new ast::FollowsT {};
         if(Token tok = ps->next(); tok != TT::LParen)
         {
@@ -340,7 +353,11 @@ namespace pql::parser
 
     ast::ParentT* parse_parent_t(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
     {
-        if(ps->next().text != "Parent" || ps->next().type != TT::Asterisk)
+        auto p = ps->next();
+        auto star = ps->next();
+        auto p_star = zst::str_view(p.text.data(), strlen("Parent*"));
+
+        if(p.text != "Parent" || star != TT::Asterisk || p_star != "Parent*")
         {
             throw PqlException("pql::parser", "ParentT relationship condition should start with 'Parent*'");
         }
@@ -546,10 +563,16 @@ namespace pql::parser
 
     ast::SuchThatCl* parse_such_that(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
     {
-        if(ps->next().text != "such" || ps->next().text != "that")
-        {
+        auto such = ps->next();
+        auto that = ps->next();
+
+        // there must be exactly a space between 'such' and 'that'. check this by "extending" the
+        // length of the 'such' token, which we know is safe.
+        auto tmp_token = zst::str_view(such.text.data(), strlen("such that"));
+
+        if(such.text != "such" || that.text != "that" || tmp_token != "such that")
             throw PqlException("pql::parser", "Such That clause should start with 'such that'");
-        }
+
         util::log("pql::parser", "Parsing such that clause. Remaining {}", ps->stream);
         auto* such_that = new ast::SuchThatCl {};
 
