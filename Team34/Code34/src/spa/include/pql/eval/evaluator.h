@@ -38,6 +38,7 @@ namespace pql::eval
         std::unordered_set<table::Entry> getInitialDomainVar(ast::Declaration* declaration);
         std::unordered_set<table::Entry> getInitialDomainProc(ast::Declaration* declaration);
         std::unordered_set<table::Entry> getInitialDomainStmt(ast::Declaration* declaration);
+        std::unordered_set<table::Entry> getInitialDomainConst(ast::Declaration* declaration);
         std::unordered_set<table::Entry> getInitialDomain(ast::Declaration* declaration);
 
     public:

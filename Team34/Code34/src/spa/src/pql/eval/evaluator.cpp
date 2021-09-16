@@ -78,7 +78,23 @@ namespace pql::eval
         }
         return domain;
     }
-
+    std::unordered_set<table::Entry> Evaluator::getInitialDomainConst(ast::Declaration* declaration)
+    {
+        std::unordered_set<table::Entry> domain;
+        if(declaration->design_ent != ast::DESIGN_ENT::CONSTANT)
+        {
+            throw util::PqlException("pql::eval", "Cannot get initial domain(constant) for non constant declaration {}",
+                declaration->toString());
+        }
+        util::log("pql::eval", "Adding {} constants to {} initial domain", m_pkb->uses_modifies.procedures.size(),
+            declaration->toString());
+        for(int const_val : m_pkb->getConstants())
+        {
+            util::log("pql::eval", "Adding {} to initial proc domain", const_val);
+            domain.insert(table::Entry(declaration, std::to_string(const_val)));
+        }
+        return domain;
+    }
     std::unordered_set<table::Entry> Evaluator::getInitialDomainStmt(ast::Declaration* declaration)
     {
         std::unordered_set<table::Entry> domain;
@@ -103,6 +119,8 @@ namespace pql::eval
             return getInitialDomainVar(declaration);
         if(declaration->design_ent == ast::DESIGN_ENT::PROCEDURE)
             return getInitialDomainProc(declaration);
+        if(declaration->design_ent == ast::DESIGN_ENT::CONSTANT)
+            return getInitialDomainConst(declaration);
         return getInitialDomainStmt(declaration);
     }
 
