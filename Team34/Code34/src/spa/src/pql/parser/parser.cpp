@@ -78,6 +78,9 @@ namespace pql::parser
             throw PqlException(
                 "pql::parser", "expected variable name to be an identifier but received {} instead.", var.text);
         }
+        if(declaration_list->declarations.find(var.text.str()) != declaration_list->declarations.end())
+            throw util::PqlException("pql::parser", "duplicate declaration '{}'", var.text);
+
         util::log("pql::parser", "Adding declaration {} to declaration list", var.text);
         auto declaration = new pql::ast::Declaration { var.text.str(), ent };
         util::log("pql::parser", "Adding {} to declaration list", declaration->toString());
@@ -107,7 +110,7 @@ namespace pql::parser
 
         if(pql::ast::DESIGN_ENT_MAP.count(ent_string) == 0)
         {
-            util::log("pql::parser", "Invalid entity provide in declaration {}", ent_string);
+            util::log("pql::parser", "Invalid entity provided in declaration {}", ent_string);
         }
         pql::ast::DESIGN_ENT ent = pql::ast::DESIGN_ENT_MAP.find(ent_string)->second;
         insert_var_to_declarations(ps, declaration_list, ent);
