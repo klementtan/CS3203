@@ -49,7 +49,7 @@ namespace simple::ast
     struct Constant : Expr
     {
         virtual std::string toString() const override;
-        int value = 0;
+        std::string value;
     };
 
     struct BinaryOp : Expr

@@ -137,9 +137,8 @@ namespace pkb
         std::unordered_set<simple::ast::StatementNum> getChildrenOf(simple::ast::StatementNum);
         std::unordered_set<simple::ast::StatementNum> getDescendantsOf(simple::ast::StatementNum);
 
-        std::unordered_set<int> _constants;
-
-        std::unordered_set<int> getConstants();
+        std::unordered_set<std::string> _constants;
+        std::unordered_set<std::string> getConstants();
 
         bool m_follows_exists = false;
         bool m_parent_exists = false;

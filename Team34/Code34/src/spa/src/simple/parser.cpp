@@ -75,8 +75,7 @@ namespace simple::parser
                 throw util::ParseException("simple::parser", "multi-digit integer literal cannot start with 0");
 
             auto constant = new Constant();
-            for(char c : num)
-                constant->value = 10 * constant->value + (c - '0');
+            constant->value = num.str();
 
             return constant;
         }
