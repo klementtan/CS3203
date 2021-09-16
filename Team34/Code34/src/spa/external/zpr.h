@@ -488,7 +488,7 @@ namespace zpr::tt
 		inline bool operator== (const str_view& other) const
 		{
 			return (this->ptr == other.ptr && this->len == other.len)
-				|| (strncmp(this->ptr, other.ptr, tt::min(this->len, other.len)) == 0);
+				|| (this->len == other.len && strncmp(this->ptr, other.ptr, this->len) == 0);
 		}
 
 		inline bool operator!= (const str_view& other) const
@@ -2383,7 +2383,7 @@ namespace zpr
 
 	2.5.3 - 15/09/2021
 	------------------
-	Add additional methods to `tt::str_view`
+	Add additional methods to `tt::str_view`, and fix broken operator== on it
 
 
 
