@@ -70,7 +70,7 @@ namespace pkb
         bool dfs(std::string a, std::unordered_map<std::string, std::unordered_set<std::string>>* adj,
             std::unordered_set<std::string>* visited);
         bool cycleExists();
-        std::string missingProc(std::vector<simple::ast::Procedure*> procs);
+        std::string missingProc(const std::vector<simple::ast::Procedure*>& procs);
     };
 
     struct UsesModifies
@@ -144,5 +144,5 @@ namespace pkb
         bool m_parent_exists = false;
     };
 
-    ProgramKB* processProgram(simple::ast::Program* prog);
+    ProgramKB* processProgram(const simple::ast::Program* prog);
 }

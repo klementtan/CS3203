@@ -174,6 +174,9 @@ TEST_CASE("Select pattern assign(name, _subexpr_)")
         TEST_EMPTY(pkb, R"^(assign a; Select a pattern a("t4", _"m * n"_))^");
         TEST_EMPTY(pkb, R"^(assign a; Select a pattern a("t4", _"g - h % i"_))^");
     }
+
+    delete pkb;
+    delete prog;
 }
 
 TEST_CASE("Select pattern assign(name, fullexpr)")
@@ -243,6 +246,9 @@ TEST_CASE("Select pattern assign(name, fullexpr)")
         TEST_EMPTY(pkb, R"^(assign a; Select a pattern a("t4", "b * c"))^");
         TEST_EMPTY(pkb, R"^(assign a; Select a pattern a("t4", "g - h % i"))^");
     }
+
+    delete pkb;
+    delete prog;
 }
 
 TEST_CASE("Select pattern assign(decl, _)")
@@ -256,6 +262,9 @@ TEST_CASE("Select pattern assign(decl, _)")
 
     TEST_EMPTY(prog_2, "assign a; variable v; Select v pattern a(v, _)");
     TEST_EMPTY(prog_2, "assign a; variable v; Select a pattern a(v, _)");
+
+    delete pkb;
+    delete prog;
 }
 
 TEST_CASE("Select pattern assign(decl, _subexpr_)")
@@ -273,6 +282,9 @@ TEST_CASE("Select pattern assign(decl, _subexpr_)")
     TEST_EMPTY(pkb, R"^(assign a; variable v; Select v pattern a(v, _"c - d"_))^");
     TEST_EMPTY(pkb, R"^(assign a; variable v; Select v pattern a(v, _"5 * a"_))^");
     TEST_EMPTY(pkb, R"^(assign a; variable v; Select v pattern a(v, _"7 + x"_))^");
+
+    delete pkb;
+    delete prog;
 }
 
 TEST_CASE("Select pattern assign(decl, fullexpr)")
@@ -291,6 +303,9 @@ TEST_CASE("Select pattern assign(decl, fullexpr)")
     TEST_EMPTY(pkb, R"^(assign a; variable v; Select v pattern a(v, "a + 7"))^");
     TEST_EMPTY(pkb, R"^(assign a; variable v; Select v pattern a(v, "1 / 2"))^");
     TEST_EMPTY(pkb, R"^(assign a; variable v; Select v pattern a(v, "g - h"))^");
+
+    delete pkb;
+    delete prog;
 }
 
 TEST_CASE("Select pattern assign(_, _)")
@@ -359,6 +374,9 @@ TEST_CASE("Select pattern assign(_, _subexpr_)")
         TEST_EMPTY(pkb, R"^(assign a; Select a pattern a(_, _"m * n"_))^");
         TEST_EMPTY(pkb, R"^(assign a; Select a pattern a(_, _"g - h % i"_))^");
     }
+
+    delete pkb;
+    delete prog;
 }
 
 TEST_CASE("Select pattern assign(_, fullexpr)")
@@ -425,11 +443,13 @@ TEST_CASE("Select pattern assign(_, fullexpr)")
         TEST_EMPTY(pkb, R"^(assign a; Select a pattern a(_, "b * c"))^");
         TEST_EMPTY(pkb, R"^(assign a; Select a pattern a(_, "g - h % i"))^");
     }
+
     SECTION("t5")
     {
-        auto prog = simple::parser::parseProgram(prog_3);
-        auto pkb = pkb::processProgram(prog);
-        TEST_OK(pkb, R"^(assign a; while w; Select a such that Parent* (w, a) pattern a ("count", _))^", 15);
-        TEST_OK(pkb, R"^(assign a; variable v; Select a such that Uses (a, v) pattern a (v, _"x"_))^", 16);
+        TEST_OK(prog_3, R"^(assign a; while w; Select a such that Parent* (w, a) pattern a ("count", _))^", 15);
+        TEST_OK(prog_3, R"^(assign a; variable v; Select a such that Uses (a, v) pattern a (v, _"x"_))^", 16);
     }
+
+    delete pkb;
+    delete prog;
 }

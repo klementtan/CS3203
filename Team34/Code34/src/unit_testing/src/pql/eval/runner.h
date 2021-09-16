@@ -18,14 +18,17 @@ struct Runner
 
     inline std::unordered_set<std::string> run(bool try_catch = false)
     {
-        if(!m_pkb)
+        pkb::ProgramKB* pkb = m_pkb;
+        simple::ast::Program* program = nullptr;
+
+        if(!pkb)
         {
-            auto prog = simple::parser::parseProgram(m_source);
-            m_pkb = pkb::processProgram(prog);
+            program = simple::parser::parseProgram(m_source);
+            pkb = pkb::processProgram(program);
         }
 
         auto query = pql::parser::parsePQL(m_query);
-        auto eval = pql::eval::Evaluator(m_pkb, query);
+        auto eval = pql::eval::Evaluator(pkb, query);
 
         std::list<std::string> result {};
         if(try_catch)
@@ -42,6 +45,12 @@ struct Runner
         else
         {
             result = eval.evaluate();
+        }
+
+        if(program != nullptr)
+        {
+            delete program;
+            delete pkb;
         }
 
         return std::unordered_set<std::string>(result.begin(), result.end());

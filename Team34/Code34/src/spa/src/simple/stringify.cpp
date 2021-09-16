@@ -6,9 +6,6 @@
 
 namespace simple::ast
 {
-    Stmt::~Stmt() { }
-    Expr::~Expr() { }
-
     static bool is_binop(const Expr* e)
     {
         return dynamic_cast<const BinaryOp*>(e) != nullptr;

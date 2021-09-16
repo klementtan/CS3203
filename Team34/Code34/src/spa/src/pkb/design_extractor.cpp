@@ -172,7 +172,7 @@ namespace pkb
         return false;
     }
 
-    std::string CallGraph::missingProc(std::vector<s_ast::Procedure*> procs)
+    std::string CallGraph::missingProc(const std::vector<s_ast::Procedure*>& procs)
     {
         for(auto& a : adj)
         {
@@ -460,7 +460,7 @@ namespace pkb
         }
     }
 
-    ProgramKB* processProgram(s_ast::Program* program)
+    ProgramKB* processProgram(const s_ast::Program* program)
     {
         auto pkb = new ProgramKB();
 

@@ -18,7 +18,16 @@ namespace simple::ast
     struct Stmt;
     struct StmtList
     {
-        std::vector<Stmt*> statements;
+        StmtList() { }
+        ~StmtList();
+
+        StmtList(const StmtList&) = delete;
+        StmtList& operator= (const StmtList&) = delete;
+
+        StmtList(StmtList&&);
+        StmtList& operator= (StmtList&&);
+
+        std::vector<Stmt*> statements {};
 
         Stmt* parent_statement = nullptr;
 
@@ -54,6 +63,8 @@ namespace simple::ast
 
     struct BinaryOp : Expr
     {
+        ~BinaryOp();
+
         virtual std::string toString() const override;
 
         Expr* lhs = 0;
@@ -68,6 +79,8 @@ namespace simple::ast
 
     struct UnaryOp : Expr
     {
+        ~UnaryOp();
+
         virtual std::string toString() const override;
 
         std::string op;
@@ -76,6 +89,8 @@ namespace simple::ast
 
     struct IfStmt : Stmt
     {
+        ~IfStmt();
+
         virtual std::string toString(int nesting, bool compact = false) const override;
 
         Expr* condition = 0;
@@ -93,6 +108,8 @@ namespace simple::ast
 
     struct WhileLoop : Stmt
     {
+        ~WhileLoop();
+
         virtual std::string toString(int nesting, bool compact = false) const override;
 
         Expr* condition = 0;
@@ -101,6 +118,7 @@ namespace simple::ast
 
     struct AssignStmt : Stmt
     {
+        ~AssignStmt();
         virtual std::string toString(int nesting, bool compact = false) const override;
 
         std::string lhs;
@@ -130,6 +148,8 @@ namespace simple::ast
 
     struct Program
     {
+        ~Program();
+
         std::string toString(bool compact = false) const;
         std::vector<Procedure*> procedures;
     };
