@@ -136,7 +136,7 @@ namespace pkb
      * End of Parent methods
      */
 
-    std::unordered_set<int> ProgramKB::getConstants()
+    std::unordered_set<std::string> ProgramKB::getConstants()
     {
         return _constants;
     }

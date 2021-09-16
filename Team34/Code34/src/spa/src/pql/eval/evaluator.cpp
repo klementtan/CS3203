@@ -88,10 +88,10 @@ namespace pql::eval
         }
         util::log("pql::eval", "Adding {} constants to {} initial domain", m_pkb->uses_modifies.procedures.size(),
             declaration->toString());
-        for(int const_val : m_pkb->getConstants())
+        for(const auto& const_val : m_pkb->getConstants())
         {
             util::log("pql::eval", "Adding {} to initial proc domain", const_val);
-            domain.insert(table::Entry(declaration, std::to_string(const_val)));
+            domain.insert(table::Entry(declaration, const_val));
         }
         return domain;
     }
