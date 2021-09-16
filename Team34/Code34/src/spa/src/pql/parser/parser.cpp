@@ -18,6 +18,11 @@ namespace pql::parser
     {
         zst::str_view stream;
 
+        zst::str_view raw_stream() const
+        {
+            return this->stream;
+        }
+
         Token next()
         {
             return getNextToken(this->stream);
@@ -546,10 +551,16 @@ namespace pql::parser
 
     ast::SuchThatCl* parse_such_that(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
     {
-        if(ps->next().text != "such" || ps->next().text != "that")
-        {
+        auto such = ps->next();
+        auto that = ps->next();
+
+        auto tmp_token = zst::str_view(such.text.data(), strlen("such that"));
+
+        // there must be exactly a space between 'such' and 'that'. check this by "extending" the
+        // length of the 'such' token, which we know is safe.
+        if(such.text != "such" || that.text != "that" || tmp_token != "such that")
             throw PqlException("pql::parser", "Such That clause should start with 'such that'");
-        }
+
         util::log("pql::parser", "Parsing such that clause. Remaining {}", ps->stream);
         auto* such_that = new ast::SuchThatCl {};
 

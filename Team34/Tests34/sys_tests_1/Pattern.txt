@@ -83,13 +83,3 @@ assign a;
 Select a pattern a(_,_"2"_)
 6, 19, 37, 48
 5000
-18 - if pattern
-if i;
-Select i pattern i(_,_,_)
-5, 18, 29, 41
-5000
-19 - while pattern
-while w;
-Select w pattern w(_,_)
-10, 23, 35, 49, 55
-5000

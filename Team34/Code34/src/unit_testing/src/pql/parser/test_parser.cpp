@@ -142,3 +142,18 @@ TEST_CASE("Parent Query")
             Catch::Contains("Invalid relationship condition tokens"));
     }
 }
+
+TEST_CASE("invalid queries")
+{
+    SECTION("duplicate queries")
+    {
+        auto query = "stmt s; assign s; Select s";
+        REQUIRE_THROWS_WITH(pql::parser::parsePQL(query), Catch::Contains("duplicate declaration 's'"));
+    }
+
+    SECTION("such-that spacing")
+    {
+        auto query = "stmt s; Select s such  that Parent(s, _)";
+        REQUIRE_THROWS_WITH(pql::parser::parsePQL(query), Catch::Contains("Such That clause should start with 'such that'"));
+    }
+}
