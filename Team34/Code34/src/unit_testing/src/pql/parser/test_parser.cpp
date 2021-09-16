@@ -117,3 +117,28 @@ TEST_CASE("Pattern Query")
     REQUIRE(rhs);
     REQUIRE(rhs->name == "cenX");
 }
+
+TEST_CASE("Parent Query")
+{
+    SECTION("Valid query")
+    {
+        pql::ast::Query* query = pql::parser::parsePQL("stmt s;\n"
+                                                       "Select s such that Parent(6, s)");
+        REQUIRE(query->declarations->declarations.size() == 1);
+        pql::ast::Declaration* s_declaration = query->declarations->declarations.find("s")->second;
+        REQUIRE(s_declaration->design_ent == pql::ast::DESIGN_ENT::STMT);
+        REQUIRE(s_declaration->name == "s");
+        REQUIRE(query->select->ent == s_declaration);
+        pql::ast::SuchThatCl* such_that_cl = query->select->such_that;
+        REQUIRE(such_that_cl->rel_conds.size() == 1);
+        pql::ast::Parent* parent = dynamic_cast<pql::ast::Parent*>(*query->select->such_that->rel_conds.rbegin());
+        REQUIRE(parent != nullptr);
+        REQUIRE(dynamic_cast<pql::ast::StmtId*>(parent->parent)->id == 6);
+        REQUIRE(dynamic_cast<pql::ast::DeclaredStmt*>(parent->child)->declaration == s_declaration);
+    }
+    SECTION("Invalid query")
+    {
+        REQUIRE_THROWS_WITH(pql::parser::parsePQL("stmt s;\nSelect s such that Parentt(6, s)"),
+            Catch::Contains("Invalid relationship condition tokens"));
+    }
+}
