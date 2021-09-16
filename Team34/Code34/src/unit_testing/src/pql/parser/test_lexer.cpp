@@ -4,7 +4,6 @@
 
 #define CATCH_CONFIG_FAST_COMPILE
 #include "catch.hpp"
-#include <zst.h>
 
 #include "pql/parser/parser.h"
 

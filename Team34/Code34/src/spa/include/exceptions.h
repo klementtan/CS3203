@@ -16,7 +16,7 @@ namespace util
     };
 
     template <typename SubType>
-    struct BaseException : public std::exception
+    struct BaseException : Exception
     {
         std::string message;
 

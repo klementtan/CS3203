@@ -3,7 +3,6 @@
 #include <unordered_set>
 
 #include <zpr.h>
-#include <zst.h>
 
 #include "util.h"
 #include "exceptions.h"
@@ -204,13 +203,7 @@ namespace pql::parser
             throw PqlException("pql::parser", "Expect expression to  with double quotes(\")");
         }
 
-        zst::Result<simple::ast::Expr*, std::string> expr_result = simple::parser::parseExpression(expr_str);
-        if(!expr_result.ok())
-        {
-            throw PqlException("pql::parser", "Invalid expression provided: {}", expr_str);
-        }
-
-        return expr_result.unwrap();
+        return simple::parser::parseExpression(expr_str);
     }
 
     pql::ast::ExprSpec* parse_expr_spec(ParserState* ps)
@@ -595,18 +588,23 @@ namespace pql::parser
         select->ent = ent;
 
         std::vector<Token> clause_tok = ps->peek_two();
+        bool allow_pattern = true;
+        bool allow_such_that = true;
 
-        while(clause_tok[0] == KW_Pattern || clause_tok == KW_SuchThat)
+        // TOOD(#100): Remove single pattern or single such that clause after iteration 1.
+        while(((clause_tok[0] == KW_Pattern) && allow_pattern) || ((clause_tok == KW_SuchThat) && allow_such_that))
         {
             if(clause_tok[0] == KW_Pattern)
             {
                 util::log("pql::parser", "Parsing pattern clause");
                 select->pattern = parse_pattern(ps, declaration_list);
+                allow_pattern = false;
             }
             else if(clause_tok == KW_SuchThat)
             {
                 util::log("pql::parser", "Parsing such that clause");
                 select->such_that = parse_such_that(ps, declaration_list);
+                allow_such_that = false;
             }
             clause_tok = ps->peek_two();
         }
@@ -628,12 +626,22 @@ namespace pql::parser
             {
                 util::log("pql::parser", "parsing Select");
                 query->select = parse_select(&ps, declaration_list);
+
+                if(ps.peek_one() != TT::EndOfFile)
+                {
+                    throw util::PqlException(
+                        "pql::parser", "Query should end after a single select clause instead of {}", ps.stream);
+                }
             }
             else
             {
                 util::log("pql::parser", "parsing declaration");
                 insert_declaration(&ps, declaration_list);
             }
+        }
+        if(query->select == nullptr)
+        {
+            throw util::PqlException("pql::parser", "All queries should contain a select clause");
         }
 
         query->declarations = declaration_list;

@@ -2,115 +2,102 @@
 
 #define CATCH_CONFIG_FAST_COMPILE
 #include "catch.hpp"
+#include "runner.h"
 
-#include "pql/eval/evaluator.h"
-#include "pql/parser/parser.h"
-#include "simple/parser.h"
 #include "pkb.h"
+#include "simple/parser.h"
+#include "pql/parser/parser.h"
+#include "pql/eval/evaluator.h"
 
-struct Runner
-{
-    Runner(bool should_pass, zst::str_view source, zst::str_view query)
-        : m_should_pass(should_pass), m_source(source), m_pkb(nullptr), m_query(query)
-    {
-    }
+constexpr const auto prog_1 = R"(
+procedure Example {
+    x = 6;
+    y = 18;
+    z = 12;
 
-    Runner(bool should_pass, pkb::ProgramKB* pkb, zst::str_view query)
-        : m_should_pass(should_pass), m_source(""), m_pkb(pkb), m_query(query)
-    {
-    }
+    t1 = x + y + z;
+    t2 = x + y + z - z * z;
+    t3 = y * (w + x) - (w - y * z) - (w - x) - z;
 
+    t4 = a + b * c - d / e + f * g - h % (i + j - k) * l / ((m - m) * (n + o));
 
-    std::unordered_set<std::string> run()
-    {
-        if(!m_pkb)
-        {
-            auto prog = simple::parser::parseProgram(m_source).unwrap();
-            m_pkb = pkb::processProgram(prog).unwrap();
-        }
+    x = 6 + 1 / 2 - 3;
+    y = 69 * 420 - 123;
+    z = a + (b + c);
 
-        auto query = pql::parser::parsePQL(m_query);
-        auto eval = pql::eval::Evaluator(m_pkb, query);
-
-        auto res = eval.evaluate();
-        return std::unordered_set<std::string>(res.begin(), res.end());
-    }
-
-    bool m_should_pass;
-    zst::str_view m_source;
-    pkb::ProgramKB* m_pkb;
-    zst::str_view m_query;
-};
-
-static std::string to_string(const char* c)
-{
-    return c;
+    a1 = 5 * (a + 7 + x);
+    a2 = 5 * (a + 7 + x);
+    a3 = 5 * (a + 7 + x);
+    read q;
 }
-
-template <typename T>
-static std::string to_string(T x)
-{
-    return std::to_string(x);
-}
-
-template <typename... Args>
-static std::unordered_set<std::string> make_set(Args&&... args)
-{
-    auto ret = std::unordered_set<std::string> {};
-    (ret.insert(to_string(static_cast<Args&&>(args))), ...);
-
-    return ret;
-}
-
-#define TEST_OK(source, query, ...) CHECK(Runner(true, source, query).run() == make_set(__VA_ARGS__))
-#define TEST_EMPTY(source, query) CHECK(Runner(true, source, query).run() == make_set())
-#define TEST_ERR(source, query, msg) \
-    CHECK_THROWS_WITH(Runner(false, source, query).run(), Catch::Matchers::Contains(msg))
-
-constexpr const auto test_program = R"(
-    procedure Example {
-        x = 6;
-        y = 18;
-        z = 12;
-
-        t1 = x + y + z;
-        t2 = x + y + z - z * z;
-        t3 = y * (w + x) - (w - y * z) - (w - x) - z;
-
-        t4 = a + b * c - d / e + f * g - h % (i + j - k) * l / ((m - m) * (n + o));
-
-        x = 6 + 1 / 2 - 3;
-        y = 69 * 420 - 123;
-        z = a + (b + c);
-
-        a1 = 5 * (a + 7 + x);
-        a2 = 5 * (a + 7 + x);
-        a3 = 5 * (a + 7 + x);
-        read q;
-    }
 )";
 
+constexpr const auto prog_2 = R"(
+procedure foo {
+    print x;
+}
+procedure bar {
+    print y;
+}
+)";
+
+constexpr const auto prog_3 = R"(
+    procedure main {
+      flag = 0;
+      call computeCentroid;
+      call printResults;
+    }
+    procedure readPoint {
+        read x;
+        read y;
+    }
+    procedure printResults {
+        print flag;
+        print cenX;
+        print cenY;
+        print normSq;
+    }
+    procedure computeCentroid {
+        count = 0;
+        cenX = 0;
+        cenY = 0;
+        call readPoint;
+        while ((x != 0) && (y != 0)) {
+            count = count + 1;
+            cenX = cenX + x;
+            cenY = cenY + y;
+            call readPoint;
+        }
+        if (count == 0) then {
+            flag = 1;
+        } else {
+            cenX = cenX / count;
+            cenY = cenY / count;
+        }
+        normSq = cenX * cenX + cenY * cenY;
+    }
+)";
 
 TEST_CASE("Select pattern assign(name, _)")
 {
     SECTION("positive cases")
     {
-        TEST_OK(test_program, R"(assign a; Select a pattern a("x", _))", 1, 8);
-        TEST_OK(test_program, R"(assign a; Select a pattern a("y", _))", 2, 9);
-        TEST_OK(test_program, R"(assign a; Select a pattern a("z", _))", 3, 10);
+        TEST_OK(prog_1, R"(assign a; Select a pattern a("x", _))", 1, 8);
+        TEST_OK(prog_1, R"(assign a; Select a pattern a("y", _))", 2, 9);
+        TEST_OK(prog_1, R"(assign a; Select a pattern a("z", _))", 3, 10);
     }
 
     SECTION("empty cases")
     {
-        TEST_EMPTY(test_program, "assign a;Select a pattern a(\"q\", _)");
+        TEST_EMPTY(prog_1, "assign a;Select a pattern a(\"q\", _)");
     }
 }
 
 TEST_CASE("Select pattern assign(name, _subexpr_)")
 {
     // we're running a lot of things, so save time here by only processing once
-    auto prog = simple::parser::parseProgram(test_program).unwrap();
-    auto pkb = pkb::processProgram(prog).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1);
+    auto pkb = pkb::processProgram(prog);
 
     SECTION("xyz")
     {
@@ -191,8 +178,8 @@ TEST_CASE("Select pattern assign(name, _subexpr_)")
 
 TEST_CASE("Select pattern assign(name, fullexpr)")
 {
-    auto prog = simple::parser::parseProgram(test_program).unwrap();
-    auto pkb = pkb::processProgram(prog).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1);
+    auto pkb = pkb::processProgram(prog);
 
     SECTION("xyz")
     {
@@ -260,18 +247,21 @@ TEST_CASE("Select pattern assign(name, fullexpr)")
 
 TEST_CASE("Select pattern assign(decl, _)")
 {
-    auto prog = simple::parser::parseProgram(test_program).unwrap();
-    auto pkb = pkb::processProgram(prog).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1);
+    auto pkb = pkb::processProgram(prog);
 
     TEST_OK(pkb, R"^(assign a; variable v; Select a pattern a(v, _))^", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
     TEST_OK(pkb, R"^(assign a; variable v; Select v pattern a(v, _))^", "a1", "a2", "a3", "t1", "t2", "t3", "t4", "x",
         "y", "z");
+
+    TEST_EMPTY(prog_2, "assign a; variable v; Select v pattern a(v, _)");
+    TEST_EMPTY(prog_2, "assign a; variable v; Select a pattern a(v, _)");
 }
 
 TEST_CASE("Select pattern assign(decl, _subexpr_)")
 {
-    auto prog = simple::parser::parseProgram(test_program).unwrap();
-    auto pkb = pkb::processProgram(prog).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1);
+    auto pkb = pkb::processProgram(prog);
 
     TEST_OK(pkb, R"^(assign a; variable v; Select v pattern a(v, _"6"_))^", "x");
     TEST_OK(pkb, R"^(assign a; variable v; Select v pattern a(v, _"b + c"_))^", "z");
@@ -287,8 +277,8 @@ TEST_CASE("Select pattern assign(decl, _subexpr_)")
 
 TEST_CASE("Select pattern assign(decl, fullexpr)")
 {
-    auto prog = simple::parser::parseProgram(test_program).unwrap();
-    auto pkb = pkb::processProgram(prog).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1);
+    auto pkb = pkb::processProgram(prog);
 
     TEST_OK(pkb, R"^(assign a; variable v; Select v pattern a(v, "6"))^", "x");
     TEST_OK(pkb, R"^(assign a; variable v; Select v pattern a(v, "18"))^", "y");
@@ -305,14 +295,14 @@ TEST_CASE("Select pattern assign(decl, fullexpr)")
 
 TEST_CASE("Select pattern assign(_, _)")
 {
-    TEST_OK(test_program, R"^(assign a; Select a pattern a(_, _))^", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
+    TEST_OK(prog_1, R"^(assign a; Select a pattern a(_, _))^", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
 }
 
 
 TEST_CASE("Select pattern assign(_, _subexpr_)")
 {
-    auto prog = simple::parser::parseProgram(test_program).unwrap();
-    auto pkb = pkb::processProgram(prog).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1);
+    auto pkb = pkb::processProgram(prog);
 
     SECTION("a")
     {
@@ -373,8 +363,8 @@ TEST_CASE("Select pattern assign(_, _subexpr_)")
 
 TEST_CASE("Select pattern assign(_, fullexpr)")
 {
-    auto prog = simple::parser::parseProgram(test_program).unwrap();
-    auto pkb = pkb::processProgram(prog).unwrap();
+    auto prog = simple::parser::parseProgram(prog_1);
+    auto pkb = pkb::processProgram(prog);
 
     SECTION("xyz")
     {
@@ -434,5 +424,12 @@ TEST_CASE("Select pattern assign(_, fullexpr)")
         TEST_EMPTY(pkb, R"^(assign a; Select a pattern a(_, "m * n"))^");
         TEST_EMPTY(pkb, R"^(assign a; Select a pattern a(_, "b * c"))^");
         TEST_EMPTY(pkb, R"^(assign a; Select a pattern a(_, "g - h % i"))^");
+    }
+    SECTION("t5")
+    {
+        auto prog = simple::parser::parseProgram(prog_3);
+        auto pkb = pkb::processProgram(prog);
+        TEST_OK(pkb, R"^(assign a; while w; Select a such that Parent* (w, a) pattern a ("count", _))^", 15);
+        TEST_OK(pkb, R"^(assign a; variable v; Select a such that Uses (a, v) pattern a (v, _"x"_))^", 16);
     }
 }

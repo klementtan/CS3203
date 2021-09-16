@@ -7,16 +7,11 @@
 #include <unordered_set>
 #include <optional>
 
-#include <zst.h>
-
 #include "pql/parser/ast.h"
 #include "simple/ast.h"
 
 namespace pkb
 {
-    template <typename T>
-    using Result = zst::Result<T, std::string>;
-
     struct Procedure
     {
         simple::ast::Procedure* ast_proc = 0;
@@ -169,5 +164,5 @@ namespace pkb
         bool m_parent_exists = false;
     };
 
-    Result<ProgramKB*> processProgram(simple::ast::Program* prog);
+    ProgramKB* processProgram(simple::ast::Program* prog);
 }

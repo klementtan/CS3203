@@ -6,9 +6,10 @@
 #include <cstddef>
 #include <cstdint>
 
-#include <zst.h>
 #include <vector>
 #include <string>
+
+#include "util.h"
 
 namespace simple::ast
 {

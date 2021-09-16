@@ -1,6 +1,5 @@
 // lexer.cpp
 
-#include <zst.h>
 #include <zpr.h>
 
 #include "util.h"

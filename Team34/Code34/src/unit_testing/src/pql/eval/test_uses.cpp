@@ -2,157 +2,107 @@
 
 #define CATCH_CONFIG_FAST_COMPILE
 #include "catch.hpp"
+#include "runner.h"
 
-#include "pql/eval/evaluator.h"
-#include "pql/parser/parser.h"
-#include "simple/parser.h"
-#include "pkb.h"
+constexpr const auto prog_1 = "procedure main {\n"
+                              "    flag = 0;\n"             // 1
+                              "    call computeCentroid;\n" // 2
+                              "    call printResults;\n"    // 3
+                              "}\n"
+                              "procedure readPoint {\n"
+                              "    read x;\n" // 4
+                              "    read y;\n" // 5
+                              "}\n"
+                              "procedure printResults {\n"
+                              "    print flag;\n"   // 6
+                              "    print cenX;\n"   // 7
+                              "    print cenY;\n"   // 8
+                              "    print normSq;\n" // 9
+                              "}\n"
+                              "procedure computeCentroid {\n"
+                              "    count = 0;\n"                     // 10
+                              "    cenX = 0;\n"                      // 11
+                              "    cenY = 0;\n"                      // 12
+                              "    call readPoint;\n"                // 13
+                              "    while ((x != 0) && (y != 0)) {\n" // 14
+                              "        count = count + 1;\n"         // 15
+                              "        cenX = cenX + x;\n"           // 16
+                              "        cenY = cenY + y;\n"           // 17
+                              "        call readPoint;\n"            // 18
+                              "    }\n"
+                              "    if (count == 0) then {\n" // 19
+                              "        flag = 1;\n"          // 20
+                              "    } else {\n"
+                              "        cenX = cenX / count;\n" // 21
+                              "        cenY = cenY / count;\n" // 22
+                              "    }\n"
+                              "    normSq = cenX * cenX + cenY * cenY;\n" // 23
+                              "}\n";
 
-constexpr const auto test_program = "procedure main {\n"
-                                    "    flag = 0;\n"             // 1
-                                    "    call computeCentroid;\n" // 2
-                                    "    call printResults;\n"    // 3
-                                    "}\n"
-                                    "procedure readPoint {\n"
-                                    "    read x;\n" // 4
-                                    "    read y;\n" // 5
-                                    "}\n"
-                                    "procedure printResults {\n"
-                                    "    print flag;\n"   // 6
-                                    "    print cenX;\n"   // 7
-                                    "    print cenY;\n"   // 8
-                                    "    print normSq;\n" // 9
-                                    "}\n"
-                                    "procedure computeCentroid {\n"
-                                    "    count = 0;\n"                     // 10
-                                    "    cenX = 0;\n"                      // 11
-                                    "    cenY = 0;\n"                      // 12
-                                    "    call readPoint;\n"                // 13
-                                    "    while ((x != 0) && (y != 0)) {\n" // 14
-                                    "        count = count + 1;\n"         // 15
-                                    "        cenX = cenX + x;\n"           // 16
-                                    "        cenY = cenY + y;\n"           // 17
-                                    "        call readPoint;\n"            // 18
-                                    "    }\n"
-                                    "    if (count == 0) then {\n" // 19
-                                    "        flag = 1;\n"          // 20
-                                    "    } else {\n"
-                                    "        cenX = cenX / count;\n" // 21
-                                    "        cenY = cenY / count;\n" // 22
-                                    "    }\n"
-                                    "    normSq = cenX * cenX + cenY * cenY;\n" // 23
-                                    "}\n";
+constexpr const auto prog_2 = R"(
+procedure foo {
+    read x;
+    read y;
+    z = 10;
+}
+procedure bar {
+    print a;
+    print b;
+    while(c == 0) {
+        print d;
+    }
+}
+)";
+
+constexpr const auto prog_3 = R"(
+procedure foo {
+    read x;
+    read y;
+}
+procedure bar {
+    read a;
+    read b;
+}
+)";
 
 TEST_CASE("UsesP(Name, Name)")
 {
-    auto prog = simple::parser::parseProgram(test_program);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("variable v;\nSelect v such that Uses(\"main\", \"flag\")");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 7);
-    REQUIRE(result_s.count("x"));
-    REQUIRE(result_s.count("y"));
-    REQUIRE(result_s.count("count"));
-    REQUIRE(result_s.count("cenX"));
-    REQUIRE(result_s.count("cenY"));
-    REQUIRE(result_s.count("flag"));
-    REQUIRE(result_s.count("normSq"));
+    TEST_OK(prog_1, R"(variable v; Select v such that Uses("main", "flag"))", "x", "y", "count", "cenX", "cenY", "flag",
+        "normSq");
 }
-
 
 TEST_CASE("UsesP(Decl, Name)")
 {
-    auto prog = simple::parser::parseProgram(test_program);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("procedure p;\nSelect p such that Uses(p, \"cenX\")");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 3);
-    REQUIRE(result_s.count("main"));
-    REQUIRE(result_s.count("printResults"));
-    REQUIRE(result_s.count("computeCentroid"));
+    TEST_OK(prog_1, R"(procedure p; Select p such that Uses(p, "cenX"))", "main", "printResults", "computeCentroid");
 }
 
 TEST_CASE("UsesP(Name, Decl)")
 {
-    auto prog = simple::parser::parseProgram(test_program);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("variable v;\nSelect v such that Uses(\"main\", v)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 7);
-    REQUIRE(result_s.count("x"));
-    REQUIRE(result_s.count("y"));
-    REQUIRE(result_s.count("count"));
-    REQUIRE(result_s.count("cenX"));
-    REQUIRE(result_s.count("cenY"));
-    REQUIRE(result_s.count("flag"));
-    REQUIRE(result_s.count("normSq"));
+    TEST_OK(prog_1, R"(variable v; Select v such that Uses("main", v))", "x", "y", "count", "cenX", "cenY", "flag",
+        "normSq");
 }
 
 TEST_CASE("UsesP(Decl, Decl)")
 {
-    auto prog = simple::parser::parseProgram(test_program);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+    TEST_OK(
+        prog_1, R"(procedure p; variable v; Select p such that Uses(p, v))", "main", "printResults", "computeCentroid");
 
-    auto query = pql::parser::parsePQL("procedure p; variable v;\nSelect p such that Uses(p, v)");
-    auto eval = pql::eval::Evaluator(pkb, query);
+    TEST_OK(prog_2, "procedure p; variable v; Select p such that Uses(p, v)", "bar");
+    TEST_OK(prog_2, "procedure p; variable v; Select v such that Uses(p, v)", "a", "b", "c", "d");
 
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 3);
-    REQUIRE(result_s.count("main"));
-    REQUIRE(result_s.count("printResults"));
-    REQUIRE(result_s.count("computeCentroid"));
+    TEST_EMPTY(prog_3, "procedure p; variable v; Select p such that Uses(p, v)");
+    TEST_EMPTY(prog_3, "procedure p; variable v; Select v such that Uses(p, v)");
 }
 
 TEST_CASE("UsesP(Name, _)")
 {
-    auto prog = simple::parser::parseProgram(test_program);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("procedure p;\nSelect p such that Uses(\"printResults\", _)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 4);
-    REQUIRE(result_s.count("main"));
-    REQUIRE(result_s.count("readPoint"));
-    REQUIRE(result_s.count("printResults"));
-    REQUIRE(result_s.count("computeCentroid"));
+    TEST_OK(prog_1, R"(procedure p; Select p such that Uses("printResults", _))", "main", "readPoint", "printResults",
+        "computeCentroid");
 }
 
 TEST_CASE("UsesP(Decl, _)")
 {
-    auto prog = simple::parser::parseProgram(test_program);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("procedure p;\nSelect p such that Uses(p, _)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 3);
-    REQUIRE(result_s.count("main"));
-    REQUIRE(result_s.count("printResults"));
-    REQUIRE(result_s.count("computeCentroid"));
+    TEST_OK(prog_1, R"(procedure p; Select p such that Uses(p, _))", "main", "printResults", "computeCentroid");
 }
 
 
@@ -160,136 +110,41 @@ TEST_CASE("UsesP(Decl, _)")
 
 TEST_CASE("UsesS(StmtId, Name)")
 {
-    auto prog = simple::parser::parseProgram(test_program);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("print p; Select p such that Uses(2, \"x\")");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 4);
-    REQUIRE(result_s.count("6"));
-    REQUIRE(result_s.count("7"));
-    REQUIRE(result_s.count("8"));
-    REQUIRE(result_s.count("9"));
+    TEST_OK(prog_1, R"(print p; Select p such that Uses(2, "x"))", 6, 7, 8, 9);
 }
 
 TEST_CASE("UsesS(StmtId, Decl)")
 {
-    auto prog = simple::parser::parseProgram(test_program);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("variable v;\nSelect v such that Uses(14, v)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 5);
-    REQUIRE(result_s.count("x"));
-    REQUIRE(result_s.count("y"));
-    REQUIRE(result_s.count("cenX"));
-    REQUIRE(result_s.count("cenY"));
-    REQUIRE(result_s.count("count"));
+    TEST_OK(prog_1, R"(variable v; Select v such that Uses(14, v))", "x", "y", "cenX", "cenY", "count");
 }
 
 TEST_CASE("UsesS(StmtId, _)")
 {
-    auto prog = simple::parser::parseProgram(test_program);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("variable v; Select v such that Uses(18, _)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    CHECK_THROWS_WITH(eval.evaluate(), Catch::Matchers::Contains("is always false"));
+    TEST_EMPTY(prog_1, R"(variable v; Select v such that Uses(18, _))");
 }
 
 TEST_CASE("UsesS(Decl, Name)")
 {
-    auto prog = simple::parser::parseProgram(test_program);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("assign a;\nSelect a such that Uses(a, \"cenX\")");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 3);
-    REQUIRE(result_s.count("16"));
-    REQUIRE(result_s.count("21"));
-    REQUIRE(result_s.count("23"));
+    TEST_OK(prog_1, R"(assign a; Select a such that Uses(a, "cenX"))", 16, 21, 23);
 }
 
 TEST_CASE("UsesS(Decl, Decl)")
 {
-    auto prog = simple::parser::parseProgram(test_program);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
+    TEST_OK(prog_1, R"(if i; variable v; Select v such that Uses(i, v))", "cenX", "cenY", "count");
 
-    auto query = pql::parser::parsePQL("if i; variable v;\nSelect v such that Uses(i, v)");
-    auto eval = pql::eval::Evaluator(pkb, query);
+    TEST_EMPTY(prog_2, "read r; variable v; Select r such that Uses(r, v)");
+    TEST_EMPTY(prog_2, "read r; variable v; Select v such that Uses(r, v)");
 
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 3);
-    REQUIRE(result_s.count("cenX"));
-    REQUIRE(result_s.count("cenY"));
-    REQUIRE(result_s.count("count"));
+    TEST_EMPTY(prog_3, "read r; variable v; Select r such that Uses(r, v)");
+    TEST_EMPTY(prog_3, "read r; variable v; Select v such that Uses(r, v)");
 }
 
 TEST_CASE("UsesS(Decl, _)")
 {
-    auto prog = simple::parser::parseProgram(test_program);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("assign a;\nSelect a such that Uses(a, _)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    auto result = eval.evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-
-    REQUIRE(result_s.size() == 6);
-    REQUIRE(result_s.count("15"));
-    REQUIRE(result_s.count("16"));
-    REQUIRE(result_s.count("17"));
-    REQUIRE(result_s.count("21"));
-    REQUIRE(result_s.count("22"));
-    REQUIRE(result_s.count("23"));
+    TEST_OK(prog_1, R"(assign a; Select a such that Uses(a, _))", 15, 16, 17, 21, 22, 23);
 }
 
 TEST_CASE("Uses(_, *)")
 {
-    auto prog = simple::parser::parseProgram(test_program);
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("variable v;\nSelect v such that Uses(_, v)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    CHECK_THROWS_WITH(eval.evaluate(), Catch::Matchers::Contains("first argument of Uses cannot be '_'"));
-}
-
-
-TEST_CASE("no follows")
-{
-    auto prog = simple::parser::parseProgram("procedure a { x = 1; }");
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("variable v;\nSelect v such that Follows(_, _)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    CHECK_THROWS_WITH(eval.evaluate(), Catch::Matchers::Contains("always evaluate to false"));
-}
-
-TEST_CASE("no parent")
-{
-    auto prog = simple::parser::parseProgram("procedure a { x = 1; }");
-    auto pkb = pkb::processProgram(prog.unwrap()).unwrap();
-
-    auto query = pql::parser::parsePQL("variable v;\nSelect v such that Parent(_, _)");
-    auto eval = pql::eval::Evaluator(pkb, query);
-
-    CHECK_THROWS_WITH(eval.evaluate(), Catch::Matchers::Contains("always false"));
+    TEST_ERR(prog_1, R"(variable v; Select v such that Uses(_, v))", "first argument of Uses cannot be '_'");
 }
