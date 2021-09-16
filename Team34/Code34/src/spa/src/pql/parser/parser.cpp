@@ -557,10 +557,10 @@ namespace pql::parser
         auto such = ps->next();
         auto that = ps->next();
 
-        auto tmp_token = zst::str_view(such.text.data(), strlen("such that"));
-
         // there must be exactly a space between 'such' and 'that'. check this by "extending" the
         // length of the 'such' token, which we know is safe.
+        auto tmp_token = zst::str_view(such.text.data(), strlen("such that"));
+
         if(such.text != "such" || that.text != "that" || tmp_token != "such that")
             throw PqlException("pql::parser", "Such That clause should start with 'such that'");
 
