@@ -154,6 +154,7 @@ TEST_CASE("invalid queries")
     SECTION("such-that spacing")
     {
         auto query = "stmt s; Select s such  that Parent(s, _)";
-        REQUIRE_THROWS_WITH(pql::parser::parsePQL(query), Catch::Contains("Such That clause should start with 'such that'"));
+        REQUIRE_THROWS_WITH(
+            pql::parser::parsePQL(query), Catch::Contains("Such That clause should start with 'such that'"));
     }
 }
