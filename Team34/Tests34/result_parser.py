@@ -27,7 +27,12 @@ def parse_one(filename):
 	global num_failed
 	global num_passed
 
-	root = ET.parse(filename).getroot()
+	try:
+		root = ET.parse(filename).getroot()
+	except:
+		print(f"malformed xml file '{filename}'")
+		return
+
 	passed_tests[filename] = []
 	failed_tests[filename] = []
 
@@ -111,10 +116,14 @@ def main():
 
 	print(f"{num_passed}/{num_passed + num_failed} tests passed, {num_failed} failed")
 
-	for (filename, tests) in failed_tests.items():
+	for (name, tests) in failed_tests.items():
 		if len(tests) == 0:
 			continue
-		print(f"test {filename}:")
+
+		if name.startswith("output-"):
+			name = name[len("output-"):]
+
+		print(f"test {name}:")
 		for t in tests:
 			print(f"    {t[0]} - {t[1]}")
 
