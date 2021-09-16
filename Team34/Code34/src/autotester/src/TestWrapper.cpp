@@ -23,7 +23,7 @@ void TestWrapper::parse(std::string filename)
 {
     auto text = util::readEntireFile(filename.c_str());
     this->program = simple::parser::parseProgram(text);
-    this->pkb = pkb::processProgram(m_program);
+    this->pkb = pkb::processProgram(this->program);
 }
 
 void TestWrapper::evaluate(std::string query, std::list<std::string>& results)

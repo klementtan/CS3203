@@ -9,12 +9,12 @@
 
 namespace pkb
 {
-	struct ProgramKB;
+    struct ProgramKB;
 }
 
 namespace simple::ast
 {
-	struct Program;
+    struct Program;
 }
 
 class TestWrapper : public AbstractWrapper
@@ -27,7 +27,7 @@ public:
     virtual void evaluate(std::string query, std::list<std::string>& results);
 
 private:
-	simple::ast::Program* program = nullptr;
+    simple::ast::Program* program = nullptr;
     pkb::ProgramKB* pkb = nullptr;
 };
 
