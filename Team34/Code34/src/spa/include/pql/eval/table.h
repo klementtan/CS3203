@@ -119,6 +119,8 @@ namespace pql::eval::table
         // Mapping of <declaration, declaration>: list of corresponding entry
         // All rows must equal to at least one of the entry pair
         std::vector<Join> m_joins;
+        // All declaration involved in select query
+        std::unordered_set<ast::Declaration*> m_select_decls;
         // Get all possible rows with decls as the column. The value of each entry in the
         // row will exist in the domain of declaration.
         [[nodiscard]] std::vector<Row> getRows(const std::vector<ast::Declaration*>& decls) const;
@@ -126,10 +128,11 @@ namespace pql::eval::table
         [[nodiscard]] std::vector<Row> getValidRows(const std::vector<Row>& candidate_rows) const;
         // Get mapping of declaration to the join that is involved in.
         [[nodiscard]] std::unordered_map<ast::Declaration*, std::vector<Join>> getDeclJoins() const;
-        [[nodiscard]] bool isValidDomain() const;
+        [[nodiscard]] bool hasValidDomain() const;
 
     public:
         void upsertDomains(ast::Declaration* decl, const Domain& entries);
+        void addSelectDecl(ast::Declaration* decl);
         Domain getDomain(ast::Declaration* decl) const;
         void addJoin(const Join& join);
         Table();

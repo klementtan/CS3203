@@ -22,6 +22,11 @@ namespace pql::eval
         bool is_child_decl = dynamic_cast<ast::DeclaredStmt*>(rel->child);
         bool is_child_wildcard = dynamic_cast<ast::AllStmt*>(rel->child);
 
+        if(is_parent_decl)
+            m_table->addSelectDecl(dynamic_cast<ast::DeclaredStmt*>(rel->parent)->declaration);
+        if(is_child_decl)
+            m_table->addSelectDecl(dynamic_cast<ast::DeclaredStmt*>(rel->child)->declaration);
+
         if(is_parent_sid && is_child_sid)
         {
             util::log("pql::eval", "processing Parent(StmtId, StmtId)");
@@ -177,6 +182,11 @@ namespace pql::eval
         bool is_child_sid = dynamic_cast<ast::StmtId*>(rel->descendant);
         bool is_child_decl = dynamic_cast<ast::DeclaredStmt*>(rel->descendant);
         bool is_child_wildcard = dynamic_cast<ast::AllStmt*>(rel->descendant);
+
+        if(is_parent_decl)
+            m_table->addSelectDecl(dynamic_cast<ast::DeclaredStmt*>(rel->ancestor)->declaration);
+        if(is_child_decl)
+            m_table->addSelectDecl(dynamic_cast<ast::DeclaredStmt*>(rel->descendant)->declaration);
 
         if(is_parent_sid && is_child_sid)
         {

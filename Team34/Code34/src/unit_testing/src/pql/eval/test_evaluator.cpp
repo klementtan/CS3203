@@ -5,6 +5,7 @@
 #define CATCH_CONFIG_FAST_COMPILE
 #include "catch.hpp"
 #include <iostream>
+#include "runner.h"
 
 #include "pql/parser/parser.h"
 #include "pql/eval/evaluator.h"
@@ -12,25 +13,27 @@
 #include "simple/parser.h"
 #include <list>
 
+constexpr const auto prog_1 = R"(
+procedure A {
+    a = 1;
+    b = 1;
+    c = 1;
+}
+)";
 TEST_CASE("No such that")
 {
-    constexpr const auto in = R"(
-            procedure A {
-	            a = 1;
-	            b = 1;
-	            c = 1;
-            }
-        )";
+    TEST_OK(prog_1, "stmt a; Select a", 1, 2, 3);
+}
 
-    auto prog = simple::parser::parseProgram(in);
-    auto pkb = pkb::processProgram(prog);
+TEST_CASE("Check valid domain")
+{
+    SECTION("Involved query has empty domain")
+    {
+        TEST_EMPTY(prog_1, "stmt a1, a2; variable v; Select a2 such that Uses(a1,v)");
+    }
 
-    pql::ast::Query* query = pql::parser::parsePQL("stmt a;\n"
-                                                   "Select a");
-    auto eval = new pql::eval::Evaluator(pkb, query);
-    std::list<std::string> result = eval->evaluate();
-    std::unordered_set<std::string> result_s(result.begin(), result.end());
-    REQUIRE(result_s.count("1"));
-    REQUIRE(result_s.count("2"));
-    REQUIRE(result_s.count("3"));
+    SECTION("Ignore not involved declaration")
+    {
+        TEST_OK(prog_1, "stmt a; if ifs; Select a", 1, 2, 3);
+    }
 }

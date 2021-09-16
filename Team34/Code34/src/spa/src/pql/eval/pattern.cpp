@@ -30,8 +30,11 @@ namespace pql::ast
         bool is_var_wild = dynamic_cast<AllEnt*>(this->ent);
         bool is_var_name = dynamic_cast<EntName*>(this->ent);
         bool is_var_decl = dynamic_cast<DeclaredEnt*>(this->ent);
-
         assert(this->assignment_declaration->design_ent == DESIGN_ENT::ASSIGN);
+
+        if(is_var_decl)
+            tbl->addSelectDecl(dynamic_cast<DeclaredEnt*>(this->ent)->declaration);
+        tbl->addSelectDecl(assignment_declaration);
         // Stores dependency when pattern a(v, ...)
         std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 

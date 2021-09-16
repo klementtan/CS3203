@@ -23,6 +23,11 @@ namespace pql::eval
         bool is_ent_name = dynamic_cast<ast::EntName*>(rel->ent);
         bool is_ent_all = dynamic_cast<ast::AllEnt*>(rel->ent);
 
+        if(is_mod_decl)
+            m_table->addSelectDecl(dynamic_cast<ast::DeclaredEnt*>(rel->modifier)->declaration);
+        if(is_ent_decl)
+            m_table->addSelectDecl(dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration);
+
         if(dynamic_cast<ast::AllEnt*>(rel->modifier))
         {
             throw PqlException("pql::eval", "Modifier of ModifiesP cannot be '_': {}", rel->toString());
@@ -188,6 +193,11 @@ namespace pql::eval
         bool is_ent_decl = dynamic_cast<ast::DeclaredEnt*>(rel->ent);
         bool is_ent_name = dynamic_cast<ast::EntName*>(rel->ent);
         bool is_ent_all = dynamic_cast<ast::AllEnt*>(rel->ent);
+
+        if(is_mod_decl)
+            m_table->addSelectDecl(dynamic_cast<ast::DeclaredStmt*>(rel->modifier)->declaration);
+        if(is_ent_decl)
+            m_table->addSelectDecl(dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration);
 
         if(dynamic_cast<ast::AllStmt*>(rel->modifier))
         {

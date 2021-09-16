@@ -122,6 +122,8 @@ namespace pql::eval
 
         // All queries should have select clause
         assert(m_query->select);
+        m_table->addSelectDecl(m_query->select->ent);
+
         if(m_query->select->such_that)
             handleSuchThat(m_query->select->such_that);
 
