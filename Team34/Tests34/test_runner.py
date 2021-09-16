@@ -20,8 +20,6 @@ def run_tests_in_folder(autotester_exe, folder):
 	source = ""
 	queries = []
 
-	print(f"running in {folder}")
-
 	for name in os.listdir(folder):
 		thing = os.path.join(folder, name)
 		if os.path.isfile(thing) and thing.endswith(".simple") and not thing.endswith("-numbered.simple"):
