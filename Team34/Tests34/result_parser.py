@@ -27,7 +27,12 @@ def parse_one(filename):
 	global num_failed
 	global num_passed
 
-	root = ET.parse(filename).getroot()
+	try:
+		root = ET.parse(filename).getroot()
+	except:
+		print(f"malformed xml file '{filename}'")
+		return
+
 	passed_tests[filename] = []
 	failed_tests[filename] = []
 

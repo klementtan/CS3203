@@ -16,11 +16,12 @@ def run_autotester(autotester_exe, folder, source, query):
 	print(f"    running '{query}'")
 	subprocess.run([autotester_exe, source_path, query_path, xml_path], stdout=subprocess.DEVNULL)
 
-def run_tests(autotester_exe, folder):
+def run_tests_in_folder(autotester_exe, folder):
 	source = ""
 	queries = []
 
-	# don't traverse the folder recursively
+	print(f"running in {folder}")
+
 	for name in os.listdir(folder):
 		thing = os.path.join(folder, name)
 		if os.path.isfile(thing) and thing.endswith(".simple") and not thing.endswith("-numbered.simple"):
@@ -33,12 +34,26 @@ def run_tests(autotester_exe, folder):
 		elif os.path.isfile(thing) and thing.endswith(".txt"):
 			queries.append(name)
 
+	if len(source) == 0:
+		return
+
 	print(f"test set {folder}:")
 	print(f"    source: {source}")
 	print(f"    queries ({len(queries)}): {queries}")
 
 	for query in queries:
 		run_autotester(autotester_exe, folder, source, query)
+
+
+def run_tests(autotester_exe, folder):
+	for root, dirs, files in os.walk(folder):
+		if len(dirs) == 0:
+			run_tests_in_folder(autotester_exe, root)
+		else:
+			for d in dirs:
+				run_tests_in_folder(autotester_exe, os.path.join(root, d))
+
+
 
 
 def clean_outputs():
