@@ -43,26 +43,22 @@ namespace pql::ast
 
     std::string ModifiesS::toString() const
     {
-        return zpr::sprint(
-            "ModifiesS(modifier:{}, ent:{})", this->modifier.toString(), this->ent.toString());
+        return zpr::sprint("ModifiesS(modifier:{}, ent:{})", this->modifier.toString(), this->ent.toString());
     }
 
     std::string ModifiesP::toString() const
     {
-        return zpr::sprint("ModifiesP(modifier:{}, ent:{})", this->modifier.toString(),
-            this->ent.toString());
+        return zpr::sprint("ModifiesP(modifier:{}, ent:{})", this->modifier.toString(), this->ent.toString());
     }
 
     std::string UsesS::toString() const
     {
-        return zpr::sprint(
-            "UsesS(user: {}, ent:{})", this->user.toString(), this->ent.toString());
+        return zpr::sprint("UsesS(user: {}, ent:{})", this->user.toString(), this->ent.toString());
     }
 
     std::string UsesP::toString() const
     {
-        return zpr::sprint(
-            "UsesP(user: {}, ent:{})", this->user.toString(), this->ent.toString());
+        return zpr::sprint("UsesP(user: {}, ent:{})", this->user.toString(), this->ent.toString());
     }
 
     std::string Parent::toString() const
