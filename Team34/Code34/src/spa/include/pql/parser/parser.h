@@ -61,5 +61,5 @@ struct std::hash<pql::parser::Token>
 
 namespace pql::parser
 {
-    pql::ast::Query* parsePQL(zst::str_view input);
+    std::unique_ptr<ast::Query> parsePQL(zst::str_view input);
 }

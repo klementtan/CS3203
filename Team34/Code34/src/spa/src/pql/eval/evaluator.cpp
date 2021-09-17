@@ -9,10 +9,10 @@
 
 namespace pql::eval
 {
-    Evaluator::Evaluator(pkb::ProgramKB* pkb, pql::ast::Query* query)
+    Evaluator::Evaluator(pkb::ProgramKB* pkb, std::unique_ptr<ast::Query> query)
     {
         this->m_pkb = pkb;
-        this->m_query = query;
+        this->m_query = std::move(query);
 
         preprocessPkb(this->m_pkb);
     }

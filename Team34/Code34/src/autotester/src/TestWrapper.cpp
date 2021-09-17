@@ -1,5 +1,6 @@
 // TestWrapper.cpp
 
+#include <cstdlib>
 #include "TestWrapper.h"
 
 // spa
@@ -33,13 +34,12 @@ void TestWrapper::evaluate(std::string query, std::list<std::string>& results)
     try
     {
         util::log("pql:ast", "Starting to generate pql ast");
-        pql::ast::Query* query_ast = pql::parser::parsePQL(query);
-        util::log("pql:ast", "Generated AST: {}", query_ast->toString());
-        pql::eval::Evaluator* eval = new pql::eval::Evaluator(this->pkb, query_ast);
-        results = eval->evaluate();
 
-        delete eval;
-        delete query_ast;
+        auto query_ast = pql::parser::parsePQL(query);
+        util::log("pql:ast", "Generated AST: {}", query_ast->toString());
+
+        auto eval = pql::eval::Evaluator(this->pkb, std::move(query_ast));
+        results = eval.evaluate();
     }
     catch(const util::Exception& e)
     {
@@ -47,9 +47,6 @@ void TestWrapper::evaluate(std::string query, std::list<std::string>& results)
         util::log("pql", "exception caught during evaluating query: {}", e.what());
     }
 }
-
-
-
 
 
 

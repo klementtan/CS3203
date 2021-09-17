@@ -10,8 +10,8 @@
 
 TEST_CASE("Basic Query")
 {
-    pql::ast::Query* query = pql::parser::parsePQL("variable v;\n"
-                                                   "Select v");
+    auto query = pql::parser::parsePQL("variable v;\n"
+                                       "Select v");
     REQUIRE(query->declarations.getAllDeclarations().size() == 1);
     auto v_declaration = query->declarations.getDeclaration("v");
     REQUIRE(v_declaration->design_ent == pql::ast::DESIGN_ENT::VARIABLE);
@@ -23,8 +23,8 @@ TEST_CASE("Basic Query")
 
 TEST_CASE("Follows* Query")
 {
-    pql::ast::Query* query = pql::parser::parsePQL("stmt s;\n"
-                                                   "Select s such that Follows* (6, s)");
+    auto query = pql::parser::parsePQL("stmt s;\n"
+                                       "Select s such that Follows* (6, s)");
     REQUIRE(query->declarations.getAllDeclarations().size() == 1);
     pql::ast::Declaration* s_declaration = query->declarations.getDeclaration("s");
     REQUIRE(s_declaration->design_ent == pql::ast::DESIGN_ENT::STMT);
@@ -41,8 +41,8 @@ TEST_CASE("Follows* Query")
 
 TEST_CASE("ModifiesS Query")
 {
-    pql::ast::Query* query = pql::parser::parsePQL("variable v;\n"
-                                                   "Select v such that Modifies (6, v)");
+    auto query = pql::parser::parsePQL("variable v;\n"
+                                       "Select v such that Modifies (6, v)");
     REQUIRE(query->declarations.getAllDeclarations().size() == 1);
     pql::ast::Declaration* v_declaration = query->declarations.getDeclaration("v");
     REQUIRE(v_declaration->design_ent == pql::ast::DESIGN_ENT::VARIABLE);
@@ -59,8 +59,8 @@ TEST_CASE("ModifiesS Query")
 
 TEST_CASE("ModifiesP Query")
 {
-    pql::ast::Query* query = pql::parser::parsePQL("variable v; procedure p;\n"
-                                                   "Select p such that Modifies (p, \"x\")");
+    auto query = pql::parser::parsePQL("variable v; procedure p;\n"
+                                       "Select p such that Modifies (p, \"x\")");
     REQUIRE(query->declarations.getAllDeclarations().size() == 2);
     pql::ast::Declaration* p_declaration = query->declarations.getDeclaration("p");
     REQUIRE(p_declaration->design_ent == pql::ast::DESIGN_ENT::PROCEDURE);
@@ -77,8 +77,8 @@ TEST_CASE("ModifiesP Query")
 
 TEST_CASE("UsesS Query")
 {
-    pql::ast::Query* query = pql::parser::parsePQL("variable v;\n"
-                                                   "Select v such that Uses (14, v)");
+    auto query = pql::parser::parsePQL("variable v;\n"
+                                       "Select v such that Uses (14, v)");
     REQUIRE(query->declarations.getAllDeclarations().size() == 1);
     pql::ast::Declaration* v_declaration = query->declarations.getDeclaration("v");
     REQUIRE(v_declaration->design_ent == pql::ast::DESIGN_ENT::VARIABLE);
@@ -95,8 +95,8 @@ TEST_CASE("UsesS Query")
 
 TEST_CASE("Pattern Query")
 {
-    pql::ast::Query* query = pql::parser::parsePQL("assign a;\n"
-                                                   "Select a pattern a ( \"normSq\" , _\"cenX * cenX\"_)");
+    auto query = pql::parser::parsePQL("assign a;\n"
+                                       "Select a pattern a ( \"normSq\" , _\"cenX * cenX\"_)");
     REQUIRE(query->declarations.getAllDeclarations().size() == 1);
     pql::ast::Declaration* a_declaration = query->declarations.getDeclaration("a");
     REQUIRE(a_declaration->design_ent == pql::ast::DESIGN_ENT::ASSIGN);
@@ -128,8 +128,8 @@ TEST_CASE("Parent Query")
 {
     SECTION("Valid query")
     {
-        pql::ast::Query* query = pql::parser::parsePQL("stmt s;\n"
-                                                       "Select s such that Parent(6, s)");
+        auto query = pql::parser::parsePQL("stmt s;\n"
+                                           "Select s such that Parent(6, s)");
         REQUIRE(query->declarations.getAllDeclarations().size() == 1);
         pql::ast::Declaration* s_declaration = query->declarations.getDeclaration("s");
         REQUIRE(s_declaration->design_ent == pql::ast::DESIGN_ENT::STMT);

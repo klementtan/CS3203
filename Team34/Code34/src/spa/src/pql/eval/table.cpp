@@ -161,13 +161,9 @@ namespace pql::eval::table
         return ret;
     }
 
-    Table::Table()
-    {
-    }
+    Table::Table() { }
 
-    Table::~Table()
-    {
-    }
+    Table::~Table() { }
 
 
     void Table::upsertDomains(ast::Declaration* decl, const std::unordered_set<Entry>& entries)

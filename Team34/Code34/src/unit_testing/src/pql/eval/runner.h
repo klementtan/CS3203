@@ -26,7 +26,7 @@ struct Runner
         }
 
         auto query = pql::parser::parsePQL(m_query);
-        auto eval = pql::eval::Evaluator(pkb, query);
+        auto eval = pql::eval::Evaluator(pkb, std::move(query));
 
         std::list<std::string> result {};
         if(try_catch)

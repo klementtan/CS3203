@@ -627,11 +627,11 @@ namespace pql::parser
         return select;
     }
 
-    ast::Query* parsePQL(zst::str_view input)
+    std::unique_ptr<ast::Query> parsePQL(zst::str_view input)
     {
         util::log("pql::parer", "Parsing input {}", input);
         auto ps = ParserState { input };
-        auto query = new ast::Query();
+        auto query = std::make_unique<ast::Query>();
 
         bool found_select = false;
         for(Token t; (t = ps.peek_one()) != TT::EndOfFile;)
