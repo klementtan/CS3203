@@ -98,7 +98,8 @@ namespace pql::ast
         std::string toString() const;
 
         Type ref_type {};
-        union {
+        union
+        {
             Declaration* _declaration;
             simple::ast::StatementNum _id;
         };
@@ -106,15 +107,75 @@ namespace pql::ast
         Declaration* declaration() const;
         simple::ast::StatementNum id() const;
 
-        inline bool isWildcard() const { return ref_type == Type::Wildcard; }
-        inline bool isStatementId() const { return ref_type == Type::StmtId; }
-        inline bool isDeclaration() const { return ref_type == Type::Declaration; }
+        inline bool isWildcard() const
+        {
+            return ref_type == Type::Wildcard;
+        }
+        inline bool isStatementId() const
+        {
+            return ref_type == Type::StmtId;
+        }
+        inline bool isDeclaration() const
+        {
+            return ref_type == Type::Declaration;
+        }
 
         static StmtRef ofWildcard();
         static StmtRef ofDeclaration(Declaration* decl);
         static StmtRef ofStatementId(simple::ast::StatementNum id);
     };
 
+    struct EntRef
+    {
+        enum class Type
+        {
+            Invalid,
+            Declaration,
+            Name,
+            Wildcard
+        };
+
+        // needs the rule of 5 or whatever cos of std::string in the union
+        EntRef() = default;
+        ~EntRef();
+
+        EntRef(const EntRef&);
+        EntRef& operator=(const EntRef&);
+
+        EntRef(EntRef&&);
+        EntRef& operator=(EntRef&&);
+
+        std::string toString() const;
+
+        Type ref_type {};
+        union
+        {
+            Declaration* _declaration;
+            std::string _name {};
+        };
+
+        Declaration* declaration() const;
+        std::string name() const;
+
+        inline bool isName() const
+        {
+            return ref_type == Type::Name;
+        }
+        inline bool isWildcard() const
+        {
+            return ref_type == Type::Wildcard;
+        }
+        inline bool isDeclaration() const
+        {
+            return ref_type == Type::Declaration;
+        }
+
+        static EntRef ofWildcard();
+        static EntRef ofName(std::string name);
+        static EntRef ofDeclaration(Declaration* decl);
+    };
+
+#if 0
     /** Abstract Reference for Entity Reference. */
     struct EntRef
     {
@@ -143,6 +204,7 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
     };
+#endif
 
     /** Abstract class for Relationship Conditions between Statements and Entities. */
     struct RelCond
@@ -162,8 +224,8 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        EntRef* modifier = nullptr;
-        EntRef* ent = nullptr;
+        EntRef modifier {};
+        EntRef ent {};
     };
 
     /** Represents `Modifies(StmtRef, EntRef)` relationship condition. */
@@ -172,7 +234,7 @@ namespace pql::ast
         virtual std::string toString() const override;
 
         StmtRef modifier {};
-        EntRef* ent = nullptr;
+        EntRef ent {};
     };
 
     /** Abstract class for Uses relationship condition. */
@@ -186,8 +248,8 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        EntRef* user = nullptr;
-        EntRef* ent = nullptr;
+        EntRef user {};
+        EntRef ent {};
     };
 
     /** Represents `Uses(StmtRef, EntRef)` relationship condition. */
@@ -196,7 +258,7 @@ namespace pql::ast
         virtual std::string toString() const override;
 
         StmtRef user {};
-        EntRef* ent = nullptr;
+        EntRef ent {};
     };
 
     /** Represents `Parent(StmtRef, StmtRef)` relationship condition. */
@@ -262,7 +324,7 @@ namespace pql::ast
 
         Declaration* assignment_declaration = nullptr;
 
-        EntRef* ent {};
+        EntRef ent {};
         ExprSpec expr_spec {};
     };
 

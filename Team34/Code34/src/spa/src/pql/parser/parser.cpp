@@ -69,7 +69,7 @@ namespace pql::parser
     const Token KW_Modifies { "Modifies", TT::Identifier };
 
     // Process the next token as a variable and insert it into declaration_list
-    void insert_var_to_declarations(ParserState* ps, pql::ast::DeclarationList* declaration_list, ast::DESIGN_ENT ent)
+    void insert_var_to_declarations(ParserState* ps, ast::DeclarationList* declaration_list, ast::DESIGN_ENT ent)
     {
         Token var = ps->next();
 
@@ -82,7 +82,7 @@ namespace pql::parser
             throw util::PqlException("pql::parser", "duplicate declaration '{}'", var.text);
 
         util::log("pql::parser", "Adding declaration {} to declaration list", var.text);
-        auto declaration = new pql::ast::Declaration { var.text.str(), ent };
+        auto declaration = new ast::Declaration { var.text.str(), ent };
 
         util::log("pql::parser", "Adding {} to declaration list", declaration->toString());
         declaration_list->addDeclaration(var.text.str(), declaration);
@@ -109,11 +109,11 @@ namespace pql::parser
         std::string ent_string { ps->next().text.str() };
         util::log("pql::parser", "Parsing declaration with design_ent:{}", ent_string);
 
-        if(pql::ast::DESIGN_ENT_MAP.count(ent_string) == 0)
+        if(ast::DESIGN_ENT_MAP.count(ent_string) == 0)
         {
             util::log("pql::parser", "Invalid entity provided in declaration {}", ent_string);
         }
-        pql::ast::DESIGN_ENT ent = pql::ast::DESIGN_ENT_MAP.find(ent_string)->second;
+        ast::DESIGN_ENT ent = ast::DESIGN_ENT_MAP.find(ent_string)->second;
         insert_var_to_declarations(ps, declaration_list, ent);
 
         // Handle trailing additional var using `,`
@@ -126,12 +126,12 @@ namespace pql::parser
     }
 
 
-    pql::ast::EntRef* parse_ent_ref(ParserState* ps, const ast::DeclarationList* declaration_list)
+    ast::EntRef parse_ent_ref(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         Token tok = ps->next();
         if(tok.type == TT::Underscore)
         {
-            return new ast::AllEnt();
+            return ast::EntRef::ofWildcard();
         }
         if(tok.type == TT::DoubleQuotes)
         {
@@ -145,9 +145,8 @@ namespace pql::parser
             {
                 throw PqlException("pql::parser", "Expected named declaration to end with double quotes(\")");
             }
-            auto ent_name = new ast::EntName();
-            ent_name->name = name_declaration_tok.text.str();
-            return ent_name;
+
+            return ast::EntRef::ofName(name_declaration_tok.text.str());
         }
         if(tok.type == TokenType::Identifier)
         {
@@ -157,15 +156,12 @@ namespace pql::parser
             if(declaration == nullptr)
                 throw PqlException("pql::parser", "Undeclared entity {} provided when parsing ent ref", var_name);
 
-            auto declared_ent = new ast::DeclaredEnt();
-            declared_ent->declaration = declaration;
-            util::log("pql:parser", "Parsed ent ref {}", declared_ent->toString());
-            return declared_ent;
+            return ast::EntRef::ofDeclaration(declaration);
         }
         throw PqlException("pql::parser", "Invalid ent ref starting with {}", tok.text);
     }
 
-    pql::ast::StmtRef parse_stmt_ref(ParserState* ps, const ast::DeclarationList* declaration_list)
+    ast::StmtRef parse_stmt_ref(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         Token tok = ps->next();
         if(tok.type == TT::Underscore)
@@ -188,9 +184,8 @@ namespace pql::parser
             if(declaration == nullptr)
                 throw PqlException("pql::parser", "Undeclared entity {} provided when parsing stmt ref", var_name);
 
-            auto declared_stmt = ast::StmtRef::ofDeclaration(declaration);
-            util::log("pql:parser", "Parsed stmt ref {}", declared_stmt.toString());
-            return declared_stmt;
+            return ast::StmtRef::ofDeclaration(declaration);
+            ;
         }
         throw PqlException("pql::parser", "Invalid stmt ref starting with {}", tok.text);
     }
@@ -213,7 +208,7 @@ namespace pql::parser
         return simple::parser::parseExpression(expr_str);
     }
 
-    pql::ast::ExprSpec parse_expr_spec(ParserState* ps)
+    ast::ExprSpec parse_expr_spec(ParserState* ps)
     {
         ast::ExprSpec expr_spec {};
 
@@ -238,9 +233,9 @@ namespace pql::parser
         return expr_spec;
     }
 
-    pql::ast::PatternCl parse_pattern(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    ast::PatternCl parse_pattern(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
-        std::vector<std::unique_ptr<pql::ast::PatternCond>> pattern_conds;
+        std::vector<std::unique_ptr<ast::PatternCond>> pattern_conds;
 
         if(Token tok = ps->next(); tok != KW_Pattern)
         {
@@ -267,7 +262,7 @@ namespace pql::parser
         util::log("pql::parser", "Parsing pattern clause with assignment condition {}", declaration->toString());
 
         // TOOD refactor to a smaller method.
-        auto pattern_cond = std::make_unique<pql::ast::AssignPatternCond>();
+        auto pattern_cond = std::make_unique<ast::AssignPatternCond>();
 
 
         if(Token tok = ps->next(); tok != TT::LParen)
@@ -294,7 +289,7 @@ namespace pql::parser
         return ast::PatternCl { std::move(pattern_conds) };
     }
 
-    std::unique_ptr<ast::FollowsT> parse_follows_t(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    std::unique_ptr<ast::FollowsT> parse_follows_t(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         auto f = ps->next();
         auto star = ps->next();
@@ -324,7 +319,7 @@ namespace pql::parser
         return follows_t;
     }
 
-    std::unique_ptr<ast::Follows> parse_follows(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    std::unique_ptr<ast::Follows> parse_follows(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         if(ps->next().text != "Follows")
         {
@@ -350,7 +345,7 @@ namespace pql::parser
         return follows;
     }
 
-    std::unique_ptr<ast::ParentT> parse_parent_t(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    std::unique_ptr<ast::ParentT> parse_parent_t(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         auto p = ps->next();
         auto star = ps->next();
@@ -379,7 +374,7 @@ namespace pql::parser
         return parent_t;
     }
 
-    std::unique_ptr<ast::Parent> parse_parent(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    std::unique_ptr<ast::Parent> parse_parent(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         if(ps->next().text != "Parent")
         {
@@ -404,7 +399,7 @@ namespace pql::parser
         return parent;
     }
 
-    bool is_next_stmt_ref(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    bool is_next_stmt_ref(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         Token tok = ps->peek_one();
         if(tok.type == TT::Number)
@@ -439,7 +434,7 @@ namespace pql::parser
         return ast::kStmtDesignEntities.count(decl->design_ent) > 0;
     }
 
-    std::unique_ptr<ast::Uses> parse_uses(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    std::unique_ptr<ast::Uses> parse_uses(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         if(ps->next().text != "Uses")
         {
@@ -459,7 +454,7 @@ namespace pql::parser
             {
                 throw PqlException("pql::parser", "Expected ',' after declaring stmt ref in Uses");
             }
-            ast::EntRef* ent = parse_ent_ref(ps, declaration_list);
+            auto ent = parse_ent_ref(ps, declaration_list);
             if(Token tok = ps->next(); tok.type != TT::RParen)
             {
                 throw PqlException("pql::parser", "Expected ')' at the end of 'Uses' instead of {}", tok.text);
@@ -471,12 +466,12 @@ namespace pql::parser
         }
         else
         {
-            ast::EntRef* user = parse_ent_ref(ps, declaration_list);
+            auto user = parse_ent_ref(ps, declaration_list);
             if(Token tok = ps->next(); tok != TT::Comma)
             {
                 throw PqlException("pql::parser", "Expected ',' after declaring ent ref in Uses");
             }
-            ast::EntRef* ent = parse_ent_ref(ps, declaration_list);
+            auto ent = parse_ent_ref(ps, declaration_list);
             if(Token tok = ps->next(); tok.type != TT::RParen)
             {
                 throw PqlException("pql::parser", "Expected ')' at the end of 'Uses' instead of {}", tok.text);
@@ -488,7 +483,7 @@ namespace pql::parser
         }
     }
 
-    std::unique_ptr<ast::Modifies> parse_modifies(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    std::unique_ptr<ast::Modifies> parse_modifies(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         if(ps->next().text != "Modifies")
         {
@@ -508,7 +503,7 @@ namespace pql::parser
             {
                 throw PqlException("pql::parser", "Expected ',' after declaring stmt ref in Modifies");
             }
-            ast::EntRef* ent = parse_ent_ref(ps, declaration_list);
+            auto ent = parse_ent_ref(ps, declaration_list);
             if(Token tok = ps->next(); tok.type != TT::RParen)
             {
                 throw PqlException("pql::parser", "Expected ')' at the end of 'Modifies' instead of {}", tok.text);
@@ -520,12 +515,12 @@ namespace pql::parser
         }
         else
         {
-            ast::EntRef* modifier = parse_ent_ref(ps, declaration_list);
+            auto modifier = parse_ent_ref(ps, declaration_list);
             if(Token tok = ps->next(); tok != TT::Comma)
             {
                 throw PqlException("pql::parser", "Expected ',' after declaring stmt ref in Modifies");
             }
-            ast::EntRef* ent = parse_ent_ref(ps, declaration_list);
+            auto ent = parse_ent_ref(ps, declaration_list);
             if(Token tok = ps->next(); tok.type != TT::RParen)
             {
                 throw PqlException("pql::parser", "Expected ')' at the end of 'Modifies' instead of {}", tok.text);
@@ -537,7 +532,7 @@ namespace pql::parser
         }
     }
 
-    std::unique_ptr<ast::RelCond> parse_rel_cond(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    std::unique_ptr<ast::RelCond> parse_rel_cond(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         std::vector<Token> rel_cond_toks = ps->peek_two();
 
@@ -559,7 +554,7 @@ namespace pql::parser
             rel_cond_toks[1].text);
     }
 
-    ast::SuchThatCl parse_such_that(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    ast::SuchThatCl parse_such_that(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         auto such = ps->next();
         auto that = ps->next();
@@ -581,7 +576,7 @@ namespace pql::parser
         return such_that;
     }
 
-    pql::ast::Select parse_select(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    ast::Select parse_select(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         Token select_tok = ps->next();
         if(select_tok != KW_Select)
@@ -603,7 +598,7 @@ namespace pql::parser
 
         util::log("pql::parser", "Return ent for Select clause: {}", ent->toString());
 
-        pql::ast::Select select {};
+        ast::Select select {};
         select.ent = ent;
 
         std::vector<Token> clause_tok = ps->peek_two();
@@ -632,11 +627,11 @@ namespace pql::parser
         return select;
     }
 
-    pql::ast::Query* parsePQL(zst::str_view input)
+    ast::Query* parsePQL(zst::str_view input)
     {
         util::log("pql::parer", "Parsing input {}", input);
         auto ps = ParserState { input };
-        auto query = new pql::ast::Query();
+        auto query = new ast::Query();
 
         bool found_select = false;
         for(Token t; (t = ps.peek_one()) != TT::EndOfFile;)

@@ -41,44 +41,28 @@ namespace pql::ast
         return zpr::sprint("Declaration(ent:{}, name:{})", ent_str, this->name);
     }
 
-    std::string DeclaredEnt::toString() const
-    {
-        return zpr::sprint(
-            "DeclaredEnt(declaration:{})", this->declaration ? this->declaration->toString() : "nullptr");
-    }
-
-    std::string EntName::toString() const
-    {
-        return zpr::sprint("EntName(name:{})", this->name);
-    }
-
-    std::string AllEnt::toString() const
-    {
-        return zpr::sprint("AllEnt(name: _)");
-    }
-
     std::string ModifiesS::toString() const
     {
-        return zpr::sprint("ModifiesS(modifier:{}, ent:{})", this->modifier.toString(),
-            this->ent ? this->ent->toString() : "nullptr");
+        return zpr::sprint(
+            "ModifiesS(modifier:{}, ent:{})", this->modifier.toString(), this->ent.toString());
     }
 
     std::string ModifiesP::toString() const
     {
-        return zpr::sprint("ModifiesP(modifier:{}, ent:{})", this->modifier->toString(),
-            this->ent ? this->ent->toString() : "nullptr");
+        return zpr::sprint("ModifiesP(modifier:{}, ent:{})", this->modifier.toString(),
+            this->ent.toString());
     }
 
     std::string UsesS::toString() const
     {
-        return zpr::sprint("UsesS(user: {}, ent:{})", this->user.toString(),
-            this->ent ? this->ent->toString() : "nullptr");
+        return zpr::sprint(
+            "UsesS(user: {}, ent:{})", this->user.toString(), this->ent.toString());
     }
 
     std::string UsesP::toString() const
     {
-        return zpr::sprint("UsesP(user: {}, ent:{})", this->user->toString(),
-            this->ent ? this->ent->toString() : "nullptr");
+        return zpr::sprint(
+            "UsesP(user: {}, ent:{})", this->user.toString(), this->ent.toString());
     }
 
     std::string Parent::toString() const
@@ -88,21 +72,19 @@ namespace pql::ast
 
     std::string ParentT::toString() const
     {
-        return zpr::sprint("ParentT(ancestor:{}, descendant:{})",
-            this->ancestor.toString(), this->descendant.toString());
+        return zpr::sprint(
+            "ParentT(ancestor:{}, descendant:{})", this->ancestor.toString(), this->descendant.toString());
     }
 
     std::string Follows::toString() const
     {
-        return zpr::sprint("Follows(directly_before:{}, directly_after:{})",
-            this->directly_before.toString(),
+        return zpr::sprint("Follows(directly_before:{}, directly_after:{})", this->directly_before.toString(),
             this->directly_after.toString());
     }
 
     std::string FollowsT::toString() const
     {
-        return zpr::sprint("FollowsT(before:{}, after{})", this->before.toString(),
-            this->after.toString());
+        return zpr::sprint("FollowsT(before:{}, after{})", this->before.toString(), this->after.toString());
     }
 
     std::string ExprSpec::toString() const
@@ -113,7 +95,7 @@ namespace pql::ast
 
     std::string AssignPatternCond::toString() const
     {
-        return zpr::sprint("PatternCl(ent:{}, assignment_declaration:{}, expr_spec:{})", this->ent->toString(),
+        return zpr::sprint("PatternCl(ent:{}, assignment_declaration:{}, expr_spec:{})", this->ent.toString(),
             this->assignment_declaration ? this->assignment_declaration->toString() : "nullptr",
             this->expr_spec.toString());
     }
@@ -168,6 +150,26 @@ namespace pql::ast
             case Type::Invalid:
             default:
                 throw util::PqlException("pql", "invalid StmtRef type");
+        }
+    }
+
+    std::string EntRef::toString() const
+    {
+        switch(this->ref_type)
+        {
+            case Type::Declaration:
+                return zpr::sprint(
+                    "DeclaredEnt(declaration:{})", this->_declaration ? this->_declaration->toString() : "nullptr");
+
+            case Type::Name:
+                return zpr::sprint("EntName(name:{})", this->_name);
+
+            case Type::Wildcard:
+                return zpr::sprint("AllEnt(name: _)");
+
+            case Type::Invalid:
+            default:
+                throw util::PqlException("pql", "invalid EntRef type");
         }
     }
 }

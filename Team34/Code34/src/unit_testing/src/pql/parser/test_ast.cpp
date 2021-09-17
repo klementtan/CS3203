@@ -56,35 +56,27 @@ TEST_CASE("AllStmt")
 TEST_CASE("DeclaredEnt")
 {
     pql::ast::Declaration* declaration = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredEnt declared_ent;
-    declared_ent.declaration = declaration;
-    pql::ast::EntRef* ent = &declared_ent;
-    REQUIRE(ent->toString() == "DeclaredEnt(declaration:Declaration(ent:assign, name:foo))");
+    auto ent = EntRef::ofDeclaration(declaration);
+    REQUIRE(ent.toString() == "DeclaredEnt(declaration:Declaration(ent:assign, name:foo))");
 }
 
 TEST_CASE("EntName")
 {
-    pql::ast::EntName ent_name;
-    ent_name.name = "foo";
-    pql::ast::EntRef* ent = &ent_name;
-    REQUIRE(ent->toString() == "EntName(name:foo)");
+    auto ent = EntRef::ofName("foo");
+    REQUIRE(ent.toString() == "EntName(name:foo)");
 }
 
 TEST_CASE("AllEnt")
 {
-    pql::ast::AllEnt all_ent;
-    pql::ast::EntRef* ent = &all_ent;
-    INFO(ent->toString());
-    REQUIRE(ent->toString() == "AllEnt(name: _)");
+    auto ent = EntRef::ofWildcard();
+    REQUIRE(ent.toString() == "AllEnt(name: _)");
 }
 
 TEST_CASE("ModifiesS")
 {
     /** Initialize entity declaration */
     pql::ast::Declaration* declaration1 = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredEnt declared_ent;
-    declared_ent.declaration = declaration1;
-    pql::ast::EntRef* ent = &declared_ent;
+    auto ent = EntRef::ofDeclaration(declaration1);
 
     /** Initialize stmt declaration */
     pql::ast::Declaration* declaration2 = new pql::ast::Declaration { "bar", pql::ast::DESIGN_ENT::ASSIGN };
@@ -104,9 +96,7 @@ TEST_CASE("UsesS")
 {
     /** Initialize entity declaration */
     pql::ast::Declaration* declaration1 = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredEnt declared_ent;
-    declared_ent.declaration = declaration1;
-    pql::ast::EntRef* ent = &declared_ent;
+    auto ent = EntRef::ofDeclaration(declaration1);
 
     /** Initialize stmt declaration */
     pql::ast::Declaration* declaration2 = new pql::ast::Declaration { "bar", pql::ast::DESIGN_ENT::ASSIGN };
@@ -227,12 +217,11 @@ TEST_CASE("PatternCl")
 
     pql::ast::Declaration* declaration = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
 
-    auto ent = DeclaredEnt {};
-    ent.declaration = declaration;
+    auto ent = EntRef::ofDeclaration(declaration);
 
     auto assign_pattern_cond = std::make_unique<pql::ast::AssignPatternCond>();
     assign_pattern_cond->assignment_declaration = declaration;
-    assign_pattern_cond->ent = &ent;
+    assign_pattern_cond->ent = ent;
     assign_pattern_cond->expr_spec = std::move(expr_spec);
     auto pattern_cl = pql::ast::PatternCl {};
     pattern_cl.pattern_conds.push_back(std::move(assign_pattern_cond));
@@ -249,9 +238,7 @@ TEST_CASE("SuchThat")
 {
     /** Initialize entity declaration */
     pql::ast::Declaration* declaration1 = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredEnt declared_ent;
-    declared_ent.declaration = declaration1;
-    pql::ast::EntRef* ent = &declared_ent;
+    auto ent = EntRef::ofDeclaration(declaration1);
 
     /** Initialize stmt declaration */
     pql::ast::Declaration* declaration2 = new pql::ast::Declaration { "bar", pql::ast::DESIGN_ENT::ASSIGN };
@@ -275,9 +262,7 @@ TEST_CASE("Select")
 {
     /** Initialize such that */
     pql::ast::Declaration* declaration1 = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredEnt declared_ent1;
-    declared_ent1.declaration = declaration1;
-    pql::ast::EntRef* ent1 = &declared_ent1;
+    auto ent1 = EntRef::ofDeclaration(declaration1);
 
     pql::ast::Declaration* declaration2 = new pql::ast::Declaration { "bar", pql::ast::DESIGN_ENT::ASSIGN };
     auto stmt = StmtRef::ofDeclaration(declaration2);
@@ -301,13 +286,11 @@ TEST_CASE("Select")
     ExprSpec expr_spec { true, std::unique_ptr<simple::ast::Expr>(expr) };
 
     auto declaration3 = new Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
-
-    auto ent2 = DeclaredEnt {};
-    ent2.declaration = declaration3;
+    auto ent2 = EntRef::ofDeclaration(declaration3);
 
     auto assign_pattern_cond = std::make_unique<pql::ast::AssignPatternCond>();
     assign_pattern_cond->assignment_declaration = declaration3;
-    assign_pattern_cond->ent = &ent2;
+    assign_pattern_cond->ent = ent2;
     assign_pattern_cond->expr_spec = std::move(expr_spec);
 
     pql::ast::PatternCl pattern_cl {};
@@ -329,9 +312,7 @@ TEST_CASE("Query")
 {
     /** Initialize such that */
     pql::ast::Declaration* declaration1 = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredEnt declared_ent1;
-    declared_ent1.declaration = declaration1;
-    pql::ast::EntRef* ent1 = &declared_ent1;
+    auto ent1 = EntRef::ofDeclaration(declaration1);
 
     pql::ast::Declaration* declaration2 = new pql::ast::Declaration { "bar", pql::ast::DESIGN_ENT::ASSIGN };
     auto stmt = StmtRef::ofDeclaration(declaration2);
@@ -355,13 +336,11 @@ TEST_CASE("Query")
     ExprSpec expr_spec { true, std::unique_ptr<simple::ast::Expr>(expr) };
 
     auto declaration3 = new Declaration { "buzz", pql::ast::DESIGN_ENT::ASSIGN };
-
-    auto ent2 = DeclaredEnt {};
-    ent2.declaration = declaration3;
+    auto ent2 = EntRef::ofDeclaration(declaration3);
 
     auto assign_pattern_cond = std::make_unique<pql::ast::AssignPatternCond>();
     assign_pattern_cond->assignment_declaration = declaration3;
-    assign_pattern_cond->ent = &ent2;
+    assign_pattern_cond->ent = ent2;
     assign_pattern_cond->expr_spec = std::move(expr_spec);
     pql::ast::PatternCl pattern_cl {};
     pattern_cl.pattern_conds.push_back(std::move(assign_pattern_cond));

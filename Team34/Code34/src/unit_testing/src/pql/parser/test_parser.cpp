@@ -54,8 +54,7 @@ TEST_CASE("ModifiesS Query")
     REQUIRE(modifies_s != nullptr);
 
     CHECK(modifies_s->modifier.id() == 6);
-
-    REQUIRE(dynamic_cast<pql::ast::DeclaredEnt*>(modifies_s->ent)->declaration == v_declaration);
+    CHECK(modifies_s->ent.declaration() == v_declaration);
 }
 
 TEST_CASE("ModifiesP Query")
@@ -72,8 +71,8 @@ TEST_CASE("ModifiesP Query")
     auto modifies_p = dynamic_cast<pql::ast::ModifiesP*>(such_that_cl.rel_conds.begin()->get());
     REQUIRE(modifies_p != nullptr);
 
-    REQUIRE(dynamic_cast<pql::ast::DeclaredEnt*>(modifies_p->modifier)->declaration == p_declaration);
-    REQUIRE(dynamic_cast<pql::ast::EntName*>(modifies_p->ent)->name == "x");
+    CHECK(modifies_p->modifier.declaration() == p_declaration);
+    CHECK(modifies_p->ent.name() == "x");
 }
 
 TEST_CASE("UsesS Query")
@@ -91,8 +90,7 @@ TEST_CASE("UsesS Query")
     REQUIRE(uses_s != nullptr);
 
     CHECK(uses_s->user.id() == 14);
-
-    REQUIRE(dynamic_cast<pql::ast::DeclaredEnt*>(uses_s->ent)->declaration == v_declaration);
+    CHECK(uses_s->ent.declaration() == v_declaration);
 }
 
 TEST_CASE("Pattern Query")
@@ -110,7 +108,9 @@ TEST_CASE("Pattern Query")
         dynamic_cast<pql::ast::AssignPatternCond*>(pattern_cl.pattern_conds.front().get());
     REQUIRE(assign_pattern_cond != nullptr);
     REQUIRE(assign_pattern_cond->assignment_declaration == a_declaration);
-    REQUIRE(dynamic_cast<pql::ast::EntName*>(assign_pattern_cond->ent)->name == "normSq");
+
+    REQUIRE(assign_pattern_cond->ent.name() == "normSq");
+
     auto& expr_spec = assign_pattern_cond->expr_spec;
     REQUIRE(expr_spec.is_subexpr == true);
     auto* expr = dynamic_cast<simple::ast::BinaryOp*>(expr_spec.expr.get());

@@ -14,43 +14,39 @@ namespace pql::eval
     void Evaluator::handleUsesP(const ast::UsesP* rel)
     {
         assert(rel);
-        bool is_proc_name = dynamic_cast<ast::EntName*>(rel->user);
-        bool is_proc_decl = dynamic_cast<ast::DeclaredEnt*>(rel->user);
-        bool is_var_name = dynamic_cast<ast::EntName*>(rel->ent);
-        bool is_var_decl = dynamic_cast<ast::DeclaredEnt*>(rel->ent);
-        bool is_var_all = dynamic_cast<ast::AllEnt*>(rel->ent);
 
-        if(is_proc_decl)
-            m_table->addSelectDecl(dynamic_cast<ast::DeclaredEnt*>(rel->user)->declaration);
-        if(is_var_decl)
-            m_table->addSelectDecl(dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration);
+        const auto& proc_ent = rel->user;
+        const auto& var_ent = rel->ent;
+
+        if(proc_ent.isDeclaration())
+            m_table->addSelectDecl(proc_ent.declaration());
+        if(var_ent.isDeclaration())
+            m_table->addSelectDecl(var_ent.declaration());
 
         // this should not happen, since Uses(_, foo) is invalid according to the specs
-        if(dynamic_cast<ast::AllEnt*>(rel->user))
+        if(proc_ent.isWildcard())
             throw PqlException("pql::eval", "first argument of Uses cannot be '_'");
 
-        if(is_proc_decl &&
-            dynamic_cast<ast::DeclaredEnt*>(rel->user)->declaration->design_ent != ast::DESIGN_ENT::PROCEDURE)
+        if(proc_ent.isDeclaration() && proc_ent.declaration()->design_ent != ast::DESIGN_ENT::PROCEDURE)
             throw PqlException("pql::eval", "entity for first argument of Uses must be a procedure");
 
-        if(is_var_decl &&
-            dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration->design_ent != ast::DESIGN_ENT::VARIABLE)
+        if(var_ent.isDeclaration() && var_ent.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
             throw PqlException("pql::eval", "entity for second argument of Uses must be a variable");
 
 
-        if(is_proc_name && is_var_name)
+        if(proc_ent.isName() && var_ent.isName())
         {
-            auto proc_name = dynamic_cast<ast::EntName*>(rel->user)->name;
-            auto var_name = dynamic_cast<ast::EntName*>(rel->ent)->name;
+            auto proc_name = proc_ent.name();
+            auto var_name = var_ent.name();
 
             util::log("pql::eval", "Processing UsesP(EntName, EntName)");
             if(!m_pkb->uses_modifies.isUses(proc_name, var_name))
                 throw PqlException("pql::eval", "{} is always false", rel->toString(), var_name);
         }
-        else if(is_proc_name && is_var_decl)
+        else if(proc_ent.isName() && var_ent.isDeclaration())
         {
-            auto proc_name = dynamic_cast<ast::EntName*>(rel->user)->name;
-            auto var_decl = dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration;
+            auto proc_name = proc_ent.name();
+            auto var_decl = var_ent.declaration();
 
 
             util::log("pql::eval", "Processing UsesP(EntName, DeclaredStmt)");
@@ -66,9 +62,9 @@ namespace pql::eval
             auto old_domain = m_table->getDomain(var_decl);
             m_table->upsertDomains(var_decl, table::entry_set_intersect(old_domain, new_domain));
         }
-        else if(is_proc_name && is_var_all)
+        else if(proc_ent.isName() && var_ent.isWildcard())
         {
-            auto proc_name = dynamic_cast<ast::EntName*>(rel->user)->name;
+            auto proc_name = proc_ent.name();
 
             util::log("pql::eval", "Processing UsesP(EntName, _)");
             auto used_vars = m_pkb->uses_modifies.getUsesVars(proc_name);
@@ -76,10 +72,10 @@ namespace pql::eval
                 throw PqlException("pql::eval", "{} is always false; {} doesn't use any variables", rel->toString());
         }
 
-        else if(is_proc_decl && is_var_name)
+        else if(proc_ent.isDeclaration() && var_ent.isName())
         {
-            auto proc_decl = dynamic_cast<ast::DeclaredEnt*>(rel->user)->declaration;
-            auto var_name = dynamic_cast<ast::EntName*>(rel->ent)->name;
+            auto proc_decl = proc_ent.declaration();
+            auto var_name = var_ent.name();
 
             util::log("pql::eval", "Processing UsesP(DeclaredEnt, EntName)");
 
@@ -95,10 +91,10 @@ namespace pql::eval
             auto old_domain = m_table->getDomain(proc_decl);
             m_table->upsertDomains(proc_decl, table::entry_set_intersect(old_domain, new_domain));
         }
-        else if(is_proc_decl && is_var_decl)
+        else if(proc_ent.isDeclaration() && var_ent.isDeclaration())
         {
-            auto proc_decl = dynamic_cast<ast::DeclaredEnt*>(rel->user)->declaration;
-            auto var_decl = dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration;
+            auto proc_decl = proc_ent.declaration();
+            auto var_decl = var_ent.declaration();
 
             util::log("pql::eval", "Processing UsesP(DeclaredEnt, DeclaredStmt)");
 
@@ -131,9 +127,9 @@ namespace pql::eval
             m_table->upsertDomains(var_decl, table::entry_set_intersect(new_var_domain, m_table->getDomain(var_decl)));
             m_table->addJoin(table::Join(proc_decl, var_decl, allowed_entries));
         }
-        else if(is_proc_decl && is_var_all)
+        else if(proc_ent.isDeclaration() && var_ent.isWildcard())
         {
-            auto proc_decl = dynamic_cast<ast::DeclaredEnt*>(rel->user)->declaration;
+            auto proc_decl = proc_ent.declaration();
 
             util::log("pql::eval", "Processing UsesP(DeclaredEnt, _)");
             std::unordered_set<table::Entry> new_domain {};
@@ -160,41 +156,36 @@ namespace pql::eval
         assert(rel);
 
         const auto& user_stmt = rel->user;
-
-        bool is_var_name = dynamic_cast<ast::EntName*>(rel->ent);
-        bool is_var_decl = dynamic_cast<ast::DeclaredEnt*>(rel->ent);
-        bool is_var_all = dynamic_cast<ast::AllEnt*>(rel->ent);
+        const auto& var_ent = rel->ent;
 
         if(user_stmt.isDeclaration())
             m_table->addSelectDecl(user_stmt.declaration());
-        if(is_var_decl)
-            m_table->addSelectDecl(dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration);
+        if(var_ent.isDeclaration())
+            m_table->addSelectDecl(var_ent.declaration());
 
         // this should not happen, since Uses(_, foo) is invalid according to the specs
         if(user_stmt.isWildcard())
             throw PqlException("pql::eval", "first argument of Uses cannot be '_'");
 
-        if(is_var_decl &&
-            dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration->design_ent != ast::DESIGN_ENT::VARIABLE)
+        if(var_ent.isDeclaration() && var_ent.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
             throw PqlException("pql::eval", "entity for second argument of Uses must be a variable");
 
-        if(user_stmt.isDeclaration() &&
-            (ast::kStmtDesignEntities.count(user_stmt.declaration()->design_ent) == 0))
+        if(user_stmt.isDeclaration() && (ast::kStmtDesignEntities.count(user_stmt.declaration()->design_ent) == 0))
             throw PqlException("pql::eval", "first argument for UsesS must be a statement entity");
 
-        if(user_stmt.isStatementId() && is_var_name)
+        if(user_stmt.isStatementId() && var_ent.isName())
         {
             auto user_sid = user_stmt.id();
-            auto var_name = dynamic_cast<ast::EntName*>(rel->ent)->name;
+            auto var_name = var_ent.name();
 
             util::log("pql::eval", "Processing UsesS(StmtId, EntName)");
             if(!m_pkb->uses_modifies.isUses(user_sid, var_name))
                 throw PqlException("pql::eval", "{} is always false", rel->toString(), var_name);
         }
-        else if(user_stmt.isStatementId() && is_var_decl)
+        else if(user_stmt.isStatementId() && var_ent.isDeclaration())
         {
             auto user_sid = user_stmt.id();
-            auto var_decl = dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration;
+            auto var_decl = var_ent.declaration();
 
             util::log("pql::eval", "Processing UsesS(StmtId, DeclaredEnt)");
             std::unordered_set<table::Entry> new_domain {};
@@ -204,7 +195,7 @@ namespace pql::eval
 
             m_table->upsertDomains(var_decl, table::entry_set_intersect(new_domain, m_table->getDomain(var_decl)));
         }
-        else if(user_stmt.isStatementId() && is_var_all)
+        else if(user_stmt.isStatementId() && var_ent.isWildcard())
         {
             auto user_sid = user_stmt.id();
 
@@ -212,10 +203,10 @@ namespace pql::eval
             if(m_pkb->uses_modifies.getUsesVars(user_sid).empty())
                 throw PqlException("pql::eval", "{} is always false", rel->toString());
         }
-        else if(user_stmt.isDeclaration() && is_var_name)
+        else if(user_stmt.isDeclaration() && var_ent.isName())
         {
             auto user_decl = user_stmt.declaration();
-            auto var_name = dynamic_cast<ast::EntName*>(rel->ent)->name;
+            auto var_name = var_ent.name();
 
             util::log("pql::eval", "Processing UsesS(DeclaredStmt, EntName)");
             std::unordered_set<table::Entry> new_domain {};
@@ -225,10 +216,10 @@ namespace pql::eval
 
             m_table->upsertDomains(user_decl, table::entry_set_intersect(new_domain, m_table->getDomain(user_decl)));
         }
-        else if(user_stmt.isDeclaration() && is_var_decl)
+        else if(user_stmt.isDeclaration() && var_ent.isDeclaration())
         {
             auto user_decl = user_stmt.declaration();
-            auto var_decl = dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration;
+            auto var_decl = var_ent.declaration();
 
             util::log("pql::eval", "Processing UsesS(DeclaredStmt, DeclaredEnt)");
 
@@ -261,7 +252,7 @@ namespace pql::eval
             m_table->upsertDomains(var_decl, table::entry_set_intersect(new_var_domain, m_table->getDomain(var_decl)));
             m_table->addJoin(table::Join(user_decl, var_decl, allowed_entries));
         }
-        else if(user_stmt.isDeclaration() && is_var_all)
+        else if(user_stmt.isDeclaration() && var_ent.isWildcard())
         {
             auto user_decl = user_stmt.declaration();
 

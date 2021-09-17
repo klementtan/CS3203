@@ -10,8 +10,6 @@
 
 namespace pql::ast
 {
-    EntRef::~EntRef() { }
-
     RelCond::~RelCond() { }
 
     PatternCond::~PatternCond() { }
@@ -112,4 +110,104 @@ namespace pql::ast
         ret._id = id;
         return ret;
     }
+
+
+
+
+    EntRef::~EntRef()
+    {
+        using std::string;
+        if(this->ref_type == Type::Name)
+            this->_name.~string();
+    }
+
+    Declaration* EntRef::declaration() const
+    {
+        if(this->ref_type != Type::Declaration)
+            throw util::PqlException("pql", "EntRef is not a Declaration");
+
+        return this->_declaration;
+    }
+
+    std::string EntRef::name() const
+    {
+        if(this->ref_type != Type::Name)
+            throw util::PqlException("pql", "EntRef is not a Name");
+
+        return this->_name;
+    }
+
+
+    EntRef EntRef::ofWildcard()
+    {
+        EntRef ret {};
+        ret.ref_type = Type::Wildcard;
+        return ret;
+    }
+
+    EntRef EntRef::ofDeclaration(Declaration* decl)
+    {
+        EntRef ret {};
+        ret.ref_type = Type::Declaration;
+        ret._declaration = decl;
+        return ret;
+    }
+
+    EntRef EntRef::ofName(std::string name)
+    {
+        EntRef ret {};
+        ret.ref_type = Type::Name;
+        ret._name = std::move(name);
+        return ret;
+    }
+
+    EntRef::EntRef(const EntRef& other)
+    {
+        this->ref_type = other.ref_type;
+        if(this->ref_type == Type::Name)
+            this->_name = other._name;
+        else
+            this->_declaration = other._declaration;
+    }
+
+    EntRef& EntRef::operator=(const EntRef& other)
+    {
+        if(this != &other)
+        {
+            this->ref_type = other.ref_type;
+            if(this->ref_type == Type::Name)
+                this->_name = other._name;
+            else
+                this->_declaration = other._declaration;
+        }
+        return *this;
+    }
+
+
+    EntRef::EntRef(EntRef&& other)
+    {
+        this->ref_type = other.ref_type;
+        other.ref_type = Type::Invalid;
+
+        if(this->ref_type == Type::Name)
+            this->_name = std::move(other._name);
+        else
+            this->_declaration = std::move(other._declaration);
+    }
+
+    EntRef& EntRef::operator=(EntRef&& other)
+    {
+        if(this != &other)
+        {
+            this->ref_type = other.ref_type;
+            other.ref_type = Type::Invalid;
+
+            if(this->ref_type == Type::Name)
+                this->_name = std::move(other._name);
+            else
+                this->_declaration = std::move(other._declaration);
+        }
+        return *this;
+    }
+
 }
