@@ -11,9 +11,10 @@ namespace pql::eval
 {
     Evaluator::Evaluator(pkb::ProgramKB* pkb, pql::ast::Query* query)
     {
-        this->m_query = query;
         this->m_pkb = pkb;
-        this->m_table = new pql::eval::table::Table();
+        this->m_query = query;
+        // this->m_table = table::Table {};
+
         preprocessPkb(this->m_pkb);
     }
 
@@ -127,18 +128,18 @@ namespace pql::eval
     void Evaluator::processDeclarations(const ast::DeclarationList& declaration_list)
     {
         for(const auto& [_, decl_ptr] : declaration_list.getAllDeclarations())
-            m_table->upsertDomains(decl_ptr, getInitialDomain(decl_ptr));
+            m_table.upsertDomains(decl_ptr, getInitialDomain(decl_ptr));
     }
 
     std::list<std::string> Evaluator::evaluate()
     {
         util::log("pql::eval", "Evaluating query: {}", m_query->toString());
         processDeclarations(m_query->declarations);
-        util::log("pql::eval", "Table after initial processing of declaration: {}", m_table->toString());
+        util::log("pql::eval", "Table after initial processing of declaration: {}", m_table.toString());
 
         // All queries should have select clause
         assert(m_query->select.ent);
-        m_table->addSelectDecl(m_query->select.ent);
+        m_table.addSelectDecl(m_query->select.ent);
 
         if(m_query->select.such_that)
             handleSuchThat(*m_query->select.such_that);
@@ -146,8 +147,8 @@ namespace pql::eval
         if(m_query->select.pattern)
             this->handlePattern(*m_query->select.pattern);
 
-        util::log("pql::eval", "Table after processing of such that: {}", m_table->toString());
-        return this->m_table->getResult(m_query->select.ent);
+        util::log("pql::eval", "Table after processing of such that: {}", m_table.toString());
+        return this->m_table.getResult(m_query->select.ent);
     }
 
     void Evaluator::handleSuchThat(const ast::SuchThatCl& such_that)

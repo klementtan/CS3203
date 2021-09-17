@@ -19,9 +19,9 @@ namespace pql::eval
         const auto& child_stmt = rel->child;
 
         if(parent_stmt.isDeclaration())
-            m_table->addSelectDecl(parent_stmt.declaration());
+            m_table.addSelectDecl(parent_stmt.declaration());
         if(child_stmt.isDeclaration())
-            m_table->addSelectDecl(child_stmt.declaration());
+            m_table.addSelectDecl(child_stmt.declaration());
 
         if(parent_stmt.isStatementId() && child_stmt.isStatementId())
         {
@@ -44,7 +44,7 @@ namespace pql::eval
             for(const auto& child_id : m_pkb->getChildrenOf(parent_sid))
                 new_domain.emplace(child_decl, child_id);
 
-            m_table->upsertDomains(child_decl, table::entry_set_intersect(new_domain, m_table->getDomain(child_decl)));
+            m_table.upsertDomains(child_decl, table::entry_set_intersect(new_domain, m_table.getDomain(child_decl)));
         }
         else if(parent_stmt.isStatementId() && child_stmt.isWildcard())
         {
@@ -69,8 +69,8 @@ namespace pql::eval
 
             std::unordered_set<table::Entry> new_domain { table::Entry(parent_decl, parent_id.value()) };
 
-            m_table->upsertDomains(
-                parent_decl, table::entry_set_intersect(new_domain, m_table->getDomain(parent_decl)));
+            m_table.upsertDomains(
+                parent_decl, table::entry_set_intersect(new_domain, m_table.getDomain(parent_decl)));
         }
         else if(parent_stmt.isDeclaration() && child_stmt.isDeclaration())
         {
@@ -80,7 +80,7 @@ namespace pql::eval
             auto child_decl = child_stmt.declaration();
 
             // same strategy as Follows
-            auto parent_domain = m_table->getDomain(parent_decl);
+            auto parent_domain = m_table.getDomain(parent_decl);
             auto new_child_domain = table::Domain {};
             std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
@@ -103,10 +103,10 @@ namespace pql::eval
                 ++it;
             }
 
-            m_table->upsertDomains(parent_decl, parent_domain);
-            m_table->upsertDomains(
-                child_decl, table::entry_set_intersect(new_child_domain, m_table->getDomain(child_decl)));
-            m_table->addJoin(table::Join(parent_decl, child_decl, allowed_entries));
+            m_table.upsertDomains(parent_decl, parent_domain);
+            m_table.upsertDomains(
+                child_decl, table::entry_set_intersect(new_child_domain, m_table.getDomain(child_decl)));
+            m_table.addJoin(table::Join(parent_decl, child_decl, allowed_entries));
         }
         else if(parent_stmt.isDeclaration() && child_stmt.isWildcard())
         {
@@ -115,7 +115,7 @@ namespace pql::eval
             auto parent_decl = parent_stmt.declaration();
             std::unordered_set<table::Entry> new_domain {};
 
-            for(const auto& entry : m_table->getDomain(parent_decl))
+            for(const auto& entry : m_table.getDomain(parent_decl))
             {
                 if(m_pkb->getChildrenOf(entry.getStmtNum()).empty())
                     continue;
@@ -123,8 +123,8 @@ namespace pql::eval
                 new_domain.emplace(parent_decl, entry.getStmtNum());
             }
 
-            m_table->upsertDomains(
-                parent_decl, table::entry_set_intersect(new_domain, m_table->getDomain(parent_decl)));
+            m_table.upsertDomains(
+                parent_decl, table::entry_set_intersect(new_domain, m_table.getDomain(parent_decl)));
         }
 
         else if(parent_stmt.isWildcard() && child_stmt.isStatementId())
@@ -142,7 +142,7 @@ namespace pql::eval
             auto child_decl = child_stmt.declaration();
             std::unordered_set<table::Entry> new_domain {};
 
-            for(const auto& entry : m_table->getDomain(child_decl))
+            for(const auto& entry : m_table.getDomain(child_decl))
             {
                 if(!m_pkb->getParentOf(entry.getStmtNum()).has_value())
                     continue;
@@ -150,7 +150,7 @@ namespace pql::eval
                 new_domain.emplace(child_decl, entry.getStmtNum());
             }
 
-            m_table->upsertDomains(child_decl, table::entry_set_intersect(new_domain, m_table->getDomain(child_decl)));
+            m_table.upsertDomains(child_decl, table::entry_set_intersect(new_domain, m_table.getDomain(child_decl)));
         }
         else if(parent_stmt.isWildcard() && child_stmt.isWildcard())
         {
@@ -176,10 +176,10 @@ namespace pql::eval
         const auto& descendant_stmt = rel->descendant;
 
         if(ancestor_stmt.isDeclaration())
-            m_table->addSelectDecl(ancestor_stmt.declaration());
+            m_table.addSelectDecl(ancestor_stmt.declaration());
 
         if(descendant_stmt.isDeclaration())
-            m_table->addSelectDecl(descendant_stmt.declaration());
+            m_table.addSelectDecl(descendant_stmt.declaration());
 
         if(ancestor_stmt.isStatementId() && descendant_stmt.isStatementId())
         {
@@ -202,7 +202,7 @@ namespace pql::eval
             for(const auto& child_id : m_pkb->getDescendantsOf(parent_sid))
                 new_domain.emplace(child_decl, child_id);
 
-            m_table->upsertDomains(child_decl, table::entry_set_intersect(new_domain, m_table->getDomain(child_decl)));
+            m_table.upsertDomains(child_decl, table::entry_set_intersect(new_domain, m_table.getDomain(child_decl)));
         }
         else if(ancestor_stmt.isStatementId() && descendant_stmt.isWildcard())
         {
@@ -225,8 +225,8 @@ namespace pql::eval
             for(const auto& parent_id : m_pkb->getAncestorsOf(child_sid))
                 new_domain.emplace(parent_decl, parent_id);
 
-            m_table->upsertDomains(
-                parent_decl, table::entry_set_intersect(new_domain, m_table->getDomain(parent_decl)));
+            m_table.upsertDomains(
+                parent_decl, table::entry_set_intersect(new_domain, m_table.getDomain(parent_decl)));
         }
         else if(ancestor_stmt.isDeclaration() && descendant_stmt.isDeclaration())
         {
@@ -235,7 +235,7 @@ namespace pql::eval
             auto parent_decl = ancestor_stmt.declaration();
             auto child_decl = descendant_stmt.declaration();
 
-            auto parent_domain = m_table->getDomain(parent_decl);
+            auto parent_domain = m_table.getDomain(parent_decl);
             auto new_child_domain = table::Domain {};
             std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
@@ -258,10 +258,10 @@ namespace pql::eval
                 ++it;
             }
 
-            m_table->upsertDomains(parent_decl, parent_domain);
-            m_table->upsertDomains(
-                child_decl, table::entry_set_intersect(new_child_domain, m_table->getDomain(child_decl)));
-            m_table->addJoin(table::Join(parent_decl, child_decl, allowed_entries));
+            m_table.upsertDomains(parent_decl, parent_domain);
+            m_table.upsertDomains(
+                child_decl, table::entry_set_intersect(new_child_domain, m_table.getDomain(child_decl)));
+            m_table.addJoin(table::Join(parent_decl, child_decl, allowed_entries));
         }
         else if(ancestor_stmt.isDeclaration() && descendant_stmt.isWildcard())
         {
@@ -270,7 +270,7 @@ namespace pql::eval
             auto parent_decl = ancestor_stmt.declaration();
             std::unordered_set<table::Entry> new_domain {};
 
-            for(const auto& entry : m_table->getDomain(parent_decl))
+            for(const auto& entry : m_table.getDomain(parent_decl))
             {
                 if(m_pkb->getDescendantsOf(entry.getStmtNum()).empty())
                     continue;
@@ -278,8 +278,8 @@ namespace pql::eval
                 new_domain.emplace(parent_decl, entry.getStmtNum());
             }
 
-            m_table->upsertDomains(
-                parent_decl, table::entry_set_intersect(new_domain, m_table->getDomain(parent_decl)));
+            m_table.upsertDomains(
+                parent_decl, table::entry_set_intersect(new_domain, m_table.getDomain(parent_decl)));
         }
 
         else if(ancestor_stmt.isWildcard() && descendant_stmt.isStatementId())
@@ -297,7 +297,7 @@ namespace pql::eval
             auto child_decl = descendant_stmt.declaration();
             std::unordered_set<table::Entry> new_domain {};
 
-            for(const auto& entry : m_table->getDomain(child_decl))
+            for(const auto& entry : m_table.getDomain(child_decl))
             {
                 if(m_pkb->getAncestorsOf(entry.getStmtNum()).empty())
                     continue;
@@ -305,7 +305,7 @@ namespace pql::eval
                 new_domain.emplace(child_decl, entry.getStmtNum());
             }
 
-            m_table->upsertDomains(child_decl, table::entry_set_intersect(new_domain, m_table->getDomain(child_decl)));
+            m_table.upsertDomains(child_decl, table::entry_set_intersect(new_domain, m_table.getDomain(child_decl)));
         }
         else if(ancestor_stmt.isWildcard() && descendant_stmt.isWildcard())
         {

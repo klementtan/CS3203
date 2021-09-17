@@ -19,10 +19,10 @@ namespace pql::eval
         const auto& after_stmt = follows->directly_after;
 
         if(before_stmt.isDeclaration())
-            m_table->addSelectDecl(before_stmt.declaration());
+            m_table.addSelectDecl(before_stmt.declaration());
 
         if(after_stmt.isDeclaration())
-            m_table->addSelectDecl(after_stmt.declaration());
+            m_table.addSelectDecl(after_stmt.declaration());
 
         if(before_stmt.isStatementId() && after_stmt.isStatementId())
         {
@@ -71,8 +71,8 @@ namespace pql::eval
                 auto entry = table::Entry(aft_decl, m_pkb->getFollows(bef_stmt_id)->directly_after);
                 util::log("pql::eval", "{} updating domain to [{}]", follows->toString(), entry.toString());
                 table::Domain curr_domain = { entry };
-                table::Domain prev_domain = m_table->getDomain(aft_decl);
-                m_table->upsertDomains(aft_decl, table::entry_set_intersect(prev_domain, curr_domain));
+                table::Domain prev_domain = m_table.getDomain(aft_decl);
+                m_table.upsertDomains(aft_decl, table::entry_set_intersect(prev_domain, curr_domain));
             }
         }
         else if(before_stmt.isWildcard() && after_stmt.isStatementId())
@@ -110,7 +110,7 @@ namespace pql::eval
 
             util::log("pql::eval", "Processing Follows(_,DeclaredStmt)");
             table::Domain curr_domain {};
-            table::Domain prev_domain = m_table->getDomain(aft_decl);
+            table::Domain prev_domain = m_table.getDomain(aft_decl);
             for(auto pkb_follows : m_pkb->follows)
             {
                 // Add all stmts with a directly before to domain
@@ -121,7 +121,7 @@ namespace pql::eval
                     curr_domain.insert(entry);
                 }
             }
-            m_table->upsertDomains(aft_decl, table::entry_set_intersect(prev_domain, curr_domain));
+            m_table.upsertDomains(aft_decl, table::entry_set_intersect(prev_domain, curr_domain));
         }
         else if(before_stmt.isDeclaration() && after_stmt.isStatementId())
         {
@@ -140,8 +140,8 @@ namespace pql::eval
                 auto entry = table::Entry(bef_decl, m_pkb->getFollows(aft_stmt_id)->directly_before);
                 util::log("pql::eval", "{} adds {} to curr domain", follows->toString(), entry.toString());
                 table::Domain curr_domain = { entry };
-                table::Domain prev_domain = m_table->getDomain(bef_decl);
-                m_table->upsertDomains(bef_decl, table::entry_set_intersect(prev_domain, curr_domain));
+                table::Domain prev_domain = m_table.getDomain(bef_decl);
+                m_table.upsertDomains(bef_decl, table::entry_set_intersect(prev_domain, curr_domain));
             }
         }
         else if(before_stmt.isDeclaration() && after_stmt.isWildcard())
@@ -150,7 +150,7 @@ namespace pql::eval
 
             util::log("pql::eval", "Processing Follows(DeclaredStmt,_)");
             table::Domain curr_domain;
-            table::Domain prev_domain = m_table->getDomain(bef_decl);
+            table::Domain prev_domain = m_table.getDomain(bef_decl);
             for(auto pkb_follows : m_pkb->follows)
             {
                 // Add all stmts with a directly before to domain
@@ -161,7 +161,7 @@ namespace pql::eval
                     curr_domain.insert(entry);
                 }
             }
-            m_table->upsertDomains(bef_decl, table::entry_set_intersect(prev_domain, curr_domain));
+            m_table.upsertDomains(bef_decl, table::entry_set_intersect(prev_domain, curr_domain));
         }
         else if(before_stmt.isDeclaration() && after_stmt.isDeclaration())
         {
@@ -173,7 +173,7 @@ namespace pql::eval
             // use a combination of pruning and intersection in this case, to obviate the need for
             // explicitly doing a nested loop.
 
-            auto bef_domain = m_table->getDomain(bef_decl);
+            auto bef_domain = m_table.getDomain(bef_decl);
             auto new_aft_domain = table::Domain {};
             std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
@@ -197,9 +197,9 @@ namespace pql::eval
                 ++it;
             }
 
-            m_table->upsertDomains(bef_decl, bef_domain);
-            m_table->upsertDomains(aft_decl, table::entry_set_intersect(new_aft_domain, m_table->getDomain(aft_decl)));
-            m_table->addJoin(table::Join(bef_decl, aft_decl, allowed_entries));
+            m_table.upsertDomains(bef_decl, bef_domain);
+            m_table.upsertDomains(aft_decl, table::entry_set_intersect(new_aft_domain, m_table.getDomain(aft_decl)));
+            m_table.addJoin(table::Join(bef_decl, aft_decl, allowed_entries));
         }
         else
         {
@@ -218,10 +218,10 @@ namespace pql::eval
         const auto& after_stmt = follows_t->after;
 
         if(before_stmt.isDeclaration())
-            m_table->addSelectDecl(before_stmt.declaration());
+            m_table.addSelectDecl(before_stmt.declaration());
 
         if(after_stmt.isDeclaration())
-            m_table->addSelectDecl(after_stmt.declaration());
+            m_table.addSelectDecl(after_stmt.declaration());
 
         if(before_stmt.isStatementId() && after_stmt.isStatementId())
         {
@@ -274,8 +274,8 @@ namespace pql::eval
                     util::log("pql::eval", "{} updating domain to [{}]", follows_t->toString(), entry.toString());
                     curr_domain.insert(entry);
                 }
-                std::unordered_set<table::Entry> prev_domain = m_table->getDomain(aft_decl);
-                m_table->upsertDomains(aft_decl, table::entry_set_intersect(prev_domain, curr_domain));
+                std::unordered_set<table::Entry> prev_domain = m_table.getDomain(aft_decl);
+                m_table.upsertDomains(aft_decl, table::entry_set_intersect(prev_domain, curr_domain));
             }
         }
         else if(before_stmt.isWildcard() && after_stmt.isStatementId())
@@ -313,7 +313,7 @@ namespace pql::eval
 
             util::log("pql::eval", "Processing Follows*(_,DeclaredStmt)");
             std::unordered_set<table::Entry> curr_domain;
-            std::unordered_set<table::Entry> prev_domain = m_table->getDomain(aft_decl);
+            std::unordered_set<table::Entry> prev_domain = m_table.getDomain(aft_decl);
             for(auto pkb_follows : m_pkb->follows)
             {
                 // Add all stmts with a directly before to domain
@@ -324,7 +324,7 @@ namespace pql::eval
                     curr_domain.insert(entry);
                 }
             }
-            m_table->upsertDomains(aft_decl, table::entry_set_intersect(prev_domain, curr_domain));
+            m_table.upsertDomains(aft_decl, table::entry_set_intersect(prev_domain, curr_domain));
         }
         else if(before_stmt.isDeclaration() && after_stmt.isStatementId())
         {
@@ -341,14 +341,14 @@ namespace pql::eval
             else
             {
                 std::unordered_set<table::Entry> curr_domain;
-                std::unordered_set<table::Entry> prev_domain = m_table->getDomain(bef_decl);
+                std::unordered_set<table::Entry> prev_domain = m_table.getDomain(bef_decl);
                 for(simple::ast::StatementNum bef_stmt_id : m_pkb->getFollows(aft_stmt_id)->before)
                 {
                     auto entry = table::Entry(bef_decl, bef_stmt_id);
                     curr_domain.insert(entry);
                     util::log("pql::eval", "{} adds {} to curr domain", follows_t->toString(), entry.toString());
                 }
-                m_table->upsertDomains(bef_decl, table::entry_set_intersect(prev_domain, curr_domain));
+                m_table.upsertDomains(bef_decl, table::entry_set_intersect(prev_domain, curr_domain));
             }
         }
         else if(before_stmt.isDeclaration() && after_stmt.isWildcard())
@@ -357,7 +357,7 @@ namespace pql::eval
 
             util::log("pql::eval", "Processing Follows*(DeclaredStmt,_)");
             std::unordered_set<table::Entry> curr_domain;
-            std::unordered_set<table::Entry> prev_domain = m_table->getDomain(bef_decl);
+            std::unordered_set<table::Entry> prev_domain = m_table.getDomain(bef_decl);
             for(auto pkb_follows : m_pkb->follows)
             {
                 // Add all stmts with a directly before to domain
@@ -368,7 +368,7 @@ namespace pql::eval
                     curr_domain.insert(entry);
                 }
             }
-            m_table->upsertDomains(bef_decl, table::entry_set_intersect(prev_domain, curr_domain));
+            m_table.upsertDomains(bef_decl, table::entry_set_intersect(prev_domain, curr_domain));
         }
         else if(before_stmt.isDeclaration() && after_stmt.isDeclaration())
         {
@@ -378,7 +378,7 @@ namespace pql::eval
             util::log("pql::eval", "Processing Follows*(DeclaredStmt,DeclaredStmt)");
 
             // same strategy as Follows
-            auto bef_domain = m_table->getDomain(bef_decl);
+            auto bef_domain = m_table.getDomain(bef_decl);
             auto new_aft_domain = table::Domain {};
             std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
@@ -405,9 +405,9 @@ namespace pql::eval
                 ++it;
             }
 
-            m_table->upsertDomains(bef_decl, bef_domain);
-            m_table->upsertDomains(aft_decl, table::entry_set_intersect(new_aft_domain, m_table->getDomain(aft_decl)));
-            m_table->addJoin(table::Join(bef_decl, aft_decl, allowed_entries));
+            m_table.upsertDomains(bef_decl, bef_domain);
+            m_table.upsertDomains(aft_decl, table::entry_set_intersect(new_aft_domain, m_table.getDomain(aft_decl)));
+            m_table.addJoin(table::Join(bef_decl, aft_decl, allowed_entries));
         }
         else
         {

@@ -42,11 +42,17 @@ def run_tests_in_folder(autotester_exe, folder):
 
 
 def run_tests(autotester_exe, folder):
+	seen = set()
 	for root, dirs, files in os.walk(folder):
+		if root in seen:
+			continue
+
 		if len(dirs) == 0:
+			seen.add(root)
 			run_tests_in_folder(autotester_exe, root)
 		else:
 			for d in dirs:
+				seen.add(os.path.join(root, d))
 				run_tests_in_folder(autotester_exe, os.path.join(root, d))
 
 

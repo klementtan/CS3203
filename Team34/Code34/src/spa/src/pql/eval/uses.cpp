@@ -19,9 +19,9 @@ namespace pql::eval
         const auto& var_ent = rel->ent;
 
         if(proc_ent.isDeclaration())
-            m_table->addSelectDecl(proc_ent.declaration());
+            m_table.addSelectDecl(proc_ent.declaration());
         if(var_ent.isDeclaration())
-            m_table->addSelectDecl(var_ent.declaration());
+            m_table.addSelectDecl(var_ent.declaration());
 
         // this should not happen, since Uses(_, foo) is invalid according to the specs
         if(proc_ent.isWildcard())
@@ -59,8 +59,8 @@ namespace pql::eval
             for(const auto& var : used_vars)
                 new_domain.emplace(var_decl, var);
 
-            auto old_domain = m_table->getDomain(var_decl);
-            m_table->upsertDomains(var_decl, table::entry_set_intersect(old_domain, new_domain));
+            auto old_domain = m_table.getDomain(var_decl);
+            m_table.upsertDomains(var_decl, table::entry_set_intersect(old_domain, new_domain));
         }
         else if(proc_ent.isName() && var_ent.isWildcard())
         {
@@ -88,8 +88,8 @@ namespace pql::eval
             for(const auto& proc_name : procs_using)
                 new_domain.emplace(proc_decl, proc_name);
 
-            auto old_domain = m_table->getDomain(proc_decl);
-            m_table->upsertDomains(proc_decl, table::entry_set_intersect(old_domain, new_domain));
+            auto old_domain = m_table.getDomain(proc_decl);
+            m_table.upsertDomains(proc_decl, table::entry_set_intersect(old_domain, new_domain));
         }
         else if(proc_ent.isDeclaration() && var_ent.isDeclaration())
         {
@@ -98,7 +98,7 @@ namespace pql::eval
 
             util::log("pql::eval", "Processing UsesP(DeclaredEnt, DeclaredStmt)");
 
-            auto proc_domain = m_table->getDomain(proc_decl);
+            auto proc_domain = m_table.getDomain(proc_decl);
             auto new_var_domain = table::Domain {};
             std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
@@ -123,9 +123,9 @@ namespace pql::eval
                 ++it;
             }
 
-            m_table->upsertDomains(proc_decl, proc_domain);
-            m_table->upsertDomains(var_decl, table::entry_set_intersect(new_var_domain, m_table->getDomain(var_decl)));
-            m_table->addJoin(table::Join(proc_decl, var_decl, allowed_entries));
+            m_table.upsertDomains(proc_decl, proc_domain);
+            m_table.upsertDomains(var_decl, table::entry_set_intersect(new_var_domain, m_table.getDomain(var_decl)));
+            m_table.addJoin(table::Join(proc_decl, var_decl, allowed_entries));
         }
         else if(proc_ent.isDeclaration() && var_ent.isWildcard())
         {
@@ -134,7 +134,7 @@ namespace pql::eval
             util::log("pql::eval", "Processing UsesP(DeclaredEnt, _)");
             std::unordered_set<table::Entry> new_domain {};
 
-            for(const auto& entry : m_table->getDomain(proc_decl))
+            for(const auto& entry : m_table.getDomain(proc_decl))
             {
                 auto proc_used_vars = m_pkb->uses_modifies.getUsesVars(entry.getVal());
                 if(proc_used_vars.empty())
@@ -143,7 +143,7 @@ namespace pql::eval
                 new_domain.insert(entry);
             }
 
-            m_table->upsertDomains(proc_decl, table::entry_set_intersect(new_domain, m_table->getDomain(proc_decl)));
+            m_table.upsertDomains(proc_decl, table::entry_set_intersect(new_domain, m_table.getDomain(proc_decl)));
         }
         else
         {
@@ -159,9 +159,9 @@ namespace pql::eval
         const auto& var_ent = rel->ent;
 
         if(user_stmt.isDeclaration())
-            m_table->addSelectDecl(user_stmt.declaration());
+            m_table.addSelectDecl(user_stmt.declaration());
         if(var_ent.isDeclaration())
-            m_table->addSelectDecl(var_ent.declaration());
+            m_table.addSelectDecl(var_ent.declaration());
 
         // this should not happen, since Uses(_, foo) is invalid according to the specs
         if(user_stmt.isWildcard())
@@ -193,7 +193,7 @@ namespace pql::eval
             for(const auto& var : m_pkb->uses_modifies.getUsesVars(user_sid))
                 new_domain.emplace(var_decl, var);
 
-            m_table->upsertDomains(var_decl, table::entry_set_intersect(new_domain, m_table->getDomain(var_decl)));
+            m_table.upsertDomains(var_decl, table::entry_set_intersect(new_domain, m_table.getDomain(var_decl)));
         }
         else if(user_stmt.isStatementId() && var_ent.isWildcard())
         {
@@ -214,7 +214,7 @@ namespace pql::eval
             for(const auto& stmt : m_pkb->uses_modifies.getUses(user_decl->design_ent, var_name))
                 new_domain.emplace(user_decl, static_cast<simple::ast::StatementNum>(std::stoi(stmt)));
 
-            m_table->upsertDomains(user_decl, table::entry_set_intersect(new_domain, m_table->getDomain(user_decl)));
+            m_table.upsertDomains(user_decl, table::entry_set_intersect(new_domain, m_table.getDomain(user_decl)));
         }
         else if(user_stmt.isDeclaration() && var_ent.isDeclaration())
         {
@@ -223,7 +223,7 @@ namespace pql::eval
 
             util::log("pql::eval", "Processing UsesS(DeclaredStmt, DeclaredEnt)");
 
-            auto user_domain = m_table->getDomain(user_decl);
+            auto user_domain = m_table.getDomain(user_decl);
             auto new_var_domain = table::Domain {};
             std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
@@ -248,9 +248,9 @@ namespace pql::eval
                 ++it;
             }
 
-            m_table->upsertDomains(user_decl, user_domain);
-            m_table->upsertDomains(var_decl, table::entry_set_intersect(new_var_domain, m_table->getDomain(var_decl)));
-            m_table->addJoin(table::Join(user_decl, var_decl, allowed_entries));
+            m_table.upsertDomains(user_decl, user_domain);
+            m_table.upsertDomains(var_decl, table::entry_set_intersect(new_var_domain, m_table.getDomain(var_decl)));
+            m_table.addJoin(table::Join(user_decl, var_decl, allowed_entries));
         }
         else if(user_stmt.isDeclaration() && var_ent.isWildcard())
         {
@@ -259,7 +259,7 @@ namespace pql::eval
             util::log("pql::eval", "Processing UsesS(DeclaredStmt, _)");
 
             std::unordered_set<table::Entry> new_domain {};
-            for(const auto& entry : m_table->getDomain(user_decl))
+            for(const auto& entry : m_table.getDomain(user_decl))
             {
                 auto used_vars = m_pkb->uses_modifies.getUsesVars(entry.getStmtNum());
                 if(used_vars.empty())
@@ -268,7 +268,7 @@ namespace pql::eval
                 new_domain.insert(entry);
             }
 
-            m_table->upsertDomains(user_decl, table::entry_set_intersect(new_domain, m_table->getDomain(user_decl)));
+            m_table.upsertDomains(user_decl, table::entry_set_intersect(new_domain, m_table.getDomain(user_decl)));
         }
         else
         {

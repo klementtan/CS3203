@@ -19,10 +19,10 @@ namespace pql::eval
         const auto& modifier_ent = rel->modifier;
 
         if(modifier_ent.isDeclaration())
-            m_table->addSelectDecl(modifier_ent.declaration());
+            m_table.addSelectDecl(modifier_ent.declaration());
 
         if(ent_ent.isDeclaration())
-            m_table->addSelectDecl(ent_ent.declaration());
+            m_table.addSelectDecl(ent_ent.declaration());
 
         if(modifier_ent.isWildcard())
         {
@@ -44,7 +44,7 @@ namespace pql::eval
 
             util::log("pql::eval", "Processing ModifiesP(DeclaredEnt, DeclaredEnt)");
 
-            auto mod_domain = m_table->getDomain(mod_decl);
+            auto mod_domain = m_table.getDomain(mod_decl);
             auto new_ent_domain = table::Domain {};
             std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
@@ -70,9 +70,9 @@ namespace pql::eval
                 ++it;
             }
 
-            m_table->upsertDomains(mod_decl, mod_domain);
-            m_table->upsertDomains(ent_decl, table::entry_set_intersect(new_ent_domain, m_table->getDomain(ent_decl)));
-            m_table->addJoin(table::Join(mod_decl, ent_decl, allowed_entries));
+            m_table.upsertDomains(mod_decl, mod_domain);
+            m_table.upsertDomains(ent_decl, table::entry_set_intersect(new_ent_domain, m_table.getDomain(ent_decl)));
+            m_table.addJoin(table::Join(mod_decl, ent_decl, allowed_entries));
         }
         else if(modifier_ent.isDeclaration() && ent_ent.isName())
         {
@@ -91,14 +91,14 @@ namespace pql::eval
             else
             {
                 std::unordered_set<table::Entry> curr_domain;
-                std::unordered_set<table::Entry> prev_domain = m_table->getDomain(mod_decl);
+                std::unordered_set<table::Entry> prev_domain = m_table.getDomain(mod_decl);
                 for(std::string proc_name : modifier_candidates)
                 {
                     auto entry = table::Entry(mod_decl, proc_name);
                     curr_domain.insert(entry);
                     util::log("pql::eval", "{} adds {} to curr domain", rel->toString(), entry.toString());
                 }
-                m_table->upsertDomains(mod_decl, table::entry_set_intersect(prev_domain, curr_domain));
+                m_table.upsertDomains(mod_decl, table::entry_set_intersect(prev_domain, curr_domain));
             }
         }
         else if(modifier_ent.isDeclaration() && ent_ent.isWildcard())
@@ -107,8 +107,8 @@ namespace pql::eval
 
             util::log("pql::eval", "Processing ModifiesP(DeclaredEnt, _)");
             std::unordered_set<table::Entry> curr_domain;
-            std::unordered_set<table::Entry> prev_domain = m_table->getDomain(mod_decl);
-            for(const table::Entry& entry : m_table->getDomain(mod_decl))
+            std::unordered_set<table::Entry> prev_domain = m_table.getDomain(mod_decl);
+            for(const table::Entry& entry : m_table.getDomain(mod_decl))
             {
                 std::string proc_name = entry.getVal();
                 if(!m_pkb->uses_modifies.getModifiesVars(proc_name).empty())
@@ -117,7 +117,7 @@ namespace pql::eval
                     util::log("pql::eval", "{} adds {} to curr domain", rel->toString(), entry.toString());
                 }
             }
-            m_table->upsertDomains(mod_decl, table::entry_set_intersect(prev_domain, curr_domain));
+            m_table.upsertDomains(mod_decl, table::entry_set_intersect(prev_domain, curr_domain));
         }
         else if(modifier_ent.isName() && ent_ent.isDeclaration())
         {
@@ -127,7 +127,7 @@ namespace pql::eval
             util::log("pql::eval", "Processing ModifiesP(EntName, DeclaredEnt)");
             std::unordered_set<std::string> var_candidates = m_pkb->uses_modifies.getModifiesVars(mod_name);
             std::unordered_set<table::Entry> curr_domain;
-            std::unordered_set<table::Entry> prev_domain = m_table->getDomain(ent_decl);
+            std::unordered_set<table::Entry> prev_domain = m_table.getDomain(ent_decl);
             for(const std::string& var : var_candidates)
             {
                 util::log("pql::eval", "Adding {} modifies {}", mod_name, var);
@@ -135,7 +135,7 @@ namespace pql::eval
                 curr_domain.insert(entry);
                 util::log("pql::eval", "{} adds {} to curr domain", rel->toString(), entry.toString());
             }
-            m_table->upsertDomains(ent_decl, table::entry_set_intersect(curr_domain, prev_domain));
+            m_table.upsertDomains(ent_decl, table::entry_set_intersect(curr_domain, prev_domain));
         }
         else if(modifier_ent.isName() && ent_ent.isWildcard())
         {
@@ -184,10 +184,10 @@ namespace pql::eval
         const auto& ent_ent = rel->ent;
 
         if(modifier_stmt.isDeclaration())
-            m_table->addSelectDecl(modifier_stmt.declaration());
+            m_table.addSelectDecl(modifier_stmt.declaration());
 
         if(ent_ent.isDeclaration())
-            m_table->addSelectDecl(ent_ent.declaration());
+            m_table.addSelectDecl(ent_ent.declaration());
 
         if(modifier_stmt.isWildcard())
         {
@@ -210,7 +210,7 @@ namespace pql::eval
 
             util::log("pql::eval", "Processing ModifiesS(DeclaredStmt, DeclaredEnt)");
 
-            auto mod_domain = m_table->getDomain(mod_decl);
+            auto mod_domain = m_table.getDomain(mod_decl);
             auto new_ent_domain = table::Domain {};
 
             std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
@@ -236,9 +236,9 @@ namespace pql::eval
                 ++it;
             }
 
-            m_table->upsertDomains(mod_decl, mod_domain);
-            m_table->upsertDomains(ent_decl, table::entry_set_intersect(new_ent_domain, m_table->getDomain(ent_decl)));
-            m_table->addJoin(table::Join(mod_decl, ent_decl, allowed_entries));
+            m_table.upsertDomains(mod_decl, mod_domain);
+            m_table.upsertDomains(ent_decl, table::entry_set_intersect(new_ent_domain, m_table.getDomain(ent_decl)));
+            m_table.addJoin(table::Join(mod_decl, ent_decl, allowed_entries));
         }
         else if(modifier_stmt.isDeclaration() && ent_ent.isName())
         {
@@ -257,7 +257,7 @@ namespace pql::eval
             else
             {
                 std::unordered_set<table::Entry> curr_domain;
-                std::unordered_set<table::Entry> prev_domain = m_table->getDomain(mod_decl);
+                std::unordered_set<table::Entry> prev_domain = m_table.getDomain(mod_decl);
                 for(const auto& stmt_num_str : modifier_candidates)
                 {
                     simple::ast::StatementNum stmt_num = atoi(stmt_num_str.c_str());
@@ -265,7 +265,7 @@ namespace pql::eval
                     curr_domain.insert(entry);
                     util::log("pql::eval", "{} adds {} to curr domain", rel->toString(), entry.toString());
                 }
-                m_table->upsertDomains(mod_decl, table::entry_set_intersect(prev_domain, curr_domain));
+                m_table.upsertDomains(mod_decl, table::entry_set_intersect(prev_domain, curr_domain));
             }
         }
         else if(modifier_stmt.isDeclaration() && ent_ent.isWildcard())
@@ -274,8 +274,8 @@ namespace pql::eval
 
             util::log("pql::eval", "Processing ModifiesS(DeclaredStmt, _)");
             std::unordered_set<table::Entry> curr_domain;
-            std::unordered_set<table::Entry> prev_domain = m_table->getDomain(mod_decl);
-            for(const table::Entry& entry : m_table->getDomain(mod_decl))
+            std::unordered_set<table::Entry> prev_domain = m_table.getDomain(mod_decl);
+            for(const table::Entry& entry : m_table.getDomain(mod_decl))
             {
                 simple::ast::StatementNum stmt_num = entry.getStmtNum();
                 if(!m_pkb->uses_modifies.getModifiesVars(stmt_num).empty())
@@ -284,7 +284,7 @@ namespace pql::eval
                     util::log("pql::eval", "{} adds {} to curr domain", rel->toString(), entry.toString());
                 }
             }
-            m_table->upsertDomains(mod_decl, table::entry_set_intersect(prev_domain, curr_domain));
+            m_table.upsertDomains(mod_decl, table::entry_set_intersect(prev_domain, curr_domain));
         }
         else if(modifier_stmt.isStatementId() && ent_ent.isDeclaration())
         {
@@ -294,7 +294,7 @@ namespace pql::eval
             util::log("pql::eval", "Processing ModifiesS(StmtId, DeclaredEnt)");
             std::unordered_set<std::string> var_candidates = m_pkb->uses_modifies.getModifiesVars(mod_stmt_id);
             std::unordered_set<table::Entry> curr_domain;
-            std::unordered_set<table::Entry> prev_domain = m_table->getDomain(ent_decl);
+            std::unordered_set<table::Entry> prev_domain = m_table.getDomain(ent_decl);
             for(const std::string& var : var_candidates)
             {
                 util::log("pql::eval", "Adding StatementNum: {} modifies {}", mod_stmt_id, var);
@@ -302,7 +302,7 @@ namespace pql::eval
                 curr_domain.insert(entry);
                 util::log("pql::eval", "{} adds {} to curr domain", rel->toString(), entry.toString());
             }
-            m_table->upsertDomains(ent_decl, table::entry_set_intersect(curr_domain, prev_domain));
+            m_table.upsertDomains(ent_decl, table::entry_set_intersect(curr_domain, prev_domain));
         }
         else if(modifier_stmt.isStatementId() && ent_ent.isWildcard())
         {

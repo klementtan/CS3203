@@ -136,6 +136,7 @@ namespace pql::eval::table
         Domain getDomain(ast::Declaration* decl) const;
         void addJoin(const Join& join);
         Table();
+        ~Table();
         std::list<std::string> getResult(ast::Declaration* ret_decls);
         [[nodiscard]] std::string toString() const;
     };

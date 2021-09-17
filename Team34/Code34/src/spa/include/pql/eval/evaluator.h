@@ -14,7 +14,7 @@ namespace pql::eval
     class Evaluator
     {
     private:
-        pql::eval::table::Table* m_table;
+        pql::eval::table::Table m_table;
         pkb::ProgramKB* m_pkb;
         pql::ast::Query* m_query;
 

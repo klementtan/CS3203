@@ -175,37 +175,6 @@ namespace pql::ast
         static EntRef ofDeclaration(Declaration* decl);
     };
 
-#if 0
-    /** Abstract Reference for Entity Reference. */
-    struct EntRef
-    {
-        virtual ~EntRef();
-        virtual std::string toString() const = 0;
-    };
-
-    /** Entity Reference using previous pql Declaration. */
-    struct DeclaredEnt : EntRef
-    {
-        virtual std::string toString() const override;
-
-        Declaration* declaration = nullptr;
-    };
-
-    /** Entity Reference using the string represnetation of variable name in program. */
-    struct EntName : EntRef
-    {
-        virtual std::string toString() const override;
-
-        std::string name;
-    };
-
-    /** Entity Reference to all(`_`) entities. */
-    struct AllEnt : EntRef
-    {
-        virtual std::string toString() const override;
-    };
-#endif
-
     /** Abstract class for Relationship Conditions between Statements and Entities. */
     struct RelCond
     {
