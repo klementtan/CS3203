@@ -3,6 +3,7 @@
 
 #include <list>
 #include <string>
+#include <memory>
 
 // include your other headers here
 #include "AbstractWrapper.h"
@@ -27,7 +28,7 @@ public:
     virtual void evaluate(std::string query, std::list<std::string>& results);
 
 private:
-    pkb::ProgramKB* pkb = nullptr;
+    std::unique_ptr<pkb::ProgramKB> pkb {};
 };
 
 #endif

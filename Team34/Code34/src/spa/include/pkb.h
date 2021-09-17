@@ -151,5 +151,5 @@ namespace pkb
         std::unique_ptr<simple::ast::Program> m_program {};
     };
 
-    ProgramKB* processProgram(std::unique_ptr<simple::ast::Program> prog);
+    std::unique_ptr<ProgramKB> processProgram(std::unique_ptr<simple::ast::Program> prog);
 }

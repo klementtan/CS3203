@@ -460,13 +460,13 @@ namespace pkb
         }
     }
 
-    ProgramKB* processProgram(std::unique_ptr<s_ast::Program> prog)
+    std::unique_ptr<ProgramKB> processProgram(std::unique_ptr<s_ast::Program> prog)
     {
-        auto pkb = new ProgramKB();
+        auto pkb = std::make_unique<ProgramKB>();
         pkb->m_program = std::move(prog);
 
         for(const auto& proc : pkb->m_program->procedures)
-            processCallGraph(pkb, &proc->body, &proc->name);
+            processCallGraph(pkb.get(), &proc->body, &proc->name);
 
         if(pkb->proc_calls.cycleExists())
             throw util::PkbException("pkb", "Cyclic or recursive calls are not allowed");
@@ -478,7 +478,7 @@ namespace pkb
         // parent stmtlist, and collect all the procedures.
         for(const auto& proc : pkb->m_program->procedures)
         {
-            collectStmtList(pkb, &proc->body);
+            collectStmtList(pkb.get(), &proc->body);
 
             if(pkb->uses_modifies.procedures.find(proc->name) != pkb->uses_modifies.procedures.end())
                 throw util::PkbException("pkb", "procedure '{}' is already defined", proc->name);
@@ -489,17 +489,17 @@ namespace pkb
         // do a second pass to populate the follows vector and parent, uses, modifies hashmap.
         for(const auto& proc : pkb->m_program->procedures)
         {
-            processFollows(pkb, &proc->body);
-            processStmtList(pkb, &proc->body, proc.get());
+            processFollows(pkb.get(), &proc->body);
+            processStmtList(pkb.get(), &proc->body, proc.get());
         }
 
         // do a third pass to populate the ancestors/descendants hashmap and
         // to populate uses/modifies for nested if/while statements
         for(const auto& proc : pkb->m_program->procedures)
         {
-            processAncestors(pkb, &proc->body);
-            reprocessStmtList(pkb, &proc->body, proc.get());
-            processDescendants(pkb, &proc->body);
+            processAncestors(pkb.get(), &proc->body);
+            reprocessStmtList(pkb.get(), &proc->body, proc.get());
+            processDescendants(pkb.get(), &proc->body);
         }
 
         return pkb;

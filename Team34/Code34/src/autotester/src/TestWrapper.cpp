@@ -14,10 +14,7 @@
 
 TestWrapper::TestWrapper() { }
 
-TestWrapper::~TestWrapper()
-{
-    delete this->pkb;
-}
+TestWrapper::~TestWrapper() { }
 
 void TestWrapper::parse(std::string filename)
 {
@@ -38,7 +35,7 @@ void TestWrapper::evaluate(std::string query, std::list<std::string>& results)
         auto query_ast = pql::parser::parsePQL(query);
         util::log("pql:ast", "Generated AST: {}", query_ast->toString());
 
-        auto eval = pql::eval::Evaluator(this->pkb, std::move(query_ast));
+        auto eval = pql::eval::Evaluator(this->pkb.get(), std::move(query_ast));
         results = eval.evaluate();
     }
     catch(const util::Exception& e)

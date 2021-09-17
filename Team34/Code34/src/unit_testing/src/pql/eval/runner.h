@@ -18,15 +18,26 @@ struct Runner
 
     inline std::unordered_set<std::string> run(bool try_catch = false)
     {
-        pkb::ProgramKB* pkb = m_pkb;
+        // this is necessary so we can either:
+        // (a) create a pkb and delete it when this function ends
+        // (b) use an external pkb and *not* delete it when this function ends
+        // unique_ptr is used so that the pkb is cleaned up if and when an exception is thrown.
 
+        struct deleterino
+        {
+            void operator()(pkb::ProgramKB* owo) const { if(should_delete) delete owo; }
+            bool should_delete = false;
+        };
+
+        auto pkb = std::unique_ptr<pkb::ProgramKB, deleterino>(m_pkb, deleterino { false });
         if(!pkb)
         {
-            pkb = pkb::processProgram(simple::parser::parseProgram(m_source));
+            auto tmp = pkb::processProgram(simple::parser::parseProgram(m_source));
+            pkb = std::unique_ptr<pkb::ProgramKB, deleterino>(tmp.release(), deleterino { true });
         }
 
         auto query = pql::parser::parsePQL(m_query);
-        auto eval = pql::eval::Evaluator(pkb, std::move(query));
+        auto eval = pql::eval::Evaluator(pkb.get(), std::move(query));
 
         std::list<std::string> result {};
         if(try_catch)
@@ -44,9 +55,6 @@ struct Runner
         {
             result = eval.evaluate();
         }
-
-        if(m_pkb == nullptr)
-            delete pkb;
 
         return std::unordered_set<std::string>(result.begin(), result.end());
     }
