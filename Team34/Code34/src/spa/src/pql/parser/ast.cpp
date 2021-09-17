@@ -5,6 +5,7 @@
 
 #include <zpr.h>
 
+#include "exceptions.h"
 #include "pql/parser/ast.h"
 
 namespace pql::ast
@@ -71,6 +72,24 @@ namespace pql::ast
         return this->name == other.name && this->design_ent == other.design_ent;
     }
 
+
+    Declaration* StmtRef::declaration() const
+    {
+        if(this->ref_type != Type::Declaration)
+            throw util::PqlException("pql", "StmtRef is not a Declaration");
+
+        return this->_declaration;
+    }
+
+    simple::ast::StatementNum StmtRef::id() const
+    {
+        if(this->ref_type != Type::StmtId)
+            throw util::PqlException("pql", "StmtRef is not a StmtId");
+
+        return this->_id;
+    }
+
+
     StmtRef StmtRef::ofWildcard()
     {
         StmtRef ret {};
@@ -82,7 +101,7 @@ namespace pql::ast
     {
         StmtRef ret {};
         ret.ref_type = Type::Declaration;
-        ret.declaration = decl;
+        ret._declaration = decl;
         return ret;
     }
 
@@ -90,8 +109,7 @@ namespace pql::ast
     {
         StmtRef ret {};
         ret.ref_type = Type::StmtId;
-        ret.id = id;
+        ret._id = id;
         return ret;
     }
-
 }

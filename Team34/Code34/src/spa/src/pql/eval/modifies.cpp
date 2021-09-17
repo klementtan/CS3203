@@ -194,7 +194,7 @@ namespace pql::eval
         bool is_ent_all = dynamic_cast<ast::AllEnt*>(rel->ent);
 
         if(modifier_stmt.isDeclaration())
-            m_table->addSelectDecl(modifier_stmt.declaration);
+            m_table->addSelectDecl(modifier_stmt.declaration());
 
         if(is_ent_decl)
             m_table->addSelectDecl(dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration);
@@ -203,7 +203,7 @@ namespace pql::eval
         {
             throw PqlException("pql::eval", "Modifier of ModifiesS cannot be '_': {}", rel->toString());
         }
-        else if(modifier_stmt.isDeclaration() && (ast::kStmtDesignEntities.count(modifier_stmt.declaration->design_ent) == 0))
+        else if(modifier_stmt.isDeclaration() && (ast::kStmtDesignEntities.count(modifier_stmt.declaration()->design_ent) == 0))
         {
             throw PqlException(
                 "pql::eval", "Declared modifier of ModifiesS must be a statement type: {}", rel->toString());
@@ -215,7 +215,7 @@ namespace pql::eval
         }
         else if(modifier_stmt.isDeclaration() && is_ent_decl)
         {
-            auto mod_decl = modifier_stmt.declaration;
+            auto mod_decl = modifier_stmt.declaration();
             auto ent_decl = dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration;
 
             util::log("pql::eval", "Processing ModifiesS(DeclaredStmt, DeclaredEnt)");
@@ -252,7 +252,7 @@ namespace pql::eval
         }
         else if(modifier_stmt.isDeclaration() && is_ent_name)
         {
-            auto mod_decl = modifier_stmt.declaration;
+            auto mod_decl = modifier_stmt.declaration();
             auto ent_name = dynamic_cast<ast::EntName*>(rel->ent)->name;
 
             util::log("pql::eval", "Processing ModifiesS(DeclaredStmt, EntName)");
@@ -280,7 +280,7 @@ namespace pql::eval
         }
         else if(modifier_stmt.isDeclaration() && is_ent_all)
         {
-            auto mod_decl = modifier_stmt.declaration;
+            auto mod_decl = modifier_stmt.declaration();
 
             util::log("pql::eval", "Processing ModifiesS(DeclaredStmt, _)");
             std::unordered_set<table::Entry> curr_domain;
@@ -298,7 +298,7 @@ namespace pql::eval
         }
         else if(modifier_stmt.isStatementId() && is_ent_decl)
         {
-            auto mod_stmt_id = modifier_stmt.id;
+            auto mod_stmt_id = modifier_stmt.id();
             auto ent_decl = dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration;
 
             util::log("pql::eval", "Processing ModifiesS(StmtId, DeclaredEnt)");
@@ -316,7 +316,7 @@ namespace pql::eval
         }
         else if(modifier_stmt.isStatementId() && is_ent_all)
         {
-            auto mod_stmt_id = modifier_stmt.id;
+            auto mod_stmt_id = modifier_stmt.id();
 
             util::log("pql::eval", "Processing ModifiesS(StmtId, AllEnt)");
             if(m_pkb->uses_modifies.getModifiesVars(mod_stmt_id).empty())
@@ -332,7 +332,7 @@ namespace pql::eval
         }
         else if(modifier_stmt.isStatementId() && is_ent_name)
         {
-            auto mod_stmt_id = modifier_stmt.id;
+            auto mod_stmt_id = modifier_stmt.id();
             auto ent_name = dynamic_cast<ast::EntName*>(rel->ent)->name;
 
             util::log("pql::eval", "Processing ModifiesS(StmtId, EntName)");

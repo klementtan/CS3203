@@ -99,9 +99,12 @@ namespace pql::ast
 
         Type ref_type {};
         union {
-            Declaration* declaration;
-            simple::ast::StatementNum id;
+            Declaration* _declaration;
+            simple::ast::StatementNum _id;
         };
+
+        Declaration* declaration() const;
+        simple::ast::StatementNum id() const;
 
         inline bool isWildcard() const { return ref_type == Type::Wildcard; }
         inline bool isStatementId() const { return ref_type == Type::StmtId; }
@@ -111,27 +114,6 @@ namespace pql::ast
         static StmtRef ofDeclaration(Declaration* decl);
         static StmtRef ofStatementId(simple::ast::StatementNum id);
     };
-
-    // /** Statement Reference using previous pql Declaration. */
-    // struct DeclaredStmt : StmtRef
-    // {
-    //     virtual std::string toString() const override;
-
-    // };
-
-    // /** Statement Reference using id(line number) of statement in program. */
-    // struct StmtId : StmtRef
-    // {
-    //     virtual std::string toString() const override;
-
-    //      // = 0;
-    // };
-
-    // /** Statement Reference to all(`_`) statements. */
-    // struct AllStmt : StmtRef
-    // {
-    //     virtual std::string toString() const override;
-    // };
 
     /** Abstract Reference for Entity Reference. */
     struct EntRef

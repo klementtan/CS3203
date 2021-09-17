@@ -35,10 +35,8 @@ TEST_CASE("Follows* Query")
     auto follows_t = dynamic_cast<pql::ast::FollowsT*>(such_that_cl.rel_conds.begin()->get());
     REQUIRE(follows_t != nullptr);
 
-    CHECK(follows_t->before.isStatementId());
-    CHECK(follows_t->before.id == 6);
-    CHECK(follows_t->after.isDeclaration());
-    CHECK(follows_t->after.declaration == s_declaration);
+    CHECK(follows_t->before.id() == 6);
+    CHECK(follows_t->after.declaration() == s_declaration);
 }
 
 TEST_CASE("ModifiesS Query")
@@ -55,8 +53,7 @@ TEST_CASE("ModifiesS Query")
     auto modifies_s = dynamic_cast<pql::ast::ModifiesS*>(such_that_cl.rel_conds.begin()->get());
     REQUIRE(modifies_s != nullptr);
 
-    CHECK(modifies_s->modifier.isStatementId());
-    CHECK(modifies_s->modifier.id == 6);
+    CHECK(modifies_s->modifier.id() == 6);
 
     REQUIRE(dynamic_cast<pql::ast::DeclaredEnt*>(modifies_s->ent)->declaration == v_declaration);
 }
@@ -93,8 +90,7 @@ TEST_CASE("UsesS Query")
     auto uses_s = dynamic_cast<pql::ast::UsesS*>(such_that_cl.rel_conds.begin()->get());
     REQUIRE(uses_s != nullptr);
 
-    CHECK(uses_s->user.isStatementId());
-    CHECK(uses_s->user.id == 14);
+    CHECK(uses_s->user.id() == 14);
 
     REQUIRE(dynamic_cast<pql::ast::DeclaredEnt*>(uses_s->ent)->declaration == v_declaration);
 }
@@ -144,10 +140,8 @@ TEST_CASE("Parent Query")
         auto parent = dynamic_cast<pql::ast::Parent*>(such_that_cl.rel_conds.begin()->get());
         REQUIRE(parent != nullptr);
 
-        CHECK(parent->parent.isStatementId());
-        CHECK(parent->parent.id == 6);
-        CHECK(parent->child.isDeclaration());
-        CHECK(parent->child.declaration == s_declaration);
+        CHECK(parent->parent.id() == 6);
+        CHECK(parent->child.declaration() == s_declaration);
     }
     SECTION("Invalid query")
     {

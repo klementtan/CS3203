@@ -157,10 +157,10 @@ namespace pql::ast
         {
             case Type::Declaration:
                 return zpr::sprint(
-                    "DeclaredStmt(declaration: {})", this->declaration ? this->declaration->toString() : "nullptr");
+                    "DeclaredStmt(declaration: {})", this->_declaration ? this->_declaration->toString() : "nullptr");
 
             case Type::StmtId:
-                return zpr::sprint("StmtId(id:{})", this->id);
+                return zpr::sprint("StmtId(id:{})", this->_id);
 
             case Type::Wildcard:
                 return zpr::sprint("AllStmt(name: _)");

@@ -166,7 +166,7 @@ namespace pql::eval
         bool is_var_all = dynamic_cast<ast::AllEnt*>(rel->ent);
 
         if(user_stmt.isDeclaration())
-            m_table->addSelectDecl(user_stmt.declaration);
+            m_table->addSelectDecl(user_stmt.declaration());
         if(is_var_decl)
             m_table->addSelectDecl(dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration);
 
@@ -179,12 +179,12 @@ namespace pql::eval
             throw PqlException("pql::eval", "entity for second argument of Uses must be a variable");
 
         if(user_stmt.isDeclaration() &&
-            (ast::kStmtDesignEntities.count(user_stmt.declaration->design_ent) == 0))
+            (ast::kStmtDesignEntities.count(user_stmt.declaration()->design_ent) == 0))
             throw PqlException("pql::eval", "first argument for UsesS must be a statement entity");
 
         if(user_stmt.isStatementId() && is_var_name)
         {
-            auto user_sid = user_stmt.id;
+            auto user_sid = user_stmt.id();
             auto var_name = dynamic_cast<ast::EntName*>(rel->ent)->name;
 
             util::log("pql::eval", "Processing UsesS(StmtId, EntName)");
@@ -193,7 +193,7 @@ namespace pql::eval
         }
         else if(user_stmt.isStatementId() && is_var_decl)
         {
-            auto user_sid = user_stmt.id;
+            auto user_sid = user_stmt.id();
             auto var_decl = dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration;
 
             util::log("pql::eval", "Processing UsesS(StmtId, DeclaredEnt)");
@@ -206,7 +206,7 @@ namespace pql::eval
         }
         else if(user_stmt.isStatementId() && is_var_all)
         {
-            auto user_sid = user_stmt.id;
+            auto user_sid = user_stmt.id();
 
             util::log("pql::eval", "Processing UsesS(StmtId, _)");
             if(m_pkb->uses_modifies.getUsesVars(user_sid).empty())
@@ -214,7 +214,7 @@ namespace pql::eval
         }
         else if(user_stmt.isDeclaration() && is_var_name)
         {
-            auto user_decl = user_stmt.declaration;
+            auto user_decl = user_stmt.declaration();
             auto var_name = dynamic_cast<ast::EntName*>(rel->ent)->name;
 
             util::log("pql::eval", "Processing UsesS(DeclaredStmt, EntName)");
@@ -227,7 +227,7 @@ namespace pql::eval
         }
         else if(user_stmt.isDeclaration() && is_var_decl)
         {
-            auto user_decl = user_stmt.declaration;
+            auto user_decl = user_stmt.declaration();
             auto var_decl = dynamic_cast<ast::DeclaredEnt*>(rel->ent)->declaration;
 
             util::log("pql::eval", "Processing UsesS(DeclaredStmt, DeclaredEnt)");
@@ -263,7 +263,7 @@ namespace pql::eval
         }
         else if(user_stmt.isDeclaration() && is_var_all)
         {
-            auto user_decl = user_stmt.declaration;
+            auto user_decl = user_stmt.declaration();
 
             util::log("pql::eval", "Processing UsesS(DeclaredStmt, _)");
 

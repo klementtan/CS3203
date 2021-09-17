@@ -19,15 +19,15 @@ namespace pql::eval
         const auto& after_stmt = follows->directly_after;
 
         if(before_stmt.isDeclaration())
-            m_table->addSelectDecl(before_stmt.declaration);
+            m_table->addSelectDecl(before_stmt.declaration());
 
         if(after_stmt.isDeclaration())
-            m_table->addSelectDecl(after_stmt.declaration);
+            m_table->addSelectDecl(after_stmt.declaration());
 
         if(before_stmt.isStatementId() && after_stmt.isStatementId())
         {
-            auto bef_stmt_id = before_stmt.id;
-            auto aft_stmt_id = after_stmt.id;
+            auto bef_stmt_id = before_stmt.id();
+            auto aft_stmt_id = after_stmt.id();
 
             util::log("pql::eval", "Processing Follows(StmtId,StmtId)");
             if(m_pkb->isFollows(bef_stmt_id, aft_stmt_id))
@@ -42,7 +42,7 @@ namespace pql::eval
         }
         else if(before_stmt.isStatementId() && after_stmt.isWildcard())
         {
-            auto bef_stmt_id = before_stmt.id;
+            auto bef_stmt_id = before_stmt.id();
 
             util::log("pql::eval", "Processing Follows(StmtId,_)");
             if(m_pkb->getFollows(bef_stmt_id)->after.empty())
@@ -57,8 +57,8 @@ namespace pql::eval
         }
         else if(before_stmt.isStatementId() && after_stmt.isDeclaration())
         {
-            auto bef_stmt_id = before_stmt.id;
-            auto aft_decl = after_stmt.declaration;
+            auto bef_stmt_id = before_stmt.id();
+            auto aft_decl = after_stmt.declaration();
 
             util::log("pql::eval", "Processing Follows(StmtId,DeclaredStmt)");
             if(m_pkb->getFollows(bef_stmt_id)->after.empty())
@@ -77,7 +77,7 @@ namespace pql::eval
         }
         else if(before_stmt.isWildcard() && after_stmt.isStatementId())
         {
-            auto aft_stmt_id = after_stmt.id;
+            auto aft_stmt_id = after_stmt.id();
 
             util::log("pql::eval", "Processing Follows(_,StmtId)");
             if(m_pkb->getFollows(aft_stmt_id)->before.empty())
@@ -106,7 +106,7 @@ namespace pql::eval
         }
         else if(before_stmt.isWildcard() && after_stmt.isDeclaration())
         {
-            auto aft_decl = after_stmt.declaration;
+            auto aft_decl = after_stmt.declaration();
 
             util::log("pql::eval", "Processing Follows(_,DeclaredStmt)");
             table::Domain curr_domain {};
@@ -125,8 +125,8 @@ namespace pql::eval
         }
         else if(before_stmt.isDeclaration() && after_stmt.isStatementId())
         {
-            auto bef_decl = before_stmt.declaration;
-            auto aft_stmt_id = after_stmt.id;
+            auto bef_decl = before_stmt.declaration();
+            auto aft_stmt_id = after_stmt.id();
 
             util::log("pql::eval", "Processing Follows(DeclaredStmt,StmtId)");
             if(m_pkb->getFollows(aft_stmt_id)->before.empty())
@@ -146,7 +146,7 @@ namespace pql::eval
         }
         else if(before_stmt.isDeclaration() && after_stmt.isWildcard())
         {
-            auto bef_decl = before_stmt.declaration;
+            auto bef_decl = before_stmt.declaration();
 
             util::log("pql::eval", "Processing Follows(DeclaredStmt,_)");
             table::Domain curr_domain;
@@ -165,8 +165,8 @@ namespace pql::eval
         }
         else if(before_stmt.isDeclaration() && after_stmt.isDeclaration())
         {
-            auto bef_decl = before_stmt.declaration;
-            auto aft_decl = after_stmt.declaration;
+            auto bef_decl = before_stmt.declaration();
+            auto aft_decl = after_stmt.declaration();
 
             util::log("pql::eval", "Processing Follows(DeclaredStmt,DeclaredStmt)");
 
@@ -218,15 +218,15 @@ namespace pql::eval
         const auto& after_stmt = follows_t->after;
 
         if(before_stmt.isDeclaration())
-            m_table->addSelectDecl(before_stmt.declaration);
+            m_table->addSelectDecl(before_stmt.declaration());
 
         if(after_stmt.isDeclaration())
-            m_table->addSelectDecl(after_stmt.declaration);
+            m_table->addSelectDecl(after_stmt.declaration());
 
         if(before_stmt.isStatementId() && after_stmt.isStatementId())
         {
-            auto bef_stmt_id = before_stmt.id;
-            auto aft_stmt_id = after_stmt.id;
+            auto bef_stmt_id = before_stmt.id();
+            auto aft_stmt_id = after_stmt.id();
 
             util::log("pql::eval", "Processing Follows*(StmtId,StmtId)");
             if(m_pkb->isFollowsT(bef_stmt_id, aft_stmt_id))
@@ -241,7 +241,7 @@ namespace pql::eval
         }
         else if(before_stmt.isStatementId() && after_stmt.isWildcard())
         {
-            auto bef_stmt_id = before_stmt.id;
+            auto bef_stmt_id = before_stmt.id();
 
             util::log("pql::eval", "Processing Follows*(StmtId,_)");
             if(m_pkb->getFollows(bef_stmt_id)->after.empty())
@@ -256,8 +256,8 @@ namespace pql::eval
         }
         else if(before_stmt.isStatementId() && after_stmt.isDeclaration())
         {
-            auto bef_stmt_id = before_stmt.id;
-            auto aft_decl = after_stmt.declaration;
+            auto bef_stmt_id = before_stmt.id();
+            auto aft_decl = after_stmt.declaration();
 
             util::log("pql::eval", "Processing Follows*(StmtId,DeclaredStmt)");
             if(m_pkb->getFollows(bef_stmt_id)->after.empty())
@@ -280,7 +280,7 @@ namespace pql::eval
         }
         else if(before_stmt.isWildcard() && after_stmt.isStatementId())
         {
-            auto aft_stmt_id = after_stmt.id;
+            auto aft_stmt_id = after_stmt.id();
 
             util::log("pql::eval", "Processing Follows*(_,StmtId)");
             if(m_pkb->getFollows(aft_stmt_id)->before.empty())
@@ -309,7 +309,7 @@ namespace pql::eval
         }
         else if(before_stmt.isWildcard() && after_stmt.isDeclaration())
         {
-            auto aft_decl = after_stmt.declaration;
+            auto aft_decl = after_stmt.declaration();
 
             util::log("pql::eval", "Processing Follows*(_,DeclaredStmt)");
             std::unordered_set<table::Entry> curr_domain;
@@ -328,8 +328,8 @@ namespace pql::eval
         }
         else if(before_stmt.isDeclaration() && after_stmt.isStatementId())
         {
-            auto aft_stmt_id = after_stmt.id;
-            auto bef_decl = before_stmt.declaration;
+            auto aft_stmt_id = after_stmt.id();
+            auto bef_decl = before_stmt.declaration();
 
             util::log("pql::eval", "Processing Follows*(DeclaredStmt,StmtId)");
             if(m_pkb->getFollows(aft_stmt_id)->before.empty())
@@ -353,7 +353,7 @@ namespace pql::eval
         }
         else if(before_stmt.isDeclaration() && after_stmt.isWildcard())
         {
-            auto bef_decl = before_stmt.declaration;
+            auto bef_decl = before_stmt.declaration();
 
             util::log("pql::eval", "Processing Follows*(DeclaredStmt,_)");
             std::unordered_set<table::Entry> curr_domain;
@@ -372,8 +372,8 @@ namespace pql::eval
         }
         else if(before_stmt.isDeclaration() && after_stmt.isDeclaration())
         {
-            auto bef_decl = before_stmt.declaration;
-            auto aft_decl = after_stmt.declaration;
+            auto bef_decl = before_stmt.declaration();
+            auto aft_decl = after_stmt.declaration();
 
             util::log("pql::eval", "Processing Follows*(DeclaredStmt,DeclaredStmt)");
 
