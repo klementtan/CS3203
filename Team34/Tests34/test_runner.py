@@ -35,9 +35,7 @@ def run_tests_in_folder(autotester_exe, folder):
 	if len(source) == 0:
 		return
 
-	print(f"test set {folder}:")
-	print(f"    source: {source}")
-	print(f"    queries ({len(queries)}): {queries}")
+	print(f"test set {folder}: ({source})")
 
 	for query in queries:
 		run_autotester(autotester_exe, folder, source, query)
