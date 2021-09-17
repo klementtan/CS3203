@@ -101,9 +101,11 @@ def main():
 	passed_tests = rp.get_passed_tests()
 	num_failed = rp.get_num_failed()
 	num_passed = rp.get_num_passed()
+	total_tests = num_failed + num_passed
 
 	with open("autotester_summary.txt", "wb") as f:
-		log_string(f, f"{num_passed}/{num_passed + num_failed} tests passed, {num_failed} failed")
+		log_string(f, f"{num_passed}/{total_tests} ({100 * num_passed / total_tests:.1f}%) " +
+			f"test{'' if num_passed == 1 else 's'} passed, {num_failed} failed")
 
 		for (filename, tests) in failed_tests.items():
 			if len(tests) == 0:
