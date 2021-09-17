@@ -82,10 +82,7 @@ namespace pql::parser
             throw util::PqlException("pql::parser", "duplicate declaration '{}'", var.text);
 
         util::log("pql::parser", "Adding declaration {} to declaration list", var.text);
-        auto declaration = new ast::Declaration { var.text.str(), ent };
-
-        util::log("pql::parser", "Adding {} to declaration list", declaration->toString());
-        declaration_list->addDeclaration(var.text.str(), declaration);
+        declaration_list->addDeclaration(var.text.str(), ent);
     }
 
     // Process the next tokens as the start of an entity declaration and insert declarations into declaration_list

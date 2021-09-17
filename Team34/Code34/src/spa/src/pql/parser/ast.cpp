@@ -53,11 +53,11 @@ namespace pql::ast
         return nullptr;
     }
 
-    void DeclarationList::addDeclaration(std::string name, Declaration* decl)
+    Declaration* DeclarationList::addDeclaration(const std::string& name, DESIGN_ENT design_ent)
     {
         assert(!this->hasDeclaration(name));
 
-        this->declarations.emplace(std::move(name), decl);
+        return this->declarations.emplace(name, new Declaration { name, design_ent }).first->second;
     }
 
     const std::unordered_map<std::string, Declaration*>& DeclarationList::getAllDeclarations() const

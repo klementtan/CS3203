@@ -68,7 +68,7 @@ namespace pql::ast
         Declaration* getDeclaration(const std::string& name) const;
         const std::unordered_map<std::string, Declaration*>& getAllDeclarations() const;
 
-        void addDeclaration(std::string name, Declaration* decl);
+        Declaration* addDeclaration(const std::string& name, DESIGN_ENT design_ent);
 
     private:
         std::unordered_map<std::string, Declaration*> declarations {};
