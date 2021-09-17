@@ -19,7 +19,7 @@ namespace simple::ast
     struct Stmt;
     struct StmtList
     {
-    #if 0
+#if 0
         // StmtList() { }
         // ~StmtList();
 
@@ -28,7 +28,7 @@ namespace simple::ast
 
         // StmtList(StmtList&&);
         // StmtList& operator=(StmtList&&);
-    #endif
+#endif
         std::vector<std::unique_ptr<Stmt>> statements {};
 
         const Stmt* parent_statement = nullptr;

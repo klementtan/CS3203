@@ -25,7 +25,11 @@ struct Runner
 
         struct deleterino
         {
-            void operator()(pkb::ProgramKB* owo) const { if(should_delete) delete owo; }
+            void operator()(pkb::ProgramKB* owo) const
+            {
+                if(should_delete)
+                    delete owo;
+            }
             bool should_delete = false;
         };
 

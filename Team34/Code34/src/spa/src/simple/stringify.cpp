@@ -113,7 +113,8 @@ namespace simple::ast
     {
         if(compact)
         {
-            return zpr::sprint("while{}{}", parenthesise_conditional(this->condition.get()), this->body.toString(0, true));
+            return zpr::sprint(
+                "while{}{}", parenthesise_conditional(this->condition.get()), this->body.toString(0, true));
         }
         else
         {

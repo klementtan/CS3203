@@ -216,7 +216,8 @@ TEST_CASE("Select pattern assign(name, fullexpr)")
     SECTION("t3")
     {
         TEST_OK(pkb.get(), R"^(assign a; Select a pattern a("t3", "y * (w + x) - (w - y * z) - (w - x) - z"))^", 6);
-        TEST_OK(pkb.get(), R"^(assign a; Select a pattern a("t3", "((y * (w + x)) - (w - (y * z))) - (w - x) - z"))^", 6);
+        TEST_OK(
+            pkb.get(), R"^(assign a; Select a pattern a("t3", "((y * (w + x)) - (w - (y * z))) - (w - x) - z"))^", 6);
 
         TEST_EMPTY(pkb.get(), R"^(assign a; Select a pattern a("t3", "w + x"))^");
         TEST_EMPTY(pkb.get(), R"^(assign a; Select a pattern a("t3", "y * w"))^");
@@ -250,9 +251,10 @@ TEST_CASE("Select pattern assign(decl, _)")
     auto prog = simple::parser::parseProgram(prog_1);
     auto pkb = pkb::processProgram(std::move(prog));
 
-    TEST_OK(pkb.get(), R"^(assign a; variable v; Select a pattern a(v, _))^", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
-    TEST_OK(pkb.get(), R"^(assign a; variable v; Select v pattern a(v, _))^", "a1", "a2", "a3", "t1", "t2", "t3", "t4", "x",
-        "y", "z");
+    TEST_OK(
+        pkb.get(), R"^(assign a; variable v; Select a pattern a(v, _))^", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
+    TEST_OK(pkb.get(), R"^(assign a; variable v; Select v pattern a(v, _))^", "a1", "a2", "a3", "t1", "t2", "t3", "t4",
+        "x", "y", "z");
 
     TEST_EMPTY(prog_2, "assign a; variable v; Select v pattern a(v, _)");
     TEST_EMPTY(prog_2, "assign a; variable v; Select a pattern a(v, _)");
@@ -286,7 +288,8 @@ TEST_CASE("Select pattern assign(decl, fullexpr)")
 
     TEST_OK(pkb.get(), R"^(assign a; variable v; Select v pattern a(v, "x + y + z"))^", "t1");
     TEST_OK(pkb.get(), R"^(assign a; variable v; Select v pattern a(v, "x + y + z - z * z"))^", "t2");
-    TEST_OK(pkb.get(), R"^(assign a; variable v; Select v pattern a(v, "y * (w + x) - (w - y * z) - (w - x) - z"))^", "t3");
+    TEST_OK(
+        pkb.get(), R"^(assign a; variable v; Select v pattern a(v, "y * (w + x) - (w - y * z) - (w - x) - z"))^", "t3");
 
     TEST_EMPTY(pkb.get(), R"^(assign a; variable v; Select v pattern a(v, "a + 7"))^");
     TEST_EMPTY(pkb.get(), R"^(assign a; variable v; Select v pattern a(v, "1 / 2"))^");
