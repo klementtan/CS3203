@@ -87,31 +87,51 @@ namespace pql::ast
     /** Abstract class for Statement Reference. */
     struct StmtRef
     {
-        virtual ~StmtRef();
-        virtual std::string toString() const = 0;
+        enum class Type
+        {
+            Invalid,
+            Declaration,
+            StmtId,
+            Wildcard
+        };
+
+        std::string toString() const;
+
+        Type ref_type {};
+        union {
+            Declaration* declaration;
+            simple::ast::StatementNum id;
+        };
+
+        inline bool isWildcard() const { return ref_type == Type::Wildcard; }
+        inline bool isStatementId() const { return ref_type == Type::StmtId; }
+        inline bool isDeclaration() const { return ref_type == Type::Declaration; }
+
+        static StmtRef ofWildcard();
+        static StmtRef ofDeclaration(Declaration* decl);
+        static StmtRef ofStatementId(simple::ast::StatementNum id);
     };
 
-    /** Statement Reference using previous pql Declaration. */
-    struct DeclaredStmt : StmtRef
-    {
-        virtual std::string toString() const override;
+    // /** Statement Reference using previous pql Declaration. */
+    // struct DeclaredStmt : StmtRef
+    // {
+    //     virtual std::string toString() const override;
 
-        Declaration* declaration = nullptr;
-    };
+    // };
 
-    /** Statement Reference using id(line number) of statement in program. */
-    struct StmtId : StmtRef
-    {
-        virtual std::string toString() const override;
+    // /** Statement Reference using id(line number) of statement in program. */
+    // struct StmtId : StmtRef
+    // {
+    //     virtual std::string toString() const override;
 
-        simple::ast::StatementNum id = 0;
-    };
+    //      // = 0;
+    // };
 
-    /** Statement Reference to all(`_`) statements. */
-    struct AllStmt : StmtRef
-    {
-        virtual std::string toString() const override;
-    };
+    // /** Statement Reference to all(`_`) statements. */
+    // struct AllStmt : StmtRef
+    // {
+    //     virtual std::string toString() const override;
+    // };
 
     /** Abstract Reference for Entity Reference. */
     struct EntRef
@@ -169,7 +189,7 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        StmtRef* modifier = nullptr;
+        StmtRef modifier {};
         EntRef* ent = nullptr;
     };
 
@@ -193,7 +213,7 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        StmtRef* user = nullptr;
+        StmtRef user {};
         EntRef* ent = nullptr;
     };
 
@@ -202,8 +222,8 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        StmtRef* parent = nullptr;
-        StmtRef* child = nullptr;
+        StmtRef parent {};
+        StmtRef child {};
     };
 
     /** Represents `Parent*(StmtRef, StmtRef)` relationship condition. */
@@ -211,8 +231,8 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        StmtRef* ancestor = nullptr;
-        StmtRef* descendant = nullptr;
+        StmtRef ancestor {};
+        StmtRef descendant {};
     };
 
     /** Represents `Follows(StmtRef, StmtRef)` relationship condition. */
@@ -220,8 +240,8 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        StmtRef* directly_before = nullptr;
-        StmtRef* directly_after = nullptr;
+        StmtRef directly_before {};
+        StmtRef directly_after {};
     };
 
     /** Represents `Follows*(StmtRef, StmtRef)` relationship condition. */
@@ -229,8 +249,8 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        StmtRef* before = nullptr;
-        StmtRef* after = nullptr;
+        StmtRef before {};
+        StmtRef after {};
     };
 
     /** Expression Specification: pattern segment  of an assignment pattern. */

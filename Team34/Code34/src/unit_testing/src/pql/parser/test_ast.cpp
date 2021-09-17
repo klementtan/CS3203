@@ -37,25 +37,20 @@ TEST_CASE("DeclarationList")
 TEST_CASE("DeclaredStmt")
 {
     pql::ast::Declaration* declaration = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredStmt delcared_stmt;
-    delcared_stmt.declaration = declaration;
-    pql::ast::StmtRef* stmt = &delcared_stmt;
-    REQUIRE(stmt->toString() == "DeclaredStmt(declaration: Declaration(ent:assign, name:foo))");
+    auto stmt = StmtRef::ofDeclaration(declaration);
+    REQUIRE(stmt.toString() == "DeclaredStmt(declaration: Declaration(ent:assign, name:foo))");
 }
 
 TEST_CASE("StmtId")
 {
-    pql::ast::StmtId stmt_id;
-    stmt_id.id = 1;
-    pql::ast::StmtRef* stmt = &stmt_id;
-    REQUIRE(stmt->toString() == "StmtId(id:1)");
+    auto stmt = StmtRef::ofStatementId(1);
+    REQUIRE(stmt.toString() == "StmtId(id:1)");
 }
 
 TEST_CASE("AllStmt")
 {
-    pql::ast::AllStmt all_stmt;
-    pql::ast::StmtRef* stmt = &all_stmt;
-    REQUIRE(stmt->toString() == "AllStmt(name: _)");
+    auto stmt = StmtRef::ofWildcard();
+    REQUIRE(stmt.toString() == "AllStmt(name: _)");
 }
 
 TEST_CASE("DeclaredEnt")
@@ -93,9 +88,7 @@ TEST_CASE("ModifiesS")
 
     /** Initialize stmt declaration */
     pql::ast::Declaration* declaration2 = new pql::ast::Declaration { "bar", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredStmt delcared_stmt;
-    delcared_stmt.declaration = declaration2;
-    pql::ast::StmtRef* stmt = &delcared_stmt;
+    auto stmt = StmtRef::ofDeclaration(declaration2);
 
     /** Initialize relationship */
     pql::ast::ModifiesS relationship;
@@ -117,9 +110,7 @@ TEST_CASE("UsesS")
 
     /** Initialize stmt declaration */
     pql::ast::Declaration* declaration2 = new pql::ast::Declaration { "bar", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredStmt delcared_stmt;
-    delcared_stmt.declaration = declaration2;
-    pql::ast::StmtRef* stmt = &delcared_stmt;
+    auto stmt = StmtRef::ofDeclaration(declaration2);
 
     /** Initialize relationship */
     pql::ast::UsesS relationship;
@@ -134,15 +125,11 @@ TEST_CASE("Parent")
 {
     /** Initialize stmt1 declaration */
     pql::ast::Declaration* declaration1 = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredStmt delcared_stmt1;
-    delcared_stmt1.declaration = declaration1;
-    pql::ast::StmtRef* stmt1 = &delcared_stmt1;
+    auto stmt1 = StmtRef::ofDeclaration(declaration1);
 
     /** Initialize stmt2 declaration */
     pql::ast::Declaration* declaration2 = new pql::ast::Declaration { "bar", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredStmt delcared_stmt2;
-    delcared_stmt2.declaration = declaration2;
-    pql::ast::StmtRef* stmt2 = &delcared_stmt2;
+    auto stmt2 = StmtRef::ofDeclaration(declaration2);
 
     /** Initialize relationship */
     pql::ast::Parent relationship;
@@ -157,15 +144,11 @@ TEST_CASE("ParentT")
 {
     /** Initialize stmt1 declaration */
     pql::ast::Declaration* declaration1 = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredStmt delcared_stmt1;
-    delcared_stmt1.declaration = declaration1;
-    pql::ast::StmtRef* stmt1 = &delcared_stmt1;
+    auto stmt1 = StmtRef::ofDeclaration(declaration1);
 
     /** Initialize stmt2 declaration */
     pql::ast::Declaration* declaration2 = new pql::ast::Declaration { "bar", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredStmt delcared_stmt2;
-    delcared_stmt2.declaration = declaration2;
-    pql::ast::StmtRef* stmt2 = &delcared_stmt2;
+    auto stmt2 = StmtRef::ofDeclaration(declaration2);
 
     /** Initialize relationship */
     pql::ast::ParentT relationship;
@@ -180,15 +163,11 @@ TEST_CASE("Follows")
 {
     /** Initialize stmt1 declaration */
     pql::ast::Declaration* declaration1 = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredStmt delcared_stmt1;
-    delcared_stmt1.declaration = declaration1;
-    pql::ast::StmtRef* stmt1 = &delcared_stmt1;
+    auto stmt1 = StmtRef::ofDeclaration(declaration1);
 
     /** Initialize stmt2 declaration */
     pql::ast::Declaration* declaration2 = new pql::ast::Declaration { "bar", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredStmt delcared_stmt2;
-    delcared_stmt2.declaration = declaration2;
-    pql::ast::StmtRef* stmt2 = &delcared_stmt2;
+    auto stmt2 = StmtRef::ofDeclaration(declaration2);
 
     /** Initialize relationship */
     pql::ast::Follows relationship;
@@ -204,15 +183,11 @@ TEST_CASE("FollowsT")
 {
     /** Initialize stmt1 declaration */
     pql::ast::Declaration* declaration1 = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredStmt delcared_stmt1;
-    delcared_stmt1.declaration = declaration1;
-    pql::ast::StmtRef* stmt1 = &delcared_stmt1;
+    auto stmt1 = StmtRef::ofDeclaration(declaration1);
 
     /** Initialize stmt2 declaration */
     pql::ast::Declaration* declaration2 = new pql::ast::Declaration { "bar", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredStmt delcared_stmt2;
-    delcared_stmt2.declaration = declaration2;
-    pql::ast::StmtRef* stmt2 = &delcared_stmt2;
+    auto stmt2 = StmtRef::ofDeclaration(declaration2);
 
     /** Initialize relationship */
     pql::ast::FollowsT relationship;
@@ -280,9 +255,7 @@ TEST_CASE("SuchThat")
 
     /** Initialize stmt declaration */
     pql::ast::Declaration* declaration2 = new pql::ast::Declaration { "bar", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredStmt delcared_stmt;
-    delcared_stmt.declaration = declaration2;
-    pql::ast::StmtRef* stmt = &delcared_stmt;
+    auto stmt = StmtRef::ofDeclaration(declaration2);
 
     /** Initialize relationship */
     auto relationship = std::make_unique<pql::ast::ModifiesS>();
@@ -307,9 +280,7 @@ TEST_CASE("Select")
     pql::ast::EntRef* ent1 = &declared_ent1;
 
     pql::ast::Declaration* declaration2 = new pql::ast::Declaration { "bar", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredStmt delcared_stmt;
-    delcared_stmt.declaration = declaration2;
-    pql::ast::StmtRef* stmt = &delcared_stmt;
+    auto stmt = StmtRef::ofDeclaration(declaration2);
 
     auto relationship = std::make_unique<pql::ast::ModifiesS>();
     relationship->ent = ent1;
@@ -363,9 +334,7 @@ TEST_CASE("Query")
     pql::ast::EntRef* ent1 = &declared_ent1;
 
     pql::ast::Declaration* declaration2 = new pql::ast::Declaration { "bar", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredStmt delcared_stmt;
-    delcared_stmt.declaration = declaration2;
-    pql::ast::StmtRef* stmt = &delcared_stmt;
+    auto stmt = StmtRef::ofDeclaration(declaration2);
 
     auto relationship = std::make_unique<pql::ast::ModifiesS>();
     relationship->ent = ent1;

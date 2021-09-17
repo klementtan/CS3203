@@ -165,21 +165,20 @@ namespace pql::parser
         throw PqlException("pql::parser", "Invalid ent ref starting with {}", tok.text);
     }
 
-    pql::ast::StmtRef* parse_stmt_ref(ParserState* ps, const ast::DeclarationList* declaration_list)
+    pql::ast::StmtRef parse_stmt_ref(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         Token tok = ps->next();
         if(tok.type == TT::Underscore)
         {
-            return new ast::AllStmt {};
+            return ast::StmtRef::ofWildcard();
         }
         if(tok.type == TT::Number)
         {
-            auto* stmt_id = new ast::StmtId {};
+            size_t id = 0;
             for(char c : tok.text)
-            {
-                stmt_id->id = 10 * stmt_id->id + (c - '0');
-            }
-            return stmt_id;
+                id = 10 * id + (c - '0');
+
+            return ast::StmtRef::ofStatementId(id);
         }
         if(tok.type == TokenType::Identifier)
         {
@@ -189,9 +188,8 @@ namespace pql::parser
             if(declaration == nullptr)
                 throw PqlException("pql::parser", "Undeclared entity {} provided when parsing stmt ref", var_name);
 
-            auto* declared_stmt = new ast::DeclaredStmt {};
-            declared_stmt->declaration = declaration;
-            util::log("pql:parser", "Parsed stmt ref {}", declared_stmt->toString());
+            auto declared_stmt = ast::StmtRef::ofDeclaration(declaration);
+            util::log("pql:parser", "Parsed stmt ref {}", declared_stmt.toString());
             return declared_stmt;
         }
         throw PqlException("pql::parser", "Invalid stmt ref starting with {}", tok.text);
@@ -456,7 +454,7 @@ namespace pql::parser
 
         if(is_user_stmt_ref)
         {
-            ast::StmtRef* user = parse_stmt_ref(ps, declaration_list);
+            auto user = parse_stmt_ref(ps, declaration_list);
             if(Token tok = ps->next(); tok != TT::Comma)
             {
                 throw PqlException("pql::parser", "Expected ',' after declaring stmt ref in Uses");
@@ -505,7 +503,7 @@ namespace pql::parser
 
         if(is_modifier_stmt_ref)
         {
-            ast::StmtRef* modifier = parse_stmt_ref(ps, declaration_list);
+            auto modifier = parse_stmt_ref(ps, declaration_list);
             if(Token tok = ps->next(); tok != TT::Comma)
             {
                 throw PqlException("pql::parser", "Expected ',' after declaring stmt ref in Modifies");
