@@ -1,5 +1,6 @@
 // pqlast.cpp
 
+#include <cassert>
 #include <algorithm>
 
 #include <zpr.h>
@@ -61,6 +62,35 @@ namespace pql::ast
         ret += "]";
         return ret;
     }
+
+    bool DeclarationList::hasDeclaration(const std::string& name) const
+    {
+        return this->declarations.find(name) != this->declarations.end();
+    }
+
+    Declaration* DeclarationList::getDeclaration(const std::string& name) const
+    {
+        if(auto it = this->declarations.find(name); it != this->declarations.end())
+            return it->second;
+
+        return nullptr;
+    }
+
+    void DeclarationList::addDeclaration(std::string name, Declaration* decl)
+    {
+        assert(!this->hasDeclaration(name));
+
+        this->declarations.emplace(std::move(name), decl);
+    }
+
+    const std::unordered_map<std::string, Declaration*>& DeclarationList::getAllDeclarations() const
+    {
+        return this->declarations;
+    }
+
+
+
+
 
     std::string Declaration::toString() const
     {
@@ -205,6 +235,6 @@ namespace pql::ast
     std::string Query::toString() const
     {
         return zpr::sprint("Query(select:{}, declarations:{})", this->select ? this->select->toString() : "nullptr",
-            this->declarations ? this->declarations->toString() : "nullptr");
+            this->declarations.toString());
     }
 }

@@ -22,7 +22,7 @@ namespace pql::eval
         std::unordered_map<ast::DESIGN_ENT, std::vector<simple::ast::Stmt*>> m_all_ent_stmt_map;
 
         void preprocessPkb(pkb::ProgramKB* pkb);
-        void processDeclarations(const ast::DeclarationList* declaration_list);
+        void processDeclarations(const ast::DeclarationList& declaration_list);
         void handleSuchThat(const ast::SuchThatCl* such_that);
         void handlePattern(const ast::PatternCl* pattern);
 

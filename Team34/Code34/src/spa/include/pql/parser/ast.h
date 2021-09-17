@@ -49,13 +49,13 @@ namespace pql::ast
     extern const std::unordered_map<DESIGN_ENT, std::string> INV_DESIGN_ENT_MAP;
 
     /** List of design entity declaration. ie Represents [`assign a`, `print p`]. */
-    struct DeclarationList
-    {
-        // Mapping of all declarations. <name, Declaration>
-        std::unordered_map<std::string, Declaration*> declarations;
+    // struct DeclarationList
+    // {
+    //     // Mapping of all declarations. <name, Declaration>
+    //     std::unordered_map<std::string, Declaration*> declarations;
 
-        std::string toString() const;
-    };
+    //     std::string toString() const;
+    // };
 
     /** Design entity declaration. ie `assign a`. */
     struct Declaration
@@ -274,10 +274,25 @@ namespace pql::ast
         std::string toString() const;
     };
 
+    struct DeclarationList
+    {
+        bool hasDeclaration(const std::string& name) const;
+        Declaration* getDeclaration(const std::string& name) const;
+        const std::unordered_map<std::string, Declaration*>& getAllDeclarations() const;
+
+        void addDeclaration(std::string name, Declaration* decl);
+
+        std::string toString() const;
+
+    private:
+        std::unordered_map<std::string, Declaration*> declarations {};
+    };
+
     struct Query
     {
         Select* select = nullptr;
-        DeclarationList* declarations = nullptr;
+
+        DeclarationList declarations {};
         std::string toString() const;
     };
 

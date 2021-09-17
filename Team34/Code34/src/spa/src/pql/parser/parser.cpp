@@ -78,13 +78,14 @@ namespace pql::parser
             throw PqlException(
                 "pql::parser", "expected variable name to be an identifier but received {} instead.", var.text);
         }
-        if(declaration_list->declarations.find(var.text.str()) != declaration_list->declarations.end())
+        if(declaration_list->hasDeclaration(var.text.str()))
             throw util::PqlException("pql::parser", "duplicate declaration '{}'", var.text);
 
         util::log("pql::parser", "Adding declaration {} to declaration list", var.text);
         auto declaration = new pql::ast::Declaration { var.text.str(), ent };
+
         util::log("pql::parser", "Adding {} to declaration list", declaration->toString());
-        declaration_list->declarations[var.text.str()] = declaration;
+        declaration_list->addDeclaration(var.text.str(), declaration);
     }
 
     // Process the next tokens as the start of an entity declaration and insert declarations into declaration_list
@@ -151,11 +152,11 @@ namespace pql::parser
         if(tok.type == TokenType::Identifier)
         {
             std::string var_name = tok.text.str();
-            if(declaration_list->declarations.count(var_name) == 0)
-            {
+
+            auto declaration = declaration_list->getDeclaration(var_name);
+            if(declaration == nullptr)
                 throw PqlException("pql::parser", "Undeclared entity {} provided when parsing ent ref", var_name);
-            }
-            ast::Declaration* declaration = declaration_list->declarations.find(var_name)->second;
+
             auto* declared_ent = new ast::DeclaredEnt {};
             declared_ent->declaration = declaration;
             util::log("pql:parser", "Parsed ent ref {}", declared_ent->toString());
@@ -183,11 +184,11 @@ namespace pql::parser
         if(tok.type == TokenType::Identifier)
         {
             std::string var_name = tok.text.str();
-            if(declaration_list->declarations.count(var_name) == 0)
-            {
+
+            auto declaration = declaration_list->getDeclaration(var_name);
+            if(declaration == nullptr)
                 throw PqlException("pql::parser", "Undeclared entity {} provided when parsing stmt ref", var_name);
-            }
-            ast::Declaration* declaration = declaration_list->declarations.find(var_name)->second;
+
             auto* declared_stmt = new ast::DeclaredStmt {};
             declared_stmt->declaration = declaration;
             util::log("pql:parser", "Parsed stmt ref {}", declared_stmt->toString());
@@ -250,14 +251,14 @@ namespace pql::parser
         }
 
         Token declaration_tok = ps->next();
-        if(declaration_list->declarations.count(declaration_tok.text.str()) == 0)
+
+        auto declaration = declaration_list->getDeclaration(declaration_tok.text.str());
+        if(declaration == nullptr)
         {
             throw PqlException("pql::parser",
                 "Pattern condition should start with the synonym of a previous declaration instead of {}",
                 declaration_tok.text);
         }
-
-        ast::Declaration* declaration = declaration_list->declarations.find(declaration_tok.text.str())->second;
 
         if(declaration->design_ent != ast::DESIGN_ENT::ASSIGN)
         {
@@ -431,14 +432,13 @@ namespace pql::parser
             throw PqlException("pql::parser",
                 "StmtRef,EntRef should start with number, underscore, '\"' or identifier instead of {}", tok.text);
         }
-        if(declaration_list->declarations.count(tok.text.str()) == 0)
-        {
+
+        auto decl = declaration_list->getDeclaration(tok.text.str());
+        if(decl == nullptr)
             throw PqlException("pql::parser", "{} was not previously declared", tok.text);
-        }
 
         // Check if the reference to previously declared entity is a stmt.
-        return ast::kStmtDesignEntities.count(declaration_list->declarations.find(tok.text.str())->second->design_ent) >
-               0;
+        return ast::kStmtDesignEntities.count(decl->design_ent) > 0;
     }
 
     ast::Uses* parse_uses(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
@@ -599,12 +599,10 @@ namespace pql::parser
                 "pql::parser", "Expected synonym at the start of Select clause instead of {}", var_tok.text);
         }
 
-        if(declaration_list->declarations.count(var_tok.text.str()) == 0)
-        {
+        auto ent = declaration_list->getDeclaration(var_tok.text.str());
+        if(ent == nullptr)
             throw PqlException("pql::parser", "Undeclared {} entity provided.", var_tok.text.str());
-        }
 
-        pql::ast::Declaration* ent = declaration_list->declarations.find(var_tok.text.str())->second;
         util::log("pql::parser", "Return ent for Select clause: {}", ent->toString());
 
         auto* select = new pql::ast::Select {};
@@ -641,14 +639,13 @@ namespace pql::parser
         util::log("pql::parer", "Parsing input {}", input);
         auto ps = ParserState { input };
         auto query = new pql::ast::Query();
-        auto declaration_list = new pql::ast::DeclarationList();
 
         for(Token t; (t = ps.peek_one()) != TT::EndOfFile;)
         {
             if(t == KW_Select)
             {
                 util::log("pql::parser", "parsing Select");
-                query->select = parse_select(&ps, declaration_list);
+                query->select = parse_select(&ps, &query->declarations);
 
                 if(ps.peek_one() != TT::EndOfFile)
                 {
@@ -659,7 +656,7 @@ namespace pql::parser
             else
             {
                 util::log("pql::parser", "parsing declaration");
-                insert_declaration(&ps, declaration_list);
+                insert_declaration(&ps, &query->declarations);
             }
         }
         if(query->select == nullptr)
@@ -667,7 +664,6 @@ namespace pql::parser
             throw util::PqlException("pql::parser", "All queries should contain a select clause");
         }
 
-        query->declarations = declaration_list;
         util::log("pql::parser", "Completed parsing AST: {}", query->toString());
         return query;
     }

@@ -21,10 +21,12 @@ TEST_CASE("DeclarationList")
 {
     pql::ast::Declaration* declaration1 = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
     pql::ast::Declaration* declaration2 = new pql::ast::Declaration { "bar", pql::ast::DESIGN_ENT::PROCEDURE };
-    std::unordered_map<std::string, pql::ast::Declaration*> declarations = { { "foo", declaration1 },
-        { "bar", declaration2 } };
-    pql::ast::DeclarationList* declaration_list = new pql::ast::DeclarationList { declarations };
-    REQUIRE(declaration_list->toString() == "DeclarationList[\n"
+
+    auto declaration_list = pql::ast::DeclarationList {};
+    declaration_list.addDeclaration("foo", declaration1);
+    declaration_list.addDeclaration("bar", declaration2);
+
+    REQUIRE(declaration_list.toString() == "DeclarationList[\n"
                                             "\tname:bar, declaration:Declaration(ent:procedure, name:bar)\n"
                                             "\tname:foo, declaration:Declaration(ent:assign, name:foo)\n"
                                             "]");
@@ -383,12 +385,15 @@ TEST_CASE("Query")
 
     pql::ast::Select select { such_that_cl, pattern_cl, declaration1 };
 
-    std::unordered_map<std::string, pql::ast::Declaration*> declarations = { { "foo", declaration1 },
-        { "bar", declaration2 }, { "buzz", declaration3 } };
+    pql::ast::DeclarationList declaration_list {};
+    declaration_list.addDeclaration("foo", declaration1);
+    declaration_list.addDeclaration("bar", declaration2);
+    declaration_list.addDeclaration("buzz", declaration3);
 
-    pql::ast::DeclarationList declaration_list { declarations };
+    pql::ast::Query query {};
+    query.select = &select;
+    query.declarations = std::move(declaration_list);
 
-    pql::ast::Query query { &select, &declaration_list };
     INFO(query.toString());
 
     constexpr auto expected = "Query(select:Select(such_that:SuchThatCl[\n"

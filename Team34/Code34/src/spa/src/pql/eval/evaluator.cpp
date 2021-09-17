@@ -124,12 +124,10 @@ namespace pql::eval
         return getInitialDomainStmt(declaration);
     }
 
-    void Evaluator::processDeclarations(const ast::DeclarationList* declaration_list)
+    void Evaluator::processDeclarations(const ast::DeclarationList& declaration_list)
     {
-        for(auto [name, decl_ptr] : declaration_list->declarations)
-        {
+        for(const auto& [_, decl_ptr] : declaration_list.getAllDeclarations())
             m_table->upsertDomains(decl_ptr, getInitialDomain(decl_ptr));
-        }
     }
 
     std::list<std::string> Evaluator::evaluate()
