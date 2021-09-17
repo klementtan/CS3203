@@ -356,4 +356,17 @@ namespace pkb
     /**
      * End of Uses and Modifies methods
      */
+
+
+    ProgramKB::~ProgramKB()
+    {
+        for(auto follow : this->follows)
+            delete follow;
+    }
+
+    UsesModifies::~UsesModifies()
+    {
+        for(auto stmt : this->statements)
+            delete stmt;
+    }
 }

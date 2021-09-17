@@ -76,6 +76,8 @@ namespace pkb
 
     struct UsesModifies
     {
+        ~UsesModifies();
+
         // this also functions as a unordered_map from (stmt_number - 1) -> Stmt*,
         // and the Stmt knows its own number.
         std::vector<Statement*> statements;
@@ -108,6 +110,8 @@ namespace pkb
 
     struct ProgramKB
     {
+        ~ProgramKB();
+
         CallGraph proc_calls;
 
         UsesModifies uses_modifies;

@@ -13,7 +13,6 @@ namespace pql::eval
     {
         this->m_pkb = pkb;
         this->m_query = query;
-        // this->m_table = table::Table {};
 
         preprocessPkb(this->m_pkb);
     }
