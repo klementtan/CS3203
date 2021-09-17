@@ -16,14 +16,14 @@ TestWrapper::TestWrapper() { }
 TestWrapper::~TestWrapper()
 {
     delete this->pkb;
-    delete this->program;
 }
 
 void TestWrapper::parse(std::string filename)
 {
     auto text = util::readEntireFile(filename.c_str());
-    this->program = simple::parser::parseProgram(text);
-    this->pkb = pkb::processProgram(this->program);
+    auto program = simple::parser::parseProgram(text);
+
+    this->pkb = pkb::processProgram(std::move(program));
 }
 
 void TestWrapper::evaluate(std::string query, std::list<std::string>& results)

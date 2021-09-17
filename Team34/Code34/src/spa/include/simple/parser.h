@@ -8,6 +8,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 #include <zpr.h>
 
@@ -72,5 +73,5 @@ namespace simple::parser
 namespace simple::parser
 {
     ast::Expr* parseExpression(zst::str_view input);
-    ast::Program* parseProgram(zst::str_view input);
+    std::unique_ptr<ast::Program> parseProgram(zst::str_view input);
 }

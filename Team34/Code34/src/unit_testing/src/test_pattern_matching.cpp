@@ -44,8 +44,7 @@ Expr* get_rhs(Stmt* stmt)
 
 TEST_CASE("pattern matching on trees")
 {
-    auto prog = parseProgram(sample_source);
-    auto kb = processProgram(prog);
+    auto kb = processProgram(parseProgram(sample_source));
     std::vector<Stmt*> stmts {};
     {
         for(const auto& s : kb->uses_modifies.statements)

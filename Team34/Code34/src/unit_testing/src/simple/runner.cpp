@@ -19,8 +19,6 @@ bool Test::run() const
         {
             auto res = simple::parser::parseProgram(this->input);
             actual = res->toString(/* compact: */ true);
-
-            delete res;
         }
         else
         {

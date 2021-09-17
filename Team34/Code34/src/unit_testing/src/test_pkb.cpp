@@ -25,7 +25,7 @@ TEST_CASE("Populate PKB")
         )";
 
         auto prog = parseProgram(in);
-        REQUIRE_THROWS_WITH(processProgram(prog), "Cyclic or recursive calls are not allowed");
+        REQUIRE_THROWS_WITH(processProgram(std::move(prog)), "Cyclic or recursive calls are not allowed");
     }
 
     SECTION("Recursive call")
@@ -37,7 +37,7 @@ TEST_CASE("Populate PKB")
         )";
 
         auto prog = parseProgram(in);
-        REQUIRE_THROWS_WITH(processProgram(prog), "Cyclic or recursive calls are not allowed");
+        REQUIRE_THROWS_WITH(processProgram(std::move(prog)), "Cyclic or recursive calls are not allowed");
     }
 
     SECTION("Recursive calls in disjoint graphs")
@@ -70,7 +70,7 @@ TEST_CASE("Populate PKB")
         )";
 
         auto prog = parseProgram(in);
-        REQUIRE_THROWS_WITH(processProgram(prog), "Cyclic or recursive calls are not allowed");
+        REQUIRE_THROWS_WITH(processProgram(std::move(prog)), "Cyclic or recursive calls are not allowed");
     }
 
     SECTION("Call to non-existent procedure")
@@ -84,6 +84,6 @@ TEST_CASE("Populate PKB")
             }
         )";
         auto prog = parseProgram(in);
-        REQUIRE_THROWS_WITH(processProgram(prog), "Procedure 'C' is undefined");
+        REQUIRE_THROWS_WITH(processProgram(std::move(prog)), "Procedure 'C' is undefined");
     }
 }

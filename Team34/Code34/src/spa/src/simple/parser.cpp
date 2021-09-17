@@ -459,10 +459,10 @@ namespace simple::parser
         return proc;
     }
 
-    Program* parseProgram(zst::str_view input)
+    std::unique_ptr<Program> parseProgram(zst::str_view input)
     {
         auto ps = ParserState { input };
-        auto prog = new Program();
+        auto prog = std::make_unique<Program>();
 
         for(TokenType t; (t = ps.peek()) != TT::EndOfFile;)
             prog->procedures.push_back(parseProcedure(&ps));

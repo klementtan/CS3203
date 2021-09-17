@@ -27,7 +27,6 @@ public:
     virtual void evaluate(std::string query, std::list<std::string>& results);
 
 private:
-    simple::ast::Program* program = nullptr;
     pkb::ProgramKB* pkb = nullptr;
 };
 

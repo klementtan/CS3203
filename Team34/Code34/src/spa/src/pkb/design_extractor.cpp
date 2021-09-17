@@ -460,22 +460,23 @@ namespace pkb
         }
     }
 
-    ProgramKB* processProgram(const s_ast::Program* program)
+    ProgramKB* processProgram(std::unique_ptr<s_ast::Program> prog)
     {
         auto pkb = new ProgramKB();
+        pkb->m_program = std::move(prog);
 
-        for(const auto& proc : program->procedures)
+        for(const auto& proc : pkb->m_program->procedures)
             processCallGraph(pkb, &proc->body, &proc->name);
 
         if(pkb->proc_calls.cycleExists())
             throw util::PkbException("pkb", "Cyclic or recursive calls are not allowed");
 
-        if(auto a = pkb->proc_calls.missingProc(program->procedures); a != "")
+        if(auto a = pkb->proc_calls.missingProc(pkb->m_program->procedures); a != "")
             throw util::PkbException("pkb", "Procedure '{}' is undefined", a);
 
         // do a first pass to number all the statements, set the
         // parent stmtlist, and collect all the procedures.
-        for(const auto& proc : program->procedures)
+        for(const auto& proc : pkb->m_program->procedures)
         {
             collectStmtList(pkb, &proc->body);
 
@@ -486,7 +487,7 @@ namespace pkb
         }
 
         // do a second pass to populate the follows vector and parent, uses, modifies hashmap.
-        for(const auto& proc : program->procedures)
+        for(const auto& proc : pkb->m_program->procedures)
         {
             processFollows(pkb, &proc->body);
             processStmtList(pkb, &proc->body, proc);
@@ -494,7 +495,7 @@ namespace pkb
 
         // do a third pass to populate the ancestors/descendants hashmap and
         // to populate uses/modifies for nested if/while statements
-        for(const auto& proc : program->procedures)
+        for(const auto& proc : pkb->m_program->procedures)
         {
             processAncestors(pkb, &proc->body);
             reprocessStmtList(pkb, &proc->body, proc);

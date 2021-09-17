@@ -3,9 +3,10 @@
 
 #pragma once
 
+#include <memory>
+#include <optional>
 #include <unordered_map>
 #include <unordered_set>
-#include <optional>
 
 #include "pql/parser/ast.h"
 #include "simple/ast.h"
@@ -142,7 +143,9 @@ namespace pkb
 
         bool m_follows_exists = false;
         bool m_parent_exists = false;
+
+        std::unique_ptr<simple::ast::Program> m_program {};
     };
 
-    ProgramKB* processProgram(const simple::ast::Program* prog);
+    ProgramKB* processProgram(std::unique_ptr<simple::ast::Program> prog);
 }
