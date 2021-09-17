@@ -238,8 +238,7 @@ namespace pql::ast
     {
         // whether this is surrounded by '_'s
         bool is_subexpr = false;
-
-        simple::ast::Expr* expr = nullptr;
+        std::unique_ptr<simple::ast::Expr> expr {};
 
         std::string toString() const;
     };
@@ -259,9 +258,10 @@ namespace pql::ast
         virtual std::string toString() const override;
         virtual void evaluate(pkb::ProgramKB* pkb, eval::table::Table* table) const override;
 
-        EntRef* ent = nullptr;
         Declaration* assignment_declaration = nullptr;
-        ExprSpec* expr_spec = nullptr;
+
+        EntRef* ent {};
+        ExprSpec expr_spec {};
     };
 
     /** Pattern Clause. */

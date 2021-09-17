@@ -28,6 +28,8 @@ void TestWrapper::parse(std::string filename)
 
 void TestWrapper::evaluate(std::string query, std::list<std::string>& results)
 {
+    results.clear();
+
     try
     {
         util::log("pql:ast", "Starting to generate pql ast");
@@ -35,6 +37,9 @@ void TestWrapper::evaluate(std::string query, std::list<std::string>& results)
         util::log("pql:ast", "Generated AST: {}", query_ast->toString());
         pql::eval::Evaluator* eval = new pql::eval::Evaluator(this->pkb, query_ast);
         results = eval->evaluate();
+
+        delete eval;
+        delete query_ast;
     }
     catch(const util::Exception& e)
     {

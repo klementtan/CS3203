@@ -33,6 +33,7 @@ namespace pql::ast
 
         if(is_var_decl)
             tbl->addSelectDecl(dynamic_cast<DeclaredEnt*>(this->ent)->declaration);
+
         tbl->addSelectDecl(assignment_declaration);
         // Stores dependency when pattern a(v, ...)
         std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
@@ -45,13 +46,12 @@ namespace pql::ast
             assert(assign_stmt);
 
             // check the rhs first, since it requires less table operations
-            assert(this->expr_spec);
-            if(this->expr_spec->expr != nullptr)
+            if(this->expr_spec.expr != nullptr)
             {
-                if(this->expr_spec->is_subexpr)
-                    should_erase |= !s_ast::partialMatch(this->expr_spec->expr, assign_stmt->rhs);
+                if(this->expr_spec.is_subexpr)
+                    should_erase |= !s_ast::partialMatch(this->expr_spec.expr.get(), assign_stmt->rhs);
                 else
-                    should_erase |= !s_ast::exactMatch(this->expr_spec->expr, assign_stmt->rhs);
+                    should_erase |= !s_ast::exactMatch(this->expr_spec.expr.get(), assign_stmt->rhs);
             }
 
 

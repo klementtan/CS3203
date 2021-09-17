@@ -11,6 +11,8 @@
 #include <unordered_map>
 #include "util.h"
 
+using namespace pql::ast;
+
 TEST_CASE("Declaration")
 {
     pql::ast::Declaration* declaration = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
@@ -231,7 +233,7 @@ TEST_CASE("ExprSpec")
     expr->lhs = lhs;
     expr->rhs = rhs;
     expr->op = "+";
-    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, expr };
+    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, std::unique_ptr<simple::ast::Expr>(expr) };
 
     REQUIRE(expr_spec->toString() == "ExprSpec(is_subexpr:true, expr:(x + y))");
 }
@@ -246,17 +248,17 @@ TEST_CASE("PatternCl")
     expr->lhs = lhs;
     expr->rhs = rhs;
     expr->op = "+";
-    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, expr };
+    ExprSpec expr_spec { true, std::unique_ptr<simple::ast::Expr>(expr) };
 
     pql::ast::Declaration* declaration = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredEnt declared_ent;
-    declared_ent.declaration = declaration;
-    pql::ast::EntRef* ent = &declared_ent;
+
+    auto ent = DeclaredEnt {};
+    ent.declaration = declaration;
 
     auto assign_pattern_cond = std::make_unique<pql::ast::AssignPatternCond>();
     assign_pattern_cond->assignment_declaration = declaration;
-    assign_pattern_cond->ent = ent;
-    assign_pattern_cond->expr_spec = expr_spec;
+    assign_pattern_cond->ent = &ent;
+    assign_pattern_cond->expr_spec = std::move(expr_spec);
     auto pattern_cl = pql::ast::PatternCl {};
     pattern_cl.pattern_conds.push_back(std::move(assign_pattern_cond));
 
@@ -325,15 +327,18 @@ TEST_CASE("Select")
     expr->lhs = lhs;
     expr->rhs = rhs;
     expr->op = "+";
-    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, expr };
-    pql::ast::Declaration* declaration3 = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredEnt declared_ent2;
-    declared_ent2.declaration = declaration3;
-    pql::ast::EntRef* ent2 = &declared_ent2;
+    ExprSpec expr_spec { true, std::unique_ptr<simple::ast::Expr>(expr) };
+
+    auto declaration3 = new Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
+
+    auto ent2 = DeclaredEnt {};
+    ent2.declaration = declaration3;
+
     auto assign_pattern_cond = std::make_unique<pql::ast::AssignPatternCond>();
     assign_pattern_cond->assignment_declaration = declaration3;
-    assign_pattern_cond->ent = ent2;
-    assign_pattern_cond->expr_spec = expr_spec;
+    assign_pattern_cond->ent = &ent2;
+    assign_pattern_cond->expr_spec = std::move(expr_spec);
+
     pql::ast::PatternCl pattern_cl {};
     pattern_cl.pattern_conds.push_back(std::move(assign_pattern_cond));
 
@@ -378,15 +383,17 @@ TEST_CASE("Query")
     expr->lhs = lhs;
     expr->rhs = rhs;
     expr->op = "+";
-    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, expr };
-    pql::ast::Declaration* declaration3 = new pql::ast::Declaration { "buzz", pql::ast::DESIGN_ENT::ASSIGN };
-    pql::ast::DeclaredEnt declared_ent2;
-    declared_ent2.declaration = declaration3;
-    pql::ast::EntRef* ent2 = &declared_ent2;
+    ExprSpec expr_spec { true, std::unique_ptr<simple::ast::Expr>(expr) };
+
+    auto declaration3 = new Declaration { "buzz", pql::ast::DESIGN_ENT::ASSIGN };
+
+    auto ent2 = DeclaredEnt {};
+    ent2.declaration = declaration3;
+
     auto assign_pattern_cond = std::make_unique<pql::ast::AssignPatternCond>();
     assign_pattern_cond->assignment_declaration = declaration3;
-    assign_pattern_cond->ent = ent2;
-    assign_pattern_cond->expr_spec = expr_spec;
+    assign_pattern_cond->ent = &ent2;
+    assign_pattern_cond->expr_spec = std::move(expr_spec);
     pql::ast::PatternCl pattern_cl {};
     pattern_cl.pattern_conds.push_back(std::move(assign_pattern_cond));
 

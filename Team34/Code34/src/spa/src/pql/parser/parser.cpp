@@ -131,7 +131,7 @@ namespace pql::parser
         Token tok = ps->next();
         if(tok.type == TT::Underscore)
         {
-            return new ast::AllEnt {};
+            return new ast::AllEnt();
         }
         if(tok.type == TT::DoubleQuotes)
         {
@@ -145,7 +145,7 @@ namespace pql::parser
             {
                 throw PqlException("pql::parser", "Expected named declaration to end with double quotes(\")");
             }
-            auto* ent_name = new ast::EntName {};
+            auto ent_name = new ast::EntName();
             ent_name->name = name_declaration_tok.text.str();
             return ent_name;
         }
@@ -157,7 +157,7 @@ namespace pql::parser
             if(declaration == nullptr)
                 throw PqlException("pql::parser", "Undeclared entity {} provided when parsing ent ref", var_name);
 
-            auto* declared_ent = new ast::DeclaredEnt {};
+            auto declared_ent = new ast::DeclaredEnt();
             declared_ent->declaration = declaration;
             util::log("pql:parser", "Parsed ent ref {}", declared_ent->toString());
             return declared_ent;
@@ -215,9 +215,9 @@ namespace pql::parser
         return simple::parser::parseExpression(expr_str);
     }
 
-    pql::ast::ExprSpec* parse_expr_spec(ParserState* ps)
+    pql::ast::ExprSpec parse_expr_spec(ParserState* ps)
     {
-        auto* expr_spec = new ast::ExprSpec {};
+        ast::ExprSpec expr_spec {};
 
         bool is_subexpr = false;
         if(ps->peek_one() == TT::Underscore)
@@ -227,16 +227,16 @@ namespace pql::parser
         }
 
         if(ps->peek_one() == TT::DoubleQuotes)
-            expr_spec->expr = parse_expr(ps);
+            expr_spec.expr.reset(parse_expr(ps));
 
         // '_' itself is valid as well, so don't expect '__'
-        if(is_subexpr && expr_spec->expr != nullptr)
+        if(is_subexpr && expr_spec.expr != nullptr)
         {
             if(ps->next() != TT::Underscore)
                 throw PqlException("pql::parser", "expected '_' in subexpression pattern");
         }
 
-        expr_spec->is_subexpr = is_subexpr;
+        expr_spec.is_subexpr = is_subexpr;
         return expr_spec;
     }
 

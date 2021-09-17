@@ -200,7 +200,7 @@ namespace pql::ast
     {
         return zpr::sprint("PatternCl(ent:{}, assignment_declaration:{}, expr_spec:{})", this->ent->toString(),
             this->assignment_declaration ? this->assignment_declaration->toString() : "nullptr",
-            expr_spec ? this->expr_spec->toString() : "nullptr");
+            this->expr_spec.toString());
     }
 
     std::string PatternCl::toString() const
