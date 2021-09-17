@@ -22,10 +22,10 @@ namespace simple::ast
         ~StmtList();
 
         StmtList(const StmtList&) = delete;
-        StmtList& operator= (const StmtList&) = delete;
+        StmtList& operator=(const StmtList&) = delete;
 
         StmtList(StmtList&&);
-        StmtList& operator= (StmtList&&);
+        StmtList& operator=(StmtList&&);
 
         std::vector<Stmt*> statements {};
 
