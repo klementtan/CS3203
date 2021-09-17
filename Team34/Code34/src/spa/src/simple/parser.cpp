@@ -56,8 +56,8 @@ namespace simple::parser
         }
     }
 
-    static Expr* parseExpr(ParserState* ps);
-    static Expr* parsePrimary(ParserState* ps)
+    static std::unique_ptr<Expr> parseExpr(ParserState* ps);
+    static std::unique_ptr<Expr> parsePrimary(ParserState* ps)
     {
         if(ps->peek() == TT::LParen)
         {
@@ -74,14 +74,14 @@ namespace simple::parser
             if(num.size() > 1 && num[0] == '0')
                 throw util::ParseException("simple::parser", "multi-digit integer literal cannot start with 0");
 
-            auto constant = new Constant();
+            auto constant = std::make_unique<Constant>();
             constant->value = num.str();
 
             return constant;
         }
         else if(ps->peek() == TT::Identifier)
         {
-            auto vr = new VarRef();
+            auto vr = std::make_unique<VarRef>();
             vr->name = ps->next().text.str();
 
             return vr;
@@ -96,7 +96,7 @@ namespace simple::parser
         }
     }
 
-    static Expr* parseRhs(ParserState* ps, Expr* lhs, int priority)
+    static std::unique_ptr<Expr> parseRhs(ParserState* ps, std::unique_ptr<Expr> lhs, int priority)
     {
         if(priority == -1)
             return lhs;
@@ -115,32 +115,32 @@ namespace simple::parser
             auto next = get_precedence(ps->peek());
             if(next > prec)
             {
-                rhs = parseRhs(ps, rhs, prec + 1);
+                rhs = parseRhs(ps, std::move(rhs), prec + 1);
                 assert(rhs);
             }
 
-            auto binop = new BinaryOp();
-            binop->lhs = lhs;
-            binop->rhs = rhs;
+            auto binop = std::make_unique<BinaryOp>();
+            binop->lhs = std::move(lhs);
+            binop->rhs = std::move(rhs);
             binop->op = op.str();
 
-            lhs = binop;
+            lhs = std::move(binop);
         }
     }
 
-    static Expr* parseExpr(ParserState* ps)
+    static std::unique_ptr<Expr> parseExpr(ParserState* ps)
     {
         return parseRhs(ps, parsePrimary(ps), 0);
     }
 
-    static Expr* parseCondExpr(ParserState* ps, int paren_nesting = 0);
+    static std::unique_ptr<Expr> parseCondExpr(ParserState* ps, int paren_nesting = 0);
 
 
     // parse `(cond_expr) && (cond_expr)` and friends.
     // but not `! (cond_expr)`
-    static Expr* parseBinaryCondExpr(ParserState* ps, Expr* lhs)
+    static std::unique_ptr<Expr> parseBinaryCondExpr(ParserState* ps, std::unique_ptr<Expr> lhs)
     {
-        assert(lhs != nullptr);
+        assert(lhs);
 
         std::string op;
         if(auto tok = ps->next(); tok == TT::LogicalAnd)
@@ -158,18 +158,19 @@ namespace simple::parser
         if(auto n = ps->next(); n != TT::RParen)
             throw util::ParseException("simple::parser", "expected ')' after expression, found '{}' instead", n.text);
 
-        auto ret = new BinaryOp();
-        ret->lhs = lhs;
-        ret->rhs = rhs;
+        auto ret = std::make_unique<BinaryOp>();
+        ret->lhs = std::move(lhs);
+        ret->rhs = std::move(rhs);
         ret->op = op;
         return ret;
     }
 
 
     // parse `rel_expr < rel_expr` and friends.
-    static Expr* parseRelationalExpr(ParserState* ps, Expr* lhs)
+    static std::unique_ptr<Expr> parseRelationalExpr(ParserState* ps, std::unique_ptr<Expr> lhs)
     {
-        assert(lhs != nullptr);
+        assert(lhs);
+
         std::string op;
         if(auto tok = ps->next(); tok == TT::LAngle)
             op = "<";
@@ -189,9 +190,9 @@ namespace simple::parser
         auto rhs = parseExpr(ps);
         assert(rhs);
 
-        auto ret = new BinaryOp();
-        ret->lhs = lhs;
-        ret->rhs = rhs;
+        auto ret = std::make_unique<BinaryOp>();
+        ret->lhs = std::move(lhs);
+        ret->rhs = std::move(rhs);
         ret->op = op;
         return ret;
     }
@@ -199,7 +200,7 @@ namespace simple::parser
 
 
 
-    static Expr* parseCondExpr(ParserState* ps, int paren_nesting)
+    static std::unique_ptr<Expr> parseCondExpr(ParserState* ps, int paren_nesting)
     {
         if(ps->peek() == TT::Exclamation)
         {
@@ -207,7 +208,7 @@ namespace simple::parser
             if(auto n = ps->next(); n != TT::LParen)
                 throw util::ParseException("simple::parser", "expected '(' after '!', found '{}' instead", n.text);
 
-            auto ret = new UnaryOp();
+            auto ret = std::make_unique<UnaryOp>();
             ret->op = "!";
             ret->expr = parseCondExpr(ps, paren_nesting + 1);
 
@@ -251,7 +252,7 @@ namespace simple::parser
 
             // continue parsing an expression if we can...
             if(auto n = ps->peek(); n != TT::RParen && get_precedence(n) != -1)
-                lhs = parseRhs(ps, lhs, 0);
+                lhs = parseRhs(ps, std::move(lhs), 0);
 
             // now for some hackery...
             if(ps->peek() == TT::RParen && paren_nesting > 0)
@@ -261,22 +262,14 @@ namespace simple::parser
             }
             else if(BinaryOp::isRelational(ps->peek().text))
             {
-                if(is_relational_expr(lhs))
+                if(is_relational_expr(lhs.get()))
                     throw util::ParseException("simple::parser", "relational operators cannot be chained");
 
-                return parseRelationalExpr(ps, lhs);
-
-                // return lhs.flatmap([&ps, &is_relational_expr ](auto lhs) -> auto {
-                //     if(is_relational_expr(lhs))
-                //         return Result<Expr*>(ErrFmt("relational operators cannot be chained"));
-
-                //     return parseRelationalExpr(ps, lhs);
-                // });
+                return parseRelationalExpr(ps, std::move(lhs));
             }
             else if(BinaryOp::isConditional(ps->peek().text))
             {
-                return parseBinaryCondExpr(ps, lhs);
-                // return lhs.flatmap([&ps](auto lhs) -> auto { return parseBinaryCondExpr(ps, lhs); });
+                return parseBinaryCondExpr(ps, std::move(lhs));
             }
             else
             {
@@ -294,13 +287,11 @@ namespace simple::parser
                 return lhs;
 
             // this *has* to be a rel_expr (since cond_exprs must be parenthesised)
-            return parseRelationalExpr(ps, lhs);
-
-            // return lhs.flatmap([&ps](auto lhs) -> auto { return parseRelationalExpr(ps, lhs); });
+            return parseRelationalExpr(ps, std::move(lhs));
         }
     }
 
-    static Stmt* parseStmt(ParserState* ps);
+    static std::unique_ptr<Stmt> parseStmt(ParserState* ps);
     static StmtList parseStatementList(ParserState* ps)
     {
         StmtList list {};
@@ -326,13 +317,13 @@ namespace simple::parser
         return list;
     }
 
-    static IfStmt* parseIfStmt(ParserState* ps)
+    static std::unique_ptr<IfStmt> parseIfStmt(ParserState* ps)
     {
         // note: 'if' was already eaten, so we need to parse the expression immediately.
         if(ps->next() != TT::LParen)
             throw util::ParseException("simple::parser", "expected '(' after 'if'");
 
-        auto ret = new IfStmt();
+        auto ret = std::make_unique<IfStmt>();
         ret->condition = parseCondExpr(ps);
 
         if(auto n = ps->next(); n != TT::RParen)
@@ -350,13 +341,13 @@ namespace simple::parser
         return ret;
     }
 
-    static WhileLoop* parseWhileLoop(ParserState* ps)
+    static std::unique_ptr<WhileLoop> parseWhileLoop(ParserState* ps)
     {
         // note: 'while' was already eaten, so we need to parse the expression immediately.
         if(ps->next() != TT::LParen)
             throw util::ParseException("simple::parser", "expected '(' after 'while'");
 
-        auto ret = new WhileLoop();
+        auto ret = std::make_unique<WhileLoop>();
         ret->condition = parseCondExpr(ps);
 
         if(auto n = ps->next(); n != TT::RParen)
@@ -366,7 +357,7 @@ namespace simple::parser
         return ret;
     }
 
-    static Stmt* parseStmt(ParserState* ps)
+    static std::unique_ptr<Stmt> parseStmt(ParserState* ps)
     {
         auto check_semicolon = [](ParserState * ps, auto ret) -> auto
         {
@@ -387,33 +378,33 @@ namespace simple::parser
 
         if(match_keyword_if_not_assign(tok, KW_Read))
         {
-            auto read = new ReadStmt();
+            auto read = std::make_unique<ReadStmt>();
             if(auto name = ps->next(); name != TT::Identifier)
                 throw util::ParseException("simple::parser", "expected identifier after 'read'");
             else
                 read->var_name = name.text.str();
 
-            return check_semicolon(ps, read);
+            return check_semicolon(ps, std::move(read));
         }
         else if(match_keyword_if_not_assign(tok, KW_Print))
         {
-            auto print = new PrintStmt();
+            auto print = std::make_unique<PrintStmt>();
             if(auto name = ps->next(); name != TT::Identifier)
                 throw util::ParseException("simple::parser", "expected identifier after 'print'");
             else
                 print->var_name = name.text.str();
 
-            return check_semicolon(ps, print);
+            return check_semicolon(ps, std::move(print));
         }
         else if(match_keyword_if_not_assign(tok, KW_Call))
         {
-            auto call = new ProcCall();
+            auto call = std::make_unique<ProcCall>();
             if(auto name = ps->next(); name != TT::Identifier)
                 throw util::ParseException("simple::parser", "expected identifier after 'call'");
             else
                 call->proc_name = name.text.str();
 
-            return check_semicolon(ps, call);
+            return check_semicolon(ps, std::move(call));
         }
         else if(match_keyword_if_not_assign(tok, KW_If))
         {
@@ -430,11 +421,11 @@ namespace simple::parser
             if(ps->next() != TT::Equal)
                 throw util::ParseException("simple::parser", "expected '=' after identifier");
 
-            auto assign = new AssignStmt();
+            auto assign = std::make_unique<AssignStmt>();
             assign->lhs = tok.text.str();
             assign->rhs = parseExpr(ps);
 
-            return check_semicolon(ps, assign);
+            return check_semicolon(ps, std::move(assign));
         }
         else
         {
@@ -442,13 +433,13 @@ namespace simple::parser
         }
     }
 
-    static Procedure* parseProcedure(ParserState* ps)
+    static std::unique_ptr<Procedure> parseProcedure(ParserState* ps)
     {
         if(auto kw = ps->next(); kw != TT::Identifier || kw.text != KW_Procedure)
             throw util::ParseException(
                 "simple::parser", "expected 'procedure' to define a procedure (found '{}')", kw.text);
 
-        auto proc = new Procedure();
+        auto proc = std::make_unique<Procedure>();
 
         if(auto name = ps->next(); name == TT::Identifier)
             proc->name = name.text.str();
@@ -470,7 +461,7 @@ namespace simple::parser
         return prog;
     }
 
-    Expr* parseExpression(zst::str_view input)
+    std::unique_ptr<Expr> parseExpression(zst::str_view input)
     {
         auto ps = ParserState { input };
         auto ret = parseExpr(&ps);

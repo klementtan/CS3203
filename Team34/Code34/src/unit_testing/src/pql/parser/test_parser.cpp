@@ -116,10 +116,10 @@ TEST_CASE("Pattern Query")
     auto* expr = dynamic_cast<simple::ast::BinaryOp*>(expr_spec.expr.get());
     REQUIRE(expr);
     REQUIRE(expr->op == "*");
-    auto* lhs = dynamic_cast<simple::ast::VarRef*>(expr->lhs);
+    auto* lhs = dynamic_cast<simple::ast::VarRef*>(expr->lhs.get());
     REQUIRE(lhs);
     REQUIRE(lhs->name == "cenX");
-    auto* rhs = dynamic_cast<simple::ast::VarRef*>(expr->rhs);
+    auto* rhs = dynamic_cast<simple::ast::VarRef*>(expr->rhs.get());
     REQUIRE(rhs);
     REQUIRE(rhs->name == "cenX");
 }

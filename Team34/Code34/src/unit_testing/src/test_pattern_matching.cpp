@@ -39,7 +39,7 @@ constexpr const auto sample_source = R"(
 
 Expr* get_rhs(Stmt* stmt)
 {
-    return ((AssignStmt*) stmt)->rhs;
+    return ((AssignStmt*) stmt)->rhs.get();
 }
 
 TEST_CASE("pattern matching on trees")

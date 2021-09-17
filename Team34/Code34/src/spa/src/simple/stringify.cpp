@@ -40,8 +40,8 @@ namespace simple::ast
     {
         if(is_conditional_op(this))
         {
-            auto left = parenthesise_conditional(this->lhs);
-            auto right = parenthesise_conditional(this->rhs);
+            auto left = parenthesise_conditional(this->lhs.get());
+            auto right = parenthesise_conditional(this->rhs.get());
 
             return zpr::sprint("{} {} {}", left, this->op, right);
         }
@@ -53,7 +53,7 @@ namespace simple::ast
 
     std::string UnaryOp::toString() const
     {
-        if(is_conditional_op(this->expr) || !is_binop(this->expr))
+        if(is_conditional_op(this->expr.get()) || !is_binop(this->expr.get()))
             return zpr::sprint("{}({})", this->op, this->expr->toString());
         else
             return zpr::sprint("{}{}", this->op, this->expr->toString());
@@ -86,7 +86,7 @@ namespace simple::ast
     {
         if(compact)
         {
-            return zpr::sprint("if{}then{}else{}", parenthesise_conditional(this->condition),
+            return zpr::sprint("if{}then{}else{}", parenthesise_conditional(this->condition.get()),
                 this->true_case.toString(0, true), this->false_case.toString(0, true));
         }
         else
@@ -113,7 +113,7 @@ namespace simple::ast
     {
         if(compact)
         {
-            return zpr::sprint("while{}{}", parenthesise_conditional(this->condition), this->body.toString(0, true));
+            return zpr::sprint("while{}{}", parenthesise_conditional(this->condition.get()), this->body.toString(0, true));
         }
         else
         {
@@ -187,4 +187,8 @@ namespace simple::ast
     {
         return op == "&&" || op == "||";
     }
+
+
+    Stmt::~Stmt() { }
+    Expr::~Expr() { }
 }

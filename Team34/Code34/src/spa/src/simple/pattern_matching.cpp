@@ -19,8 +19,8 @@ namespace simple::ast
         if(auto binary0 = dynamic_cast<BinaryOp*>(subtree))
         {
             auto binary1 = dynamic_cast<BinaryOp*>(tree);
-            return binary1 && binary0->op == binary1->op && exactMatch(binary0->lhs, binary1->lhs) &&
-                   exactMatch(binary0->rhs, binary1->rhs);
+            return binary1 && binary0->op == binary1->op && exactMatch(binary0->lhs.get(), binary1->lhs.get()) &&
+                   exactMatch(binary0->rhs.get(), binary1->rhs.get());
         }
 
         return false;
@@ -32,7 +32,7 @@ namespace simple::ast
             return true;
 
         if(BinaryOp* binary_tree = dynamic_cast<BinaryOp*>(tree))
-            return partialMatch(subtree, binary_tree->lhs) || partialMatch(subtree, binary_tree->rhs);
+            return partialMatch(subtree, binary_tree->lhs.get()) || partialMatch(subtree, binary_tree->rhs.get());
 
         return false;
     }

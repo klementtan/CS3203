@@ -48,9 +48,9 @@ namespace pql::ast
             if(this->expr_spec.expr != nullptr)
             {
                 if(this->expr_spec.is_subexpr)
-                    should_erase |= !s_ast::partialMatch(this->expr_spec.expr.get(), assign_stmt->rhs);
+                    should_erase |= !s_ast::partialMatch(this->expr_spec.expr.get(), assign_stmt->rhs.get());
                 else
-                    should_erase |= !s_ast::exactMatch(this->expr_spec.expr.get(), assign_stmt->rhs);
+                    should_erase |= !s_ast::exactMatch(this->expr_spec.expr.get(), assign_stmt->rhs.get());
             }
 
 

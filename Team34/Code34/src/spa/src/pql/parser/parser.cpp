@@ -191,7 +191,7 @@ namespace pql::parser
     }
 
     // Extract out the expression between the double quotes in expression specification.
-    simple::ast::Expr* parse_expr(ParserState* ps)
+    std::unique_ptr<simple::ast::Expr> parse_expr(ParserState* ps)
     {
         if(ps->next().type != TT::DoubleQuotes)
         {
@@ -220,7 +220,7 @@ namespace pql::parser
         }
 
         if(ps->peek_one() == TT::DoubleQuotes)
-            expr_spec.expr.reset(parse_expr(ps));
+            expr_spec.expr = parse_expr(ps);
 
         // '_' itself is valid as well, so don't expect '__'
         if(is_subexpr && expr_spec.expr != nullptr)

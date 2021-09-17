@@ -190,30 +190,30 @@ TEST_CASE("FollowsT")
 
 TEST_CASE("ExprSpec")
 {
-    simple::ast::BinaryOp* expr = new simple::ast::BinaryOp {};
-    simple::ast::VarRef* lhs = new simple::ast::VarRef {};
+    auto expr = std::make_unique<simple::ast::BinaryOp>();
+    auto lhs = std::make_unique<simple::ast::VarRef>();
     lhs->name = "x";
-    simple::ast::VarRef* rhs = new simple::ast::VarRef {};
+    auto rhs = std::make_unique<simple::ast::VarRef>();
     rhs->name = "y";
-    expr->lhs = lhs;
-    expr->rhs = rhs;
+    expr->lhs = std::move(lhs);
+    expr->rhs = std::move(rhs);
     expr->op = "+";
-    pql::ast::ExprSpec* expr_spec = new pql::ast::ExprSpec { true, std::unique_ptr<simple::ast::Expr>(expr) };
+    auto expr_spec = pql::ast::ExprSpec { true, std::move(expr) };
 
-    REQUIRE(expr_spec->toString() == "ExprSpec(is_subexpr:true, expr:(x + y))");
+    REQUIRE(expr_spec.toString() == "ExprSpec(is_subexpr:true, expr:(x + y))");
 }
 
 TEST_CASE("PatternCl")
 {
-    simple::ast::BinaryOp* expr = new simple::ast::BinaryOp {};
-    simple::ast::VarRef* lhs = new simple::ast::VarRef {};
+    auto expr = std::make_unique<simple::ast::BinaryOp>();
+    auto lhs = std::make_unique<simple::ast::VarRef>();
     lhs->name = "x";
-    simple::ast::VarRef* rhs = new simple::ast::VarRef {};
+    auto rhs = std::make_unique<simple::ast::VarRef>();
     rhs->name = "y";
-    expr->lhs = lhs;
-    expr->rhs = rhs;
+    expr->lhs = std::move(lhs);
+    expr->rhs = std::move(rhs);
     expr->op = "+";
-    ExprSpec expr_spec { true, std::unique_ptr<simple::ast::Expr>(expr) };
+    auto expr_spec = pql::ast::ExprSpec { true, std::move(expr) };
 
     pql::ast::Declaration* declaration = new pql::ast::Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
 
@@ -275,15 +275,15 @@ TEST_CASE("Select")
     such_that_cl.rel_conds.push_back(std::move(relationship));
 
     /** Initialize pattern*/
-    simple::ast::BinaryOp* expr = new simple::ast::BinaryOp {};
-    simple::ast::VarRef* lhs = new simple::ast::VarRef {};
+    auto expr = std::make_unique<simple::ast::BinaryOp>();
+    auto lhs = std::make_unique<simple::ast::VarRef>();
     lhs->name = "x";
-    simple::ast::VarRef* rhs = new simple::ast::VarRef {};
+    auto rhs = std::make_unique<simple::ast::VarRef>();
     rhs->name = "y";
-    expr->lhs = lhs;
-    expr->rhs = rhs;
+    expr->lhs = std::move(lhs);
+    expr->rhs = std::move(rhs);
     expr->op = "+";
-    ExprSpec expr_spec { true, std::unique_ptr<simple::ast::Expr>(expr) };
+    auto expr_spec = pql::ast::ExprSpec { true, std::move(expr) };
 
     auto declaration3 = new Declaration { "foo", pql::ast::DESIGN_ENT::ASSIGN };
     auto ent2 = EntRef::ofDeclaration(declaration3);
@@ -325,15 +325,15 @@ TEST_CASE("Query")
     such_that_cl.rel_conds.push_back(std::move(relationship));
 
     /** Initialize pattern*/
-    simple::ast::BinaryOp* expr = new simple::ast::BinaryOp {};
-    simple::ast::VarRef* lhs = new simple::ast::VarRef {};
+    auto expr = std::make_unique<simple::ast::BinaryOp>();
+    auto lhs = std::make_unique<simple::ast::VarRef>();
     lhs->name = "x";
-    simple::ast::VarRef* rhs = new simple::ast::VarRef {};
+    auto rhs = std::make_unique<simple::ast::VarRef>();
     rhs->name = "y";
-    expr->lhs = lhs;
-    expr->rhs = rhs;
+    expr->lhs = std::move(lhs);
+    expr->rhs = std::move(rhs);
     expr->op = "+";
-    ExprSpec expr_spec { true, std::unique_ptr<simple::ast::Expr>(expr) };
+    auto expr_spec = pql::ast::ExprSpec { true, std::move(expr) };
 
     auto declaration3 = new Declaration { "buzz", pql::ast::DESIGN_ENT::ASSIGN };
     auto ent2 = EntRef::ofDeclaration(declaration3);

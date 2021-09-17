@@ -24,8 +24,6 @@ bool Test::run() const
         {
             auto res = simple::parser::parseExpression(this->input);
             actual = res->toString();
-
-            delete res;
         }
         ok = true;
     }
