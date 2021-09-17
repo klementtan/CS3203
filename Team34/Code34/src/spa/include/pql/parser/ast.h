@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 #include <optional>
 #include <unordered_map>
 #include <unordered_set>
@@ -52,6 +53,16 @@ namespace pql::ast
     /** List of design entity declaration. ie Represents [`assign a`, `print p`]. */
     struct DeclarationList
     {
+        DeclarationList() = default;
+        ~DeclarationList();
+
+        DeclarationList(const DeclarationList&) = delete;
+        DeclarationList& operator=(const DeclarationList&) = delete;
+
+        DeclarationList(DeclarationList&&) = default;
+        DeclarationList& operator=(DeclarationList&&) = default;
+
+
         std::string toString() const;
         bool hasDeclaration(const std::string& name) const;
         Declaration* getDeclaration(const std::string& name) const;
@@ -93,7 +104,7 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        size_t id = 0;
+        simple::ast::StatementNum id = 0;
     };
 
     /** Statement Reference to all(`_`) statements. */
@@ -258,7 +269,7 @@ namespace pql::ast
     {
         // Support multiple PatternCond for forward compatibility. Future iteration
         // requires ANDing multiple PatternCond
-        std::vector<PatternCond*> pattern_conds;
+        std::vector<std::unique_ptr<PatternCond>> pattern_conds;
         std::string toString() const;
     };
 
@@ -267,7 +278,7 @@ namespace pql::ast
     {
         // Support multiple RelCond for forward compatibility. Future iteration
         // requires ANDing multiple RelCond
-        std::vector<RelCond*> rel_conds;
+        std::vector<std::unique_ptr<RelCond>> rel_conds;
         std::string toString() const;
     };
 

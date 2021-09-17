@@ -32,7 +32,7 @@ TEST_CASE("Follows* Query")
     REQUIRE(query->select.ent == s_declaration);
     pql::ast::SuchThatCl& such_that_cl = *query->select.such_that;
     REQUIRE(such_that_cl.rel_conds.size() == 1);
-    pql::ast::FollowsT* follows_t = dynamic_cast<pql::ast::FollowsT*>(*such_that_cl.rel_conds.rbegin());
+    auto follows_t = dynamic_cast<pql::ast::FollowsT*>(such_that_cl.rel_conds.begin()->get());
     REQUIRE(follows_t != nullptr);
     REQUIRE(dynamic_cast<pql::ast::StmtId*>(follows_t->before)->id == 6);
     REQUIRE(dynamic_cast<pql::ast::DeclaredStmt*>(follows_t->after)->declaration == s_declaration);
@@ -49,7 +49,7 @@ TEST_CASE("ModifiesS Query")
     REQUIRE(query->select.ent == v_declaration);
     pql::ast::SuchThatCl& such_that_cl = *query->select.such_that;
     REQUIRE(such_that_cl.rel_conds.size() == 1);
-    pql::ast::ModifiesS* modifies_s = dynamic_cast<pql::ast::ModifiesS*>(*such_that_cl.rel_conds.rbegin());
+    auto modifies_s = dynamic_cast<pql::ast::ModifiesS*>(such_that_cl.rel_conds.begin()->get());
     REQUIRE(modifies_s != nullptr);
     REQUIRE(dynamic_cast<pql::ast::StmtId*>(modifies_s->modifier)->id == 6);
     REQUIRE(dynamic_cast<pql::ast::DeclaredEnt*>(modifies_s->ent)->declaration == v_declaration);
@@ -66,7 +66,7 @@ TEST_CASE("ModifiesP Query")
     REQUIRE(query->select.ent == p_declaration);
     pql::ast::SuchThatCl& such_that_cl = *query->select.such_that;
     REQUIRE(such_that_cl.rel_conds.size() == 1);
-    pql::ast::ModifiesP* modifies_p = dynamic_cast<pql::ast::ModifiesP*>(*such_that_cl.rel_conds.rbegin());
+    auto modifies_p = dynamic_cast<pql::ast::ModifiesP*>(such_that_cl.rel_conds.begin()->get());
     REQUIRE(modifies_p != nullptr);
     REQUIRE(dynamic_cast<pql::ast::DeclaredEnt*>(modifies_p->modifier)->declaration == p_declaration);
     REQUIRE(dynamic_cast<pql::ast::EntName*>(modifies_p->ent)->name == "x");
@@ -83,7 +83,7 @@ TEST_CASE("UsesS Query")
     REQUIRE(query->select.ent == v_declaration);
     pql::ast::SuchThatCl& such_that_cl = *query->select.such_that;
     REQUIRE(such_that_cl.rel_conds.size() == 1);
-    pql::ast::UsesS* uses_s = dynamic_cast<pql::ast::UsesS*>(*such_that_cl.rel_conds.rbegin());
+    auto uses_s = dynamic_cast<pql::ast::UsesS*>(such_that_cl.rel_conds.begin()->get());
     REQUIRE(uses_s != nullptr);
     REQUIRE(dynamic_cast<pql::ast::StmtId*>(uses_s->user)->id == 14);
     REQUIRE(dynamic_cast<pql::ast::DeclaredEnt*>(uses_s->ent)->declaration == v_declaration);
@@ -101,7 +101,7 @@ TEST_CASE("Pattern Query")
     pql::ast::PatternCl& pattern_cl = *query->select.pattern;
     REQUIRE(pattern_cl.pattern_conds.size() == 1);
     pql::ast::AssignPatternCond* assign_pattern_cond =
-        dynamic_cast<pql::ast::AssignPatternCond*>(pattern_cl.pattern_conds.front());
+        dynamic_cast<pql::ast::AssignPatternCond*>(pattern_cl.pattern_conds.front().get());
     REQUIRE(assign_pattern_cond != nullptr);
     REQUIRE(assign_pattern_cond->assignment_declaration == a_declaration);
     REQUIRE(dynamic_cast<pql::ast::EntName*>(assign_pattern_cond->ent)->name == "normSq");
@@ -131,7 +131,7 @@ TEST_CASE("Parent Query")
         REQUIRE(query->select.ent == s_declaration);
         pql::ast::SuchThatCl& such_that_cl = *query->select.such_that;
         REQUIRE(such_that_cl.rel_conds.size() == 1);
-        pql::ast::Parent* parent = dynamic_cast<pql::ast::Parent*>(*such_that_cl.rel_conds.rbegin());
+        auto parent = dynamic_cast<pql::ast::Parent*>(such_that_cl.rel_conds.begin()->get());
         REQUIRE(parent != nullptr);
         REQUIRE(dynamic_cast<pql::ast::StmtId*>(parent->parent)->id == 6);
         REQUIRE(dynamic_cast<pql::ast::DeclaredStmt*>(parent->child)->declaration == s_declaration);

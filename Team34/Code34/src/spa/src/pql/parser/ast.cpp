@@ -206,10 +206,9 @@ namespace pql::ast
     std::string PatternCl::toString() const
     {
         std::string ret { "PatternCl[\n" };
-        for(const PatternCond* pattern_cond : this->pattern_conds)
-        {
+        for(const auto& pattern_cond : this->pattern_conds)
             ret += zpr::sprint("\t{}\n", pattern_cond ? pattern_cond->toString() : "nullptr");
-        }
+
         ret += "]";
         return ret;
     }
@@ -217,10 +216,9 @@ namespace pql::ast
     std::string SuchThatCl::toString() const
     {
         std::string ret { "SuchThatCl[\n" };
-        for(const RelCond* rel_cond : this->rel_conds)
-        {
+        for(const auto& rel_cond : this->rel_conds)
             ret += zpr::sprint("\t{}\n", rel_cond ? rel_cond->toString() : "nullptr");
-        }
+
         ret += "]";
         return ret;
     }

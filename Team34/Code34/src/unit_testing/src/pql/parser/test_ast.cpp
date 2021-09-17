@@ -27,9 +27,9 @@ TEST_CASE("DeclarationList")
     declaration_list.addDeclaration("bar", declaration2);
 
     REQUIRE(declaration_list.toString() == "DeclarationList[\n"
-                                            "\tname:bar, declaration:Declaration(ent:procedure, name:bar)\n"
-                                            "\tname:foo, declaration:Declaration(ent:assign, name:foo)\n"
-                                            "]");
+                                           "\tname:bar, declaration:Declaration(ent:procedure, name:bar)\n"
+                                           "\tname:foo, declaration:Declaration(ent:assign, name:foo)\n"
+                                           "]");
 }
 
 TEST_CASE("DeclaredStmt")
@@ -253,17 +253,19 @@ TEST_CASE("PatternCl")
     declared_ent.declaration = declaration;
     pql::ast::EntRef* ent = &declared_ent;
 
-    pql::ast::AssignPatternCond* assign_pattern_cond = new pql::ast::AssignPatternCond {};
+    auto assign_pattern_cond = std::make_unique<pql::ast::AssignPatternCond>();
     assign_pattern_cond->assignment_declaration = declaration;
     assign_pattern_cond->ent = ent;
     assign_pattern_cond->expr_spec = expr_spec;
-    pql::ast::PatternCl* pattern_cl = new pql::ast::PatternCl { { assign_pattern_cond } };
-    INFO(pattern_cl->toString());
-    REQUIRE(pattern_cl->toString() == "PatternCl[\n"
-                                      "\tPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)), "
-                                      "assignment_declaration:Declaration(ent:assign, name:foo), expr_spec:ExprSpec"
-                                      "(is_subexpr:true, expr:(x + y)))\n"
-                                      "]");
+    auto pattern_cl = pql::ast::PatternCl {};
+    pattern_cl.pattern_conds.push_back(std::move(assign_pattern_cond));
+
+    INFO(pattern_cl.toString());
+    REQUIRE(pattern_cl.toString() == "PatternCl[\n"
+                                     "\tPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)), "
+                                     "assignment_declaration:Declaration(ent:assign, name:foo), expr_spec:ExprSpec"
+                                     "(is_subexpr:true, expr:(x + y)))\n"
+                                     "]");
 }
 
 TEST_CASE("SuchThat")
@@ -281,11 +283,12 @@ TEST_CASE("SuchThat")
     pql::ast::StmtRef* stmt = &delcared_stmt;
 
     /** Initialize relationship */
-    pql::ast::ModifiesS relationship;
-    relationship.ent = ent;
-    relationship.modifier = stmt;
+    auto relationship = std::make_unique<pql::ast::ModifiesS>();
+    relationship->ent = ent;
+    relationship->modifier = stmt;
 
-    pql::ast::SuchThatCl such_that_cl = { { &relationship } };
+    pql::ast::SuchThatCl such_that_cl {};
+    such_that_cl.rel_conds.push_back(std::move(relationship));
     INFO(such_that_cl.toString());
     REQUIRE(such_that_cl.toString() == "SuchThatCl[\n"
                                        "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:"
@@ -306,11 +309,12 @@ TEST_CASE("Select")
     delcared_stmt.declaration = declaration2;
     pql::ast::StmtRef* stmt = &delcared_stmt;
 
-    pql::ast::ModifiesS relationship;
-    relationship.ent = ent1;
-    relationship.modifier = stmt;
+    auto relationship = std::make_unique<pql::ast::ModifiesS>();
+    relationship->ent = ent1;
+    relationship->modifier = stmt;
 
-    pql::ast::SuchThatCl such_that_cl { { &relationship } };
+    pql::ast::SuchThatCl such_that_cl {};
+    such_that_cl.rel_conds.push_back(std::move(relationship));
 
     /** Initialize pattern*/
     simple::ast::BinaryOp* expr = new simple::ast::BinaryOp {};
@@ -326,13 +330,14 @@ TEST_CASE("Select")
     pql::ast::DeclaredEnt declared_ent2;
     declared_ent2.declaration = declaration3;
     pql::ast::EntRef* ent2 = &declared_ent2;
-    pql::ast::AssignPatternCond* assign_pattern_cond = new pql::ast::AssignPatternCond {};
+    auto assign_pattern_cond = std::make_unique<pql::ast::AssignPatternCond>();
     assign_pattern_cond->assignment_declaration = declaration3;
     assign_pattern_cond->ent = ent2;
     assign_pattern_cond->expr_spec = expr_spec;
-    pql::ast::PatternCl pattern_cl { { assign_pattern_cond } };
+    pql::ast::PatternCl pattern_cl {};
+    pattern_cl.pattern_conds.push_back(std::move(assign_pattern_cond));
 
-    pql::ast::Select select { such_that_cl, pattern_cl, declaration1 };
+    pql::ast::Select select { std::move(such_that_cl), std::move(pattern_cl), declaration1 };
     INFO(select.toString());
     REQUIRE(select.toString() == "Select(such_that:SuchThatCl[\n"
                                  "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:"
@@ -357,11 +362,12 @@ TEST_CASE("Query")
     delcared_stmt.declaration = declaration2;
     pql::ast::StmtRef* stmt = &delcared_stmt;
 
-    pql::ast::ModifiesS relationship;
-    relationship.ent = ent1;
-    relationship.modifier = stmt;
+    auto relationship = std::make_unique<pql::ast::ModifiesS>();
+    relationship->ent = ent1;
+    relationship->modifier = stmt;
 
-    pql::ast::SuchThatCl such_that_cl { { &relationship } };
+    pql::ast::SuchThatCl such_that_cl {};
+    such_that_cl.rel_conds.push_back(std::move(relationship));
 
     /** Initialize pattern*/
     simple::ast::BinaryOp* expr = new simple::ast::BinaryOp {};
@@ -377,13 +383,14 @@ TEST_CASE("Query")
     pql::ast::DeclaredEnt declared_ent2;
     declared_ent2.declaration = declaration3;
     pql::ast::EntRef* ent2 = &declared_ent2;
-    pql::ast::AssignPatternCond* assign_pattern_cond = new pql::ast::AssignPatternCond {};
+    auto assign_pattern_cond = std::make_unique<pql::ast::AssignPatternCond>();
     assign_pattern_cond->assignment_declaration = declaration3;
     assign_pattern_cond->ent = ent2;
     assign_pattern_cond->expr_spec = expr_spec;
-    pql::ast::PatternCl pattern_cl { { assign_pattern_cond } };
+    pql::ast::PatternCl pattern_cl {};
+    pattern_cl.pattern_conds.push_back(std::move(assign_pattern_cond));
 
-    pql::ast::Select select { such_that_cl, pattern_cl, declaration1 };
+    pql::ast::Select select { std::move(such_that_cl), std::move(pattern_cl), declaration1 };
 
     pql::ast::DeclarationList declaration_list {};
     declaration_list.addDeclaration("foo", declaration1);

@@ -153,24 +153,26 @@ namespace pql::eval
     void Evaluator::handleSuchThat(const ast::SuchThatCl& such_that)
     {
         util::log("pql::eval", "Handling such that:{}", such_that.toString());
-        for(ast::RelCond* rel_cond : such_that.rel_conds)
+        for(const auto& rel_cond : such_that.rel_conds)
         {
-            if(auto follows = dynamic_cast<ast::Follows*>(rel_cond); follows)
+            if(auto follows = dynamic_cast<ast::Follows*>(rel_cond.get()); follows)
                 handleFollows(follows);
-            if(auto follows_t = dynamic_cast<ast::FollowsT*>(rel_cond); follows_t)
+            else if(auto follows_t = dynamic_cast<ast::FollowsT*>(rel_cond.get()); follows_t)
                 handleFollowsT(follows_t);
-            if(auto uses_p = dynamic_cast<ast::UsesP*>(rel_cond); uses_p)
+            else if(auto uses_p = dynamic_cast<ast::UsesP*>(rel_cond.get()); uses_p)
                 handleUsesP(uses_p);
-            if(auto uses_s = dynamic_cast<ast::UsesS*>(rel_cond); uses_s)
+            else if(auto uses_s = dynamic_cast<ast::UsesS*>(rel_cond.get()); uses_s)
                 handleUsesS(uses_s);
-            if(auto modifies_p = dynamic_cast<ast::ModifiesP*>(rel_cond); modifies_p)
+            else if(auto modifies_p = dynamic_cast<ast::ModifiesP*>(rel_cond.get()); modifies_p)
                 handleModifiesP(modifies_p);
-            if(auto modifies_s = dynamic_cast<ast::ModifiesS*>(rel_cond); modifies_s)
+            else if(auto modifies_s = dynamic_cast<ast::ModifiesS*>(rel_cond.get()); modifies_s)
                 handleModifiesS(modifies_s);
-            if(auto parent = dynamic_cast<ast::Parent*>(rel_cond); parent)
+            else if(auto parent = dynamic_cast<ast::Parent*>(rel_cond.get()); parent)
                 handleParent(parent);
-            if(auto parent_t = dynamic_cast<ast::ParentT*>(rel_cond); parent_t)
+            else if(auto parent_t = dynamic_cast<ast::ParentT*>(rel_cond.get()); parent_t)
                 handleParentT(parent_t);
+            else
+                throw util::PqlException("pql::eval", "unknown relation type");
         }
     }
 }

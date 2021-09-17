@@ -12,7 +12,7 @@ namespace pql::eval
 {
     void Evaluator::handlePattern(const ast::PatternCl& pattern)
     {
-        for(auto p : pattern.pattern_conds)
+        for(const auto& p : pattern.pattern_conds)
             p->evaluate(this->m_pkb, this->m_table);
     }
 }

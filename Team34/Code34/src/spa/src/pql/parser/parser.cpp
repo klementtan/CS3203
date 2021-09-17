@@ -242,7 +242,7 @@ namespace pql::parser
 
     pql::ast::PatternCl parse_pattern(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
     {
-        std::vector<pql::ast::PatternCond*> pattern_conds;
+        std::vector<std::unique_ptr<pql::ast::PatternCond>> pattern_conds;
 
         if(Token tok = ps->next(); tok != KW_Pattern)
         {
@@ -269,7 +269,7 @@ namespace pql::parser
         util::log("pql::parser", "Parsing pattern clause with assignment condition {}", declaration->toString());
 
         // TOOD refactor to a smaller method.
-        auto* pattern_cond = new pql::ast::AssignPatternCond {};
+        auto pattern_cond = std::make_unique<pql::ast::AssignPatternCond>();
 
 
         if(Token tok = ps->next(); tok != TT::LParen)
@@ -289,14 +289,14 @@ namespace pql::parser
         {
             throw PqlException("pql::parser", "Expected ')' after expr spec in Pattern clause instead of {}", tok.text);
         }
-        pattern_conds.push_back(pattern_cond);
 
         util::log("pql::parser", "Completed parsing pattern cond: {}", pattern_cond->toString());
+        pattern_conds.push_back(std::move(pattern_cond));
 
-        return ast::PatternCl { pattern_conds };
+        return ast::PatternCl { std::move(pattern_conds) };
     }
 
-    ast::FollowsT* parse_follows_t(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    std::unique_ptr<ast::FollowsT> parse_follows_t(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
     {
         auto f = ps->next();
         auto star = ps->next();
@@ -307,7 +307,7 @@ namespace pql::parser
             throw PqlException("pql::parser", "FollowsT relationship condition should start with 'Follows*'");
         }
 
-        auto* follows_t = new ast::FollowsT {};
+        auto follows_t = std::make_unique<ast::FollowsT>();
         if(Token tok = ps->next(); tok != TT::LParen)
         {
             throw PqlException("pql::parser", "Expected '(' at the start of 'Follows*' instead of {}", tok.text);
@@ -326,13 +326,13 @@ namespace pql::parser
         return follows_t;
     }
 
-    ast::Follows* parse_follows(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    std::unique_ptr<ast::Follows> parse_follows(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
     {
         if(ps->next().text != "Follows")
         {
             throw PqlException("pql::parser", "FollowsT relationship condition should start with 'Follows*'");
         }
-        auto* follows = new ast::Follows {};
+        auto follows = std::make_unique<ast::Follows>();
         if(Token tok = ps->next(); tok != TT::LParen)
         {
             throw PqlException("pql::parser", "Expected '(' at the start of 'Follows' instead of {}", tok.text);
@@ -352,7 +352,7 @@ namespace pql::parser
         return follows;
     }
 
-    ast::ParentT* parse_parent_t(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    std::unique_ptr<ast::ParentT> parse_parent_t(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
     {
         auto p = ps->next();
         auto star = ps->next();
@@ -362,7 +362,7 @@ namespace pql::parser
         {
             throw PqlException("pql::parser", "ParentT relationship condition should start with 'Parent*'");
         }
-        auto* parent_t = new ast::ParentT {};
+        auto parent_t = std::make_unique<ast::ParentT>();
         if(Token tok = ps->next(); tok != TT::LParen)
         {
             throw PqlException("pql::parser", "Expected '(' at the start of 'Parent*' instead of {}", tok.text);
@@ -381,13 +381,13 @@ namespace pql::parser
         return parent_t;
     }
 
-    ast::Parent* parse_parent(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    std::unique_ptr<ast::Parent> parse_parent(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
     {
         if(ps->next().text != "Parent")
         {
             throw PqlException("pql::parser", "Parent relationship condition should start with 'Parent'");
         }
-        auto* parent = new ast::Parent {};
+        auto parent = std::make_unique<ast::Parent>();
         if(Token tok = ps->next(); tok != TT::LParen)
         {
             throw PqlException("pql::parser", "Expected '(' at the start of 'Parent' instead of {}", tok.text);
@@ -441,7 +441,7 @@ namespace pql::parser
         return ast::kStmtDesignEntities.count(decl->design_ent) > 0;
     }
 
-    ast::Uses* parse_uses(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    std::unique_ptr<ast::Uses> parse_uses(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
     {
         if(ps->next().text != "Uses")
         {
@@ -466,7 +466,7 @@ namespace pql::parser
             {
                 throw PqlException("pql::parser", "Expected ')' at the end of 'Uses' instead of {}", tok.text);
             }
-            auto* user_s = new ast::UsesS {};
+            auto user_s = std::make_unique<ast::UsesS>();
             user_s->user = user;
             user_s->ent = ent;
             return user_s;
@@ -483,14 +483,14 @@ namespace pql::parser
             {
                 throw PqlException("pql::parser", "Expected ')' at the end of 'Uses' instead of {}", tok.text);
             }
-            auto* user_p = new ast::UsesP {};
+            auto user_p = std::make_unique<ast::UsesP>();
             user_p->user = user;
             user_p->ent = ent;
             return user_p;
         }
     }
 
-    ast::Modifies* parse_modifies(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    std::unique_ptr<ast::Modifies> parse_modifies(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
     {
         if(ps->next().text != "Modifies")
         {
@@ -515,7 +515,7 @@ namespace pql::parser
             {
                 throw PqlException("pql::parser", "Expected ')' at the end of 'Modifies' instead of {}", tok.text);
             }
-            auto* modifies_s = new ast::ModifiesS {};
+            auto modifies_s = std::make_unique<ast::ModifiesS>();
             modifies_s->modifier = modifier;
             modifies_s->ent = ent;
             return modifies_s;
@@ -532,14 +532,14 @@ namespace pql::parser
             {
                 throw PqlException("pql::parser", "Expected ')' at the end of 'Modifies' instead of {}", tok.text);
             }
-            auto* modifies_s = new ast::ModifiesP {};
+            auto modifies_s = std::make_unique<ast::ModifiesP>();
             modifies_s->modifier = modifier;
             modifies_s->ent = ent;
             return modifies_s;
         }
     }
 
-    ast::RelCond* parse_rel_cond(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    std::unique_ptr<ast::RelCond> parse_rel_cond(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
     {
         std::vector<Token> rel_cond_toks = ps->peek_two();
 
@@ -577,8 +577,7 @@ namespace pql::parser
         ast::SuchThatCl such_that {};
 
         // TODO(iteration 2): Handle AND condition here
-        auto rel_cond = parse_rel_cond(ps, declaration_list);
-        such_that.rel_conds.push_back(rel_cond);
+        such_that.rel_conds.push_back(parse_rel_cond(ps, declaration_list));
 
         util::log("pql::parser", "Complete parsing such that clause: {}", such_that.toString());
         return such_that;
