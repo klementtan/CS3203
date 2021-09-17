@@ -240,7 +240,7 @@ namespace pql::parser
         return expr_spec;
     }
 
-    pql::ast::PatternCl* parse_pattern(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    pql::ast::PatternCl parse_pattern(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
     {
         std::vector<pql::ast::PatternCond*> pattern_conds;
 
@@ -293,7 +293,7 @@ namespace pql::parser
 
         util::log("pql::parser", "Completed parsing pattern cond: {}", pattern_cond->toString());
 
-        return new ast::PatternCl { pattern_conds };
+        return ast::PatternCl { pattern_conds };
     }
 
     ast::FollowsT* parse_follows_t(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
@@ -561,7 +561,7 @@ namespace pql::parser
             rel_cond_toks[1].text);
     }
 
-    ast::SuchThatCl* parse_such_that(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    ast::SuchThatCl parse_such_that(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
     {
         auto such = ps->next();
         auto that = ps->next();
@@ -574,16 +574,17 @@ namespace pql::parser
             throw PqlException("pql::parser", "Such That clause should start with 'such that'");
 
         util::log("pql::parser", "Parsing such that clause. Remaining {}", ps->stream);
-        auto* such_that = new ast::SuchThatCl {};
+        ast::SuchThatCl such_that {};
 
         // TODO(iteration 2): Handle AND condition here
-        ast::RelCond* rel_cond = parse_rel_cond(ps, declaration_list);
-        such_that->rel_conds.push_back(rel_cond);
-        util::log("pql::parser", "Complete parsing such that clause: {}", such_that->toString());
+        auto rel_cond = parse_rel_cond(ps, declaration_list);
+        such_that.rel_conds.push_back(rel_cond);
+
+        util::log("pql::parser", "Complete parsing such that clause: {}", such_that.toString());
         return such_that;
     }
 
-    pql::ast::Select* parse_select(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
+    pql::ast::Select parse_select(ParserState* ps, const pql::ast::DeclarationList* declaration_list)
     {
         Token select_tok = ps->next();
         if(select_tok != KW_Select)
@@ -605,8 +606,8 @@ namespace pql::parser
 
         util::log("pql::parser", "Return ent for Select clause: {}", ent->toString());
 
-        auto* select = new pql::ast::Select {};
-        select->ent = ent;
+        pql::ast::Select select {};
+        select.ent = ent;
 
         std::vector<Token> clause_tok = ps->peek_two();
         bool allow_pattern = true;
@@ -618,18 +619,18 @@ namespace pql::parser
             if(clause_tok[0] == KW_Pattern)
             {
                 util::log("pql::parser", "Parsing pattern clause");
-                select->pattern = parse_pattern(ps, declaration_list);
+                select.pattern = parse_pattern(ps, declaration_list);
                 allow_pattern = false;
             }
             else if(clause_tok == KW_SuchThat)
             {
                 util::log("pql::parser", "Parsing such that clause");
-                select->such_that = parse_such_that(ps, declaration_list);
+                select.such_that = parse_such_that(ps, declaration_list);
                 allow_such_that = false;
             }
             clause_tok = ps->peek_two();
         }
-        util::log("pql::parser", "Completed parsing Select clause :{}", select->toString());
+        util::log("pql::parser", "Completed parsing Select clause :{}", select.toString());
 
         return select;
     }
@@ -640,6 +641,7 @@ namespace pql::parser
         auto ps = ParserState { input };
         auto query = new pql::ast::Query();
 
+        bool found_select = false;
         for(Token t; (t = ps.peek_one()) != TT::EndOfFile;)
         {
             if(t == KW_Select)
@@ -647,6 +649,7 @@ namespace pql::parser
                 util::log("pql::parser", "parsing Select");
                 query->select = parse_select(&ps, &query->declarations);
 
+                found_select = true;
                 if(ps.peek_one() != TT::EndOfFile)
                 {
                     throw util::PqlException(
@@ -659,10 +662,9 @@ namespace pql::parser
                 insert_declaration(&ps, &query->declarations);
             }
         }
-        if(query->select == nullptr)
-        {
+
+        if(!found_select)
             throw util::PqlException("pql::parser", "All queries should contain a select clause");
-        }
 
         util::log("pql::parser", "Completed parsing AST: {}", query->toString());
         return query;

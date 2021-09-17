@@ -10,10 +10,9 @@
 
 namespace pql::eval
 {
-    void Evaluator::handlePattern(const ast::PatternCl* pattern)
+    void Evaluator::handlePattern(const ast::PatternCl& pattern)
     {
-        assert(pattern);
-        for(auto p : pattern->pattern_conds)
+        for(auto p : pattern.pattern_conds)
             p->evaluate(this->m_pkb, this->m_table);
     }
 }

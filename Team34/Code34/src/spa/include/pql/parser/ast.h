@@ -3,10 +3,11 @@
 
 #pragma once
 
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 #include <string>
+#include <optional>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "simple/ast.h"
 
@@ -49,13 +50,18 @@ namespace pql::ast
     extern const std::unordered_map<DESIGN_ENT, std::string> INV_DESIGN_ENT_MAP;
 
     /** List of design entity declaration. ie Represents [`assign a`, `print p`]. */
-    // struct DeclarationList
-    // {
-    //     // Mapping of all declarations. <name, Declaration>
-    //     std::unordered_map<std::string, Declaration*> declarations;
+    struct DeclarationList
+    {
+        std::string toString() const;
+        bool hasDeclaration(const std::string& name) const;
+        Declaration* getDeclaration(const std::string& name) const;
+        const std::unordered_map<std::string, Declaration*>& getAllDeclarations() const;
 
-    //     std::string toString() const;
-    // };
+        void addDeclaration(std::string name, Declaration* decl);
+
+    private:
+        std::unordered_map<std::string, Declaration*> declarations {};
+    };
 
     /** Design entity declaration. ie `assign a`. */
     struct Declaration
@@ -268,31 +274,18 @@ namespace pql::ast
     /** Select query. */
     struct Select
     {
-        SuchThatCl* such_that = nullptr;
-        PatternCl* pattern = nullptr;
+        std::optional<SuchThatCl> such_that {};
+        std::optional<PatternCl> pattern {};
         Declaration* ent = nullptr;
-        std::string toString() const;
-    };
-
-    struct DeclarationList
-    {
-        bool hasDeclaration(const std::string& name) const;
-        Declaration* getDeclaration(const std::string& name) const;
-        const std::unordered_map<std::string, Declaration*>& getAllDeclarations() const;
-
-        void addDeclaration(std::string name, Declaration* decl);
 
         std::string toString() const;
-
-    private:
-        std::unordered_map<std::string, Declaration*> declarations {};
     };
 
     struct Query
     {
-        Select* select = nullptr;
-
+        Select select {};
         DeclarationList declarations {};
+
         std::string toString() const;
     };
 

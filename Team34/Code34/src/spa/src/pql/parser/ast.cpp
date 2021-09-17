@@ -234,7 +234,6 @@ namespace pql::ast
 
     std::string Query::toString() const
     {
-        return zpr::sprint("Query(select:{}, declarations:{})", this->select ? this->select->toString() : "nullptr",
-            this->declarations.toString());
+        return zpr::sprint("Query(select:{}, declarations:{})", this->select.toString(), this->declarations.toString());
     }
 }

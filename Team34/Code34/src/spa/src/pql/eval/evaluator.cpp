@@ -137,23 +137,23 @@ namespace pql::eval
         util::log("pql::eval", "Table after initial processing of declaration: {}", m_table->toString());
 
         // All queries should have select clause
-        assert(m_query->select);
-        m_table->addSelectDecl(m_query->select->ent);
+        assert(m_query->select.ent);
+        m_table->addSelectDecl(m_query->select.ent);
 
-        if(m_query->select->such_that)
-            handleSuchThat(m_query->select->such_that);
+        if(m_query->select.such_that)
+            handleSuchThat(*m_query->select.such_that);
 
-        if(m_query->select->pattern)
-            this->handlePattern(m_query->select->pattern);
+        if(m_query->select.pattern)
+            this->handlePattern(*m_query->select.pattern);
 
         util::log("pql::eval", "Table after processing of such that: {}", m_table->toString());
-        return this->m_table->getResult(m_query->select->ent);
+        return this->m_table->getResult(m_query->select.ent);
     }
 
-    void Evaluator::handleSuchThat(const ast::SuchThatCl* such_that)
+    void Evaluator::handleSuchThat(const ast::SuchThatCl& such_that)
     {
-        util::log("pql::eval", "Handling such that:{}", such_that->toString());
-        for(ast::RelCond* rel_cond : such_that->rel_conds)
+        util::log("pql::eval", "Handling such that:{}", such_that.toString());
+        for(ast::RelCond* rel_cond : such_that.rel_conds)
         {
             if(auto follows = dynamic_cast<ast::Follows*>(rel_cond); follows)
                 handleFollows(follows);

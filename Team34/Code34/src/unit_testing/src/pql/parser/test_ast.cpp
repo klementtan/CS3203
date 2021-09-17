@@ -310,7 +310,7 @@ TEST_CASE("Select")
     relationship.ent = ent1;
     relationship.modifier = stmt;
 
-    pql::ast::SuchThatCl* such_that_cl = new pql::ast::SuchThatCl { { &relationship } };
+    pql::ast::SuchThatCl such_that_cl { { &relationship } };
 
     /** Initialize pattern*/
     simple::ast::BinaryOp* expr = new simple::ast::BinaryOp {};
@@ -330,7 +330,7 @@ TEST_CASE("Select")
     assign_pattern_cond->assignment_declaration = declaration3;
     assign_pattern_cond->ent = ent2;
     assign_pattern_cond->expr_spec = expr_spec;
-    pql::ast::PatternCl* pattern_cl = new pql::ast::PatternCl { { assign_pattern_cond } };
+    pql::ast::PatternCl pattern_cl { { assign_pattern_cond } };
 
     pql::ast::Select select { such_that_cl, pattern_cl, declaration1 };
     INFO(select.toString());
@@ -361,7 +361,7 @@ TEST_CASE("Query")
     relationship.ent = ent1;
     relationship.modifier = stmt;
 
-    pql::ast::SuchThatCl* such_that_cl = new pql::ast::SuchThatCl { { &relationship } };
+    pql::ast::SuchThatCl such_that_cl { { &relationship } };
 
     /** Initialize pattern*/
     simple::ast::BinaryOp* expr = new simple::ast::BinaryOp {};
@@ -381,7 +381,7 @@ TEST_CASE("Query")
     assign_pattern_cond->assignment_declaration = declaration3;
     assign_pattern_cond->ent = ent2;
     assign_pattern_cond->expr_spec = expr_spec;
-    pql::ast::PatternCl* pattern_cl = new pql::ast::PatternCl { { assign_pattern_cond } };
+    pql::ast::PatternCl pattern_cl { { assign_pattern_cond } };
 
     pql::ast::Select select { such_that_cl, pattern_cl, declaration1 };
 
@@ -391,7 +391,7 @@ TEST_CASE("Query")
     declaration_list.addDeclaration("buzz", declaration3);
 
     pql::ast::Query query {};
-    query.select = &select;
+    query.select = std::move(select);
     query.declarations = std::move(declaration_list);
 
     INFO(query.toString());
