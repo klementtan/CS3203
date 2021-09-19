@@ -16,7 +16,7 @@ none
 4 - valid complete match
 assign a;
 Select a pattern a(_,"y * (2) + x * (a + 1) * b")
-48
+57
 5000
 5 - invalid complete match due to missing ()
 assign a;
@@ -26,17 +26,17 @@ none
 6 - valid complete match with () removed
 assign a;call cl1;
 Select a pattern a(_,"y * 2 + x * (a + 1) * b")
-48
+57
 5000
 7 - valid complete match with constant only
 assign a;call cl1;
 Select a pattern a(_,"1")
-1, 14, 31, 63
+1,72,14,40
 5000
 8 - complete match with variable only
 assign a;variable v;
 Select a pattern a(v,"v")
-2, 15
+2,15
 5000
 9 - complete match with an always true pattern
 assign a, a1;
@@ -46,7 +46,7 @@ none
 10 - valid lowest layer sub match
 assign a;
 Select a pattern a(_,_"a + 1"_)
-48
+57
 5000
 11 - valid 2 layers sub match
 assign a;
@@ -61,7 +61,7 @@ none
 13 - valid submatch with complete match pattern
 assign a;
 Select a pattern a(_,_"y * (2) + x * (a + 1) * b"_)
-48
+57
 5000
 14 - invalid submatch due to wrong precedence
 assign a;
@@ -76,10 +76,35 @@ none
 16 - valid variable only submatch
 assign a;variable v;
 Select a pattern a(v,_"v"_)
-2, 15, 70
+2,79,15
 5000
 17 - valid constant only submatch
 assign a;
 Select a pattern a(_,_"2"_)
-6, 19, 37, 48
+6,22,46,57
+5000
+18 - pattern
+assign a; variable v;
+Select a pattern a("a",v)
+none
+5000
+19 - pattern
+assign a; variable v;
+Select a pattern a(v,_"1"_)
+57,1,40,72,14
+5000
+20 - pattern
+assign a; variable v;
+Select a pattern a(_"a"_,v)
+none
+5000
+21 - pattern
+assign a; variable v;
+Select a pattern a("b","v")
+2
+5000
+22 - pattern
+assign a; variable v;
+Select a pattern a("b",_"((((v))))"_)
+2
 5000

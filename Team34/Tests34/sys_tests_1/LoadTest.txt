@@ -1,16 +1,15 @@
 1 - 20 declaration with no such that.
 assign a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20;
 Select a1
-1,2,6,7,8,9,11,12,14,15,19,20,21,22,24,25,30,31,36,37,42,43,44,48,50,51,56,57,62,63,70,71,72,73
+9,65,1,66,2,6,71,7,72,8,11,12,14,79,15,22,23,24,25,26,27,28,29,30,31,33,34,39,40,45,46,51,52,53,57,59,60,80,81,82
 5000
 2 - 20 declaration with such that.
 assign a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20; variable v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15;
 Select a1 such that Modifies(a1,v1) pattern a1(v1,_"y"_)
-48,70
+79,57
 5000
 3 - 4 declaration with 2 joins
 variable v, v1; assign a, a1;
 Select v1 such that Modifies (a, v) pattern a1(v1, _)
-a,zzzz,p,a2,p1,n1,zzzzz,s,a1,m1,k1,ff,c2,j1,b1,zzz,m,c1,j,b,q1,q,n,c3,k,a3
+read,s,b,a,Extra,then,p1,p,call,j,b1,else,print,if,A,a2,ff,q,q1,a1,while,c1,a3,n,c3,c2,zzzzz,procedure,zzzz,k,zzz,n1,m
 5000
-

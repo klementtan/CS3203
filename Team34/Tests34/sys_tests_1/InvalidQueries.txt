@@ -1,0 +1,75 @@
+1 - Missing Select
+assign a;
+a such that Modifies (_,_)
+none
+5000
+2 - Missing declaration in select
+assign a;
+Select re1 such that Modifies (a, "f")
+none
+5000
+3 - Missing declaration in sub-clause
+assign a;variable v;
+Select a such that Modifies (a, b)
+none
+5000
+4 - Invalid keyword
+assign a;variable v;
+select v such that Modifies (a, v)
+none
+5000
+5 - Invalid keyword
+assign a;
+Select a Such that Modifies (a, "a")
+none
+5000
+6 - Additional semicolon
+assign a;
+Select a such that Modifies (a, "8000");
+none
+5000
+7 - Invalid keyword in declaration
+Assign a;
+Select a such that Modifies (a, _)
+none
+5000
+8 - Invalid syn name
+assign 1a;
+Select 1a such that Modifies (1a, _)
+none
+5000
+9 - Invalid token in declaration
+assign a,while w;
+Select a such that Modifies (a, _)
+none
+5000
+10 - Invalid keyword / non-existent design abs
+assign a;
+Select a such that ModifiesT (a, _)
+none
+5000
+11 - Wrong number of params in pattern
+if ifs;
+Select ifs such that ifs(_,_)
+none
+5000
+12 - Wrong number of params in pattern
+if ifs;
+Select ifs such that ifs(_,_,_,_)
+none
+5000
+13 - Invalid type of syn in pattern
+assign a,a1; stmt s, procedure p;
+Select a1 pattern a(s,p)
+none
+5000
+14 - Invalid name
+if i;
+Select i such that a(_, "5a")
+none
+5000
+15 - Invalid name
+if i;
+Select i such that a(_, "00")
+none
+5000
