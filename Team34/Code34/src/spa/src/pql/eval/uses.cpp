@@ -40,7 +40,7 @@ namespace pql::eval
             auto var_name = var_ent.name();
 
             util::log("pql::eval", "Processing UsesP(EntName, EntName)");
-            if(!m_pkb->uses_modifies.isUses(proc_name, var_name))
+            if(!m_pkb->isUses(proc_name, var_name))
                 throw PqlException("pql::eval", "{} is always false", rel->toString(), var_name);
         }
         else if(proc_ent.isName() && var_ent.isDeclaration())
@@ -50,7 +50,7 @@ namespace pql::eval
 
 
             util::log("pql::eval", "Processing UsesP(EntName, DeclaredStmt)");
-            auto used_vars = m_pkb->uses_modifies.getUsesVars(proc_name);
+            auto used_vars = m_pkb->getUsesVars(proc_name);
             if(used_vars.empty())
                 throw PqlException("pql::eval", "{} is always false; {} doesn't use any variables", rel->toString());
 
@@ -67,7 +67,7 @@ namespace pql::eval
             auto proc_name = proc_ent.name();
 
             util::log("pql::eval", "Processing UsesP(EntName, _)");
-            auto used_vars = m_pkb->uses_modifies.getUsesVars(proc_name);
+            auto used_vars = m_pkb->getUsesVars(proc_name);
             if(used_vars.empty())
                 throw PqlException("pql::eval", "{} is always false; {} doesn't use any variables", rel->toString());
         }
@@ -79,7 +79,7 @@ namespace pql::eval
 
             util::log("pql::eval", "Processing UsesP(DeclaredEnt, EntName)");
 
-            auto procs_using = m_pkb->uses_modifies.getUses(ast::DESIGN_ENT::PROCEDURE, var_name);
+            auto procs_using = m_pkb->getUses(ast::DESIGN_ENT::PROCEDURE, var_name);
             if(procs_using.empty())
                 throw PqlException(
                     "pql::eval", "{} is always false; {} no procedure uses '{}'", rel->toString(), var_name);
@@ -104,7 +104,7 @@ namespace pql::eval
 
             for(auto it = proc_domain.begin(); it != proc_domain.end();)
             {
-                auto used_vars = m_pkb->uses_modifies.getUsesVars(it->getVal());
+                auto used_vars = m_pkb->getUsesVars(it->getVal());
                 if(used_vars.empty())
                 {
                     it = proc_domain.erase(it);
@@ -136,7 +136,7 @@ namespace pql::eval
 
             for(const auto& entry : m_table.getDomain(proc_decl))
             {
-                auto proc_used_vars = m_pkb->uses_modifies.getUsesVars(entry.getVal());
+                auto proc_used_vars = m_pkb->getUsesVars(entry.getVal());
                 if(proc_used_vars.empty())
                     continue;
 
@@ -179,7 +179,7 @@ namespace pql::eval
             auto var_name = var_ent.name();
 
             util::log("pql::eval", "Processing UsesS(StmtId, EntName)");
-            if(!m_pkb->uses_modifies.isUses(user_sid, var_name))
+            if(!m_pkb->isUses(user_sid, var_name))
                 throw PqlException("pql::eval", "{} is always false", rel->toString(), var_name);
         }
         else if(user_stmt.isStatementId() && var_ent.isDeclaration())
@@ -190,7 +190,7 @@ namespace pql::eval
             util::log("pql::eval", "Processing UsesS(StmtId, DeclaredEnt)");
             std::unordered_set<table::Entry> new_domain {};
 
-            for(const auto& var : m_pkb->uses_modifies.getUsesVars(user_sid))
+            for(const auto& var : m_pkb->getUsesVars(user_sid))
                 new_domain.emplace(var_decl, var);
 
             m_table.upsertDomains(var_decl, table::entry_set_intersect(new_domain, m_table.getDomain(var_decl)));
@@ -200,7 +200,7 @@ namespace pql::eval
             auto user_sid = user_stmt.id();
 
             util::log("pql::eval", "Processing UsesS(StmtId, _)");
-            if(m_pkb->uses_modifies.getUsesVars(user_sid).empty())
+            if(m_pkb->getUsesVars(user_sid).empty())
                 throw PqlException("pql::eval", "{} is always false", rel->toString());
         }
         else if(user_stmt.isDeclaration() && var_ent.isName())
@@ -211,7 +211,7 @@ namespace pql::eval
             util::log("pql::eval", "Processing UsesS(DeclaredStmt, EntName)");
             std::unordered_set<table::Entry> new_domain {};
 
-            for(const auto& stmt : m_pkb->uses_modifies.getUses(user_decl->design_ent, var_name))
+            for(const auto& stmt : m_pkb->getUses(user_decl->design_ent, var_name))
                 new_domain.emplace(user_decl, static_cast<simple::ast::StatementNum>(std::stoi(stmt)));
 
             m_table.upsertDomains(user_decl, table::entry_set_intersect(new_domain, m_table.getDomain(user_decl)));
@@ -229,7 +229,7 @@ namespace pql::eval
 
             for(auto it = user_domain.begin(); it != user_domain.end();)
             {
-                auto used_vars = m_pkb->uses_modifies.getUsesVars(it->getStmtNum());
+                auto used_vars = m_pkb->getUsesVars(it->getStmtNum());
                 if(used_vars.empty())
                 {
                     it = user_domain.erase(it);
@@ -261,7 +261,7 @@ namespace pql::eval
             std::unordered_set<table::Entry> new_domain {};
             for(const auto& entry : m_table.getDomain(user_decl))
             {
-                auto used_vars = m_pkb->uses_modifies.getUsesVars(entry.getStmtNum());
+                auto used_vars = m_pkb->getUsesVars(entry.getStmtNum());
                 if(used_vars.empty())
                     continue;
 

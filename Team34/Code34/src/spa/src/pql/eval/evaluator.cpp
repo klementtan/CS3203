@@ -37,10 +37,10 @@ namespace pql::eval
 
     void Evaluator::preprocessPkb(pkb::ProgramKB* pkb)
     {
-        for(pkb::Statement* pkb_stmt : pkb->uses_modifies.statements)
+        for(const auto& pkb_stmt : pkb->m_statements)
         {
-            m_all_ent_stmt_map[getDesignEnt(pkb_stmt->stmt)].push_back(pkb_stmt->stmt);
-            m_all_ent_stmt_map[ast::DESIGN_ENT::STMT].push_back(pkb_stmt->stmt);
+            m_all_ent_stmt_map[getDesignEnt(pkb_stmt.stmt)].push_back(pkb_stmt.stmt);
+            m_all_ent_stmt_map[ast::DESIGN_ENT::STMT].push_back(pkb_stmt.stmt);
         }
     }
 
@@ -52,9 +52,9 @@ namespace pql::eval
             throw util::PqlException(
                 "pql::eval", "Cannot get initial domain(var) for non variable declaration {}", declaration->toString());
         }
-        util::log("pql::eval", "Adding {} variables to {} initial domain", m_pkb->uses_modifies.variables.size(),
+        util::log("pql::eval", "Adding {} variables to {} initial domain", m_pkb->m_variables.size(),
             declaration->toString());
-        for(auto [name, var] : m_pkb->uses_modifies.variables)
+        for(const auto& [name, var] : m_pkb->m_variables)
         {
             util::log("pql::eval", "Adding {} to initial var domain", name);
             domain.insert(table::Entry(declaration, name));
@@ -69,9 +69,9 @@ namespace pql::eval
             throw util::PqlException("pql::eval", "Cannot get initial domain(proc) for non variable declaration {}",
                 declaration->toString());
         }
-        util::log("pql::eval", "Adding {} procedures to {} initial domain", m_pkb->uses_modifies.procedures.size(),
+        util::log("pql::eval", "Adding {} procedures to {} initial domain", m_pkb->m_procedures.size(),
             declaration->toString());
-        for(auto [name, proc] : m_pkb->uses_modifies.procedures)
+        for(const auto& [name, proc] : m_pkb->m_procedures)
         {
             util::log("pql::eval", "Adding {} to initial proc domain", name);
             domain.insert(table::Entry(declaration, name));
@@ -86,7 +86,7 @@ namespace pql::eval
             throw util::PqlException("pql::eval", "Cannot get initial domain(constant) for non constant declaration {}",
                 declaration->toString());
         }
-        util::log("pql::eval", "Adding {} constants to {} initial domain", m_pkb->uses_modifies.procedures.size(),
+        util::log("pql::eval", "Adding {} constants to {} initial domain", m_pkb->_constants.size(),
             declaration->toString());
         for(const auto& const_val : m_pkb->getConstants())
         {

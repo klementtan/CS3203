@@ -22,6 +22,9 @@ namespace pkb
 
         std::unordered_set<std::string> calls;
         std::unordered_set<std::string> called_by;
+
+        std::unordered_set<std::string> calls_transitive {};
+        std::unordered_set<std::string> called_by_transitive {};
     };
 
     // decided to go with 3 data structures because this would allow all 3 kinds of
@@ -29,34 +32,81 @@ namespace pkb
     // the pre-processing is once off.
     struct Statement
     {
+        inline bool hasFollower() const
+        {
+            return this->directly_after != 0;
+        }
+
+        inline bool isFollower() const
+        {
+            return this->directly_before != 0;
+        }
+
+        inline bool follows(simple::ast::StatementNum id) const
+        {
+            return this->directly_before == id;
+        }
+
+        inline bool followsTransitively(simple::ast::StatementNum id) const
+        {
+            return this->before.count(id) > 0;
+        }
+
+        inline bool followedBy(simple::ast::StatementNum id) const
+        {
+            return this->directly_after == id;
+        }
+
+        inline bool followedTransitivelyBy(simple::ast::StatementNum id) const
+        {
+            return this->after.count(id) > 0;
+        }
+
+        inline simple::ast::StatementNum getDirectFollower() const
+        {
+            return this->directly_after;
+        }
+
+        inline simple::ast::StatementNum getDirectFollowee() const
+        {
+            return this->directly_before;
+        }
+
+        inline const std::unordered_set<simple::ast::StatementNum>& getTransitiveFollowers() const
+        {
+            return this->after;
+        }
+
+        inline const std::unordered_set<simple::ast::StatementNum>& getTransitiveFollowees() const
+        {
+            return this->before;
+        }
+
+
         simple::ast::Stmt* stmt = nullptr;
 
         // stores uses and modifies information if the stmt is not a proc call
-        std::unordered_set<std::string> uses;
-        std::unordered_set<std::string> modifies;
+        std::unordered_set<std::string> uses {};
+        std::unordered_set<std::string> modifies {};
+
+        simple::ast::StatementNum directly_before = 0;
+        simple::ast::StatementNum directly_after = 0;
+
+        // For a statement s, before stores all statements s1 for Follows*(s1, s) returns true,
+        // after stores all statements s2 for Follows*(s, s1) returns true.
+        std::unordered_set<simple::ast::StatementNum> before {};
+        std::unordered_set<simple::ast::StatementNum> after {};
     };
 
     struct Variable
     {
         // a procedure isn't really a statement, so we need to keep two
         // separate lists for this.
-        std::unordered_set<simple::ast::Stmt*> used_by;
-        std::unordered_set<simple::ast::Stmt*> modified_by;
+        std::unordered_set<const simple::ast::Stmt*> used_by;
+        std::unordered_set<const simple::ast::Stmt*> modified_by;
 
         std::unordered_set<simple::ast::Procedure*> used_by_procs;
         std::unordered_set<simple::ast::Procedure*> modified_by_procs;
-    };
-
-    struct Follows
-    {
-        simple::ast::StatementNum id = 0;
-        simple::ast::StatementNum directly_before = 0;
-        simple::ast::StatementNum directly_after = 0;
-
-        // For a statement s, before stores all statements s1 for Follows*(s1, s) returns true,
-        // after stores all statements s2 for Follows*(s, s1) returns true.
-        std::unordered_set<simple::ast::StatementNum> before;
-        std::unordered_set<simple::ast::StatementNum> after;
     };
 
     struct CallGraph
@@ -64,7 +114,7 @@ namespace pkb
         // adjacency graph for the edges. Proc A calls proc B gives edge (A, B).
         std::unordered_map<std::string, std::unordered_set<std::string>> adj;
 
-        void addEdge(std::string& a, std::string b);
+        void addEdge(const std::string& a, std::string b);
         std::unordered_set<std::string>::iterator removeEdge(
             std::string a, std::string b, std::unordered_map<std::string, std::unordered_set<std::string>>* adj);
 
@@ -74,16 +124,35 @@ namespace pkb
         std::string missingProc(const std::vector<std::unique_ptr<simple::ast::Procedure>>& procs);
     };
 
-    struct UsesModifies
+    struct DesignExtractor;
+
+    struct ProgramKB
     {
-        ~UsesModifies();
+        ProgramKB(std::unique_ptr<simple::ast::Program> program);
+        ~ProgramKB();
 
-        // this also functions as a unordered_map from (stmt_number - 1) -> Stmt*,
-        // and the Stmt knows its own number.
-        std::vector<Statement*> statements;
+        CallGraph proc_calls;
 
-        std::unordered_map<std::string, Procedure> procedures;
-        std::unordered_map<std::string, Variable> variables;
+        Statement* getStatementAtIndex(simple::ast::StatementNum);
+
+        bool followsRelationExists();
+        bool parentRelationExists();
+
+        std::unordered_map<simple::ast::StatementNum, simple::ast::StatementNum> _direct_parents;
+        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _ancestors;
+        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _direct_children;
+        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _descendants;
+
+        bool isParent(simple::ast::StatementNum, simple::ast::StatementNum);
+        bool isParentT(simple::ast::StatementNum, simple::ast::StatementNum);
+
+        std::optional<simple::ast::StatementNum> getParentOf(simple::ast::StatementNum);
+        std::unordered_set<simple::ast::StatementNum> getAncestorsOf(simple::ast::StatementNum);
+        std::unordered_set<simple::ast::StatementNum> getChildrenOf(simple::ast::StatementNum);
+        std::unordered_set<simple::ast::StatementNum> getDescendantsOf(simple::ast::StatementNum);
+
+        std::unordered_set<std::string> _constants;
+        std::unordered_set<std::string> getConstants();
 
         // For queries of type Uses(3, "x")
         bool isUses(const simple::ast::StatementNum& stmt_num, const std::string& var);
@@ -106,49 +175,25 @@ namespace pkb
         std::unordered_set<std::string> getModifiesVars(const std::string& var);
         // Returns the Statement numbers of queries of type Modifies(a/pn/s/p, "x")
         std::unordered_set<std::string> getModifies(const pql::ast::DESIGN_ENT& type, const std::string& var);
-    };
 
-    struct ProgramKB
-    {
-        ~ProgramKB();
+        const Procedure& getProcedureNamed(const std::string& name) const;
 
-        CallGraph proc_calls;
+        const simple::ast::Program* getProgram() const;
 
-        UsesModifies uses_modifies;
+        void addConstant(std::string value);
+        Procedure& addProcedure(const std::string& name, simple::ast::Procedure* proc);
 
-        std::vector<Follows*> follows;
-
-        Statement* getStatementAtIndex(simple::ast::StatementNum);
-
-        bool followsRelationExists();
-        bool parentRelationExists();
-
-        bool isFollows(simple::ast::StatementNum fst, simple::ast::StatementNum snd);
-        bool isFollowsT(simple::ast::StatementNum fst, simple::ast::StatementNum snd);
-        Follows* getFollows(simple::ast::StatementNum fst);
-        std::unordered_set<simple::ast::StatementNum> getFollowsTList(
-            simple::ast::StatementNum fst, simple::ast::StatementNum snd);
-
-        std::unordered_map<simple::ast::StatementNum, simple::ast::StatementNum> _direct_parents;
-        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _ancestors;
-        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _direct_children;
-        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _descendants;
-
-        bool isParent(simple::ast::StatementNum, simple::ast::StatementNum);
-        bool isParentT(simple::ast::StatementNum, simple::ast::StatementNum);
-
-        std::optional<simple::ast::StatementNum> getParentOf(simple::ast::StatementNum);
-        std::unordered_set<simple::ast::StatementNum> getAncestorsOf(simple::ast::StatementNum);
-        std::unordered_set<simple::ast::StatementNum> getChildrenOf(simple::ast::StatementNum);
-        std::unordered_set<simple::ast::StatementNum> getDescendantsOf(simple::ast::StatementNum);
-
-        std::unordered_set<std::string> _constants;
-        std::unordered_set<std::string> getConstants();
 
         bool m_follows_exists = false;
         bool m_parent_exists = false;
 
         std::unique_ptr<simple::ast::Program> m_program {};
+
+        std::unordered_map<std::string, Procedure> m_procedures {};
+        std::unordered_map<std::string, Variable> m_variables {};
+        std::vector<Statement> m_statements {};
+
+        friend struct DesignExtractor;
     };
 
     std::unique_ptr<ProgramKB> processProgram(std::unique_ptr<simple::ast::Program> prog);
