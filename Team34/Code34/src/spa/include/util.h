@@ -10,6 +10,8 @@
 
 #include <zpr.h>
 
+#include "logging_control.h"
+
 // misc stuff
 namespace util
 {
@@ -21,6 +23,9 @@ namespace util
     template <typename... Args>
     void log(const char* who, const char* fmt, Args&&... args)
     {
+        if constexpr(!ENABLE_LOGGING)
+            return;
+
         auto file = getLogFile();
         if(file == nullptr)
             return;
