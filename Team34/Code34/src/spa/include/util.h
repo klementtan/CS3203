@@ -23,7 +23,7 @@ namespace util
     template <typename... Args>
     void log(const char* who, const char* fmt, Args&&... args)
     {
-        if constexpr (!ENABLE_LOGGING)
+        if constexpr(!ENABLE_LOGGING)
             return;
 
         auto file = getLogFile();
