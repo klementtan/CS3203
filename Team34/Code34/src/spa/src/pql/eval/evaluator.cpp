@@ -9,11 +9,11 @@
 
 namespace pql::eval
 {
-    Evaluator::Evaluator(pkb::ProgramKB* pkb, pql::ast::Query* query)
+    Evaluator::Evaluator(pkb::ProgramKB* pkb, std::unique_ptr<ast::Query> query)
     {
-        this->m_query = query;
         this->m_pkb = pkb;
-        this->m_table = new pql::eval::table::Table();
+        this->m_query = std::move(query);
+
         preprocessPkb(this->m_pkb);
     }
 
@@ -124,55 +124,55 @@ namespace pql::eval
         return getInitialDomainStmt(declaration);
     }
 
-    void Evaluator::processDeclarations(const ast::DeclarationList* declaration_list)
+    void Evaluator::processDeclarations(const ast::DeclarationList& declaration_list)
     {
-        for(auto [name, decl_ptr] : declaration_list->declarations)
-        {
-            m_table->upsertDomains(decl_ptr, getInitialDomain(decl_ptr));
-        }
+        for(const auto& [_, decl_ptr] : declaration_list.getAllDeclarations())
+            m_table.upsertDomains(decl_ptr, getInitialDomain(decl_ptr));
     }
 
     std::list<std::string> Evaluator::evaluate()
     {
         util::log("pql::eval", "Evaluating query: {}", m_query->toString());
         processDeclarations(m_query->declarations);
-        util::log("pql::eval", "Table after initial processing of declaration: {}", m_table->toString());
+        util::log("pql::eval", "Table after initial processing of declaration: {}", m_table.toString());
 
         // All queries should have select clause
-        assert(m_query->select);
-        m_table->addSelectDecl(m_query->select->ent);
+        assert(m_query->select.ent);
+        m_table.addSelectDecl(m_query->select.ent);
 
-        if(m_query->select->such_that)
-            handleSuchThat(m_query->select->such_that);
+        if(m_query->select.such_that)
+            handleSuchThat(*m_query->select.such_that);
 
-        if(m_query->select->pattern)
-            this->handlePattern(m_query->select->pattern);
+        if(m_query->select.pattern)
+            this->handlePattern(*m_query->select.pattern);
 
-        util::log("pql::eval", "Table after processing of such that: {}", m_table->toString());
-        return this->m_table->getResult(m_query->select->ent);
+        util::log("pql::eval", "Table after processing of such that: {}", m_table.toString());
+        return this->m_table.getResult(m_query->select.ent);
     }
 
-    void Evaluator::handleSuchThat(const ast::SuchThatCl* such_that)
+    void Evaluator::handleSuchThat(const ast::SuchThatCl& such_that)
     {
-        util::log("pql::eval", "Handling such that:{}", such_that->toString());
-        for(ast::RelCond* rel_cond : such_that->rel_conds)
+        util::log("pql::eval", "Handling such that:{}", such_that.toString());
+        for(const auto& rel_cond : such_that.rel_conds)
         {
-            if(auto follows = dynamic_cast<ast::Follows*>(rel_cond); follows)
+            if(auto follows = dynamic_cast<ast::Follows*>(rel_cond.get()); follows)
                 handleFollows(follows);
-            if(auto follows_t = dynamic_cast<ast::FollowsT*>(rel_cond); follows_t)
+            else if(auto follows_t = dynamic_cast<ast::FollowsT*>(rel_cond.get()); follows_t)
                 handleFollowsT(follows_t);
-            if(auto uses_p = dynamic_cast<ast::UsesP*>(rel_cond); uses_p)
+            else if(auto uses_p = dynamic_cast<ast::UsesP*>(rel_cond.get()); uses_p)
                 handleUsesP(uses_p);
-            if(auto uses_s = dynamic_cast<ast::UsesS*>(rel_cond); uses_s)
+            else if(auto uses_s = dynamic_cast<ast::UsesS*>(rel_cond.get()); uses_s)
                 handleUsesS(uses_s);
-            if(auto modifies_p = dynamic_cast<ast::ModifiesP*>(rel_cond); modifies_p)
+            else if(auto modifies_p = dynamic_cast<ast::ModifiesP*>(rel_cond.get()); modifies_p)
                 handleModifiesP(modifies_p);
-            if(auto modifies_s = dynamic_cast<ast::ModifiesS*>(rel_cond); modifies_s)
+            else if(auto modifies_s = dynamic_cast<ast::ModifiesS*>(rel_cond.get()); modifies_s)
                 handleModifiesS(modifies_s);
-            if(auto parent = dynamic_cast<ast::Parent*>(rel_cond); parent)
+            else if(auto parent = dynamic_cast<ast::Parent*>(rel_cond.get()); parent)
                 handleParent(parent);
-            if(auto parent_t = dynamic_cast<ast::ParentT*>(rel_cond); parent_t)
+            else if(auto parent_t = dynamic_cast<ast::ParentT*>(rel_cond.get()); parent_t)
                 handleParentT(parent_t);
+            else
+                throw util::PqlException("pql::eval", "unknown relation type");
         }
     }
 }

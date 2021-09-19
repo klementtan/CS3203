@@ -6,3 +6,4 @@ Makefile
 objs/
 out.xml
 *.ps1
+*.xml

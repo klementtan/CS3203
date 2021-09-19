@@ -1,17 +1,15 @@
 // pqlast.cpp
 
+#include <cassert>
 #include <algorithm>
 
 #include <zpr.h>
 
+#include "exceptions.h"
 #include "pql/parser/ast.h"
 
 namespace pql::ast
 {
-    EntRef::~EntRef() { }
-
-    StmtRef::~StmtRef() { }
-
     RelCond::~RelCond() { }
 
     PatternCond::~PatternCond() { }
@@ -42,35 +40,29 @@ namespace pql::ast
         { DESIGN_ENT::PROCEDURE, "procedure" },
     };
 
-    std::string DeclarationList::toString() const
+    bool DeclarationList::hasDeclaration(const std::string& name) const
     {
-        std::string ret { "DeclarationList[\n" };
-
-        // for the sake of testing (since toString() is really only used in testing), we
-        // need a consistent ordering of all these unordered_maps...
-        std::vector<std::pair<std::string, const Declaration*>> decls;
-        for(const auto& [name, decl] : this->declarations)
-            decls.emplace_back(name, decl);
-
-        std::sort(decls.begin(), decls.end(), [](auto& a, auto& b) -> bool { return a.first < b.first; });
-
-        for(const auto& [name, decl] : decls)
-        {
-            ret += zpr::sprint("\tname:{}, declaration:{}\n", name, decl ? decl->toString() : "nullptr");
-        }
-        ret += "]";
-        return ret;
+        return this->declarations.find(name) != this->declarations.end();
     }
 
-    std::string Declaration::toString() const
+    Declaration* DeclarationList::getDeclaration(const std::string& name) const
     {
-        auto it = INV_DESIGN_ENT_MAP.find(this->design_ent);
-        if(it == INV_DESIGN_ENT_MAP.end())
-        {
-            return zpr::sprint("Declaration(nullptr)");
-        }
-        std::string ent_str = it->second;
-        return zpr::sprint("Declaration(ent:{}, name:{})", ent_str, this->name);
+        if(auto it = this->declarations.find(name); it != this->declarations.end())
+            return it->second;
+
+        return nullptr;
+    }
+
+    Declaration* DeclarationList::addDeclaration(const std::string& name, DESIGN_ENT design_ent)
+    {
+        assert(!this->hasDeclaration(name));
+
+        return this->declarations.emplace(name, new Declaration { name, design_ent }).first->second;
+    }
+
+    const std::unordered_map<std::string, Declaration*>& DeclarationList::getAllDeclarations() const
+    {
+        return this->declarations;
     }
 
     bool Declaration::operator==(const Declaration& other) const
@@ -78,133 +70,144 @@ namespace pql::ast
         return this->name == other.name && this->design_ent == other.design_ent;
     }
 
-    std::string DeclaredStmt::toString() const
+
+    Declaration* StmtRef::declaration() const
     {
-        return zpr::sprint(
-            "DeclaredStmt(declaration: {})", this->declaration ? this->declaration->toString() : "nullptr");
+        if(this->ref_type != Type::Declaration)
+            throw util::PqlException("pql", "StmtRef is not a Declaration");
+
+        return this->_declaration;
     }
 
-    std::string StmtId::toString() const
+    simple::ast::StatementNum StmtRef::id() const
     {
-        return zpr::sprint("StmtId(id:{})", this->id);
+        if(this->ref_type != Type::StmtId)
+            throw util::PqlException("pql", "StmtRef is not a StmtId");
+
+        return this->_id;
     }
 
-    std::string AllStmt::toString() const
-    {
-        return zpr::sprint("AllStmt(name: _)");
-    }
 
-    std::string DeclaredEnt::toString() const
+    StmtRef StmtRef::ofWildcard()
     {
-        return zpr::sprint(
-            "DeclaredEnt(declaration:{})", this->declaration ? this->declaration->toString() : "nullptr");
-    }
-
-    std::string EntName::toString() const
-    {
-        return zpr::sprint("EntName(name:{})", this->name);
-    }
-
-    std::string AllEnt::toString() const
-    {
-        return zpr::sprint("AllEnt(name: _)");
-    }
-
-    std::string ModifiesS::toString() const
-    {
-        return zpr::sprint("ModifiesS(modifier:{}, ent:{})", this->modifier ? this->modifier->toString() : "nullptr",
-            this->ent ? this->ent->toString() : "nullptr");
-    }
-
-    std::string ModifiesP::toString() const
-    {
-        return zpr::sprint("ModifiesP(modifier:{}, ent:{})", this->modifier ? this->modifier->toString() : "nullptr",
-            this->ent ? this->ent->toString() : "nullptr");
-    }
-
-    std::string UsesS::toString() const
-    {
-        return zpr::sprint("UsesS(user: {}, ent:{})", this->user ? this->user->toString() : "nullptr",
-            this->ent ? this->ent->toString() : "nullptr");
-    }
-
-    std::string UsesP::toString() const
-    {
-        return zpr::sprint("UsesP(user: {}, ent:{})", this->user ? this->user->toString() : "nullptr",
-            this->ent ? this->ent->toString() : "nullptr");
-    }
-
-    std::string Parent::toString() const
-    {
-        return zpr::sprint("Parent(parent:{}, child:{})", this->parent ? this->parent->toString() : "nullptr",
-            this->child ? this->child->toString() : "nullptr");
-    }
-
-    std::string ParentT::toString() const
-    {
-        return zpr::sprint("ParentT(ancestor:{}, descendant:{})",
-            this->ancestor ? this->ancestor->toString() : "nullptr",
-            this->descendant ? this->descendant->toString() : "nullptr");
-    }
-
-    std::string Follows::toString() const
-    {
-        return zpr::sprint("Follows(directly_before:{}, directly_after:{})",
-            this->directly_before ? this->directly_before->toString() : "nullptr",
-            this->directly_after ? this->directly_after->toString() : "nullptr");
-    }
-
-    std::string FollowsT::toString() const
-    {
-        return zpr::sprint("FollowsT(before:{}, after{})", this->before ? this->before->toString() : "nullptr",
-            this->after ? this->after->toString() : "nullptr");
-    }
-
-    std::string ExprSpec::toString() const
-    {
-        return zpr::sprint(
-            "ExprSpec(is_subexpr:{}, expr:{})", this->is_subexpr, this->expr ? this->expr->toString() : "nullptr");
-    }
-
-    std::string AssignPatternCond::toString() const
-    {
-        return zpr::sprint("PatternCl(ent:{}, assignment_declaration:{}, expr_spec:{})", this->ent->toString(),
-            this->assignment_declaration ? this->assignment_declaration->toString() : "nullptr",
-            expr_spec ? this->expr_spec->toString() : "nullptr");
-    }
-
-    std::string PatternCl::toString() const
-    {
-        std::string ret { "PatternCl[\n" };
-        for(const PatternCond* pattern_cond : this->pattern_conds)
-        {
-            ret += zpr::sprint("\t{}\n", pattern_cond ? pattern_cond->toString() : "nullptr");
-        }
-        ret += "]";
+        StmtRef ret {};
+        ret.ref_type = Type::Wildcard;
         return ret;
     }
 
-    std::string SuchThatCl::toString() const
+    StmtRef StmtRef::ofDeclaration(Declaration* decl)
     {
-        std::string ret { "SuchThatCl[\n" };
-        for(const RelCond* rel_cond : this->rel_conds)
-        {
-            ret += zpr::sprint("\t{}\n", rel_cond ? rel_cond->toString() : "nullptr");
-        }
-        ret += "]";
+        StmtRef ret {};
+        ret.ref_type = Type::Declaration;
+        ret._declaration = decl;
         return ret;
     }
 
-    std::string Select::toString() const
+    StmtRef StmtRef::ofStatementId(simple::ast::StatementNum id)
     {
-        return zpr::sprint("Select(such_that:{}, pattern:{}, ent:{})",
-            this->such_that ? this->such_that->toString() : "nullptr",
-            this->pattern ? this->pattern->toString() : "nullptr", this->ent ? this->ent->toString() : "nullptr");
+        StmtRef ret {};
+        ret.ref_type = Type::StmtId;
+        ret._id = id;
+        return ret;
     }
 
-    std::string Query::toString() const
+
+
+
+    EntRef::~EntRef()
     {
-        return zpr::sprint("Query(select:{}, declarations:{})", this->select ? this->select->toString() : "nullptr",
-            this->declarations ? this->declarations->toString() : "nullptr");
+        using std::string;
+        if(this->ref_type == Type::Name)
+            this->_name.~string();
     }
+
+    Declaration* EntRef::declaration() const
+    {
+        if(this->ref_type != Type::Declaration)
+            throw util::PqlException("pql", "EntRef is not a Declaration");
+
+        return this->_declaration;
+    }
+
+    std::string EntRef::name() const
+    {
+        if(this->ref_type != Type::Name)
+            throw util::PqlException("pql", "EntRef is not a Name");
+
+        return this->_name;
+    }
+
+
+    EntRef EntRef::ofWildcard()
+    {
+        EntRef ret {};
+        ret.ref_type = Type::Wildcard;
+        return ret;
+    }
+
+    EntRef EntRef::ofDeclaration(Declaration* decl)
+    {
+        EntRef ret {};
+        ret.ref_type = Type::Declaration;
+        ret._declaration = decl;
+        return ret;
+    }
+
+    EntRef EntRef::ofName(std::string name)
+    {
+        EntRef ret {};
+        ret.ref_type = Type::Name;
+        ret._name = std::move(name);
+        return ret;
+    }
+
+    EntRef::EntRef(const EntRef& other)
+    {
+        this->ref_type = other.ref_type;
+        if(this->ref_type == Type::Name)
+            this->_name = other._name;
+        else
+            this->_declaration = other._declaration;
+    }
+
+    EntRef& EntRef::operator=(const EntRef& other)
+    {
+        if(this != &other)
+        {
+            this->ref_type = other.ref_type;
+            if(this->ref_type == Type::Name)
+                this->_name = other._name;
+            else
+                this->_declaration = other._declaration;
+        }
+        return *this;
+    }
+
+
+    EntRef::EntRef(EntRef&& other)
+    {
+        this->ref_type = other.ref_type;
+        other.ref_type = Type::Invalid;
+
+        if(this->ref_type == Type::Name)
+            this->_name = std::move(other._name);
+        else
+            this->_declaration = std::move(other._declaration);
+    }
+
+    EntRef& EntRef::operator=(EntRef&& other)
+    {
+        if(this != &other)
+        {
+            this->ref_type = other.ref_type;
+            other.ref_type = Type::Invalid;
+
+            if(this->ref_type == Type::Name)
+                this->_name = std::move(other._name);
+            else
+                this->_declaration = std::move(other._declaration);
+        }
+        return *this;
+    }
+
 }

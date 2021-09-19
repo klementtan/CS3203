@@ -35,20 +35,24 @@ def run_tests_in_folder(autotester_exe, folder):
 	if len(source) == 0:
 		return
 
-	print(f"test set {folder}:")
-	print(f"    source: {source}")
-	print(f"    queries ({len(queries)}): {queries}")
+	print(f"test set {folder}: ({source})")
 
 	for query in queries:
 		run_autotester(autotester_exe, folder, source, query)
 
 
 def run_tests(autotester_exe, folder):
+	seen = set()
 	for root, dirs, files in os.walk(folder):
+		if root in seen:
+			continue
+
 		if len(dirs) == 0:
+			seen.add(root)
 			run_tests_in_folder(autotester_exe, root)
 		else:
 			for d in dirs:
+				seen.add(os.path.join(root, d))
 				run_tests_in_folder(autotester_exe, os.path.join(root, d))
 
 
@@ -97,9 +101,11 @@ def main():
 	passed_tests = rp.get_passed_tests()
 	num_failed = rp.get_num_failed()
 	num_passed = rp.get_num_passed()
+	total_tests = num_failed + num_passed
 
 	with open("autotester_summary.txt", "wb") as f:
-		log_string(f, f"{num_passed}/{num_passed + num_failed} tests passed, {num_failed} failed")
+		log_string(f, f"{num_passed}/{total_tests} ({100 * num_passed / total_tests:.1f}%) " +
+			f"test{'' if num_passed == 1 else 's'} passed, {num_failed} failed")
 
 		for (filename, tests) in failed_tests.items():
 			if len(tests) == 0:

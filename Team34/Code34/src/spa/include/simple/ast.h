@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 
 #include "util.h"
 
@@ -18,9 +19,19 @@ namespace simple::ast
     struct Stmt;
     struct StmtList
     {
-        std::vector<Stmt*> statements;
+#if 0
+        // StmtList() { }
+        // ~StmtList();
 
-        Stmt* parent_statement = nullptr;
+        // StmtList(const StmtList&) = delete;
+        // StmtList& operator=(const StmtList&) = delete;
+
+        // StmtList(StmtList&&);
+        // StmtList& operator=(StmtList&&);
+#endif
+        std::vector<std::unique_ptr<Stmt>> statements {};
+
+        const Stmt* parent_statement = nullptr;
 
         std::string toString(int nesting, bool compact = false) const;
     };
@@ -36,7 +47,7 @@ namespace simple::ast
         virtual ~Stmt();
         virtual std::string toString(int nesting, bool compact = false) const = 0;
 
-        StmtList* parent_list = 0;
+        const StmtList* parent_list = 0;
         StatementNum id = 0;
     };
 
@@ -56,8 +67,8 @@ namespace simple::ast
     {
         virtual std::string toString() const override;
 
-        Expr* lhs = 0;
-        Expr* rhs = 0;
+        std::unique_ptr<Expr> lhs {};
+        std::unique_ptr<Expr> rhs {};
 
         // TODO: make this an enumeration
         std::string op;
@@ -71,14 +82,14 @@ namespace simple::ast
         virtual std::string toString() const override;
 
         std::string op;
-        Expr* expr = 0;
+        std::unique_ptr<Expr> expr {};
     };
 
     struct IfStmt : Stmt
     {
         virtual std::string toString(int nesting, bool compact = false) const override;
 
-        Expr* condition = 0;
+        std::unique_ptr<Expr> condition {};
 
         StmtList true_case;
         StmtList false_case;
@@ -95,7 +106,7 @@ namespace simple::ast
     {
         virtual std::string toString(int nesting, bool compact = false) const override;
 
-        Expr* condition = 0;
+        std::unique_ptr<Expr> condition {};
         StmtList body;
     };
 
@@ -104,7 +115,7 @@ namespace simple::ast
         virtual std::string toString(int nesting, bool compact = false) const override;
 
         std::string lhs;
-        Expr* rhs = 0;
+        std::unique_ptr<Expr> rhs {};
     };
 
     struct ReadStmt : Stmt
@@ -131,7 +142,7 @@ namespace simple::ast
     struct Program
     {
         std::string toString(bool compact = false) const;
-        std::vector<Procedure*> procedures;
+        std::vector<std::unique_ptr<Procedure>> procedures;
     };
 
     bool exactMatch(Expr* subtree, Expr* tree);

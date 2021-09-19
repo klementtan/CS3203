@@ -3,10 +3,12 @@
 
 #pragma once
 
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 #include <string>
+#include <memory>
+#include <optional>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "simple/ast.h"
 
@@ -51,10 +53,25 @@ namespace pql::ast
     /** List of design entity declaration. ie Represents [`assign a`, `print p`]. */
     struct DeclarationList
     {
-        // Mapping of all declarations. <name, Declaration>
-        std::unordered_map<std::string, Declaration*> declarations;
+        DeclarationList() = default;
+        ~DeclarationList();
+
+        DeclarationList(const DeclarationList&) = delete;
+        DeclarationList& operator=(const DeclarationList&) = delete;
+
+        DeclarationList(DeclarationList&&) = default;
+        DeclarationList& operator=(DeclarationList&&) = default;
+
 
         std::string toString() const;
+        bool hasDeclaration(const std::string& name) const;
+        Declaration* getDeclaration(const std::string& name) const;
+        const std::unordered_map<std::string, Declaration*>& getAllDeclarations() const;
+
+        Declaration* addDeclaration(const std::string& name, DESIGN_ENT design_ent);
+
+    private:
+        std::unordered_map<std::string, Declaration*> declarations {};
     };
 
     /** Design entity declaration. ie `assign a`. */
@@ -70,59 +87,92 @@ namespace pql::ast
     /** Abstract class for Statement Reference. */
     struct StmtRef
     {
-        virtual ~StmtRef();
-        virtual std::string toString() const = 0;
+        enum class Type
+        {
+            Invalid,
+            Declaration,
+            StmtId,
+            Wildcard
+        };
+
+        std::string toString() const;
+
+        Type ref_type {};
+        union
+        {
+            Declaration* _declaration;
+            simple::ast::StatementNum _id;
+        };
+
+        Declaration* declaration() const;
+        simple::ast::StatementNum id() const;
+
+        inline bool isWildcard() const
+        {
+            return ref_type == Type::Wildcard;
+        }
+        inline bool isStatementId() const
+        {
+            return ref_type == Type::StmtId;
+        }
+        inline bool isDeclaration() const
+        {
+            return ref_type == Type::Declaration;
+        }
+
+        static StmtRef ofWildcard();
+        static StmtRef ofDeclaration(Declaration* decl);
+        static StmtRef ofStatementId(simple::ast::StatementNum id);
     };
 
-    /** Statement Reference using previous pql Declaration. */
-    struct DeclaredStmt : StmtRef
-    {
-        virtual std::string toString() const override;
-
-        Declaration* declaration = nullptr;
-    };
-
-    /** Statement Reference using id(line number) of statement in program. */
-    struct StmtId : StmtRef
-    {
-        virtual std::string toString() const override;
-
-        size_t id = 0;
-    };
-
-    /** Statement Reference to all(`_`) statements. */
-    struct AllStmt : StmtRef
-    {
-        virtual std::string toString() const override;
-    };
-
-    /** Abstract Reference for Entity Reference. */
     struct EntRef
     {
-        virtual ~EntRef();
-        virtual std::string toString() const = 0;
-    };
+        enum class Type
+        {
+            Invalid,
+            Declaration,
+            Name,
+            Wildcard
+        };
 
-    /** Entity Reference using previous pql Declaration. */
-    struct DeclaredEnt : EntRef
-    {
-        virtual std::string toString() const override;
+        // needs the rule of 5 or whatever cos of std::string in the union
+        EntRef() = default;
+        ~EntRef();
 
-        Declaration* declaration = nullptr;
-    };
+        EntRef(const EntRef&);
+        EntRef& operator=(const EntRef&);
 
-    /** Entity Reference using the string represnetation of variable name in program. */
-    struct EntName : EntRef
-    {
-        virtual std::string toString() const override;
+        EntRef(EntRef&&);
+        EntRef& operator=(EntRef&&);
 
-        std::string name;
-    };
+        std::string toString() const;
 
-    /** Entity Reference to all(`_`) entities. */
-    struct AllEnt : EntRef
-    {
-        virtual std::string toString() const override;
+        Type ref_type {};
+        union
+        {
+            Declaration* _declaration;
+            std::string _name {};
+        };
+
+        Declaration* declaration() const;
+        std::string name() const;
+
+        inline bool isName() const
+        {
+            return ref_type == Type::Name;
+        }
+        inline bool isWildcard() const
+        {
+            return ref_type == Type::Wildcard;
+        }
+        inline bool isDeclaration() const
+        {
+            return ref_type == Type::Declaration;
+        }
+
+        static EntRef ofWildcard();
+        static EntRef ofName(std::string name);
+        static EntRef ofDeclaration(Declaration* decl);
     };
 
     /** Abstract class for Relationship Conditions between Statements and Entities. */
@@ -143,8 +193,8 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        EntRef* modifier = nullptr;
-        EntRef* ent = nullptr;
+        EntRef modifier {};
+        EntRef ent {};
     };
 
     /** Represents `Modifies(StmtRef, EntRef)` relationship condition. */
@@ -152,8 +202,8 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        StmtRef* modifier = nullptr;
-        EntRef* ent = nullptr;
+        StmtRef modifier {};
+        EntRef ent {};
     };
 
     /** Abstract class for Uses relationship condition. */
@@ -167,8 +217,8 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        EntRef* user = nullptr;
-        EntRef* ent = nullptr;
+        EntRef user {};
+        EntRef ent {};
     };
 
     /** Represents `Uses(StmtRef, EntRef)` relationship condition. */
@@ -176,8 +226,8 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        StmtRef* user = nullptr;
-        EntRef* ent = nullptr;
+        StmtRef user {};
+        EntRef ent {};
     };
 
     /** Represents `Parent(StmtRef, StmtRef)` relationship condition. */
@@ -185,8 +235,8 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        StmtRef* parent = nullptr;
-        StmtRef* child = nullptr;
+        StmtRef parent {};
+        StmtRef child {};
     };
 
     /** Represents `Parent*(StmtRef, StmtRef)` relationship condition. */
@@ -194,8 +244,8 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        StmtRef* ancestor = nullptr;
-        StmtRef* descendant = nullptr;
+        StmtRef ancestor {};
+        StmtRef descendant {};
     };
 
     /** Represents `Follows(StmtRef, StmtRef)` relationship condition. */
@@ -203,8 +253,8 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        StmtRef* directly_before = nullptr;
-        StmtRef* directly_after = nullptr;
+        StmtRef directly_before {};
+        StmtRef directly_after {};
     };
 
     /** Represents `Follows*(StmtRef, StmtRef)` relationship condition. */
@@ -212,8 +262,8 @@ namespace pql::ast
     {
         virtual std::string toString() const override;
 
-        StmtRef* before = nullptr;
-        StmtRef* after = nullptr;
+        StmtRef before {};
+        StmtRef after {};
     };
 
     /** Expression Specification: pattern segment  of an assignment pattern. */
@@ -221,8 +271,7 @@ namespace pql::ast
     {
         // whether this is surrounded by '_'s
         bool is_subexpr = false;
-
-        simple::ast::Expr* expr = nullptr;
+        std::unique_ptr<simple::ast::Expr> expr {};
 
         std::string toString() const;
     };
@@ -242,9 +291,10 @@ namespace pql::ast
         virtual std::string toString() const override;
         virtual void evaluate(pkb::ProgramKB* pkb, eval::table::Table* table) const override;
 
-        EntRef* ent = nullptr;
         Declaration* assignment_declaration = nullptr;
-        ExprSpec* expr_spec = nullptr;
+
+        EntRef ent {};
+        ExprSpec expr_spec {};
     };
 
     /** Pattern Clause. */
@@ -252,7 +302,7 @@ namespace pql::ast
     {
         // Support multiple PatternCond for forward compatibility. Future iteration
         // requires ANDing multiple PatternCond
-        std::vector<PatternCond*> pattern_conds;
+        std::vector<std::unique_ptr<PatternCond>> pattern_conds;
         std::string toString() const;
     };
 
@@ -261,23 +311,25 @@ namespace pql::ast
     {
         // Support multiple RelCond for forward compatibility. Future iteration
         // requires ANDing multiple RelCond
-        std::vector<RelCond*> rel_conds;
+        std::vector<std::unique_ptr<RelCond>> rel_conds;
         std::string toString() const;
     };
 
     /** Select query. */
     struct Select
     {
-        SuchThatCl* such_that = nullptr;
-        PatternCl* pattern = nullptr;
+        std::optional<SuchThatCl> such_that {};
+        std::optional<PatternCl> pattern {};
         Declaration* ent = nullptr;
+
         std::string toString() const;
     };
 
     struct Query
     {
-        Select* select = nullptr;
-        DeclarationList* declarations = nullptr;
+        Select select {};
+        DeclarationList declarations {};
+
         std::string toString() const;
     };
 

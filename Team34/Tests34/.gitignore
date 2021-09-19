@@ -1,4 +1,4 @@
 *.xml
 __pycache__
 autotester_summary.txt
-secret_tests
+secret_tests*

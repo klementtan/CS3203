@@ -10,11 +10,10 @@
 
 namespace pql::eval
 {
-    void Evaluator::handlePattern(const ast::PatternCl* pattern)
+    void Evaluator::handlePattern(const ast::PatternCl& pattern)
     {
-        assert(pattern);
-        for(auto p : pattern->pattern_conds)
-            p->evaluate(this->m_pkb, this->m_table);
+        for(const auto& p : pattern.pattern_conds)
+            p->evaluate(this->m_pkb, &this->m_table);
     }
 }
 
@@ -27,14 +26,14 @@ namespace pql::ast
 
     void AssignPatternCond::evaluate(pkb::ProgramKB* pkb, table::Table* tbl) const
     {
-        bool is_var_wild = dynamic_cast<AllEnt*>(this->ent);
-        bool is_var_name = dynamic_cast<EntName*>(this->ent);
-        bool is_var_decl = dynamic_cast<DeclaredEnt*>(this->ent);
+        const auto& var_ent = this->ent;
         assert(this->assignment_declaration->design_ent == DESIGN_ENT::ASSIGN);
 
-        if(is_var_decl)
-            tbl->addSelectDecl(dynamic_cast<DeclaredEnt*>(this->ent)->declaration);
+        if(var_ent.isDeclaration())
+            tbl->addSelectDecl(var_ent.declaration());
+
         tbl->addSelectDecl(assignment_declaration);
+
         // Stores dependency when pattern a(v, ...)
         std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
@@ -46,31 +45,30 @@ namespace pql::ast
             assert(assign_stmt);
 
             // check the rhs first, since it requires less table operations
-            assert(this->expr_spec);
-            if(this->expr_spec->expr != nullptr)
+            if(this->expr_spec.expr != nullptr)
             {
-                if(this->expr_spec->is_subexpr)
-                    should_erase |= !s_ast::partialMatch(this->expr_spec->expr, assign_stmt->rhs);
+                if(this->expr_spec.is_subexpr)
+                    should_erase |= !s_ast::partialMatch(this->expr_spec.expr.get(), assign_stmt->rhs.get());
                 else
-                    should_erase |= !s_ast::exactMatch(this->expr_spec->expr, assign_stmt->rhs);
+                    should_erase |= !s_ast::exactMatch(this->expr_spec.expr.get(), assign_stmt->rhs.get());
             }
 
 
             // don't do extra work if we're already going to yeet this
             if(!should_erase)
             {
-                if(is_var_name)
+                if(var_ent.isName())
                 {
-                    auto var_name = dynamic_cast<EntName*>(this->ent)->name;
+                    auto var_name = var_ent.name();
                     should_erase |= (assign_stmt->lhs != var_name);
                 }
-                else if(is_var_decl)
+                else if(var_ent.isDeclaration())
                 {
                     util::log("pql::eval", "Processing pattern a (v, ...)");
                     // in theory, we also need to check if there aren't any variables, and if so yeet this
                     // assignment from the domain; however, any valid SIMPLE program has at least one variable,
                     // so in reality this should not be triggered.
-                    auto var_decl = dynamic_cast<DeclaredEnt*>(this->ent)->declaration;
+                    auto var_decl = var_ent.declaration();
                     auto var_list = tbl->getDomain(var_decl);
                     if(var_list.empty())
                         should_erase |= true;
@@ -86,7 +84,7 @@ namespace pql::ast
                         }
                     }
                 }
-                else if(is_var_wild)
+                else if(var_ent.isWildcard())
                 {
                     // do nothing
                 }
@@ -101,10 +99,9 @@ namespace pql::ast
             else
                 ++it;
         }
-        if(is_var_decl)
+        if(var_ent.isDeclaration())
         {
-            tbl->addJoin(table::Join(
-                assignment_declaration, dynamic_cast<DeclaredEnt*>(this->ent)->declaration, allowed_entries));
+            tbl->addJoin(table::Join(assignment_declaration, var_ent.declaration(), allowed_entries));
         }
 
         tbl->upsertDomains(this->assignment_declaration, domain);
