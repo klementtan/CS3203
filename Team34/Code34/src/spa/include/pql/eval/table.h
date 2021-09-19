@@ -104,6 +104,7 @@ namespace pql::eval::table
         std::unordered_set<std::pair<Entry, Entry>> m_allowed_entries;
 
     public:
+        Join() = default;
         Join(pql::ast::Declaration* decl_a, pql::ast::Declaration* decl_b,
             std::unordered_set<std::pair<Entry, Entry>> allowed_entries);
         [[nodiscard]] pql::ast::Declaration* getDeclA() const;
@@ -123,7 +124,8 @@ namespace pql::eval::table
         std::unordered_set<ast::Declaration*> m_select_decls;
         // Get all possible rows with decls as the column. The value of each entry in the
         // row will exist in the domain of declaration.
-        [[nodiscard]] std::vector<Row> getRows(const std::vector<ast::Declaration*>& decls) const;
+        [[nodiscard]] std::vector<Row> getRows(
+            const std::vector<ast::Declaration*>& decls, const std::vector<Join>& joins) const;
         // Get the rows in candidate_rows that fulfill all of the joins
         [[nodiscard]] std::vector<Row> getValidRows(const std::vector<Row>& candidate_rows) const;
         // Get mapping of declaration to the join that is involved in.
@@ -136,6 +138,7 @@ namespace pql::eval::table
         Domain getDomain(ast::Declaration* decl) const;
         void addJoin(const Join& join);
         Table();
+        ~Table();
         std::list<std::string> getResult(ast::Declaration* ret_decls);
         [[nodiscard]] std::string toString() const;
     };

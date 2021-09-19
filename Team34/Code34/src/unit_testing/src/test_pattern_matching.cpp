@@ -39,13 +39,12 @@ constexpr const auto sample_source = R"(
 
 Expr* get_rhs(Stmt* stmt)
 {
-    return ((AssignStmt*) stmt)->rhs;
+    return ((AssignStmt*) stmt)->rhs.get();
 }
 
 TEST_CASE("pattern matching on trees")
 {
-    auto prog = parseProgram(sample_source);
-    auto kb = processProgram(prog);
+    auto kb = processProgram(parseProgram(sample_source));
     std::vector<Stmt*> stmts {};
     {
         for(const auto& s : kb->uses_modifies.statements)

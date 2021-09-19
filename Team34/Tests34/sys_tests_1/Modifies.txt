@@ -123,6 +123,11 @@ procedure i;
 Select i such that Modifies (i, "p1") pattern a(_,_"1"_)
 none
 5000
+26 - pattern with 1 common syn
+assign a; variable v;
+Select a such that Modifies (a, v) pattern a(_, _)
+65,1,9,66,2,6,71,7,8,72,11,12,14,15,79,22,23,24,25,26,27,28,29,30,31,33,34,39,40,45,46,51,52,53,57,59,60,80,81,82
+5000
 27 - pattern with 2 common syns
 assign a; variable v;
 Select a such that Modifies (a, v) pattern a(v, _)

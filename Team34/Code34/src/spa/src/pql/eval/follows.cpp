@@ -14,25 +14,20 @@ namespace pql::eval
     void Evaluator::handleFollows(const ast::Follows* follows)
     {
         assert(follows);
-        assert(follows->directly_after);
-        assert(follows->directly_before);
 
-        bool is_bef_stmt_id = dynamic_cast<ast::StmtId*>(follows->directly_before);
-        bool is_aft_stmt_id = dynamic_cast<ast::StmtId*>(follows->directly_after);
-        bool is_bef_all = dynamic_cast<ast::AllStmt*>(follows->directly_before);
-        bool is_aft_all = dynamic_cast<ast::AllStmt*>(follows->directly_after);
-        bool is_bef_decl = dynamic_cast<ast::DeclaredStmt*>(follows->directly_before);
-        bool is_aft_decl = dynamic_cast<ast::DeclaredStmt*>(follows->directly_after);
+        const auto& before_stmt = follows->directly_before;
+        const auto& after_stmt = follows->directly_after;
 
-        if(is_bef_decl)
-            m_table->addSelectDecl(dynamic_cast<ast::DeclaredStmt*>(follows->directly_before)->declaration);
-        if(is_aft_decl)
-            m_table->addSelectDecl(dynamic_cast<ast::DeclaredStmt*>(follows->directly_after)->declaration);
+        if(before_stmt.isDeclaration())
+            m_table.addSelectDecl(before_stmt.declaration());
 
-        if(is_bef_stmt_id && is_aft_stmt_id)
+        if(after_stmt.isDeclaration())
+            m_table.addSelectDecl(after_stmt.declaration());
+
+        if(before_stmt.isStatementId() && after_stmt.isStatementId())
         {
-            auto bef_stmt_id = dynamic_cast<ast::StmtId*>(follows->directly_before)->id;
-            auto aft_stmt_id = dynamic_cast<ast::StmtId*>(follows->directly_after)->id;
+            auto bef_stmt_id = before_stmt.id();
+            auto aft_stmt_id = after_stmt.id();
 
             util::log("pql::eval", "Processing Follows(StmtId,StmtId)");
             if(m_pkb->isFollows(bef_stmt_id, aft_stmt_id))
@@ -45,9 +40,9 @@ namespace pql::eval
                 throw PqlException("pql::eval", "{} will always evaluate to false", follows->toString());
             }
         }
-        else if(is_bef_stmt_id && is_aft_all)
+        else if(before_stmt.isStatementId() && after_stmt.isWildcard())
         {
-            auto bef_stmt_id = dynamic_cast<ast::StmtId*>(follows->directly_before)->id;
+            auto bef_stmt_id = before_stmt.id();
 
             util::log("pql::eval", "Processing Follows(StmtId,_)");
             if(m_pkb->getFollows(bef_stmt_id)->after.empty())
@@ -60,10 +55,10 @@ namespace pql::eval
                 return;
             }
         }
-        else if(is_bef_stmt_id && is_aft_decl)
+        else if(before_stmt.isStatementId() && after_stmt.isDeclaration())
         {
-            auto bef_stmt_id = dynamic_cast<ast::StmtId*>(follows->directly_before)->id;
-            auto aft_decl = dynamic_cast<ast::DeclaredStmt*>(follows->directly_after)->declaration;
+            auto bef_stmt_id = before_stmt.id();
+            auto aft_decl = after_stmt.declaration();
 
             util::log("pql::eval", "Processing Follows(StmtId,DeclaredStmt)");
             if(m_pkb->getFollows(bef_stmt_id)->after.empty())
@@ -76,13 +71,13 @@ namespace pql::eval
                 auto entry = table::Entry(aft_decl, m_pkb->getFollows(bef_stmt_id)->directly_after);
                 util::log("pql::eval", "{} updating domain to [{}]", follows->toString(), entry.toString());
                 table::Domain curr_domain = { entry };
-                table::Domain prev_domain = m_table->getDomain(aft_decl);
-                m_table->upsertDomains(aft_decl, table::entry_set_intersect(prev_domain, curr_domain));
+                table::Domain prev_domain = m_table.getDomain(aft_decl);
+                m_table.upsertDomains(aft_decl, table::entry_set_intersect(prev_domain, curr_domain));
             }
         }
-        else if(is_bef_all && is_aft_stmt_id)
+        else if(before_stmt.isWildcard() && after_stmt.isStatementId())
         {
-            auto aft_stmt_id = dynamic_cast<ast::StmtId*>(follows->directly_after)->id;
+            auto aft_stmt_id = after_stmt.id();
 
             util::log("pql::eval", "Processing Follows(_,StmtId)");
             if(m_pkb->getFollows(aft_stmt_id)->before.empty())
@@ -95,7 +90,7 @@ namespace pql::eval
                 return;
             }
         }
-        else if(is_bef_all && is_aft_all)
+        else if(before_stmt.isWildcard() && after_stmt.isWildcard())
         {
             util::log("pql::eval", "Processing Follows(_,_)");
             if(m_pkb->followsRelationExists())
@@ -109,13 +104,13 @@ namespace pql::eval
                     "pql::eval", "{} will always evaluate to false. No 2 following statement.", follows->toString());
             }
         }
-        else if(is_bef_all && is_aft_decl)
+        else if(before_stmt.isWildcard() && after_stmt.isDeclaration())
         {
-            auto aft_decl = dynamic_cast<ast::DeclaredStmt*>(follows->directly_after)->declaration;
+            auto aft_decl = after_stmt.declaration();
 
             util::log("pql::eval", "Processing Follows(_,DeclaredStmt)");
             table::Domain curr_domain {};
-            table::Domain prev_domain = m_table->getDomain(aft_decl);
+            table::Domain prev_domain = m_table.getDomain(aft_decl);
             for(auto pkb_follows : m_pkb->follows)
             {
                 // Add all stmts with a directly before to domain
@@ -126,12 +121,12 @@ namespace pql::eval
                     curr_domain.insert(entry);
                 }
             }
-            m_table->upsertDomains(aft_decl, table::entry_set_intersect(prev_domain, curr_domain));
+            m_table.upsertDomains(aft_decl, table::entry_set_intersect(prev_domain, curr_domain));
         }
-        else if(is_bef_decl && is_aft_stmt_id)
+        else if(before_stmt.isDeclaration() && after_stmt.isStatementId())
         {
-            auto bef_decl = dynamic_cast<ast::DeclaredStmt*>(follows->directly_before)->declaration;
-            auto aft_stmt_id = dynamic_cast<ast::StmtId*>(follows->directly_after)->id;
+            auto bef_decl = before_stmt.declaration();
+            auto aft_stmt_id = after_stmt.id();
 
             util::log("pql::eval", "Processing Follows(DeclaredStmt,StmtId)");
             if(m_pkb->getFollows(aft_stmt_id)->before.empty())
@@ -145,17 +140,17 @@ namespace pql::eval
                 auto entry = table::Entry(bef_decl, m_pkb->getFollows(aft_stmt_id)->directly_before);
                 util::log("pql::eval", "{} adds {} to curr domain", follows->toString(), entry.toString());
                 table::Domain curr_domain = { entry };
-                table::Domain prev_domain = m_table->getDomain(bef_decl);
-                m_table->upsertDomains(bef_decl, table::entry_set_intersect(prev_domain, curr_domain));
+                table::Domain prev_domain = m_table.getDomain(bef_decl);
+                m_table.upsertDomains(bef_decl, table::entry_set_intersect(prev_domain, curr_domain));
             }
         }
-        else if(is_bef_decl && is_aft_all)
+        else if(before_stmt.isDeclaration() && after_stmt.isWildcard())
         {
-            auto bef_decl = dynamic_cast<ast::DeclaredStmt*>(follows->directly_before)->declaration;
+            auto bef_decl = before_stmt.declaration();
 
             util::log("pql::eval", "Processing Follows(DeclaredStmt,_)");
             table::Domain curr_domain;
-            table::Domain prev_domain = m_table->getDomain(bef_decl);
+            table::Domain prev_domain = m_table.getDomain(bef_decl);
             for(auto pkb_follows : m_pkb->follows)
             {
                 // Add all stmts with a directly before to domain
@@ -166,19 +161,19 @@ namespace pql::eval
                     curr_domain.insert(entry);
                 }
             }
-            m_table->upsertDomains(bef_decl, table::entry_set_intersect(prev_domain, curr_domain));
+            m_table.upsertDomains(bef_decl, table::entry_set_intersect(prev_domain, curr_domain));
         }
-        else if(is_bef_decl && is_aft_decl)
+        else if(before_stmt.isDeclaration() && after_stmt.isDeclaration())
         {
-            auto bef_decl = dynamic_cast<ast::DeclaredStmt*>(follows->directly_before)->declaration;
-            auto aft_decl = dynamic_cast<ast::DeclaredStmt*>(follows->directly_after)->declaration;
+            auto bef_decl = before_stmt.declaration();
+            auto aft_decl = after_stmt.declaration();
 
             util::log("pql::eval", "Processing Follows(DeclaredStmt,DeclaredStmt)");
 
             // use a combination of pruning and intersection in this case, to obviate the need for
             // explicitly doing a nested loop.
 
-            auto bef_domain = m_table->getDomain(bef_decl);
+            auto bef_domain = m_table.getDomain(bef_decl);
             auto new_aft_domain = table::Domain {};
             std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
@@ -202,9 +197,9 @@ namespace pql::eval
                 ++it;
             }
 
-            m_table->upsertDomains(bef_decl, bef_domain);
-            m_table->upsertDomains(aft_decl, table::entry_set_intersect(new_aft_domain, m_table->getDomain(aft_decl)));
-            m_table->addJoin(table::Join(bef_decl, aft_decl, allowed_entries));
+            m_table.upsertDomains(bef_decl, bef_domain);
+            m_table.upsertDomains(aft_decl, table::entry_set_intersect(new_aft_domain, m_table.getDomain(aft_decl)));
+            m_table.addJoin(table::Join(bef_decl, aft_decl, allowed_entries));
         }
         else
         {
@@ -218,25 +213,20 @@ namespace pql::eval
     void Evaluator::handleFollowsT(const ast::FollowsT* follows_t)
     {
         assert(follows_t);
-        assert(follows_t->after);
-        assert(follows_t->before);
 
-        bool is_bef_stmt_id = dynamic_cast<ast::StmtId*>(follows_t->before);
-        bool is_aft_stmt_id = dynamic_cast<ast::StmtId*>(follows_t->after);
-        bool is_bef_all = dynamic_cast<ast::AllStmt*>(follows_t->before);
-        bool is_aft_all = dynamic_cast<ast::AllStmt*>(follows_t->after);
-        bool is_bef_decl = dynamic_cast<ast::DeclaredStmt*>(follows_t->before);
-        bool is_aft_decl = dynamic_cast<ast::DeclaredStmt*>(follows_t->after);
+        const auto& before_stmt = follows_t->before;
+        const auto& after_stmt = follows_t->after;
 
-        if(is_bef_decl)
-            m_table->addSelectDecl(dynamic_cast<ast::DeclaredStmt*>(follows_t->before)->declaration);
-        if(is_aft_decl)
-            m_table->addSelectDecl(dynamic_cast<ast::DeclaredStmt*>(follows_t->after)->declaration);
+        if(before_stmt.isDeclaration())
+            m_table.addSelectDecl(before_stmt.declaration());
 
-        if(is_bef_stmt_id && is_aft_stmt_id)
+        if(after_stmt.isDeclaration())
+            m_table.addSelectDecl(after_stmt.declaration());
+
+        if(before_stmt.isStatementId() && after_stmt.isStatementId())
         {
-            auto bef_stmt_id = dynamic_cast<ast::StmtId*>(follows_t->before)->id;
-            auto aft_stmt_id = dynamic_cast<ast::StmtId*>(follows_t->after)->id;
+            auto bef_stmt_id = before_stmt.id();
+            auto aft_stmt_id = after_stmt.id();
 
             util::log("pql::eval", "Processing Follows*(StmtId,StmtId)");
             if(m_pkb->isFollowsT(bef_stmt_id, aft_stmt_id))
@@ -249,9 +239,9 @@ namespace pql::eval
                 throw PqlException("pql::eval", "{} will always evaluate to false", follows_t->toString());
             }
         }
-        else if(is_bef_stmt_id && is_aft_all)
+        else if(before_stmt.isStatementId() && after_stmt.isWildcard())
         {
-            auto bef_stmt_id = dynamic_cast<ast::StmtId*>(follows_t->before)->id;
+            auto bef_stmt_id = before_stmt.id();
 
             util::log("pql::eval", "Processing Follows*(StmtId,_)");
             if(m_pkb->getFollows(bef_stmt_id)->after.empty())
@@ -264,10 +254,10 @@ namespace pql::eval
                 return;
             }
         }
-        else if(is_bef_stmt_id && is_aft_decl)
+        else if(before_stmt.isStatementId() && after_stmt.isDeclaration())
         {
-            auto bef_stmt_id = dynamic_cast<ast::StmtId*>(follows_t->before)->id;
-            auto aft_decl = dynamic_cast<ast::DeclaredStmt*>(follows_t->after)->declaration;
+            auto bef_stmt_id = before_stmt.id();
+            auto aft_decl = after_stmt.declaration();
 
             util::log("pql::eval", "Processing Follows*(StmtId,DeclaredStmt)");
             if(m_pkb->getFollows(bef_stmt_id)->after.empty())
@@ -284,13 +274,13 @@ namespace pql::eval
                     util::log("pql::eval", "{} updating domain to [{}]", follows_t->toString(), entry.toString());
                     curr_domain.insert(entry);
                 }
-                std::unordered_set<table::Entry> prev_domain = m_table->getDomain(aft_decl);
-                m_table->upsertDomains(aft_decl, table::entry_set_intersect(prev_domain, curr_domain));
+                std::unordered_set<table::Entry> prev_domain = m_table.getDomain(aft_decl);
+                m_table.upsertDomains(aft_decl, table::entry_set_intersect(prev_domain, curr_domain));
             }
         }
-        else if(is_bef_all && is_aft_stmt_id)
+        else if(before_stmt.isWildcard() && after_stmt.isStatementId())
         {
-            auto aft_stmt_id = dynamic_cast<ast::StmtId*>(follows_t->after)->id;
+            auto aft_stmt_id = after_stmt.id();
 
             util::log("pql::eval", "Processing Follows*(_,StmtId)");
             if(m_pkb->getFollows(aft_stmt_id)->before.empty())
@@ -303,7 +293,7 @@ namespace pql::eval
                 return;
             }
         }
-        else if(is_bef_all && is_aft_all)
+        else if(before_stmt.isWildcard() && after_stmt.isWildcard())
         {
             util::log("pql::eval", "Processing Follows*(_,_)");
             if(m_pkb->followsRelationExists())
@@ -317,13 +307,13 @@ namespace pql::eval
                     "pql::eval", "{} will always evaluate to false. No 2 following statement.", follows_t->toString());
             }
         }
-        else if(is_bef_all && is_aft_decl)
+        else if(before_stmt.isWildcard() && after_stmt.isDeclaration())
         {
-            auto aft_decl = dynamic_cast<ast::DeclaredStmt*>(follows_t->after)->declaration;
+            auto aft_decl = after_stmt.declaration();
 
             util::log("pql::eval", "Processing Follows*(_,DeclaredStmt)");
             std::unordered_set<table::Entry> curr_domain;
-            std::unordered_set<table::Entry> prev_domain = m_table->getDomain(aft_decl);
+            std::unordered_set<table::Entry> prev_domain = m_table.getDomain(aft_decl);
             for(auto pkb_follows : m_pkb->follows)
             {
                 // Add all stmts with a directly before to domain
@@ -334,12 +324,12 @@ namespace pql::eval
                     curr_domain.insert(entry);
                 }
             }
-            m_table->upsertDomains(aft_decl, table::entry_set_intersect(prev_domain, curr_domain));
+            m_table.upsertDomains(aft_decl, table::entry_set_intersect(prev_domain, curr_domain));
         }
-        else if(is_bef_decl && is_aft_stmt_id)
+        else if(before_stmt.isDeclaration() && after_stmt.isStatementId())
         {
-            auto aft_stmt_id = dynamic_cast<ast::StmtId*>(follows_t->after)->id;
-            auto bef_decl = dynamic_cast<ast::DeclaredStmt*>(follows_t->before)->declaration;
+            auto aft_stmt_id = after_stmt.id();
+            auto bef_decl = before_stmt.declaration();
 
             util::log("pql::eval", "Processing Follows*(DeclaredStmt,StmtId)");
             if(m_pkb->getFollows(aft_stmt_id)->before.empty())
@@ -351,23 +341,23 @@ namespace pql::eval
             else
             {
                 std::unordered_set<table::Entry> curr_domain;
-                std::unordered_set<table::Entry> prev_domain = m_table->getDomain(bef_decl);
+                std::unordered_set<table::Entry> prev_domain = m_table.getDomain(bef_decl);
                 for(simple::ast::StatementNum bef_stmt_id : m_pkb->getFollows(aft_stmt_id)->before)
                 {
                     auto entry = table::Entry(bef_decl, bef_stmt_id);
                     curr_domain.insert(entry);
                     util::log("pql::eval", "{} adds {} to curr domain", follows_t->toString(), entry.toString());
                 }
-                m_table->upsertDomains(bef_decl, table::entry_set_intersect(prev_domain, curr_domain));
+                m_table.upsertDomains(bef_decl, table::entry_set_intersect(prev_domain, curr_domain));
             }
         }
-        else if(is_bef_decl && is_aft_all)
+        else if(before_stmt.isDeclaration() && after_stmt.isWildcard())
         {
-            auto bef_decl = dynamic_cast<ast::DeclaredStmt*>(follows_t->before)->declaration;
+            auto bef_decl = before_stmt.declaration();
 
             util::log("pql::eval", "Processing Follows*(DeclaredStmt,_)");
             std::unordered_set<table::Entry> curr_domain;
-            std::unordered_set<table::Entry> prev_domain = m_table->getDomain(bef_decl);
+            std::unordered_set<table::Entry> prev_domain = m_table.getDomain(bef_decl);
             for(auto pkb_follows : m_pkb->follows)
             {
                 // Add all stmts with a directly before to domain
@@ -378,17 +368,17 @@ namespace pql::eval
                     curr_domain.insert(entry);
                 }
             }
-            m_table->upsertDomains(bef_decl, table::entry_set_intersect(prev_domain, curr_domain));
+            m_table.upsertDomains(bef_decl, table::entry_set_intersect(prev_domain, curr_domain));
         }
-        else if(is_bef_decl && is_aft_decl)
+        else if(before_stmt.isDeclaration() && after_stmt.isDeclaration())
         {
-            auto bef_decl = dynamic_cast<ast::DeclaredStmt*>(follows_t->before)->declaration;
-            auto aft_decl = dynamic_cast<ast::DeclaredStmt*>(follows_t->after)->declaration;
+            auto bef_decl = before_stmt.declaration();
+            auto aft_decl = after_stmt.declaration();
 
             util::log("pql::eval", "Processing Follows*(DeclaredStmt,DeclaredStmt)");
 
             // same strategy as Follows
-            auto bef_domain = m_table->getDomain(bef_decl);
+            auto bef_domain = m_table.getDomain(bef_decl);
             auto new_aft_domain = table::Domain {};
             std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
@@ -415,9 +405,9 @@ namespace pql::eval
                 ++it;
             }
 
-            m_table->upsertDomains(bef_decl, bef_domain);
-            m_table->upsertDomains(aft_decl, table::entry_set_intersect(new_aft_domain, m_table->getDomain(aft_decl)));
-            m_table->addJoin(table::Join(bef_decl, aft_decl, allowed_entries));
+            m_table.upsertDomains(bef_decl, bef_domain);
+            m_table.upsertDomains(aft_decl, table::entry_set_intersect(new_aft_domain, m_table.getDomain(aft_decl)));
+            m_table.addJoin(table::Join(bef_decl, aft_decl, allowed_entries));
         }
         else
         {

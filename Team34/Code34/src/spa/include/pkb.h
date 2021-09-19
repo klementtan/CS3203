@@ -3,9 +3,10 @@
 
 #pragma once
 
+#include <memory>
+#include <optional>
 #include <unordered_map>
 #include <unordered_set>
-#include <optional>
 
 #include "pql/parser/ast.h"
 #include "simple/ast.h"
@@ -70,11 +71,13 @@ namespace pkb
         bool dfs(std::string a, std::unordered_map<std::string, std::unordered_set<std::string>>* adj,
             std::unordered_set<std::string>* visited);
         bool cycleExists();
-        std::string missingProc(std::vector<simple::ast::Procedure*> procs);
+        std::string missingProc(const std::vector<std::unique_ptr<simple::ast::Procedure>>& procs);
     };
 
     struct UsesModifies
     {
+        ~UsesModifies();
+
         // this also functions as a unordered_map from (stmt_number - 1) -> Stmt*,
         // and the Stmt knows its own number.
         std::vector<Statement*> statements;
@@ -107,6 +110,8 @@ namespace pkb
 
     struct ProgramKB
     {
+        ~ProgramKB();
+
         CallGraph proc_calls;
 
         UsesModifies uses_modifies;
@@ -142,7 +147,9 @@ namespace pkb
 
         bool m_follows_exists = false;
         bool m_parent_exists = false;
+
+        std::unique_ptr<simple::ast::Program> m_program {};
     };
 
-    ProgramKB* processProgram(simple::ast::Program* prog);
+    std::unique_ptr<ProgramKB> processProgram(std::unique_ptr<simple::ast::Program> prog);
 }

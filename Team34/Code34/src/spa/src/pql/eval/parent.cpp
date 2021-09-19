@@ -14,58 +14,54 @@ namespace pql::eval
     void Evaluator::handleParent(const ast::Parent* rel)
     {
         assert(rel);
-        bool is_parent_sid = dynamic_cast<ast::StmtId*>(rel->parent);
-        bool is_parent_decl = dynamic_cast<ast::DeclaredStmt*>(rel->parent);
-        bool is_parent_wildcard = dynamic_cast<ast::AllStmt*>(rel->parent);
 
-        bool is_child_sid = dynamic_cast<ast::StmtId*>(rel->child);
-        bool is_child_decl = dynamic_cast<ast::DeclaredStmt*>(rel->child);
-        bool is_child_wildcard = dynamic_cast<ast::AllStmt*>(rel->child);
+        const auto& parent_stmt = rel->parent;
+        const auto& child_stmt = rel->child;
 
-        if(is_parent_decl)
-            m_table->addSelectDecl(dynamic_cast<ast::DeclaredStmt*>(rel->parent)->declaration);
-        if(is_child_decl)
-            m_table->addSelectDecl(dynamic_cast<ast::DeclaredStmt*>(rel->child)->declaration);
+        if(parent_stmt.isDeclaration())
+            m_table.addSelectDecl(parent_stmt.declaration());
+        if(child_stmt.isDeclaration())
+            m_table.addSelectDecl(child_stmt.declaration());
 
-        if(is_parent_sid && is_child_sid)
+        if(parent_stmt.isStatementId() && child_stmt.isStatementId())
         {
             util::log("pql::eval", "processing Parent(StmtId, StmtId)");
 
-            auto parent_sid = dynamic_cast<ast::StmtId*>(rel->parent)->id;
-            auto child_sid = dynamic_cast<ast::StmtId*>(rel->child)->id;
+            auto parent_sid = parent_stmt.id();
+            auto child_sid = child_stmt.id();
 
             if(!m_pkb->isParent(parent_sid, child_sid))
                 throw PqlException("pql::eval", "{} is always false", rel->toString());
         }
-        else if(is_parent_sid && is_child_decl)
+        else if(parent_stmt.isStatementId() && child_stmt.isDeclaration())
         {
             util::log("pql::eval", "processing Parent(StmtId, DeclaredStmt)");
 
-            auto parent_sid = dynamic_cast<ast::StmtId*>(rel->parent)->id;
-            auto child_decl = dynamic_cast<ast::DeclaredStmt*>(rel->child)->declaration;
+            auto parent_sid = parent_stmt.id();
+            auto child_decl = child_stmt.declaration();
 
             std::unordered_set<table::Entry> new_domain {};
             for(const auto& child_id : m_pkb->getChildrenOf(parent_sid))
                 new_domain.emplace(child_decl, child_id);
 
-            m_table->upsertDomains(child_decl, table::entry_set_intersect(new_domain, m_table->getDomain(child_decl)));
+            m_table.upsertDomains(child_decl, table::entry_set_intersect(new_domain, m_table.getDomain(child_decl)));
         }
-        else if(is_parent_sid && is_child_wildcard)
+        else if(parent_stmt.isStatementId() && child_stmt.isWildcard())
         {
             util::log("pql::eval", "processing Parent(StmtId, _)");
 
-            auto parent_sid = dynamic_cast<ast::StmtId*>(rel->parent)->id;
+            auto parent_sid = parent_stmt.id();
             if(m_pkb->getChildrenOf(parent_sid).empty())
                 throw PqlException(
                     "pql::eval", "{} is always false ('{}' has no children)", rel->toString(), parent_sid);
         }
 
-        else if(is_parent_decl && is_child_sid)
+        else if(parent_stmt.isDeclaration() && child_stmt.isStatementId())
         {
             util::log("pql::eval", "processing Parent(DeclaredStmt, StmtId)");
 
-            auto parent_decl = dynamic_cast<ast::DeclaredStmt*>(rel->parent)->declaration;
-            auto child_sid = dynamic_cast<ast::StmtId*>(rel->child)->id;
+            auto parent_decl = parent_stmt.declaration();
+            auto child_sid = child_stmt.id();
 
             auto parent_id = m_pkb->getParentOf(child_sid);
             if(!parent_id.has_value())
@@ -73,18 +69,17 @@ namespace pql::eval
 
             std::unordered_set<table::Entry> new_domain { table::Entry(parent_decl, parent_id.value()) };
 
-            m_table->upsertDomains(
-                parent_decl, table::entry_set_intersect(new_domain, m_table->getDomain(parent_decl)));
+            m_table.upsertDomains(parent_decl, table::entry_set_intersect(new_domain, m_table.getDomain(parent_decl)));
         }
-        else if(is_parent_decl && is_child_decl)
+        else if(parent_stmt.isDeclaration() && child_stmt.isDeclaration())
         {
             util::log("pql::eval", "processing Parent(DeclaredStmt, DeclaredStmt)");
 
-            auto parent_decl = dynamic_cast<ast::DeclaredStmt*>(rel->parent)->declaration;
-            auto child_decl = dynamic_cast<ast::DeclaredStmt*>(rel->child)->declaration;
+            auto parent_decl = parent_stmt.declaration();
+            auto child_decl = child_stmt.declaration();
 
             // same strategy as Follows
-            auto parent_domain = m_table->getDomain(parent_decl);
+            auto parent_domain = m_table.getDomain(parent_decl);
             auto new_child_domain = table::Domain {};
             std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
@@ -107,19 +102,19 @@ namespace pql::eval
                 ++it;
             }
 
-            m_table->upsertDomains(parent_decl, parent_domain);
-            m_table->upsertDomains(
-                child_decl, table::entry_set_intersect(new_child_domain, m_table->getDomain(child_decl)));
-            m_table->addJoin(table::Join(parent_decl, child_decl, allowed_entries));
+            m_table.upsertDomains(parent_decl, parent_domain);
+            m_table.upsertDomains(
+                child_decl, table::entry_set_intersect(new_child_domain, m_table.getDomain(child_decl)));
+            m_table.addJoin(table::Join(parent_decl, child_decl, allowed_entries));
         }
-        else if(is_parent_decl && is_child_wildcard)
+        else if(parent_stmt.isDeclaration() && child_stmt.isWildcard())
         {
             util::log("pql::eval", "processing Parent(DeclaredStmt, _)");
 
-            auto parent_decl = dynamic_cast<ast::DeclaredStmt*>(rel->parent)->declaration;
+            auto parent_decl = parent_stmt.declaration();
             std::unordered_set<table::Entry> new_domain {};
 
-            for(const auto& entry : m_table->getDomain(parent_decl))
+            for(const auto& entry : m_table.getDomain(parent_decl))
             {
                 if(m_pkb->getChildrenOf(entry.getStmtNum()).empty())
                     continue;
@@ -127,26 +122,25 @@ namespace pql::eval
                 new_domain.emplace(parent_decl, entry.getStmtNum());
             }
 
-            m_table->upsertDomains(
-                parent_decl, table::entry_set_intersect(new_domain, m_table->getDomain(parent_decl)));
+            m_table.upsertDomains(parent_decl, table::entry_set_intersect(new_domain, m_table.getDomain(parent_decl)));
         }
 
-        else if(is_parent_wildcard && is_child_sid)
+        else if(parent_stmt.isWildcard() && child_stmt.isStatementId())
         {
             util::log("pql::eval", "processing Parent(_, StmtId)");
 
-            auto child_sid = dynamic_cast<ast::StmtId*>(rel->child)->id;
+            auto child_sid = child_stmt.id();
             if(!m_pkb->getParentOf(child_sid).has_value())
                 throw PqlException("pql::eval", "{} is always false ('{}' has no parent)", rel->toString(), child_sid);
         }
-        else if(is_parent_wildcard && is_child_decl)
+        else if(parent_stmt.isWildcard() && child_stmt.isDeclaration())
         {
             util::log("pql::eval", "processing Parent(_, DeclaredStmt)");
 
-            auto child_decl = dynamic_cast<ast::DeclaredStmt*>(rel->child)->declaration;
+            auto child_decl = child_stmt.declaration();
             std::unordered_set<table::Entry> new_domain {};
 
-            for(const auto& entry : m_table->getDomain(child_decl))
+            for(const auto& entry : m_table.getDomain(child_decl))
             {
                 if(!m_pkb->getParentOf(entry.getStmtNum()).has_value())
                     continue;
@@ -154,9 +148,9 @@ namespace pql::eval
                 new_domain.emplace(child_decl, entry.getStmtNum());
             }
 
-            m_table->upsertDomains(child_decl, table::entry_set_intersect(new_domain, m_table->getDomain(child_decl)));
+            m_table.upsertDomains(child_decl, table::entry_set_intersect(new_domain, m_table.getDomain(child_decl)));
         }
-        else if(is_parent_wildcard && is_child_wildcard)
+        else if(parent_stmt.isWildcard() && child_stmt.isWildcard())
         {
             util::log("pql::eval", "Processing Parent(_, _)");
             if(!m_pkb->parentRelationExists())
@@ -175,74 +169,70 @@ namespace pql::eval
     void Evaluator::handleParentT(const ast::ParentT* rel)
     {
         assert(rel);
-        bool is_parent_sid = dynamic_cast<ast::StmtId*>(rel->ancestor);
-        bool is_parent_decl = dynamic_cast<ast::DeclaredStmt*>(rel->ancestor);
-        bool is_parent_wildcard = dynamic_cast<ast::AllStmt*>(rel->ancestor);
 
-        bool is_child_sid = dynamic_cast<ast::StmtId*>(rel->descendant);
-        bool is_child_decl = dynamic_cast<ast::DeclaredStmt*>(rel->descendant);
-        bool is_child_wildcard = dynamic_cast<ast::AllStmt*>(rel->descendant);
+        const auto& ancestor_stmt = rel->ancestor;
+        const auto& descendant_stmt = rel->descendant;
 
-        if(is_parent_decl)
-            m_table->addSelectDecl(dynamic_cast<ast::DeclaredStmt*>(rel->ancestor)->declaration);
-        if(is_child_decl)
-            m_table->addSelectDecl(dynamic_cast<ast::DeclaredStmt*>(rel->descendant)->declaration);
+        if(ancestor_stmt.isDeclaration())
+            m_table.addSelectDecl(ancestor_stmt.declaration());
 
-        if(is_parent_sid && is_child_sid)
+        if(descendant_stmt.isDeclaration())
+            m_table.addSelectDecl(descendant_stmt.declaration());
+
+        if(ancestor_stmt.isStatementId() && descendant_stmt.isStatementId())
         {
             util::log("pql::eval", "processing Parent*(StmtId, StmtId)");
 
-            auto parent_sid = dynamic_cast<ast::StmtId*>(rel->ancestor)->id;
-            auto child_sid = dynamic_cast<ast::StmtId*>(rel->descendant)->id;
+            auto parent_sid = ancestor_stmt.id();
+            auto child_sid = descendant_stmt.id();
 
             if(!m_pkb->isParentT(parent_sid, child_sid))
                 throw PqlException("pql::eval", "{} is always false", rel->toString());
         }
-        else if(is_parent_sid && is_child_decl)
+        else if(ancestor_stmt.isStatementId() && descendant_stmt.isDeclaration())
         {
             util::log("pql::eval", "processing Parent*(StmtId, DeclaredStmt)");
 
-            auto parent_sid = dynamic_cast<ast::StmtId*>(rel->ancestor)->id;
-            auto child_decl = dynamic_cast<ast::DeclaredStmt*>(rel->descendant)->declaration;
+            auto parent_sid = ancestor_stmt.id();
+            auto child_decl = descendant_stmt.declaration();
 
             std::unordered_set<table::Entry> new_domain {};
             for(const auto& child_id : m_pkb->getDescendantsOf(parent_sid))
                 new_domain.emplace(child_decl, child_id);
 
-            m_table->upsertDomains(child_decl, table::entry_set_intersect(new_domain, m_table->getDomain(child_decl)));
+            m_table.upsertDomains(child_decl, table::entry_set_intersect(new_domain, m_table.getDomain(child_decl)));
         }
-        else if(is_parent_sid && is_child_wildcard)
+        else if(ancestor_stmt.isStatementId() && descendant_stmt.isWildcard())
         {
             util::log("pql::eval", "processing Parent*(StmtId, _)");
 
-            auto parent_sid = dynamic_cast<ast::StmtId*>(rel->ancestor)->id;
+            auto parent_sid = ancestor_stmt.id();
             if(m_pkb->getDescendantsOf(parent_sid).empty())
                 throw PqlException(
                     "pql::eval", "{} is always false ('{}' has no children)", rel->toString(), parent_sid);
         }
 
-        else if(is_parent_decl && is_child_sid)
+        else if(ancestor_stmt.isDeclaration() && descendant_stmt.isStatementId())
         {
             util::log("pql::eval", "processing Parent*(DeclaredStmt, StmtId)");
 
-            auto parent_decl = dynamic_cast<ast::DeclaredStmt*>(rel->ancestor)->declaration;
-            auto child_sid = dynamic_cast<ast::StmtId*>(rel->descendant)->id;
+            auto parent_decl = ancestor_stmt.declaration();
+            auto child_sid = descendant_stmt.id();
 
             std::unordered_set<table::Entry> new_domain {};
             for(const auto& parent_id : m_pkb->getAncestorsOf(child_sid))
                 new_domain.emplace(parent_decl, parent_id);
 
-            m_table->upsertDomains(
-                parent_decl, table::entry_set_intersect(new_domain, m_table->getDomain(parent_decl)));
+            m_table.upsertDomains(parent_decl, table::entry_set_intersect(new_domain, m_table.getDomain(parent_decl)));
         }
-        else if(is_parent_decl && is_child_decl)
+        else if(ancestor_stmt.isDeclaration() && descendant_stmt.isDeclaration())
         {
             util::log("pql::eval", "processing Parent*(DeclaredStmt, DeclaredStmt)");
 
-            auto parent_decl = dynamic_cast<ast::DeclaredStmt*>(rel->ancestor)->declaration;
-            auto child_decl = dynamic_cast<ast::DeclaredStmt*>(rel->descendant)->declaration;
+            auto parent_decl = ancestor_stmt.declaration();
+            auto child_decl = descendant_stmt.declaration();
 
-            auto parent_domain = m_table->getDomain(parent_decl);
+            auto parent_domain = m_table.getDomain(parent_decl);
             auto new_child_domain = table::Domain {};
             std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
@@ -265,19 +255,19 @@ namespace pql::eval
                 ++it;
             }
 
-            m_table->upsertDomains(parent_decl, parent_domain);
-            m_table->upsertDomains(
-                child_decl, table::entry_set_intersect(new_child_domain, m_table->getDomain(child_decl)));
-            m_table->addJoin(table::Join(parent_decl, child_decl, allowed_entries));
+            m_table.upsertDomains(parent_decl, parent_domain);
+            m_table.upsertDomains(
+                child_decl, table::entry_set_intersect(new_child_domain, m_table.getDomain(child_decl)));
+            m_table.addJoin(table::Join(parent_decl, child_decl, allowed_entries));
         }
-        else if(is_parent_decl && is_child_wildcard)
+        else if(ancestor_stmt.isDeclaration() && descendant_stmt.isWildcard())
         {
             util::log("pql::eval", "processing Parent*(DeclaredStmt, _)");
 
-            auto parent_decl = dynamic_cast<ast::DeclaredStmt*>(rel->ancestor)->declaration;
+            auto parent_decl = ancestor_stmt.declaration();
             std::unordered_set<table::Entry> new_domain {};
 
-            for(const auto& entry : m_table->getDomain(parent_decl))
+            for(const auto& entry : m_table.getDomain(parent_decl))
             {
                 if(m_pkb->getDescendantsOf(entry.getStmtNum()).empty())
                     continue;
@@ -285,26 +275,25 @@ namespace pql::eval
                 new_domain.emplace(parent_decl, entry.getStmtNum());
             }
 
-            m_table->upsertDomains(
-                parent_decl, table::entry_set_intersect(new_domain, m_table->getDomain(parent_decl)));
+            m_table.upsertDomains(parent_decl, table::entry_set_intersect(new_domain, m_table.getDomain(parent_decl)));
         }
 
-        else if(is_parent_wildcard && is_child_sid)
+        else if(ancestor_stmt.isWildcard() && descendant_stmt.isStatementId())
         {
             util::log("pql::eval", "processing Parent*(_, StmtId)");
 
-            auto child_sid = dynamic_cast<ast::StmtId*>(rel->descendant)->id;
+            auto child_sid = descendant_stmt.id();
             if(m_pkb->getAncestorsOf(child_sid).empty())
                 throw PqlException("pql::eval", "{} is always false ('{}' has no parent)", rel->toString(), child_sid);
         }
-        else if(is_parent_wildcard && is_child_decl)
+        else if(ancestor_stmt.isWildcard() && descendant_stmt.isDeclaration())
         {
             util::log("pql::eval", "processing Parent*(_, DeclaredStmt)");
 
-            auto child_decl = dynamic_cast<ast::DeclaredStmt*>(rel->descendant)->declaration;
+            auto child_decl = descendant_stmt.declaration();
             std::unordered_set<table::Entry> new_domain {};
 
-            for(const auto& entry : m_table->getDomain(child_decl))
+            for(const auto& entry : m_table.getDomain(child_decl))
             {
                 if(m_pkb->getAncestorsOf(entry.getStmtNum()).empty())
                     continue;
@@ -312,9 +301,9 @@ namespace pql::eval
                 new_domain.emplace(child_decl, entry.getStmtNum());
             }
 
-            m_table->upsertDomains(child_decl, table::entry_set_intersect(new_domain, m_table->getDomain(child_decl)));
+            m_table.upsertDomains(child_decl, table::entry_set_intersect(new_domain, m_table.getDomain(child_decl)));
         }
-        else if(is_parent_wildcard && is_child_wildcard)
+        else if(ancestor_stmt.isWildcard() && descendant_stmt.isWildcard())
         {
             util::log("pql::eval", "Processing Parent*(_, _)");
             if(!m_pkb->parentRelationExists())

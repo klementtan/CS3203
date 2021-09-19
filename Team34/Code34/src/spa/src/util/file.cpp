@@ -32,6 +32,8 @@ namespace util
         }
 
         util::log("misc", "read input file '{}'", path);
+        fclose(file);
+
         return contents;
     }
 

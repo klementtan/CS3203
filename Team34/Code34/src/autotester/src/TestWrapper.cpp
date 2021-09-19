@@ -1,5 +1,6 @@
 // TestWrapper.cpp
 
+#include <cstdlib>
 #include "TestWrapper.h"
 
 // spa
@@ -13,23 +14,29 @@
 
 TestWrapper::TestWrapper() { }
 
+TestWrapper::~TestWrapper() { }
+
 void TestWrapper::parse(std::string filename)
 {
     auto text = util::readEntireFile(filename.c_str());
     auto program = simple::parser::parseProgram(text);
-    this->pkb = pkb::processProgram(program);
-}
 
+    this->pkb = pkb::processProgram(std::move(program));
+}
 
 void TestWrapper::evaluate(std::string query, std::list<std::string>& results)
 {
+    results.clear();
+
     try
     {
         util::log("pql:ast", "Starting to generate pql ast");
-        pql::ast::Query* query_ast = pql::parser::parsePQL(query);
+
+        auto query_ast = pql::parser::parsePQL(query);
         util::log("pql:ast", "Generated AST: {}", query_ast->toString());
-        pql::eval::Evaluator* eval = new pql::eval::Evaluator(this->pkb, query_ast);
-        results = eval->evaluate();
+
+        auto eval = pql::eval::Evaluator(this->pkb.get(), std::move(query_ast));
+        results = eval.evaluate();
     }
     catch(const util::Exception& e)
     {
@@ -37,9 +44,6 @@ void TestWrapper::evaluate(std::string query, std::list<std::string>& results)
         util::log("pql", "exception caught during evaluating query: {}", e.what());
     }
 }
-
-
-
 
 
 

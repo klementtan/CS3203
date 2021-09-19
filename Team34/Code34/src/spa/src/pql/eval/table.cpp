@@ -161,7 +161,9 @@ namespace pql::eval::table
         return ret;
     }
 
-    Table::Table() = default;
+    Table::Table() { }
+
+    Table::~Table() { }
 
 
     void Table::upsertDomains(ast::Declaration* decl, const std::unordered_set<Entry>& entries)
@@ -190,29 +192,82 @@ namespace pql::eval::table
         return decl_joins;
     }
 
-    std::vector<Row> Table::getRows(const std::vector<ast::Declaration*>& decls) const
+    std::vector<Row> Table::getRows(const std::vector<ast::Declaration*>& decls, const std::vector<Join>& joins) const
     {
-        std::vector<std::unordered_map<ast::Declaration*, Entry>> ret;
-        ret.emplace_back();
+        std::unordered_map<ast::Declaration*, std::vector<Join>> decl_joins;
+        for(const Join& join : joins)
+        {
+            decl_joins[join.getDeclA()].push_back(join);
+            decl_joins[join.getDeclB()].push_back(join);
+        }
+        std::vector<std::unordered_map<ast::Declaration*, Entry>> rows;
+        rows.emplace_back();
 
-        // TODO: Use dfs on Joins to reduce search space
         for(ast::Declaration* decl : decls)
         {
+            util::log("pql::eval::table", "Adding {} to rows", decl->toString());
             Domain entries = Table::getDomain(decl);
-            std::vector<std::unordered_map<ast::Declaration*, Entry>> new_ret;
+            std::vector<Row> new_rows;
             for(const Entry& entry : entries)
             {
-                for(const std::unordered_map<ast::Declaration*, Entry>& table_perm : ret)
+                for(const Row& row : rows)
                 {
-                    util::log("pql::eval::table", "Adding {} for each row", entry.toString());
-                    std::unordered_map<ast::Declaration*, Entry> new_table_perm(table_perm);
-                    new_table_perm[decl] = entry;
-                    new_ret.push_back(new_table_perm);
+                    std::unordered_map<ast::Declaration*, Entry> new_row(row);
+                    new_row[decl] = entry;
+                    new_rows.push_back(new_row);
                 }
             }
-            ret = new_ret;
+            std::vector<Row> sanitized_new_rows;
+            // TODO: Use dfs on Joins to reduce search space instead of checking against every join for each permutation
+            for(const Row& row : new_rows)
+            {
+                bool is_valid = true;
+                if(decl_joins.count(decl) == 0)
+                {
+                    util::log("pql::eval::table", "Cannot prune as {} has not join dependency", decl->toString());
+                    continue;
+                }
+                for(const Join& join : decl_joins.find(decl)->second)
+                {
+                    ast::Declaration* decl_ptr_a = join.getDeclA();
+                    ast::Declaration* decl_ptr_b = join.getDeclB();
+                    if(row.count(decl_ptr_a) == 0 || row.count(decl_ptr_b) == 0)
+                    {
+                        continue;
+                    }
+                    assert(row.find(decl_ptr_a) != row.end());
+                    assert(row.find(decl_ptr_b) != row.end());
+                    Entry actual_entry_a = row.find(decl_ptr_a)->second;
+                    Entry actual_entry_b = row.find(decl_ptr_b)->second;
+                    bool has_valid_join = false;
+                    for(const auto& expected_entry_ab : join.getAllowedEntries())
+                    {
+                        // All joins should be have a valid declaration
+                        Entry expected_entry_a = expected_entry_ab.first;
+                        Entry expected_entry_b = expected_entry_ab.second;
+                        if((actual_entry_a != expected_entry_a) || (actual_entry_b != expected_entry_b))
+                        {
+                            continue;
+                        }
+                        assert(actual_entry_a == expected_entry_a);
+                        assert(actual_entry_b == expected_entry_b);
+                        has_valid_join = true;
+                        break;
+                    }
+                    if(!has_valid_join)
+                    {
+                        is_valid = false;
+                        break;
+                    }
+                }
+                if(is_valid)
+                {
+                    sanitized_new_rows.push_back(row);
+                }
+            }
+            rows = sanitized_new_rows;
         }
-        return ret;
+        return rows;
     }
     std::vector<Row> Table::getValidRows(const std::vector<Row>& candidate_rows) const
     {
@@ -313,7 +368,7 @@ namespace pql::eval::table
         if(!hasValidDomain())
             return {};
 
-        std::vector<Row> candidate_rows = getRows(join_decls);
+        std::vector<Row> candidate_rows = getRows(join_decls, m_joins);
         std::vector<Row> valid_rows = getValidRows(candidate_rows);
 
         // There should exist a valid assignment that satisfies all joins even if ret declaration is not

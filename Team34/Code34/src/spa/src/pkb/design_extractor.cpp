@@ -16,8 +16,8 @@ namespace pkb
     namespace s_ast = simple::ast;
 
     // collection only entails numbering the statements
-    static void collectStmtList(ProgramKB* pkb, s_ast::StmtList* list);
-    static void collectStmt(ProgramKB* pkb, s_ast::Stmt* stmt, s_ast::StmtList* parent)
+    static void collectStmtList(ProgramKB* pkb, const s_ast::StmtList* list);
+    static void collectStmt(ProgramKB* pkb, s_ast::Stmt* stmt, const s_ast::StmtList* parent)
     {
         // the statement should not have been seen yet.
         assert(stmt->id == 0);
@@ -42,10 +42,10 @@ namespace pkb
         }
     }
 
-    static void collectStmtList(ProgramKB* pkb, s_ast::StmtList* list)
+    static void collectStmtList(ProgramKB* pkb, const s_ast::StmtList* list)
     {
         for(const auto& stmt : list->statements)
-            collectStmt(pkb, stmt, list);
+            collectStmt(pkb, stmt.get(), list);
     }
 
     // processes and populates Follows and FollowsT concurrently
@@ -54,7 +54,7 @@ namespace pkb
         const auto& stmt_list = list->statements;
         for(size_t i = 0; i < stmt_list.size(); i++)
         {
-            s_ast::Stmt* stmt = stmt_list[i];
+            const auto& stmt = stmt_list[i];
 
             auto follows = new Follows();
             follows->id = stmt->id;
@@ -80,12 +80,12 @@ namespace pkb
                 pkb->m_follows_exists = true;
             }
 
-            if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt); i)
+            if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt.get()); i)
             {
                 processFollows(pkb, &i->true_case);
                 processFollows(pkb, &i->false_case);
             }
-            else if(auto w = dynamic_cast<s_ast::WhileLoop*>(stmt); w)
+            else if(auto w = dynamic_cast<s_ast::WhileLoop*>(stmt.get()); w)
             {
                 processFollows(pkb, &w->body);
             }
@@ -95,18 +95,18 @@ namespace pkb
     static void processCallGraph(ProgramKB* pkb, s_ast::StmtList* list, std::string* procName)
     {
         const auto& stmt_list = list->statements;
-        for(s_ast::Stmt* stmt : stmt_list)
+        for(const auto& stmt : stmt_list)
         {
-            if(auto i = dynamic_cast<s_ast::ProcCall*>(stmt); i)
+            if(auto i = dynamic_cast<s_ast::ProcCall*>(stmt.get()); i)
             {
                 pkb->proc_calls.addEdge(*procName, i->proc_name);
             }
-            else if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt); i)
+            else if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt.get()); i)
             {
                 processCallGraph(pkb, &i->true_case, procName);
                 processCallGraph(pkb, &i->false_case, procName);
             }
-            else if(auto w = dynamic_cast<s_ast::WhileLoop*>(stmt); w)
+            else if(auto w = dynamic_cast<s_ast::WhileLoop*>(stmt.get()); w)
             {
                 processCallGraph(pkb, &w->body, procName);
             }
@@ -172,7 +172,7 @@ namespace pkb
         return false;
     }
 
-    std::string CallGraph::missingProc(std::vector<s_ast::Procedure*> procs)
+    std::string CallGraph::missingProc(const std::vector<std::unique_ptr<s_ast::Procedure>>& procs)
     {
         for(auto& a : adj)
         {
@@ -191,10 +191,10 @@ namespace pkb
     // processes the parents and ancestors of statements
     static void processAncestors(ProgramKB* pkb, s_ast::StmtList* lst)
     {
-        std::queue<std::pair<s_ast::Stmt*, s_ast::Stmt*>> q;
+        std::queue<std::pair<const s_ast::Stmt*, const s_ast::Stmt*>> q;
 
-        for(auto stmt : lst->statements)
-            q.push({ stmt, nullptr });
+        for(const auto& stmt : lst->statements)
+            q.push({ stmt.get(), nullptr });
 
         while(!q.empty())
         {
@@ -222,18 +222,18 @@ namespace pkb
                     anc.insert(num);
             }
 
-            if(s_ast::IfStmt* if_stmt = dynamic_cast<s_ast::IfStmt*>(child))
+            if(auto if_stmt = dynamic_cast<const s_ast::IfStmt*>(child))
             {
-                for(auto inner : if_stmt->true_case.statements)
-                    q.push({ inner, child });
+                for(const auto& inner : if_stmt->true_case.statements)
+                    q.push({ inner.get(), child });
 
-                for(auto inner : if_stmt->false_case.statements)
-                    q.push({ inner, child });
+                for(const auto& inner : if_stmt->false_case.statements)
+                    q.push({ inner.get(), child });
             }
-            else if(s_ast::WhileLoop* while_stmt = dynamic_cast<s_ast::WhileLoop*>(child))
+            else if(auto while_stmt = dynamic_cast<const s_ast::WhileLoop*>(child))
             {
-                for(auto inner : while_stmt->body.statements)
-                    q.push({ inner, child });
+                for(const auto& inner : while_stmt->body.statements)
+                    q.push({ inner.get(), child });
             }
 
             pkb->_ancestors[child->id] = anc;
@@ -241,19 +241,19 @@ namespace pkb
     }
 
     // processes the children and descendants of statements
-    static void processDescendants(ProgramKB* pkb, s_ast::StmtList* lst)
+    static void processDescendants(ProgramKB* pkb, const s_ast::StmtList* lst)
     {
-        for(auto stmt : lst->statements)
+        for(const auto& stmt : lst->statements)
         {
             std::unordered_set<s_ast::StatementNum> chi;
             std::unordered_set<s_ast::StatementNum> des;
 
-            if(s_ast::IfStmt* if_stmt = dynamic_cast<s_ast::IfStmt*>(stmt))
+            if(auto if_stmt = dynamic_cast<const s_ast::IfStmt*>(stmt.get()))
             {
                 processDescendants(pkb, &if_stmt->true_case);
                 processDescendants(pkb, &if_stmt->false_case);
 
-                for(auto inner : if_stmt->true_case.statements)
+                for(const auto& inner : if_stmt->true_case.statements)
                 {
                     chi.insert(inner->id);
                     des.insert(inner->id);
@@ -261,7 +261,7 @@ namespace pkb
                         des.insert(num);
                 }
 
-                for(auto inner : if_stmt->false_case.statements)
+                for(const auto& inner : if_stmt->false_case.statements)
                 {
                     chi.insert(inner->id);
                     des.insert(inner->id);
@@ -269,11 +269,11 @@ namespace pkb
                         des.insert(num);
                 }
             }
-            else if(s_ast::WhileLoop* while_stmt = dynamic_cast<s_ast::WhileLoop*>(stmt))
+            else if(auto while_stmt = dynamic_cast<const s_ast::WhileLoop*>(stmt.get()))
             {
                 processDescendants(pkb, &while_stmt->body);
 
-                for(auto inner : while_stmt->body.statements)
+                for(const auto& inner : while_stmt->body.statements)
                 {
                     chi.insert(inner->id);
                     des.insert(inner->id);
@@ -308,12 +308,12 @@ namespace pkb
         }
         else if(auto bo = dynamic_cast<s_ast::BinaryOp*>(expr))
         {
-            processExpr(pkb, bo->lhs, parent_stmt, parent_proc);
-            processExpr(pkb, bo->rhs, parent_stmt, parent_proc);
+            processExpr(pkb, bo->lhs.get(), parent_stmt, parent_proc);
+            processExpr(pkb, bo->rhs.get(), parent_stmt, parent_proc);
         }
         else if(auto uo = dynamic_cast<s_ast::UnaryOp*>(expr))
         {
-            processExpr(pkb, uo->expr, parent_stmt, parent_proc);
+            processExpr(pkb, uo->expr.get(), parent_stmt, parent_proc);
         }
         else
         {
@@ -329,13 +329,13 @@ namespace pkb
             processStmtList(pkb, &i->true_case, parent_proc);
             processStmtList(pkb, &i->false_case, parent_proc);
 
-            processExpr(pkb, i->condition, i, parent_proc);
+            processExpr(pkb, i->condition.get(), i, parent_proc);
         }
         else if(auto w = dynamic_cast<s_ast::WhileLoop*>(stmt))
         {
             processStmtList(pkb, &w->body, parent_proc);
 
-            processExpr(pkb, w->condition, w, parent_proc);
+            processExpr(pkb, w->condition.get(), w, parent_proc);
         }
         else if(auto a = dynamic_cast<s_ast::AssignStmt*>(stmt)) // prolly add the uses and modifies inside
         {
@@ -346,7 +346,7 @@ namespace pkb
 
             pkb->getStatementAtIndex(a->id)->modifies.insert(a->lhs);
 
-            processExpr(pkb, a->rhs, a, parent_proc);
+            processExpr(pkb, a->rhs.get(), a, parent_proc);
         }
         else if(auto r = dynamic_cast<s_ast::ReadStmt*>(stmt))
         {
@@ -380,7 +380,7 @@ namespace pkb
     static void processStmtList(ProgramKB* pkb, s_ast::StmtList* list, s_ast::Procedure* parent_proc)
     {
         for(const auto& stmt : list->statements)
-            processStmt(pkb, stmt, parent_proc);
+            processStmt(pkb, stmt.get(), parent_proc);
     }
 
     // Secondary processing step to fully populate uses and modifies for nested if/while, and proc call statements.
@@ -388,7 +388,7 @@ namespace pkb
     {
         for(const auto& stmt : list->statements)
         {
-            if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt))
+            if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt.get()))
             {
                 reprocessStmtList(pkb, &i->true_case, proc);
                 reprocessStmtList(pkb, &i->false_case, proc);
@@ -414,7 +414,7 @@ namespace pkb
                     pkb->uses_modifies.variables.at(var).modified_by.insert(i);
                 }
             }
-            else if(auto w = dynamic_cast<s_ast::WhileLoop*>(stmt))
+            else if(auto w = dynamic_cast<s_ast::WhileLoop*>(stmt.get()))
             {
                 reprocessStmtList(pkb, &w->body, proc);
 
@@ -433,7 +433,7 @@ namespace pkb
                     pkb->uses_modifies.variables.at(var).modified_by.insert(w);
                 }
             }
-            else if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt))
+            else if(auto c = dynamic_cast<s_ast::ProcCall*>(stmt.get()))
             {
                 auto& tmp = pkb->uses_modifies.procedures.at(c->proc_name);
                 // This is an inefficient quick fix, will change to callgraph bottom-up traversal once im free
@@ -460,45 +460,46 @@ namespace pkb
         }
     }
 
-    ProgramKB* processProgram(s_ast::Program* program)
+    std::unique_ptr<ProgramKB> processProgram(std::unique_ptr<s_ast::Program> prog)
     {
-        auto pkb = new ProgramKB();
+        auto pkb = std::make_unique<ProgramKB>();
+        pkb->m_program = std::move(prog);
 
-        for(const auto& proc : program->procedures)
-            processCallGraph(pkb, &proc->body, &proc->name);
+        for(const auto& proc : pkb->m_program->procedures)
+            processCallGraph(pkb.get(), &proc->body, &proc->name);
 
         if(pkb->proc_calls.cycleExists())
             throw util::PkbException("pkb", "Cyclic or recursive calls are not allowed");
 
-        if(auto a = pkb->proc_calls.missingProc(program->procedures); a != "")
+        if(auto a = pkb->proc_calls.missingProc(pkb->m_program->procedures); a != "")
             throw util::PkbException("pkb", "Procedure '{}' is undefined", a);
 
         // do a first pass to number all the statements, set the
         // parent stmtlist, and collect all the procedures.
-        for(const auto& proc : program->procedures)
+        for(const auto& proc : pkb->m_program->procedures)
         {
-            collectStmtList(pkb, &proc->body);
+            collectStmtList(pkb.get(), &proc->body);
 
             if(pkb->uses_modifies.procedures.find(proc->name) != pkb->uses_modifies.procedures.end())
                 throw util::PkbException("pkb", "procedure '{}' is already defined", proc->name);
 
-            pkb->uses_modifies.procedures[proc->name].ast_proc = proc;
+            pkb->uses_modifies.procedures[proc->name].ast_proc = proc.get();
         }
 
         // do a second pass to populate the follows vector and parent, uses, modifies hashmap.
-        for(const auto& proc : program->procedures)
+        for(const auto& proc : pkb->m_program->procedures)
         {
-            processFollows(pkb, &proc->body);
-            processStmtList(pkb, &proc->body, proc);
+            processFollows(pkb.get(), &proc->body);
+            processStmtList(pkb.get(), &proc->body, proc.get());
         }
 
         // do a third pass to populate the ancestors/descendants hashmap and
         // to populate uses/modifies for nested if/while statements
-        for(const auto& proc : program->procedures)
+        for(const auto& proc : pkb->m_program->procedures)
         {
-            processAncestors(pkb, &proc->body);
-            reprocessStmtList(pkb, &proc->body, proc);
-            processDescendants(pkb, &proc->body);
+            processAncestors(pkb.get(), &proc->body);
+            reprocessStmtList(pkb.get(), &proc->body, proc.get());
+            processDescendants(pkb.get(), &proc->body);
         }
 
         return pkb;
