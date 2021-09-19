@@ -8,3 +8,8 @@ assign a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a1
 Select a1 such that Modifies(a1,v1) pattern a1(v1,_"y"_)
 79,57
 5000
+3 - 4 declaration with 2 joins
+variable v, v1; assign a, a1;
+Select v1 such that Modifies (a, v) pattern a1(v1, _)
+read,s,b,a,Extra,then,p1,p,call,j,b1,else,print,if,A,a2,ff,q,q1,a1,while,c1,a3,n,c3,c2,zzzzz,procedure,zzzz,k,zzz,n1,m
+5000
