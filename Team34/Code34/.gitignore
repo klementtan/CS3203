@@ -7,4 +7,3 @@ objs/
 out.xml
 *.ps1
 *.xml
-src/spa/include/logging_control.h
