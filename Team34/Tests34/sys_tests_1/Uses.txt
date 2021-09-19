@@ -11,12 +11,12 @@ none
 3 - assign
 assign a;variable v;
 Select a such that Uses (a, v)
-2,7,9,12,15,20,22,25,30,36,43,48,50,56,62,70
+65,9,2,79,15,71,7,12,23,25,27,29,31,34,39,45,52,57,59
 5000
 4 - assign
 assign a;
 Select a such that Uses (a, "a")
-48
+57
 5000
 5 - assign
 assign a;
@@ -36,7 +36,7 @@ none
 8 - assign
 assign a;
 Select a such that Uses (a, _)
-2,7,9,12,15,20,22,25,30,36,43,48,50,56,62,70
+9,65,2,71,7,79,15,12,23,25,27,29,31,34,39,45,52,57,59
 5000
 9 - read positive
 read re;
@@ -61,7 +61,7 @@ none
 13 - if (in cond, positive)
 if i;
 Select i such that Uses (i, "a1")
-29
+38
 5000
 14 - if (in cond/body, negative)
 if i;
@@ -86,25 +86,45 @@ none
 18 - while (in body, positive)
 while w;
 Select w such that Uses (w, "e2")
-23, 35
+44,32
 5000
 19 - in proc (direct call)
 procedure i;
 Select i such that Uses (i, "p1")
-A, UsesAndModifies
+A,UsesAndModifies
 5000
 20 - in proc (indirect call)
 procedure i;
 Select i such that Uses (i, "p2")
-A, UsesAndModifies2, UsesAndModifies, UsesAndModifies3
+A,UsesAndModifies,UsesAndModifies2,UsesAndModifies3
 5000
 21 - proc call
 call i;
 Select i such that Uses (i, "p1")
-54
+63
 5000
 22 - proc call
 call i;
 Select i such that Uses (i, "p2")
-54, 60, 66, 67
+69,76,63,75
+5000
+23 - pattern with no common syn
+procedure i;
+Select i such that Uses (i, "p1") pattern a(_,_)
+none
+5000
+24 - pattern with no common syn
+procedure i;
+Select i such that Uses (i, "p1") pattern a(_,_"1"_)
+none
+5000
+25 - pattern with common syn
+assign a;
+Select a such that Uses (a, "1") pattern a(_,_)
+none
+5000
+26 - pattern with 2 common syns
+assign a; variable v;
+Select a such that Uses (a, v) pattern a(v,_)
+none
 5000

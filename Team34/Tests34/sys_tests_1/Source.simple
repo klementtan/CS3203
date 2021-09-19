@@ -3,7 +3,7 @@ procedure A {
 	b = v;
 	read c;
 	print d;
-	if (e == f) then {
+	if (e != f) then {
 		j = 2;
 		k = l;
 	} else {
@@ -20,12 +20,26 @@ procedure A {
 	b1 = v;
 	read c1;
 	print d1;
-	if (e1 == f1) then {
-		j1 = 2;
-		k1 = l;
+	if (e1 <= f1) then {
+		if ((e1 >= f1) || (1==1)) then {
+			if (e1 < f1) then {
+				if (e1 > f1) then {
+					if = 2;
+					then = l;
+				} else {
+					read = 3;
+					print = o;
+				}} else{
+				call = 3%3;
+				A = o;
+			}
+		} else {
+			while = 3;
+			else = o;
+		}
 	} else {
-		m1 = 3;
-		n1 = o;
+		Extra = 3;
+		procedure = o;
 	}
 	while (g1 == h1) {
 		p1 = 4;
@@ -58,7 +72,7 @@ procedure A {
 		} else {
 			n1 = y * (2) + x * (a + 1) * b;
 		}
-		while ( ((1==1)|| (2==c)) && (xxx== 222)) {
+		while ( ((1==1)|| (2==c    ))&& (xxx== 222)){
 			a3 = b3;
 			c3 = 3;
 			read d3;
@@ -70,9 +84,7 @@ procedure A {
 				read d3;
 				print e3;
 				call UsesAndModifies2;
-			}
-		}
-	}
+			}}}
 	call C;
 }
 
