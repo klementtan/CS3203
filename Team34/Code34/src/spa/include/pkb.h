@@ -114,6 +114,7 @@ namespace pkb
         ~ProgramKB();
 
         Statement* getStatementAtIndex(simple::ast::StatementNum);
+        const Statement* getStatementAtIndex(simple::ast::StatementNum) const;
 
         bool parentRelationExists();
         bool followsRelationExists();

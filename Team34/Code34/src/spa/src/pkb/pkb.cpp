@@ -17,11 +17,15 @@ namespace pkb
 
     Statement* ProgramKB::getStatementAtIndex(s_ast::StatementNum stmt_no)
     {
+        return const_cast<Statement*>(const_cast<const ProgramKB*>(this)->getStatementAtIndex(stmt_no));
+    }
+
+    const Statement* ProgramKB::getStatementAtIndex(s_ast::StatementNum stmt_no) const
+    {
         if(stmt_no > m_statements.size())
         {
             throw util::PkbException("pkb", "Statement is out of range");
         }
-        // return this->uses_modifies.statements.at(stmt_no - 1);
         return &m_statements[stmt_no - 1];
     }
 
