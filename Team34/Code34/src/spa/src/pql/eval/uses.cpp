@@ -40,7 +40,7 @@ namespace pql::eval
             auto var_name = var_ent.name();
 
             util::log("pql::eval", "Processing UsesP(EntName, EntName)");
-            if(!m_pkb->isUses(proc_name, var_name))
+            if(!m_pkb->getProcedureNamed(proc_name).usesVariable(var_name))
                 throw PqlException("pql::eval", "{} is always false", rel->toString(), var_name);
         }
         else if(proc_ent.isName() && var_ent.isDeclaration())
@@ -48,9 +48,8 @@ namespace pql::eval
             auto proc_name = proc_ent.name();
             auto var_decl = var_ent.declaration();
 
-
             util::log("pql::eval", "Processing UsesP(EntName, DeclaredStmt)");
-            auto used_vars = m_pkb->getUsesVars(proc_name);
+            auto& used_vars = m_pkb->getProcedureNamed(proc_name).getUsedVariables();
             if(used_vars.empty())
                 throw PqlException("pql::eval", "{} is always false; {} doesn't use any variables", rel->toString());
 
@@ -67,7 +66,7 @@ namespace pql::eval
             auto proc_name = proc_ent.name();
 
             util::log("pql::eval", "Processing UsesP(EntName, _)");
-            auto used_vars = m_pkb->getUsesVars(proc_name);
+            auto& used_vars = m_pkb->getProcedureNamed(proc_name).getUsedVariables();
             if(used_vars.empty())
                 throw PqlException("pql::eval", "{} is always false; {} doesn't use any variables", rel->toString());
         }
@@ -104,7 +103,7 @@ namespace pql::eval
 
             for(auto it = proc_domain.begin(); it != proc_domain.end();)
             {
-                auto used_vars = m_pkb->getUsesVars(it->getVal());
+                auto& used_vars = m_pkb->getProcedureNamed(it->getVal()).getUsedVariables();
                 if(used_vars.empty())
                 {
                     it = proc_domain.erase(it);
@@ -136,7 +135,7 @@ namespace pql::eval
 
             for(const auto& entry : m_table.getDomain(proc_decl))
             {
-                auto proc_used_vars = m_pkb->getUsesVars(entry.getVal());
+                auto& proc_used_vars = m_pkb->getProcedureNamed(entry.getVal()).getUsedVariables();
                 if(proc_used_vars.empty())
                     continue;
 
@@ -179,7 +178,7 @@ namespace pql::eval
             auto var_name = var_ent.name();
 
             util::log("pql::eval", "Processing UsesS(StmtId, EntName)");
-            if(!m_pkb->isUses(user_sid, var_name))
+            if(!m_pkb->getStatementAtIndex(user_sid)->usesVariable(var_name))
                 throw PqlException("pql::eval", "{} is always false", rel->toString(), var_name);
         }
         else if(user_stmt.isStatementId() && var_ent.isDeclaration())

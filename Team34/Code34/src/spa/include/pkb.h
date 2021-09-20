@@ -135,7 +135,7 @@ namespace pkb
         std::unordered_set<simple::ast::StatementNum> getChildrenOf(simple::ast::StatementNum) const;
         std::unordered_set<simple::ast::StatementNum> getDescendantsOf(simple::ast::StatementNum) const;
 #endif
-
+#if 0
         // For queries of type Uses(3, "x")
         bool isUses(const simple::ast::StatementNum& stmt_num, const std::string& var) const;
         // For queries of type Uses("main", "x")
@@ -143,8 +143,6 @@ namespace pkb
 
         // For queries of type Uses("main", _)
         std::unordered_set<std::string> getUsesVars(const std::string& proc) const;
-        // Returns the Statement numbers of queries of type Uses(a/r/s/p, "x")
-        std::unordered_set<std::string> getUses(const pql::ast::DESIGN_ENT& type, const std::string& var) const;
 
         // For queries of type Modifies(3, "x")
         bool isModifies(const simple::ast::StatementNum& stmt_num, const std::string& var) const;
@@ -152,6 +150,10 @@ namespace pkb
         bool isModifies(const std::string& proc, const std::string& var) const;
         // For queries of type Modifies("main", _)
         std::unordered_set<std::string> getModifiesVars(const std::string& proc) const;
+#endif
+
+        // Returns the Statement numbers of queries of type Uses(a/r/s/p, "x")
+        std::unordered_set<std::string> getUses(const pql::ast::DESIGN_ENT& type, const std::string& var) const;
         // Returns the Statement numbers of queries of type Modifies(a/pn/s/p, "x")
         std::unordered_set<std::string> getModifies(const pql::ast::DESIGN_ENT& type, const std::string& var) const;
 

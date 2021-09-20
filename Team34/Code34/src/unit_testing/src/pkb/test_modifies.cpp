@@ -91,6 +91,12 @@ static const Statement& get_stmt(const std::unique_ptr<pkb::ProgramKB>& pkb, sim
     return *pkb->getStatementAtIndex(num);
 }
 
+static const Procedure& get_proc(const std::unique_ptr<pkb::ProgramKB>& pkb, const char* name)
+{
+    return pkb->getProcedureNamed(name);
+}
+
+
 TEST_CASE("Modifies(DeclaredStmt, DeclaredVar)")
 {
     SECTION("Modifies(DeclaredStmt, DeclaredVar) for assignment, condition and read")
@@ -162,45 +168,45 @@ TEST_CASE("Modifies(DeclaredProc, DeclaredVar)")
 {
     SECTION("Modifies(DeclaredProc, DeclaredVar)")
     {
-        CHECK(kb_sample->isModifies("Example", "i"));
-        CHECK(kb_sample->isModifies("Example", "x"));
-        CHECK(kb_sample->isModifies("Example", "y"));
-        CHECK(kb_sample->isModifies("Example", "z"));
-        CHECK(kb_sample->isModifies("p", "i"));
-        CHECK(kb_sample->isModifies("p", "x"));
-        CHECK(kb_sample->isModifies("p", "z"));
-        CHECK(kb_sample->isModifies("q", "x"));
-        CHECK(kb_sample->isModifies("q", "z"));
+        CHECK(get_proc(kb_sample, "Example").modifiesVariable("i"));
+        CHECK(get_proc(kb_sample, "Example").modifiesVariable("x"));
+        CHECK(get_proc(kb_sample, "Example").modifiesVariable("y"));
+        CHECK(get_proc(kb_sample, "Example").modifiesVariable("z"));
+        CHECK(get_proc(kb_sample, "p").modifiesVariable("i"));
+        CHECK(get_proc(kb_sample, "p").modifiesVariable("x"));
+        CHECK(get_proc(kb_sample, "p").modifiesVariable("z"));
+        CHECK(get_proc(kb_sample, "q").modifiesVariable("x"));
+        CHECK(get_proc(kb_sample, "q").modifiesVariable("z"));
 
-        CHECK(kb_trivial->isModifies("main", "cenX"));
-        CHECK(kb_trivial->isModifies("main", "cenY"));
-        CHECK(kb_trivial->isModifies("main", "count"));
-        CHECK(kb_trivial->isModifies("main", "flag"));
-        CHECK(kb_trivial->isModifies("main", "normSq"));
-        CHECK(kb_trivial->isModifies("main", "x"));
-        CHECK(kb_trivial->isModifies("main", "y"));
-        CHECK(kb_trivial->isModifies("readPoint", "x"));
-        CHECK(kb_trivial->isModifies("readPoint", "y"));
-        CHECK(kb_trivial->isModifies("computeCentroid", "cenX"));
-        CHECK(kb_trivial->isModifies("computeCentroid", "cenY"));
-        CHECK(kb_trivial->isModifies("computeCentroid", "count"));
-        CHECK(kb_trivial->isModifies("computeCentroid", "flag"));
-        CHECK(kb_trivial->isModifies("computeCentroid", "normSq"));
-        CHECK(kb_trivial->isModifies("computeCentroid", "x"));
-        CHECK(kb_trivial->isModifies("computeCentroid", "y"));
+        CHECK(get_proc(kb_trivial, "main").modifiesVariable("cenX"));
+        CHECK(get_proc(kb_trivial, "main").modifiesVariable("cenY"));
+        CHECK(get_proc(kb_trivial, "main").modifiesVariable("count"));
+        CHECK(get_proc(kb_trivial, "main").modifiesVariable("flag"));
+        CHECK(get_proc(kb_trivial, "main").modifiesVariable("normSq"));
+        CHECK(get_proc(kb_trivial, "main").modifiesVariable("x"));
+        CHECK(get_proc(kb_trivial, "main").modifiesVariable("y"));
+        CHECK(get_proc(kb_trivial, "readPoint").modifiesVariable("x"));
+        CHECK(get_proc(kb_trivial, "readPoint").modifiesVariable("y"));
+        CHECK(get_proc(kb_trivial, "computeCentroid").modifiesVariable("cenX"));
+        CHECK(get_proc(kb_trivial, "computeCentroid").modifiesVariable("cenY"));
+        CHECK(get_proc(kb_trivial, "computeCentroid").modifiesVariable("count"));
+        CHECK(get_proc(kb_trivial, "computeCentroid").modifiesVariable("flag"));
+        CHECK(get_proc(kb_trivial, "computeCentroid").modifiesVariable("normSq"));
+        CHECK(get_proc(kb_trivial, "computeCentroid").modifiesVariable("x"));
+        CHECK(get_proc(kb_trivial, "computeCentroid").modifiesVariable("y"));
     }
 
     SECTION("Modifies(DeclaredProc, DeclaredVar) negative test cases")
     {
-        CHECK_FALSE(kb_sample->isModifies("p", "y"));
-        CHECK_FALSE(kb_sample->isModifies("q", "y"));
-        CHECK_FALSE(kb_sample->isModifies("q", "i"));
+        CHECK_FALSE(get_proc(kb_sample, "p").modifiesVariable("y"));
+        CHECK_FALSE(get_proc(kb_sample, "q").modifiesVariable("y"));
+        CHECK_FALSE(get_proc(kb_sample, "q").modifiesVariable("i"));
 
 
-        CHECK_FALSE(kb_trivial->isModifies("readPoint", "cenX"));
-        CHECK_FALSE(kb_trivial->isModifies("readPoint", "cenY"));
-        CHECK_FALSE(kb_trivial->isModifies("printResults", "cenX"));
-        CHECK_FALSE(kb_trivial->isModifies("printResults", "cenY"));
+        CHECK_FALSE(get_proc(kb_trivial, "readPoint").modifiesVariable("cenX"));
+        CHECK_FALSE(get_proc(kb_trivial, "readPoint").modifiesVariable("cenY"));
+        CHECK_FALSE(get_proc(kb_trivial, "printResults").modifiesVariable("cenX"));
+        CHECK_FALSE(get_proc(kb_trivial, "printResults").modifiesVariable("cenY"));
     }
 }
 
@@ -260,7 +266,7 @@ TEST_CASE("Modifies(DeclaredProc, AllVar)")
 {
     SECTION("Modifies(DeclaredProc, AllVar) for assignment and print")
     {
-        auto fst_result = kb_trivial->getModifiesVars("main");
+        auto& fst_result = get_proc(kb_trivial, "main").getModifiedVariables();
         CHECK(fst_result.size() == 7);
         CHECK(fst_result.count("cenX"));
         CHECK(fst_result.count("cenY"));
@@ -270,12 +276,12 @@ TEST_CASE("Modifies(DeclaredProc, AllVar)")
         CHECK(fst_result.count("x"));
         CHECK(fst_result.count("y"));
 
-        auto snd_result = kb_trivial->getModifiesVars("readPoint");
+        auto& snd_result = get_proc(kb_trivial, "readPoint").getModifiedVariables();
         CHECK(snd_result.size() == 2);
         CHECK(snd_result.count("x"));
         CHECK(snd_result.count("y"));
 
-        auto trd_result = kb_trivial->getModifiesVars("computeCentroid");
+        auto& trd_result = get_proc(kb_trivial, "computeCentroid").getModifiedVariables();
         CHECK(trd_result.size() == 7);
         CHECK(trd_result.count("cenX"));
         CHECK(trd_result.count("cenY"));
@@ -285,7 +291,7 @@ TEST_CASE("Modifies(DeclaredProc, AllVar)")
         CHECK(trd_result.count("x"));
         CHECK(trd_result.count("y"));
 
-        auto frh_result = kb_trivial->getModifiesVars("printResults");
+        auto& frh_result = get_proc(kb_trivial, "printResults").getModifiedVariables();
         CHECK(frh_result.size() == 0);
     }
 }

@@ -138,6 +138,7 @@ namespace pkb
      * End of Parent methods
      */
 
+#if 0
     /**
      * Start of Uses and Modifies methods
      */
@@ -173,7 +174,7 @@ namespace pkb
 
         return this->getProcedureNamed(proc).getUsedVariables();
     }
-
+#endif
     std::unordered_set<std::string> ProgramKB::getUses(const pql::ast::DESIGN_ENT& type, const std::string& var) const
     {
         if(m_variables.find(var) == m_variables.end())
@@ -233,7 +234,7 @@ namespace pkb
         }
         return uses;
     }
-
+#if 0
     bool ProgramKB::isModifies(const simple::ast::StatementNum& stmt_num, const std::string& var) const
     {
         if(m_variables.find(var) == m_variables.end() || stmt_num > m_statements.size())
@@ -268,6 +269,7 @@ namespace pkb
         }
         return this->getProcedureNamed(proc).getModifiedVariables();
     }
+#endif
 
     std::unordered_set<std::string> ProgramKB::getModifies(const pql::ast::DESIGN_ENT& type, const std::string& var) const
     {

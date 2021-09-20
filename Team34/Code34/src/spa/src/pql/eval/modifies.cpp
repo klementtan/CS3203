@@ -50,7 +50,7 @@ namespace pql::eval
 
             for(auto it = mod_domain.begin(); it != mod_domain.end();)
             {
-                auto modified_vars = m_pkb->getModifiesVars(it->getVal());
+                auto& modified_vars = m_pkb->getProcedureNamed(it->getVal()).getModifiedVariables();
                 if(modified_vars.empty())
                 {
                     it = mod_domain.erase(it);
@@ -110,7 +110,7 @@ namespace pql::eval
             for(const table::Entry& entry : m_table.getDomain(mod_decl))
             {
                 std::string proc_name = entry.getVal();
-                if(!m_pkb->getModifiesVars(proc_name).empty())
+                if(!m_pkb->getProcedureNamed(proc_name).getModifiedVariables().empty())
                 {
                     curr_domain.insert(entry);
                     util::log("pql::eval", "{} adds {} to curr domain", rel->toString(), entry.toString());
@@ -124,7 +124,8 @@ namespace pql::eval
             auto ent_decl = ent_ent.declaration();
 
             util::log("pql::eval", "Processing ModifiesP(EntName, DeclaredEnt)");
-            std::unordered_set<std::string> var_candidates = m_pkb->getModifiesVars(mod_name);
+            auto& var_candidates = m_pkb->getProcedureNamed(mod_name).getModifiedVariables();
+
             std::unordered_set<table::Entry> curr_domain;
             std::unordered_set<table::Entry> prev_domain = m_table.getDomain(ent_decl);
             for(const std::string& var : var_candidates)
@@ -141,7 +142,7 @@ namespace pql::eval
             auto mod_name = modifier_ent.name();
 
             util::log("pql::eval", "Processing ModifiesP(EntName, AllEnt)");
-            if(m_pkb->getModifiesVars(mod_name).empty())
+            if(m_pkb->getProcedureNamed(mod_name).getModifiedVariables().empty())
             {
                 throw PqlException("pql::eval", "{} always evaluate to false. {} does not modify any variable.",
                     rel->toString(), mod_name);
@@ -157,7 +158,7 @@ namespace pql::eval
             auto ent_name = ent_ent.name();
 
             util::log("pql::eval", "Processing ModifiesP(EntName, EntName)");
-            if(m_pkb->getModifiesVars(mod_name).count(ent_name) > 0)
+            if(m_pkb->getProcedureNamed(mod_name).modifiesVariable(ent_name))
             {
                 util::log("pql::eval", "{} always evaluate to true.", rel->toString());
             }

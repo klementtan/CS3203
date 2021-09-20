@@ -91,6 +91,11 @@ static const Statement& get_stmt(const std::unique_ptr<pkb::ProgramKB>& pkb, sim
     return *pkb->getStatementAtIndex(num);
 }
 
+static const Procedure& get_proc(const std::unique_ptr<pkb::ProgramKB>& pkb, const char* name)
+{
+    return pkb->getProcedureNamed(name);
+}
+
 TEST_CASE("Uses(DeclaredStmt, DeclaredVar)")
 {
     SECTION("Uses(DeclaredStmt, DeclaredVar) for assignment, condition and print")
@@ -172,45 +177,45 @@ TEST_CASE("Uses(DeclaredProc, DeclaredVar)")
 {
     SECTION("Uses(DeclaredProc, DeclaredVar)")
     {
-        CHECK(kb_sample->isUses("Example", "i"));
-        CHECK(kb_sample->isUses("Example", "x"));
-        CHECK(kb_sample->isUses("Example", "y"));
-        CHECK(kb_sample->isUses("Example", "z"));
-        CHECK(kb_sample->isUses("p", "i"));
-        CHECK(kb_sample->isUses("p", "x"));
-        CHECK(kb_sample->isUses("p", "y"));
-        CHECK(kb_sample->isUses("p", "z"));
-        CHECK(kb_sample->isUses("q", "x"));
-        CHECK(kb_sample->isUses("q", "z"));
+        CHECK(get_proc(kb_sample, "Example").usesVariable("i"));
+        CHECK(get_proc(kb_sample, "Example").usesVariable("x"));
+        CHECK(get_proc(kb_sample, "Example").usesVariable("y"));
+        CHECK(get_proc(kb_sample, "Example").usesVariable("z"));
+        CHECK(get_proc(kb_sample, "p").usesVariable("i"));
+        CHECK(get_proc(kb_sample, "p").usesVariable("x"));
+        CHECK(get_proc(kb_sample, "p").usesVariable("y"));
+        CHECK(get_proc(kb_sample, "p").usesVariable("z"));
+        CHECK(get_proc(kb_sample, "q").usesVariable("x"));
+        CHECK(get_proc(kb_sample, "q").usesVariable("z"));
 
-        CHECK(kb_trivial->isUses("main", "cenX"));
-        CHECK(kb_trivial->isUses("main", "cenY"));
-        CHECK(kb_trivial->isUses("main", "count"));
-        CHECK(kb_trivial->isUses("main", "flag"));
-        CHECK(kb_trivial->isUses("main", "normSq"));
-        CHECK(kb_trivial->isUses("main", "x"));
-        CHECK(kb_trivial->isUses("main", "y"));
-        CHECK(kb_trivial->isUses("printResults", "cenX"));
-        CHECK(kb_trivial->isUses("printResults", "cenY"));
-        CHECK(kb_trivial->isUses("printResults", "flag"));
-        CHECK(kb_trivial->isUses("printResults", "normSq"));
-        CHECK(kb_trivial->isUses("computeCentroid", "cenX"));
-        CHECK(kb_trivial->isUses("computeCentroid", "cenY"));
-        CHECK(kb_trivial->isUses("computeCentroid", "count"));
-        CHECK(kb_trivial->isUses("computeCentroid", "x"));
-        CHECK(kb_trivial->isUses("computeCentroid", "y"));
+        CHECK(get_proc(kb_trivial, "main").usesVariable("cenX"));
+        CHECK(get_proc(kb_trivial, "main").usesVariable("cenY"));
+        CHECK(get_proc(kb_trivial, "main").usesVariable("count"));
+        CHECK(get_proc(kb_trivial, "main").usesVariable("flag"));
+        CHECK(get_proc(kb_trivial, "main").usesVariable("normSq"));
+        CHECK(get_proc(kb_trivial, "main").usesVariable("x"));
+        CHECK(get_proc(kb_trivial, "main").usesVariable("y"));
+        CHECK(get_proc(kb_trivial, "printResults").usesVariable("cenX"));
+        CHECK(get_proc(kb_trivial, "printResults").usesVariable("cenY"));
+        CHECK(get_proc(kb_trivial, "printResults").usesVariable("flag"));
+        CHECK(get_proc(kb_trivial, "printResults").usesVariable("normSq"));
+        CHECK(get_proc(kb_trivial, "computeCentroid").usesVariable("cenX"));
+        CHECK(get_proc(kb_trivial, "computeCentroid").usesVariable("cenY"));
+        CHECK(get_proc(kb_trivial, "computeCentroid").usesVariable("count"));
+        CHECK(get_proc(kb_trivial, "computeCentroid").usesVariable("x"));
+        CHECK(get_proc(kb_trivial, "computeCentroid").usesVariable("y"));
     }
 
     SECTION("Uses(DeclaredProc, DeclaredVar) negative test cases")
     {
-        CHECK_FALSE(kb_sample->isUses("q", "y"));
-        CHECK_FALSE(kb_sample->isUses("q", "i"));
+        CHECK_FALSE(get_proc(kb_sample, "q").usesVariable("y"));
+        CHECK_FALSE(get_proc(kb_sample, "q").usesVariable("i"));
 
 
-        CHECK_FALSE(kb_trivial->isUses("printResults", "x"));
-        CHECK_FALSE(kb_trivial->isUses("printResults", "y"));
-        CHECK_FALSE(kb_trivial->isUses("computeCentroid", "flag"));
-        CHECK_FALSE(kb_trivial->isUses("computeCentroid", "normSq"));
+        CHECK_FALSE(get_proc(kb_trivial, "printResults").usesVariable("x"));
+        CHECK_FALSE(get_proc(kb_trivial, "printResults").usesVariable("y"));
+        CHECK_FALSE(get_proc(kb_trivial, "computeCentroid").usesVariable("flag"));
+        CHECK_FALSE(get_proc(kb_trivial, "computeCentroid").usesVariable("normSq"));
     }
 }
 
@@ -265,7 +270,7 @@ TEST_CASE("Uses(DeclaredProc, AllVar)")
 {
     SECTION("Uses(DeclaredProc, AllVar) for assignment and print")
     {
-        auto fst_result = kb_trivial->getUsesVars("main");
+        auto& fst_result = get_proc(kb_trivial, "main").getUsedVariables();
         CHECK(fst_result.size() == 7);
         CHECK(fst_result.count("cenX"));
         CHECK(fst_result.count("cenY"));
@@ -275,10 +280,10 @@ TEST_CASE("Uses(DeclaredProc, AllVar)")
         CHECK(fst_result.count("x"));
         CHECK(fst_result.count("y"));
 
-        auto snd_result = kb_trivial->getUsesVars("readPoint");
+        auto& snd_result = get_proc(kb_trivial, "readPoint").getUsedVariables();
         CHECK(snd_result.size() == 0);
 
-        auto trd_result = kb_trivial->getUsesVars("computeCentroid");
+        auto& trd_result = get_proc(kb_trivial, "computeCentroid").getUsedVariables();
         CHECK(trd_result.size() == 5);
         CHECK(trd_result.count("cenX"));
         CHECK(trd_result.count("cenY"));
@@ -286,7 +291,7 @@ TEST_CASE("Uses(DeclaredProc, AllVar)")
         CHECK(trd_result.count("x"));
         CHECK(trd_result.count("y"));
 
-        auto frh_result = kb_trivial->getUsesVars("printResults");
+        auto& frh_result = get_proc(kb_trivial, "printResults").getUsedVariables();
         CHECK(frh_result.size() == 4);
         CHECK(frh_result.count("cenX"));
         CHECK(frh_result.count("cenY"));
