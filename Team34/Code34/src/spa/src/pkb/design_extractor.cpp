@@ -249,8 +249,17 @@ namespace pkb
             }
             else if(auto call_stmt = CONST_DCAST(ProcCall, ast_stmt); call_stmt)
             {
+                // check for (a) nonexistent procedures
+                if(m_pkb->m_procedures.find(call_stmt->proc_name) == m_pkb->m_procedures.end())
+                    throw util::PkbException("pkb", "call to undefined procedure '{}'", call_stmt->proc_name);
+
                 auto& callee = m_pkb->getProcedureNamed(call_stmt->proc_name);
                 auto* body = &callee.ast_proc->body;
+
+                // (b) cyclic calls
+                if(std::find(proc_stack.begin(), proc_stack.end(), &callee) != proc_stack.end())
+                    throw util::PkbException("pkb", "illegal recursive call to procedure '{}'", call_stmt->proc_name);
+
 
                 for(size_t i = 0; i < proc_stack.size(); i++)
                 {
