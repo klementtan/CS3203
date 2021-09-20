@@ -54,38 +54,38 @@ TEST_CASE("Follows(a, b)")
 {
     SECTION("Follows(a,b) in top level statement list")
     {
-        CHECK(get_stmt(kb, 1).followedBy(2));
-        CHECK(get_stmt(kb, 4).followedBy(12));
-        CHECK(get_stmt(kb, 13).followedBy(21));
-        CHECK(get_stmt(kb, 18).followedBy(19));
+        CHECK(get_stmt(kb, 1).isFollowedBy(2));
+        CHECK(get_stmt(kb, 4).isFollowedBy(12));
+        CHECK(get_stmt(kb, 13).isFollowedBy(21));
+        CHECK(get_stmt(kb, 18).isFollowedBy(19));
     }
 
     SECTION("Follows(a,b) in if/while for 1 and 2 levels of nesting")
     {
-        CHECK(get_stmt(kb, 5).followedBy(6));
-        CHECK(get_stmt(kb, 6).followedBy(9));
-        CHECK(get_stmt(kb, 9).followedBy(10));
-        CHECK(get_stmt(kb, 10).followedBy(11));
-        CHECK(get_stmt(kb, 15).followedBy(16));
-        CHECK(get_stmt(kb, 14).followedBy(18));
+        CHECK(get_stmt(kb, 5).isFollowedBy(6));
+        CHECK(get_stmt(kb, 6).isFollowedBy(9));
+        CHECK(get_stmt(kb, 9).isFollowedBy(10));
+        CHECK(get_stmt(kb, 10).isFollowedBy(11));
+        CHECK(get_stmt(kb, 15).isFollowedBy(16));
+        CHECK(get_stmt(kb, 14).isFollowedBy(18));
     }
 
     SECTION("Follows(a,b) negative test cases for diff stmtList, diff procs")
     {
-        CHECK_FALSE(get_stmt(kb, 4).followedBy(5));
-        CHECK_FALSE(get_stmt(kb, 6).followedBy(7));
-        CHECK_FALSE(get_stmt(kb, 7).followedBy(8));
-        CHECK_FALSE(get_stmt(kb, 8).followedBy(9));
-        CHECK_FALSE(get_stmt(kb, 11).followedBy(12));
-        CHECK_FALSE(get_stmt(kb, 10).followedBy(22));
-        CHECK_FALSE(get_stmt(kb, 23).followedBy(24));
+        CHECK_FALSE(get_stmt(kb, 4).isFollowedBy(5));
+        CHECK_FALSE(get_stmt(kb, 6).isFollowedBy(7));
+        CHECK_FALSE(get_stmt(kb, 7).isFollowedBy(8));
+        CHECK_FALSE(get_stmt(kb, 8).isFollowedBy(9));
+        CHECK_FALSE(get_stmt(kb, 11).isFollowedBy(12));
+        CHECK_FALSE(get_stmt(kb, 10).isFollowedBy(22));
+        CHECK_FALSE(get_stmt(kb, 23).isFollowedBy(24));
     }
 
     SECTION("Follows(a,b) fail from indices out of range")
     {
-        CHECK_THROWS_WITH(get_stmt(kb, 0).followedBy(20), Catch::Matchers::Contains("StatementNum is out of range"));
-        CHECK_THROWS_WITH(get_stmt(kb, -1).followedBy(0), Catch::Matchers::Contains("StatementNum is out of range"));
-        CHECK_THROWS_WITH(get_stmt(kb, 25).followedBy(26), Catch::Matchers::Contains("StatementNum is out of range"));
+        CHECK_THROWS_WITH(get_stmt(kb, 0).isFollowedBy(20), Catch::Matchers::Contains("StatementNum is out of range"));
+        CHECK_THROWS_WITH(get_stmt(kb, -1).isFollowedBy(0), Catch::Matchers::Contains("StatementNum is out of range"));
+        CHECK_THROWS_WITH(get_stmt(kb, 25).isFollowedBy(26), Catch::Matchers::Contains("StatementNum is out of range"));
     }
 }
 
@@ -93,50 +93,50 @@ TEST_CASE("Follows*(a, b)")
 {
     SECTION("Follows*(a,b) in top level statement list such that Follows(a, b) holds")
     {
-        CHECK(get_stmt(kb, 1).followedTransitivelyBy(2));
-        CHECK(get_stmt(kb, 4).followedTransitivelyBy(12));
-        CHECK(get_stmt(kb, 13).followedTransitivelyBy(21));
-        CHECK(get_stmt(kb, 18).followedTransitivelyBy(19));
+        CHECK(get_stmt(kb, 1).isFollowedTransitivelyBy(2));
+        CHECK(get_stmt(kb, 4).isFollowedTransitivelyBy(12));
+        CHECK(get_stmt(kb, 13).isFollowedTransitivelyBy(21));
+        CHECK(get_stmt(kb, 18).isFollowedTransitivelyBy(19));
     }
 
     SECTION("Follows*(a,b) in top level statement list")
     {
-        CHECK(get_stmt(kb, 1).followedTransitivelyBy(3));
-        CHECK(get_stmt(kb, 1).followedTransitivelyBy(4));
-        CHECK(get_stmt(kb, 1).followedTransitivelyBy(12));
-        CHECK(get_stmt(kb, 2).followedTransitivelyBy(12));
+        CHECK(get_stmt(kb, 1).isFollowedTransitivelyBy(3));
+        CHECK(get_stmt(kb, 1).isFollowedTransitivelyBy(4));
+        CHECK(get_stmt(kb, 1).isFollowedTransitivelyBy(12));
+        CHECK(get_stmt(kb, 2).isFollowedTransitivelyBy(12));
     }
 
     SECTION("Follows*(a,b) in if/while for 1 and 2 levels of nesting")
     {
-        CHECK(get_stmt(kb, 5).followedTransitivelyBy(6));
-        CHECK(get_stmt(kb, 5).followedTransitivelyBy(9));
-        CHECK(get_stmt(kb, 5).followedTransitivelyBy(10));
-        CHECK(get_stmt(kb, 5).followedTransitivelyBy(11));
-        CHECK(get_stmt(kb, 6).followedTransitivelyBy(11));
-        CHECK(get_stmt(kb, 14).followedTransitivelyBy(18));
-        CHECK(get_stmt(kb, 14).followedTransitivelyBy(19));
-        CHECK(get_stmt(kb, 15).followedTransitivelyBy(17));
+        CHECK(get_stmt(kb, 5).isFollowedTransitivelyBy(6));
+        CHECK(get_stmt(kb, 5).isFollowedTransitivelyBy(9));
+        CHECK(get_stmt(kb, 5).isFollowedTransitivelyBy(10));
+        CHECK(get_stmt(kb, 5).isFollowedTransitivelyBy(11));
+        CHECK(get_stmt(kb, 6).isFollowedTransitivelyBy(11));
+        CHECK(get_stmt(kb, 14).isFollowedTransitivelyBy(18));
+        CHECK(get_stmt(kb, 14).isFollowedTransitivelyBy(19));
+        CHECK(get_stmt(kb, 15).isFollowedTransitivelyBy(17));
     }
 
     SECTION("Follows*(a,b) negative test cases for diff stmtList, diff procs")
     {
-        CHECK_FALSE(get_stmt(kb, 4).followedTransitivelyBy(6));
-        CHECK_FALSE(get_stmt(kb, 6).followedTransitivelyBy(8));
-        CHECK_FALSE(get_stmt(kb, 7).followedTransitivelyBy(8));
-        CHECK_FALSE(get_stmt(kb, 8).followedTransitivelyBy(11));
-        CHECK_FALSE(get_stmt(kb, 12).followedTransitivelyBy(13));
-        CHECK_FALSE(get_stmt(kb, 10).followedTransitivelyBy(24));
-        CHECK_FALSE(get_stmt(kb, 22).followedTransitivelyBy(24));
+        CHECK_FALSE(get_stmt(kb, 4).isFollowedTransitivelyBy(6));
+        CHECK_FALSE(get_stmt(kb, 6).isFollowedTransitivelyBy(8));
+        CHECK_FALSE(get_stmt(kb, 7).isFollowedTransitivelyBy(8));
+        CHECK_FALSE(get_stmt(kb, 8).isFollowedTransitivelyBy(11));
+        CHECK_FALSE(get_stmt(kb, 12).isFollowedTransitivelyBy(13));
+        CHECK_FALSE(get_stmt(kb, 10).isFollowedTransitivelyBy(24));
+        CHECK_FALSE(get_stmt(kb, 22).isFollowedTransitivelyBy(24));
     }
     SECTION("Follows*(a,b) fail from indices out of range")
     {
         CHECK_THROWS_WITH(
-            get_stmt(kb, 0).followedTransitivelyBy(20), Catch::Matchers::Contains("StatementNum is out of range"));
+            get_stmt(kb, 0).isFollowedTransitivelyBy(20), Catch::Matchers::Contains("StatementNum is out of range"));
         CHECK_THROWS_WITH(
-            get_stmt(kb, -1).followedTransitivelyBy(0), Catch::Matchers::Contains("StatementNum is out of range"));
+            get_stmt(kb, -1).isFollowedTransitivelyBy(0), Catch::Matchers::Contains("StatementNum is out of range"));
         CHECK_THROWS_WITH(
-            get_stmt(kb, 25).followedTransitivelyBy(26), Catch::Matchers::Contains("StatementNum is out of range"));
+            get_stmt(kb, 25).isFollowedTransitivelyBy(26), Catch::Matchers::Contains("StatementNum is out of range"));
     }
 }
 
@@ -146,55 +146,55 @@ TEST_CASE("getFollows")
     SECTION("Follows(a,b) and Follows*(a,b) in top level statement list")
     {
         auto& fst_result = get_stmt(kb, 1);
-        CHECK(fst_result.getDirectFollowee() == 0);
-        CHECK(fst_result.getDirectFollower() == 2);
-        CHECK(fst_result.getTransitiveFollowees().size() == 0);
-        CHECK(fst_result.getTransitiveFollowers().size() == 4);
-        CHECK(fst_result.getTransitiveFollowers().count(2) > 0);
-        CHECK(fst_result.getTransitiveFollowers().count(3) > 0);
-        CHECK(fst_result.getTransitiveFollowers().count(4) > 0);
-        CHECK(fst_result.getTransitiveFollowers().count(12) > 0);
+        CHECK(fst_result.getDirectStmtBefore() == 0);
+        CHECK(fst_result.getDirectStmtAfter() == 2);
+        CHECK(fst_result.getStmtsTransitivelyBefore().size() == 0);
+        CHECK(fst_result.getStmtsTransitivelyAfter().size() == 4);
+        CHECK(fst_result.getStmtsTransitivelyAfter().count(2) > 0);
+        CHECK(fst_result.getStmtsTransitivelyAfter().count(3) > 0);
+        CHECK(fst_result.getStmtsTransitivelyAfter().count(4) > 0);
+        CHECK(fst_result.getStmtsTransitivelyAfter().count(12) > 0);
 
         auto& snd_result = get_stmt(kb, 3);
-        CHECK(snd_result.getDirectFollowee() == 2);
-        CHECK(snd_result.getDirectFollower() == 4);
-        CHECK(snd_result.getTransitiveFollowees().size() == 2);
-        CHECK(snd_result.getTransitiveFollowers().size() == 2);
-        CHECK(snd_result.getTransitiveFollowees().count(1) > 0);
-        CHECK(snd_result.getTransitiveFollowees().count(2) > 0);
-        CHECK(snd_result.getTransitiveFollowers().count(4) > 0);
-        CHECK(snd_result.getTransitiveFollowers().count(12) > 0);
+        CHECK(snd_result.getDirectStmtBefore() == 2);
+        CHECK(snd_result.getDirectStmtAfter() == 4);
+        CHECK(snd_result.getStmtsTransitivelyBefore().size() == 2);
+        CHECK(snd_result.getStmtsTransitivelyAfter().size() == 2);
+        CHECK(snd_result.getStmtsTransitivelyBefore().count(1) > 0);
+        CHECK(snd_result.getStmtsTransitivelyBefore().count(2) > 0);
+        CHECK(snd_result.getStmtsTransitivelyAfter().count(4) > 0);
+        CHECK(snd_result.getStmtsTransitivelyAfter().count(12) > 0);
     }
 
     SECTION("Follows(a,b) and Follows*(a,b) in if/while for 1 and 2 levels of nesting")
     {
         auto& fst_result = get_stmt(kb, 5);
-        CHECK(fst_result.getDirectFollowee() == 0);
-        CHECK(fst_result.getDirectFollower() == 6);
-        CHECK(fst_result.getTransitiveFollowees().size() == 0);
-        CHECK(fst_result.getTransitiveFollowers().size() == 4);
-        CHECK(fst_result.getTransitiveFollowers().count(6) > 0);
-        CHECK(fst_result.getTransitiveFollowers().count(9) > 0);
-        CHECK(fst_result.getTransitiveFollowers().count(10) > 0);
-        CHECK(fst_result.getTransitiveFollowers().count(11) > 0);
+        CHECK(fst_result.getDirectStmtBefore() == 0);
+        CHECK(fst_result.getDirectStmtAfter() == 6);
+        CHECK(fst_result.getStmtsTransitivelyBefore().size() == 0);
+        CHECK(fst_result.getStmtsTransitivelyAfter().size() == 4);
+        CHECK(fst_result.getStmtsTransitivelyAfter().count(6) > 0);
+        CHECK(fst_result.getStmtsTransitivelyAfter().count(9) > 0);
+        CHECK(fst_result.getStmtsTransitivelyAfter().count(10) > 0);
+        CHECK(fst_result.getStmtsTransitivelyAfter().count(11) > 0);
 
         auto& snd_result = get_stmt(kb, 17);
-        CHECK(snd_result.getDirectFollowee() == 16);
-        CHECK(snd_result.getDirectFollower() == 0);
-        CHECK(snd_result.getTransitiveFollowees().size() == 2);
-        CHECK(snd_result.getTransitiveFollowers().size() == 0);
-        CHECK(snd_result.getTransitiveFollowees().count(15) > 0);
-        CHECK(snd_result.getTransitiveFollowees().count(16) > 0);
+        CHECK(snd_result.getDirectStmtBefore() == 16);
+        CHECK(snd_result.getDirectStmtAfter() == 0);
+        CHECK(snd_result.getStmtsTransitivelyBefore().size() == 2);
+        CHECK(snd_result.getStmtsTransitivelyAfter().size() == 0);
+        CHECK(snd_result.getStmtsTransitivelyBefore().count(15) > 0);
+        CHECK(snd_result.getStmtsTransitivelyBefore().count(16) > 0);
     }
 
     SECTION("Follows(a,b) and Follows*(a,b) negative test cases for diff stmtList, diff procs")
     {
         auto& fst_result = get_stmt(kb, 23);
-        CHECK(fst_result.getDirectFollowee() != 22);
-        CHECK(fst_result.getDirectFollower() != 24);
+        CHECK(fst_result.getDirectStmtBefore() != 22);
+        CHECK(fst_result.getDirectStmtAfter() != 24);
 
         auto& snd_result = get_stmt(kb, 16);
-        CHECK(snd_result.getDirectFollowee() == 15);
-        CHECK(snd_result.getDirectFollower() != 22);
+        CHECK(snd_result.getDirectStmtBefore() == 15);
+        CHECK(snd_result.getDirectStmtAfter() != 22);
     }
 }

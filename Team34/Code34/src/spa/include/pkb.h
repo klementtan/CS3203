@@ -64,15 +64,15 @@ namespace pkb
         bool hasFollower() const;
         bool isFollower() const;
 
-        bool follows(simple::ast::StatementNum id) const;
-        bool followedBy(simple::ast::StatementNum id) const;
-        bool followsTransitively(simple::ast::StatementNum id) const;
-        bool followedTransitivelyBy(simple::ast::StatementNum id) const;
+        bool doesFollow(simple::ast::StatementNum id) const;
+        bool isFollowedBy(simple::ast::StatementNum id) const;
+        bool doesFollowTransitively(simple::ast::StatementNum id) const;
+        bool isFollowedTransitivelyBy(simple::ast::StatementNum id) const;
 
-        simple::ast::StatementNum getDirectFollower() const;
-        simple::ast::StatementNum getDirectFollowee() const;
-        const std::unordered_set<simple::ast::StatementNum>& getTransitiveFollowers() const;
-        const std::unordered_set<simple::ast::StatementNum>& getTransitiveFollowees() const;
+        simple::ast::StatementNum getDirectStmtAfter() const;
+        simple::ast::StatementNum getDirectStmtBefore() const;
+        const std::unordered_set<simple::ast::StatementNum>& getStmtsTransitivelyAfter() const;
+        const std::unordered_set<simple::ast::StatementNum>& getStmtsTransitivelyBefore() const;
 
         const simple::ast::Stmt* getAstStmt() const;
 

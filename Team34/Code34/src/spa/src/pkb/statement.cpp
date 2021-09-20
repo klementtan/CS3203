@@ -26,42 +26,42 @@ namespace pkb
         return m_directly_before != 0;
     }
 
-    bool Statement::follows(simple::ast::StatementNum id) const
+    bool Statement::doesFollow(simple::ast::StatementNum id) const
     {
         return m_directly_before == id;
     }
 
-    bool Statement::followsTransitively(simple::ast::StatementNum id) const
+    bool Statement::doesFollowTransitively(simple::ast::StatementNum id) const
     {
         return m_before.count(id) > 0;
     }
 
-    bool Statement::followedBy(simple::ast::StatementNum id) const
+    bool Statement::isFollowedBy(simple::ast::StatementNum id) const
     {
         return m_directly_after == id;
     }
 
-    bool Statement::followedTransitivelyBy(simple::ast::StatementNum id) const
+    bool Statement::isFollowedTransitivelyBy(simple::ast::StatementNum id) const
     {
         return m_after.count(id) > 0;
     }
 
-    simple::ast::StatementNum Statement::getDirectFollower() const
+    simple::ast::StatementNum Statement::getDirectStmtAfter() const
     {
         return m_directly_after;
     }
 
-    simple::ast::StatementNum Statement::getDirectFollowee() const
+    simple::ast::StatementNum Statement::getDirectStmtBefore() const
     {
         return m_directly_before;
     }
 
-    const std::unordered_set<simple::ast::StatementNum>& Statement::getTransitiveFollowers() const
+    const std::unordered_set<simple::ast::StatementNum>& Statement::getStmtsTransitivelyAfter() const
     {
         return m_after;
     }
 
-    const std::unordered_set<simple::ast::StatementNum>& Statement::getTransitiveFollowees() const
+    const std::unordered_set<simple::ast::StatementNum>& Statement::getStmtsTransitivelyBefore() const
     {
         return m_before;
     }
