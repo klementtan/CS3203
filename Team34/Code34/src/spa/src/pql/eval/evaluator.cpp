@@ -88,9 +88,10 @@ namespace pql::eval
             throw util::PqlException("pql::eval", "Cannot get initial domain(constant) for non constant declaration {}",
                 declaration->toString());
         }
+        auto& const_list = m_pkb->getAllConstants();
         util::log(
-            "pql::eval", "Adding {} constants to {} initial domain", m_pkb->_constants.size(), declaration->toString());
-        for(const auto& const_val : m_pkb->getConstants())
+            "pql::eval", "Adding {} constants to {} initial domain", const_list.size(), declaration->toString());
+        for(const auto& const_val : const_list)
         {
             util::log("pql::eval", "Adding {} to initial proc domain", const_val);
             domain.insert(table::Entry(declaration, const_val));

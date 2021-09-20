@@ -42,12 +42,17 @@ namespace pkb
 
     void ProgramKB::addConstant(std::string value)
     {
-        this->_constants.insert(std::move(value));
+        m_constants.insert(std::move(value));
     }
 
     const std::vector<Statement>& ProgramKB::getAllStatements() const
     {
         return m_statements;
+    }
+
+    const std::unordered_set<std::string>& ProgramKB::getAllConstants() const
+    {
+        return m_constants;
     }
 
     const std::unordered_map<std::string, Procedure>& ProgramKB::getAllProcedures() const
@@ -67,51 +72,51 @@ namespace pkb
      */
     bool ProgramKB::isParent(s_ast::StatementNum fst, s_ast::StatementNum snd)
     {
-        if(_direct_parents.count(snd) == 0)
+        if(m_direct_parents.count(snd) == 0)
             return false;
 
-        return _direct_parents[snd] == fst;
+        return m_direct_parents[snd] == fst;
     }
 
     bool ProgramKB::isParentT(s_ast::StatementNum fst, s_ast::StatementNum snd)
     {
-        if(_ancestors.count(snd) == 0)
+        if(m_ancestors.count(snd) == 0)
             return false;
 
-        return _ancestors[snd].count(fst);
+        return m_ancestors[snd].count(fst);
     }
 
     std::optional<s_ast::StatementNum> ProgramKB::getParentOf(s_ast::StatementNum fst)
     {
         // this will return 0 if it has no parent
-        if(_direct_parents.count(fst) == 0)
+        if(m_direct_parents.count(fst) == 0)
             return std::nullopt;
 
-        return _direct_parents[fst];
+        return m_direct_parents[fst];
     }
 
     std::unordered_set<s_ast::StatementNum> ProgramKB::getAncestorsOf(s_ast::StatementNum fst)
     {
-        if(_ancestors.count(fst) == 0)
+        if(m_ancestors.count(fst) == 0)
             return {};
 
-        return _ancestors[fst];
+        return m_ancestors[fst];
     }
 
     std::unordered_set<s_ast::StatementNum> ProgramKB::getChildrenOf(s_ast::StatementNum fst)
     {
-        if(_direct_children.count(fst) == 0)
+        if(m_direct_children.count(fst) == 0)
             return {};
 
-        return _direct_children[fst];
+        return m_direct_children[fst];
     }
 
     std::unordered_set<s_ast::StatementNum> ProgramKB::getDescendantsOf(s_ast::StatementNum fst)
     {
-        if(_descendants.count(fst) == 0)
+        if(m_descendants.count(fst) == 0)
             return {};
 
-        return _descendants[fst];
+        return m_descendants[fst];
     }
 
     bool ProgramKB::followsRelationExists()
@@ -126,11 +131,6 @@ namespace pkb
     /**
      * End of Parent methods
      */
-
-    std::unordered_set<std::string> ProgramKB::getConstants()
-    {
-        return _constants;
-    }
 
     /**
      * Start of Uses and Modifies methods

@@ -113,13 +113,12 @@ namespace pkb
         ProgramKB(std::unique_ptr<simple::ast::Program> program);
         ~ProgramKB();
 
-        CallGraph proc_calls;
-
         Statement* getStatementAtIndex(simple::ast::StatementNum);
 
-        bool followsRelationExists();
         bool parentRelationExists();
+        bool followsRelationExists();
 
+#if 1
         bool isParent(simple::ast::StatementNum, simple::ast::StatementNum);
         bool isParentT(simple::ast::StatementNum, simple::ast::StatementNum);
 
@@ -127,9 +126,7 @@ namespace pkb
         std::unordered_set<simple::ast::StatementNum> getAncestorsOf(simple::ast::StatementNum);
         std::unordered_set<simple::ast::StatementNum> getChildrenOf(simple::ast::StatementNum);
         std::unordered_set<simple::ast::StatementNum> getDescendantsOf(simple::ast::StatementNum);
-
-        std::unordered_set<std::string> _constants;
-        std::unordered_set<std::string> getConstants();
+#endif
 
         // For queries of type Uses(3, "x")
         bool isUses(const simple::ast::StatementNum& stmt_num, const std::string& var);
@@ -157,6 +154,7 @@ namespace pkb
         Procedure& addProcedure(const std::string& name, simple::ast::Procedure* proc);
 
         const std::vector<Statement>& getAllStatements() const;
+        const std::unordered_set<std::string>& getAllConstants() const;
         const std::unordered_map<std::string, Variable>& getAllVariables() const;
         const std::unordered_map<std::string, Procedure>& getAllProcedures() const;
 
@@ -165,17 +163,18 @@ namespace pkb
 
         std::unordered_map<std::string, Procedure> m_procedures {};
         std::unordered_map<std::string, Variable> m_variables {};
+        std::unordered_set<std::string> m_constants {};
         std::vector<Statement> m_statements {};
 
-        std::unordered_map<simple::ast::StatementNum, simple::ast::StatementNum> _direct_parents;
-        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _ancestors;
-        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _direct_children;
-        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _descendants;
+        std::unordered_map<simple::ast::StatementNum, simple::ast::StatementNum> m_direct_parents {};
+        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> m_ancestors {};
+        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> m_direct_children {};
+        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> m_descendants {};
 
+        CallGraph m_call_graph {};
 
         bool m_follows_exists = false;
         bool m_parent_exists = false;
-
 
         friend struct DesignExtractor;
     };

@@ -63,7 +63,7 @@ namespace pkb
             {
                 if(auto c = dynamic_cast<const s_ast::ProcCall*>(stmt.get()); c)
                 {
-                    m_pkb->proc_calls.addEdge(name, c->proc_name);
+                    m_pkb->m_call_graph.addEdge(name, c->proc_name);
                 }
                 else if(auto i = dynamic_cast<const s_ast::IfStmt*>(stmt.get()); i)
                 {
@@ -206,12 +206,12 @@ namespace pkb
                 // only set the direct parent/child for the top of the stack
                 if(i == stmt_stack.size() - 1)
                 {
-                    m_pkb->_direct_parents[sid] = list_sid;
-                    m_pkb->_direct_children[list_sid].insert(sid);
+                    m_pkb->m_direct_parents[sid] = list_sid;
+                    m_pkb->m_direct_children[list_sid].insert(sid);
                 }
 
-                m_pkb->_ancestors[sid].insert(list_sid);
-                m_pkb->_descendants[list_sid].insert(sid);
+                m_pkb->m_ancestors[sid].insert(list_sid);
+                m_pkb->m_descendants[list_sid].insert(sid);
 
                 m_pkb->m_parent_exists = true;
             }
@@ -317,10 +317,10 @@ namespace pkb
         this->processCallGraph();
 
         // 2. check for missing procedures or cyclic calls
-        if(m_pkb->proc_calls.cycleExists())
+        if(m_pkb->m_call_graph.cycleExists())
             throw util::PkbException("pkb", "Cyclic or recursive calls are not allowed");
 
-        else if(auto a = m_pkb->proc_calls.missingProc(m_program->procedures); !a.empty())
+        else if(auto a = m_pkb->m_call_graph.missingProc(m_program->procedures); !a.empty())
             throw util::PkbException("pkb", "Procedure '{}' is undefined", a);
 
         // 3. assign the statement numbers. this has to use the vector of procedures in
