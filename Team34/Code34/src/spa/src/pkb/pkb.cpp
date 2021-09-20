@@ -30,12 +30,15 @@ namespace pkb
 
     const Procedure& ProgramKB::getProcedureNamed(const std::string& name) const
     {
-        return m_procedures.at(name);
+        if(auto it = m_procedures.find(name); it != m_procedures.end())
+            return it->second;
+
+        throw util::PkbException("pkb", "no procedure named '{}'", name);
     }
 
     Procedure& ProgramKB::getProcedureNamed(const std::string& name)
     {
-        return m_procedures.at(name);
+        return const_cast<Procedure&>(const_cast<const ProgramKB*>(this)->getProcedureNamed(name));
     }
 
     Procedure& ProgramKB::addProcedure(const std::string& name, const simple::ast::Procedure* proc)
@@ -44,6 +47,14 @@ namespace pkb
             throw util::PkbException("pkb", "duplicate definition of procedure '{}'", name);
 
         return m_procedures.emplace(name, proc).first->second;
+    }
+
+    const Variable& ProgramKB::getVariableNamed(const std::string& name) const
+    {
+        if(auto it = m_variables.find(name); it != m_variables.end())
+            return it->second;
+
+        throw util::PkbException("pkb", "no variable named '{}'", name);
     }
 
     void ProgramKB::addConstant(std::string value)
@@ -136,132 +147,6 @@ namespace pkb
     }
     /**
      * End of Parent methods
-     */
-
-
-    std::unordered_set<std::string> ProgramKB::getUses(pql::ast::DESIGN_ENT type, const std::string& var) const
-    {
-        if(m_variables.find(var) == m_variables.end())
-        {
-            throw util::PkbException("pkb::eval", "Variable not found.");
-        }
-        std::unordered_set<std::string> uses;
-        auto& stmt_list = m_variables.at(var).used_by;
-        switch(type)
-        {
-            case pql::ast::DESIGN_ENT::ASSIGN:
-                for(auto& stmt : stmt_list)
-                {
-                    if(dynamic_cast<const s_ast::AssignStmt*>(stmt))
-                        uses.insert(std::to_string(stmt->id));
-                }
-                break;
-            case pql::ast::DESIGN_ENT::PRINT:
-                for(auto& stmt : stmt_list)
-                {
-                    if(dynamic_cast<const s_ast::PrintStmt*>(stmt))
-                        uses.insert(std::to_string(stmt->id));
-                }
-                break;
-            case pql::ast::DESIGN_ENT::STMT:
-                for(auto& stmt : stmt_list)
-                    uses.insert(std::to_string(stmt->id));
-
-                break;
-            case pql::ast::DESIGN_ENT::CALL:
-                for(auto& stmt : stmt_list)
-                {
-                    if(dynamic_cast<const s_ast::ProcCall*>(stmt))
-                        uses.insert(std::to_string(stmt->id));
-                }
-                break;
-            case pql::ast::DESIGN_ENT::IF:
-                for(auto& stmt : stmt_list)
-                {
-                    if(dynamic_cast<const s_ast::IfStmt*>(stmt))
-                        uses.insert(std::to_string(stmt->id));
-                }
-                break;
-            case pql::ast::DESIGN_ENT::WHILE:
-                for(auto& stmt : stmt_list)
-                {
-                    if(dynamic_cast<const s_ast::WhileLoop*>(stmt))
-                        uses.insert(std::to_string(stmt->id));
-                }
-                break;
-            case pql::ast::DESIGN_ENT::PROCEDURE:
-                for(auto& proc : m_variables.at(var).used_by_procs)
-                    uses.insert(proc->getAstProc()->name);
-                break;
-            default:
-                throw util::PkbException("pkb::eval", "Invalid statement type.");
-        }
-        return uses;
-    }
-
-    std::unordered_set<std::string> ProgramKB::getModifies(pql::ast::DESIGN_ENT type, const std::string& var) const
-    {
-        if(m_variables.find(var) == m_variables.end())
-        {
-            throw util::PkbException("pkb::eval", "Variable not found.");
-        }
-        std::unordered_set<std::string> modifies;
-        auto& stmt_list = m_variables.at(var).modified_by;
-        switch(type)
-        {
-            case pql::ast::DESIGN_ENT::ASSIGN:
-                for(auto& stmt : stmt_list)
-                {
-                    if(dynamic_cast<const s_ast::AssignStmt*>(stmt))
-                        modifies.insert(std::to_string(stmt->id));
-                }
-                break;
-            case pql::ast::DESIGN_ENT::READ:
-                for(auto& stmt : stmt_list)
-                {
-                    if(dynamic_cast<const s_ast::ReadStmt*>(stmt))
-                        modifies.insert(std::to_string(stmt->id));
-                }
-                break;
-            case pql::ast::DESIGN_ENT::STMT:
-                for(auto& stmt : stmt_list)
-                {
-                    modifies.insert(std::to_string(stmt->id));
-                }
-                break;
-            case pql::ast::DESIGN_ENT::CALL:
-                for(auto& stmt : stmt_list)
-                {
-                    if(dynamic_cast<const s_ast::ProcCall*>(stmt))
-                        modifies.insert(std::to_string(stmt->id));
-                }
-                break;
-            case pql::ast::DESIGN_ENT::IF:
-                for(auto& stmt : stmt_list)
-                {
-                    if(dynamic_cast<const s_ast::IfStmt*>(stmt))
-                        modifies.insert(std::to_string(stmt->id));
-                }
-                break;
-            case pql::ast::DESIGN_ENT::WHILE:
-                for(auto& stmt : stmt_list)
-                {
-                    if(dynamic_cast<const s_ast::WhileLoop*>(stmt))
-                        modifies.insert(std::to_string(stmt->id));
-                }
-                break;
-            case pql::ast::DESIGN_ENT::PROCEDURE:
-                for(auto& proc : m_variables.at(var).modified_by_procs)
-                    modifies.insert(proc->getAstProc()->name);
-
-                break;
-            default:
-                throw util::PkbException("pkb::eval", "Invalid statement type.");
-        }
-        return modifies;
-    }
-    /**
-     * End of Uses and Modifies methods
      */
 
     ProgramKB::ProgramKB(std::unique_ptr<simple::ast::Program> program)

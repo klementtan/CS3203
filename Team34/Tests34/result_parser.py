@@ -41,22 +41,24 @@ def parse_one(filename):
 		name = query.find("id").get("comment")
 		num = query.find("id").text
 
+		test_name_str = f"{filename}/{num} - {name}"
+		tmp = query.find("correct")
+		if tmp is None:
+			if query.find("exception") is not None:
+				print(f"warning: {test_name_str} threw exception")
+				failed_tests[filename].append((num, name))
+				num_failed += 1
+				continue
+			else:
+				print(f"warning: {test_name_str} has no correct result")
+				continue
+
 		if query.find("failed") is not None:
 			failed_tests[filename].append((num, name))
 			num_failed += 1
 		else:
 			passed_tests[filename].append((num, name))
 			num_passed += 1
-
-		test_name_str = f"{filename}/{num} - {name}"
-		tmp = query.find("correct")
-		if tmp is None:
-			if query.find("exception") is not None:
-				print(f"warning: {test_name_str} threw exception")
-				continue
-			else:
-				print(f"warning: {test_name_str} has no correct result")
-				continue
 
 		correct_ans = query.find("correct").text
 		if correct_ans is None:

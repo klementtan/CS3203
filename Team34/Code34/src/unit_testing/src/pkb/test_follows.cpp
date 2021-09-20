@@ -131,9 +131,12 @@ TEST_CASE("Follows*(a, b)")
     }
     SECTION("Follows*(a,b) fail from indices out of range")
     {
-        CHECK_THROWS_WITH(get_stmt(kb, 0).followedTransitivelyBy(20), Catch::Matchers::Contains("StatementNum is out of range"));
-        CHECK_THROWS_WITH(get_stmt(kb, -1).followedTransitivelyBy(0), Catch::Matchers::Contains("StatementNum is out of range"));
-        CHECK_THROWS_WITH(get_stmt(kb, 25).followedTransitivelyBy(26), Catch::Matchers::Contains("StatementNum is out of range"));
+        CHECK_THROWS_WITH(
+            get_stmt(kb, 0).followedTransitivelyBy(20), Catch::Matchers::Contains("StatementNum is out of range"));
+        CHECK_THROWS_WITH(
+            get_stmt(kb, -1).followedTransitivelyBy(0), Catch::Matchers::Contains("StatementNum is out of range"));
+        CHECK_THROWS_WITH(
+            get_stmt(kb, 25).followedTransitivelyBy(26), Catch::Matchers::Contains("StatementNum is out of range"));
     }
 }
 

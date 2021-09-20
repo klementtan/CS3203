@@ -89,8 +89,7 @@ namespace pql::eval
                 declaration->toString());
         }
         auto& const_list = m_pkb->getAllConstants();
-        util::log(
-            "pql::eval", "Adding {} constants to {} initial domain", const_list.size(), declaration->toString());
+        util::log("pql::eval", "Adding {} constants to {} initial domain", const_list.size(), declaration->toString());
         for(const auto& const_val : const_list)
         {
             util::log("pql::eval", "Adding {} to initial proc domain", const_val);

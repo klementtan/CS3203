@@ -96,6 +96,11 @@ static const Procedure& get_proc(const std::unique_ptr<pkb::ProgramKB>& pkb, con
     return pkb->getProcedureNamed(name);
 }
 
+static const Variable& get_var(const std::unique_ptr<pkb::ProgramKB>& pkb, const char* name)
+{
+    return pkb->getVariableNamed(name);
+}
+
 
 TEST_CASE("Modifies(DeclaredStmt, DeclaredVar)")
 {
@@ -300,104 +305,104 @@ TEST_CASE("Modifies(Synonym, DeclaredVar)")
 {
     SECTION("Modifies(ASSIGN, DeclaredVar)")
     {
-        auto fst_result = kb_trivial->getModifies(pql::ast::DESIGN_ENT::ASSIGN, "flag");
+        auto fst_result = get_var(kb_trivial, "flag").getModifyingStmtNumsFiltered(pql::ast::DESIGN_ENT::ASSIGN);
         CHECK(fst_result.size() == 2);
-        CHECK(fst_result.count("1"));
-        CHECK(fst_result.count("20"));
+        CHECK(fst_result.count(1));
+        CHECK(fst_result.count(20));
 
-        auto snd_result = kb_trivial->getModifies(pql::ast::DESIGN_ENT::ASSIGN, "cenX");
+        auto snd_result = get_var(kb_trivial, "cenX").getModifyingStmtNumsFiltered(pql::ast::DESIGN_ENT::ASSIGN);
         CHECK(snd_result.size() == 3);
-        CHECK(snd_result.count("11"));
-        CHECK(snd_result.count("16"));
-        CHECK(snd_result.count("21"));
+        CHECK(snd_result.count(11));
+        CHECK(snd_result.count(16));
+        CHECK(snd_result.count(21));
     }
 
     SECTION("Modifies(READ, DeclaredVar)")
     {
-        auto fst_result = kb_trivial->getModifies(pql::ast::DESIGN_ENT::READ, "x");
+        auto fst_result = get_var(kb_trivial, "x").getModifyingStmtNumsFiltered(pql::ast::DESIGN_ENT::READ);
         CHECK(fst_result.size() == 1);
-        CHECK(fst_result.count("4"));
+        CHECK(fst_result.count(4));
 
-        auto snd_result = kb_trivial->getModifies(pql::ast::DESIGN_ENT::READ, "y");
+        auto snd_result = get_var(kb_trivial, "y").getModifyingStmtNumsFiltered(pql::ast::DESIGN_ENT::READ);
         CHECK(snd_result.size() == 1);
-        CHECK(snd_result.count("5"));
+        CHECK(snd_result.count(5));
     }
 
     SECTION("Modifies(CALL, DeclaredVar)")
     {
-        auto fst_result = kb_trivial->getModifies(pql::ast::DESIGN_ENT::CALL, "flag");
+        auto fst_result = get_var(kb_trivial, "flag").getModifyingStmtNumsFiltered(pql::ast::DESIGN_ENT::CALL);
         CHECK(fst_result.size() == 1);
-        CHECK(fst_result.count("2"));
+        CHECK(fst_result.count(2));
 
-        auto snd_result = kb_trivial->getModifies(pql::ast::DESIGN_ENT::CALL, "x");
+        auto snd_result = get_var(kb_trivial, "x").getModifyingStmtNumsFiltered(pql::ast::DESIGN_ENT::CALL);
         CHECK(snd_result.size() == 3);
-        CHECK(snd_result.count("2"));
-        CHECK(snd_result.count("13"));
-        CHECK(snd_result.count("18"));
+        CHECK(snd_result.count(2));
+        CHECK(snd_result.count(13));
+        CHECK(snd_result.count(18));
     }
 
     SECTION("Modifies(IF, DeclaredVar)")
     {
-        auto fst_result = kb_sample->getModifies(pql::ast::DESIGN_ENT::IF, "x");
+        auto fst_result = get_var(kb_sample, "x").getModifyingStmtNumsFiltered(pql::ast::DESIGN_ENT::IF);
         CHECK(fst_result.size() == 2);
-        CHECK(fst_result.count("13"));
-        CHECK(fst_result.count("22"));
+        CHECK(fst_result.count(13));
+        CHECK(fst_result.count(22));
 
-        auto snd_result = kb_sample->getModifies(pql::ast::DESIGN_ENT::IF, "i");
+        auto snd_result = get_var(kb_sample, "i").getModifyingStmtNumsFiltered(pql::ast::DESIGN_ENT::IF);
         CHECK(snd_result.size() == 1);
-        CHECK(snd_result.count("13"));
+        CHECK(snd_result.count(13));
     }
 
     SECTION("Modifies(WHILE, DeclaredVar)")
     {
-        auto fst_result = kb_sample->getModifies(pql::ast::DESIGN_ENT::WHILE, "y");
+        auto fst_result = get_var(kb_sample, "y").getModifyingStmtNumsFiltered(pql::ast::DESIGN_ENT::WHILE);
         CHECK(fst_result.size() == 1);
-        CHECK(fst_result.count("4"));
+        CHECK(fst_result.count(4));
 
-        auto snd_result = kb_sample->getModifies(pql::ast::DESIGN_ENT::WHILE, "i");
+        auto snd_result = get_var(kb_sample, "i").getModifyingStmtNumsFiltered(pql::ast::DESIGN_ENT::WHILE);
         CHECK(snd_result.size() == 2);
-        CHECK(snd_result.count("4"));
-        CHECK(snd_result.count("14"));
+        CHECK(snd_result.count(4));
+        CHECK(snd_result.count(14));
     }
 
     SECTION("Uses(STMT, DeclaredVar)")
     {
-        auto fst_result = kb_sample->getModifies(pql::ast::DESIGN_ENT::STMT, "x");
+        auto fst_result = get_var(kb_sample, "x").getModifyingStmtNumsFiltered(pql::ast::DESIGN_ENT::STMT);
         CHECK(fst_result.size() == 12);
-        CHECK(fst_result.count("1"));
-        CHECK(fst_result.count("4"));
-        CHECK(fst_result.count("5"));
-        CHECK(fst_result.count("10"));
-        CHECK(fst_result.count("12"));
-        CHECK(fst_result.count("13"));
-        CHECK(fst_result.count("14"));
-        CHECK(fst_result.count("15"));
-        CHECK(fst_result.count("16"));
-        CHECK(fst_result.count("18"));
-        CHECK(fst_result.count("22"));
-        CHECK(fst_result.count("24"));
+        CHECK(fst_result.count(1));
+        CHECK(fst_result.count(4));
+        CHECK(fst_result.count(5));
+        CHECK(fst_result.count(10));
+        CHECK(fst_result.count(12));
+        CHECK(fst_result.count(13));
+        CHECK(fst_result.count(14));
+        CHECK(fst_result.count(15));
+        CHECK(fst_result.count(16));
+        CHECK(fst_result.count(18));
+        CHECK(fst_result.count(22));
+        CHECK(fst_result.count(24));
 
-        auto snd_result = kb_trivial->getModifies(pql::ast::DESIGN_ENT::STMT, "x");
+        auto snd_result = get_var(kb_trivial, "x").getModifyingStmtNumsFiltered(pql::ast::DESIGN_ENT::STMT);
         CHECK(snd_result.size() == 5);
-        CHECK(snd_result.count("2"));
-        CHECK(snd_result.count("4"));
-        CHECK(snd_result.count("13"));
-        CHECK(snd_result.count("14"));
-        CHECK(snd_result.count("18"));
+        CHECK(snd_result.count(2));
+        CHECK(snd_result.count(4));
+        CHECK(snd_result.count(13));
+        CHECK(snd_result.count(14));
+        CHECK(snd_result.count(18));
     }
 
     SECTION("Uses(PROCEDURE, DeclaredVar)")
     {
-        auto fst_result = kb_sample->getModifies(pql::ast::DESIGN_ENT::PROCEDURE, "y");
+        auto fst_result = get_var(kb_sample, "y").getModifyingProcNames();
         CHECK(fst_result.size() == 1);
         CHECK(fst_result.count("Example"));
 
-        auto snd_result = kb_trivial->getModifies(pql::ast::DESIGN_ENT::PROCEDURE, "flag");
+        auto snd_result = get_var(kb_trivial, "flag").getModifyingProcNames();
         CHECK(snd_result.size() == 2);
         CHECK(snd_result.count("computeCentroid"));
         CHECK(snd_result.count("main"));
 
-        auto trd_result = kb_trivial->getModifies(pql::ast::DESIGN_ENT::PROCEDURE, "x");
+        auto trd_result = get_var(kb_trivial, "x").getModifyingProcNames();
         CHECK(trd_result.size() == 3);
         CHECK(trd_result.count("computeCentroid"));
         CHECK(trd_result.count("main"));

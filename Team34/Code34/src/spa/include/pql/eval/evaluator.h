@@ -14,6 +14,8 @@
 
 namespace pql::eval
 {
+    ast::DESIGN_ENT getDesignEnt(const simple::ast::Stmt* stmt);
+
     class Evaluator
     {
     private:

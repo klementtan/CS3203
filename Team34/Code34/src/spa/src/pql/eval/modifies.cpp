@@ -81,7 +81,7 @@ namespace pql::eval
 
             util::log("pql::eval", "Processing ModifiesP(DeclaredEnt, EntName)");
 
-            std::unordered_set<std::string> modifier_candidates = m_pkb->getModifies(mod_decl->design_ent, ent_name);
+            const auto& modifier_candidates = m_pkb->getVariableNamed(ent_name).getModifyingProcNames();
             if(modifier_candidates.empty())
             {
                 throw PqlException("pql::eval", "{} will always evaluate to false. No procedures modifies {}",
@@ -91,7 +91,7 @@ namespace pql::eval
             {
                 std::unordered_set<table::Entry> curr_domain;
                 std::unordered_set<table::Entry> prev_domain = m_table.getDomain(mod_decl);
-                for(std::string proc_name : modifier_candidates)
+                for(const auto& proc_name : modifier_candidates)
                 {
                     auto entry = table::Entry(mod_decl, proc_name);
                     curr_domain.insert(entry);
@@ -245,27 +245,29 @@ namespace pql::eval
             auto mod_decl = modifier_stmt.declaration();
             auto ent_name = ent_ent.name();
 
+            auto& var = m_pkb->getVariableNamed(ent_name);
+
             util::log("pql::eval", "Processing ModifiesS(DeclaredStmt, EntName)");
 
-            std::unordered_set<std::string> modifier_candidates = m_pkb->getModifies(mod_decl->design_ent, ent_name);
-            if(modifier_candidates.empty())
+            std::unordered_set<table::Entry> new_domain {};
+            if(mod_decl->design_ent == ast::DESIGN_ENT::PROCEDURE)
+            {
+                for(const auto& proc_name : var.getModifyingProcNames())
+                    new_domain.emplace(mod_decl, proc_name);
+            }
+            else
+            {
+                for(auto sid : var.getModifyingStmtNumsFiltered(mod_decl->design_ent))
+                    new_domain.emplace(mod_decl, sid);
+            }
+
+            if(new_domain.empty())
             {
                 throw PqlException("pql::eval", "{} will always evaluate to false. No statements modifies {}",
                     rel->toString(), ent_name);
             }
-            else
-            {
-                std::unordered_set<table::Entry> curr_domain;
-                std::unordered_set<table::Entry> prev_domain = m_table.getDomain(mod_decl);
-                for(const auto& stmt_num_str : modifier_candidates)
-                {
-                    simple::ast::StatementNum stmt_num = atoi(stmt_num_str.c_str());
-                    auto entry = table::Entry(mod_decl, stmt_num);
-                    curr_domain.insert(entry);
-                    util::log("pql::eval", "{} adds {} to curr domain", rel->toString(), entry.toString());
-                }
-                m_table.upsertDomains(mod_decl, table::entry_set_intersect(prev_domain, curr_domain));
-            }
+
+            m_table.upsertDomains(mod_decl, table::entry_set_intersect(new_domain, m_table.getDomain(mod_decl)));
         }
         else if(modifier_stmt.isDeclaration() && ent_ent.isWildcard())
         {

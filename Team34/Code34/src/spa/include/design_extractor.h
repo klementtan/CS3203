@@ -17,10 +17,10 @@ namespace pkb
         struct TraversalState
         {
             // contains only ifs and whiles local to the current function
-            std::vector<const simple::ast::Stmt*> local_stmt_stack {};
+            std::vector<const Statement*> local_stmt_stack {};
 
             // contains ifs and whiles for the entire traversal (including across functions)
-            std::vector<const simple::ast::Stmt*> global_stmt_stack {};
+            std::vector<const Statement*> global_stmt_stack {};
 
             // contains the procedures call stack
             std::vector<pkb::Procedure*> proc_stack {};

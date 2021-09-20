@@ -15,17 +15,19 @@ namespace pkb
 {
     struct DesignExtractor;
 
+#define MOVE_ONLY_TYPE(TypeName)               \
+    TypeName(TypeName&&) = default;            \
+    TypeName& operator=(TypeName&&) = default; \
+    TypeName(const TypeName&) = delete;        \
+    TypeName& operator=(const TypeName&) = delete;
+
     struct Procedure
     {
+        MOVE_ONLY_TYPE(Procedure);
+
         friend struct DesignExtractor;
 
         Procedure(const simple::ast::Procedure* ast_proc);
-
-        Procedure(Procedure&&) = default;
-        Procedure& operator=(Procedure&&) = default;
-
-        Procedure(const Procedure&) = delete;
-        Procedure& operator=(const Procedure&) = delete;
 
         bool usesVariable(const std::string& varname) const;
         bool modifiesVariable(const std::string& varname) const;
@@ -53,16 +55,11 @@ namespace pkb
     // the pre-processing is once off.
     struct Statement
     {
+        MOVE_ONLY_TYPE(Statement);
+
         friend struct DesignExtractor;
 
         Statement(const simple::ast::Stmt* stmt);
-
-        // cannot be copied
-        Statement(const Statement&) = delete;
-        Statement& operator=(const Statement&) = delete;
-
-        Statement(Statement&&) = default;
-        Statement& operator=(Statement&&) = default;
 
         bool hasFollower() const;
         bool isFollower() const;
@@ -103,13 +100,26 @@ namespace pkb
 
     struct Variable
     {
+        Variable() = default;
+
+        MOVE_ONLY_TYPE(Variable);
+
+        friend struct DesignExtractor;
+
+        std::unordered_set<simple::ast::StatementNum> getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT ent) const;
+        std::unordered_set<simple::ast::StatementNum> getModifyingStmtNumsFiltered(pql::ast::DESIGN_ENT ent) const;
+
+        std::unordered_set<std::string> getUsingProcNames() const;
+        std::unordered_set<std::string> getModifyingProcNames() const;
+
+    private:
         // a procedure isn't really a statement, so we need to keep two
         // separate lists for this.
-        std::unordered_set<const simple::ast::Stmt*> used_by {};
-        std::unordered_set<const simple::ast::Stmt*> modified_by {};
+        std::unordered_set<const Statement*> m_used_by {};
+        std::unordered_set<const Statement*> m_modified_by {};
 
-        std::unordered_set<const Procedure*> used_by_procs {};
-        std::unordered_set<const Procedure*> modified_by_procs {};
+        std::unordered_set<const Procedure*> m_used_by_procs {};
+        std::unordered_set<const Procedure*> m_modified_by_procs {};
     };
 
     struct ProgramKB
@@ -123,6 +133,8 @@ namespace pkb
         const Procedure& getProcedureNamed(const std::string& name) const;
         Procedure& getProcedureNamed(const std::string& name);
 
+        const Variable& getVariableNamed(const std::string& name) const;
+
         bool parentRelationExists() const;
         bool followsRelationExists() const;
 
@@ -135,12 +147,6 @@ namespace pkb
         std::unordered_set<simple::ast::StatementNum> getChildrenOf(simple::ast::StatementNum) const;
         std::unordered_set<simple::ast::StatementNum> getDescendantsOf(simple::ast::StatementNum) const;
 #endif
-
-        // Returns the Statement numbers of queries of type Uses(a/r/s/p, "x")
-        std::unordered_set<std::string> getUses(pql::ast::DESIGN_ENT type, const std::string& var) const;
-
-        // Returns the Statement numbers of queries of type Modifies(a/pn/s/p, "x")
-        std::unordered_set<std::string> getModifies(pql::ast::DESIGN_ENT type, const std::string& var) const;
 
         const simple::ast::Program* getProgram() const;
 
@@ -163,7 +169,8 @@ namespace pkb
 
         std::unordered_map<simple::ast::StatementNum, simple::ast::StatementNum> m_direct_parents {};
         std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> m_ancestors {};
-        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> m_direct_children {};
+        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>>
+            m_direct_children {};
         std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> m_descendants {};
 
         bool m_follows_exists = false;

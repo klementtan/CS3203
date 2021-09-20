@@ -96,6 +96,11 @@ static const Procedure& get_proc(const std::unique_ptr<pkb::ProgramKB>& pkb, con
     return pkb->getProcedureNamed(name);
 }
 
+static const Variable& get_var(const std::unique_ptr<pkb::ProgramKB>& pkb, const char* name)
+{
+    return pkb->getVariableNamed(name);
+}
+
 TEST_CASE("Uses(DeclaredStmt, DeclaredVar)")
 {
     SECTION("Uses(DeclaredStmt, DeclaredVar) for assignment, condition and print")
@@ -304,103 +309,103 @@ TEST_CASE("Uses(Synonym, DeclaredVar)")
 {
     SECTION("Uses(ASSIGN, DeclaredVar)")
     {
-        auto fst_result = kb_trivial->getUses(pql::ast::DESIGN_ENT::ASSIGN, "count");
+        auto fst_result = get_var(kb_trivial, "count").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::ASSIGN);
         CHECK(fst_result.size() == 3);
-        CHECK(fst_result.count("15"));
-        CHECK(fst_result.count("21"));
-        CHECK(fst_result.count("22"));
+        CHECK(fst_result.count(15));
+        CHECK(fst_result.count(21));
+        CHECK(fst_result.count(22));
 
-        auto snd_result = kb_trivial->getUses(pql::ast::DESIGN_ENT::ASSIGN, "cenX");
+        auto snd_result = get_var(kb_trivial, "cenX").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::ASSIGN);
         CHECK(snd_result.size() == 3);
-        CHECK(snd_result.count("16"));
-        CHECK(snd_result.count("21"));
-        CHECK(snd_result.count("23"));
+        CHECK(snd_result.count(16));
+        CHECK(snd_result.count(21));
+        CHECK(snd_result.count(23));
     }
 
     SECTION("Uses(PRINT, DeclaredVar)")
     {
-        auto fst_result = kb_trivial->getUses(pql::ast::DESIGN_ENT::PRINT, "flag");
+        auto fst_result = get_var(kb_trivial, "flag").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::PRINT);
         CHECK(fst_result.size() == 1);
-        CHECK(fst_result.count("6"));
+        CHECK(fst_result.count(6));
 
-        auto snd_result = kb_trivial->getUses(pql::ast::DESIGN_ENT::PRINT, "cenX");
+        auto snd_result = get_var(kb_trivial, "cenX").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::PRINT);
         CHECK(snd_result.size() == 1);
-        CHECK(snd_result.count("7"));
+        CHECK(snd_result.count(7));
     }
 
     SECTION("Uses(CALL, DeclaredVar)")
     {
-        auto fst_result = kb_trivial->getUses(pql::ast::DESIGN_ENT::CALL, "flag");
+        auto fst_result = get_var(kb_trivial, "flag").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::CALL);
         CHECK(fst_result.size() == 1);
-        CHECK(fst_result.count("3"));
+        CHECK(fst_result.count(3));
 
-        auto snd_result = kb_trivial->getUses(pql::ast::DESIGN_ENT::CALL, "cenX");
+        auto snd_result = get_var(kb_trivial, "cenX").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::CALL);
         CHECK(snd_result.size() == 2);
-        CHECK(snd_result.count("2"));
-        CHECK(snd_result.count("3"));
+        CHECK(snd_result.count(2));
+        CHECK(snd_result.count(3));
     }
 
     SECTION("Uses(IF, DeclaredVar)")
     {
-        auto fst_result = kb_sample->getUses(pql::ast::DESIGN_ENT::IF, "x");
+        auto fst_result = get_var(kb_sample, "x").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::IF);
         CHECK(fst_result.size() == 3);
-        CHECK(fst_result.count("6"));
-        CHECK(fst_result.count("13"));
-        CHECK(fst_result.count("22"));
+        CHECK(fst_result.count(6));
+        CHECK(fst_result.count(13));
+        CHECK(fst_result.count(22));
 
-        auto snd_result = kb_sample->getUses(pql::ast::DESIGN_ENT::IF, "i");
+        auto snd_result = get_var(kb_sample, "i").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::IF);
         CHECK(snd_result.size() == 1);
-        CHECK(snd_result.count("13"));
+        CHECK(snd_result.count(13));
     }
 
     SECTION("Uses(WHILE, DeclaredVar)")
     {
-        auto fst_result = kb_sample->getUses(pql::ast::DESIGN_ENT::WHILE, "y");
+        auto fst_result = get_var(kb_sample, "y").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::WHILE);
         CHECK(fst_result.size() == 1);
-        CHECK(fst_result.count("14"));
+        CHECK(fst_result.count(14));
 
-        auto snd_result = kb_sample->getUses(pql::ast::DESIGN_ENT::WHILE, "i");
+        auto snd_result = get_var(kb_sample, "i").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::WHILE);
         CHECK(snd_result.size() == 2);
-        CHECK(snd_result.count("4"));
-        CHECK(snd_result.count("14"));
+        CHECK(snd_result.count(4));
+        CHECK(snd_result.count(14));
     }
 
     SECTION("Uses(STMT, DeclaredVar)")
     {
-        auto fst_result = kb_sample->getUses(pql::ast::DESIGN_ENT::STMT, "x");
+        auto fst_result = get_var(kb_sample, "x").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::STMT);
         CHECK(fst_result.size() == 16);
-        CHECK(fst_result.count("4"));
-        CHECK(fst_result.count("5"));
-        CHECK(fst_result.count("6"));
-        CHECK(fst_result.count("7"));
-        CHECK(fst_result.count("9"));
-        CHECK(fst_result.count("10"));
-        CHECK(fst_result.count("12"));
-        CHECK(fst_result.count("13"));
-        CHECK(fst_result.count("14"));
-        CHECK(fst_result.count("16"));
-        CHECK(fst_result.count("18"));
-        CHECK(fst_result.count("19"));
-        CHECK(fst_result.count("21"));
-        CHECK(fst_result.count("22"));
-        CHECK(fst_result.count("23"));
-        CHECK(fst_result.count("24"));
+        CHECK(fst_result.count(4));
+        CHECK(fst_result.count(5));
+        CHECK(fst_result.count(6));
+        CHECK(fst_result.count(7));
+        CHECK(fst_result.count(9));
+        CHECK(fst_result.count(10));
+        CHECK(fst_result.count(12));
+        CHECK(fst_result.count(13));
+        CHECK(fst_result.count(14));
+        CHECK(fst_result.count(16));
+        CHECK(fst_result.count(18));
+        CHECK(fst_result.count(19));
+        CHECK(fst_result.count(21));
+        CHECK(fst_result.count(22));
+        CHECK(fst_result.count(23));
+        CHECK(fst_result.count(24));
 
-        auto snd_result = kb_trivial->getUses(pql::ast::DESIGN_ENT::STMT, "x");
+        auto snd_result = get_var(kb_trivial, "x").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::STMT);
         CHECK(snd_result.size() == 3);
-        CHECK(snd_result.count("2"));
-        CHECK(snd_result.count("14"));
-        CHECK(snd_result.count("16"));
+        CHECK(snd_result.count(2));
+        CHECK(snd_result.count(14));
+        CHECK(snd_result.count(16));
     }
 
     SECTION("Uses(PROCEDURE, DeclaredVar)")
     {
-        auto fst_result = kb_sample->getUses(pql::ast::DESIGN_ENT::PROCEDURE, "y");
+        auto fst_result = get_var(kb_sample, "y").getUsingProcNames();
         CHECK(fst_result.size() == 2);
         CHECK(fst_result.count("Example"));
         CHECK(fst_result.count("p"));
 
-        auto snd_result = kb_trivial->getUses(pql::ast::DESIGN_ENT::PROCEDURE, "flag");
+        auto snd_result = get_var(kb_trivial, "flag").getUsingProcNames();
         CHECK(snd_result.size() == 2);
         CHECK(snd_result.count("printResults"));
         CHECK(snd_result.count("main"));

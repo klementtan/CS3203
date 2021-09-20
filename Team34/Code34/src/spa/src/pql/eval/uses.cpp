@@ -78,7 +78,7 @@ namespace pql::eval
 
             util::log("pql::eval", "Processing UsesP(DeclaredEnt, EntName)");
 
-            auto procs_using = m_pkb->getUses(ast::DESIGN_ENT::PROCEDURE, var_name);
+            const auto& procs_using = m_pkb->getVariableNamed(var_name).getUsingProcNames();
             if(procs_using.empty())
                 throw PqlException(
                     "pql::eval", "{} is always false; {} no procedure uses '{}'", rel->toString(), var_name);
@@ -206,12 +206,21 @@ namespace pql::eval
         {
             auto user_decl = user_stmt.declaration();
             auto var_name = var_ent.name();
+            auto& var = m_pkb->getVariableNamed(var_name);
 
             util::log("pql::eval", "Processing UsesS(DeclaredStmt, EntName)");
             std::unordered_set<table::Entry> new_domain {};
 
-            for(const auto& stmt : m_pkb->getUses(user_decl->design_ent, var_name))
-                new_domain.emplace(user_decl, static_cast<simple::ast::StatementNum>(std::stoi(stmt)));
+            if(user_decl->design_ent == ast::DESIGN_ENT::PROCEDURE)
+            {
+                for(const auto& proc_name : var.getUsingProcNames())
+                    new_domain.emplace(user_decl, proc_name);
+            }
+            else
+            {
+                for(auto sid : var.getUsingStmtNumsFiltered(user_decl->design_ent))
+                    new_domain.emplace(user_decl, sid);
+            }
 
             m_table.upsertDomains(user_decl, table::entry_set_intersect(new_domain, m_table.getDomain(user_decl)));
         }
