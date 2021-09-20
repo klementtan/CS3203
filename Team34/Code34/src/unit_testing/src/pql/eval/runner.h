@@ -5,6 +5,7 @@
 #include <type_traits>
 
 #include "exceptions.h"
+#include "design_extractor.h"
 #include "pql/eval/evaluator.h"
 #include "pql/parser/parser.h"
 #include "simple/parser.h"
@@ -36,7 +37,7 @@ struct Runner
         auto pkb = std::unique_ptr<pkb::ProgramKB, deleterino>(m_pkb, deleterino { false });
         if(!pkb)
         {
-            auto tmp = pkb::processProgram(simple::parser::parseProgram(m_source));
+            auto tmp = pkb::DesignExtractor(simple::parser::parseProgram(m_source)).run();
             pkb = std::unique_ptr<pkb::ProgramKB, deleterino>(tmp.release(), deleterino { true });
         }
 

@@ -145,6 +145,6 @@ namespace simple::ast
         std::vector<std::unique_ptr<Procedure>> procedures;
     };
 
-    bool exactMatch(Expr* subtree, Expr* tree);
-    bool partialMatch(Expr* subtree, Expr* tree);
+    bool exactMatch(const Expr* subtree, const Expr* tree);
+    bool partialMatch(const Expr* subtree, const Expr* tree);
 }

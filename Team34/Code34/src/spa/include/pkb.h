@@ -191,6 +191,4 @@ namespace pkb
 
         friend struct DesignExtractor;
     };
-
-    std::unique_ptr<ProgramKB> processProgram(std::unique_ptr<simple::ast::Program> prog);
 }

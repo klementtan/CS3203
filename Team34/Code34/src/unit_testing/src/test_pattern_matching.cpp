@@ -3,6 +3,7 @@
 
 #include "simple/ast.h"
 #include "simple/parser.h"
+#include "design_extractor.h"
 #include "pkb.h"
 #include "util.h"
 
@@ -37,25 +38,25 @@ constexpr const auto sample_source = R"(
     }
 )";
 
-Expr* get_rhs(Stmt* stmt)
+const Expr* get_rhs(const Stmt* stmt)
 {
-    return ((AssignStmt*) stmt)->rhs.get();
+    return ((const AssignStmt*) stmt)->rhs.get();
 }
 
 TEST_CASE("pattern matching on trees")
 {
-    auto kb = processProgram(parseProgram(sample_source));
-    std::vector<Stmt*> stmts {};
+    auto kb = DesignExtractor(parseProgram(sample_source)).run();
+    std::vector<const Stmt*> stmts {};
     {
-        for(const auto& s : kb->uses_modifies.statements)
-            stmts.push_back(s->stmt);
+        for(const auto& s : kb->getAllStatements())
+            stmts.push_back(s.getAstStmt());
     }
 
-    std::vector<Expr*> trees;
+    std::vector<const Expr*> trees;
     for(int i = 3; i < 6; i++)
         trees.push_back(get_rhs(stmts[i]));
 
-    std::vector<Expr*> subtrees;
+    std::vector<const Expr*> subtrees;
     for(int i = 6; i < 15; i++)
         subtrees.push_back(get_rhs(stmts[i]));
 

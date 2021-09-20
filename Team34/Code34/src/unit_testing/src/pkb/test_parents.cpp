@@ -1,6 +1,7 @@
 #define CATCH_CONFIG_FAST_COMPILE 1
 #include "catch.hpp"
 
+#include "design_extractor.h"
 #include "simple/parser.h"
 #include "pkb.h"
 #include "util.h"
@@ -48,7 +49,7 @@ constexpr const auto sample_source = R"(
         x = z + x; } }
 )";
 
-auto kb = processProgram(parseProgram(sample_source));
+auto kb = DesignExtractor(parseProgram(sample_source)).run();
 
 TEST_CASE("Parent(a, b)")
 {

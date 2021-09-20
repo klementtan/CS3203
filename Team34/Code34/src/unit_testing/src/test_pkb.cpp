@@ -3,6 +3,7 @@
 
 #include <zpr.h>
 #include "simple/parser.h"
+#include "design_extractor.h"
 #include "pkb.h"
 #include "util.h"
 using namespace simple::parser;
@@ -25,7 +26,7 @@ TEST_CASE("Populate PKB")
         )";
 
         auto prog = parseProgram(in);
-        REQUIRE_THROWS_WITH(processProgram(std::move(prog)), "Cyclic or recursive calls are not allowed");
+        REQUIRE_THROWS_WITH(DesignExtractor(std::move(prog)).run(), "Cyclic or recursive calls are not allowed");
     }
 
     SECTION("Recursive call")
@@ -37,7 +38,7 @@ TEST_CASE("Populate PKB")
         )";
 
         auto prog = parseProgram(in);
-        REQUIRE_THROWS_WITH(processProgram(std::move(prog)), "Cyclic or recursive calls are not allowed");
+        REQUIRE_THROWS_WITH(DesignExtractor(std::move(prog)).run(), "Cyclic or recursive calls are not allowed");
     }
 
     SECTION("Recursive calls in disjoint graphs")
@@ -70,7 +71,7 @@ TEST_CASE("Populate PKB")
         )";
 
         auto prog = parseProgram(in);
-        REQUIRE_THROWS_WITH(processProgram(std::move(prog)), "Cyclic or recursive calls are not allowed");
+        REQUIRE_THROWS_WITH(DesignExtractor(std::move(prog)).run(), "Cyclic or recursive calls are not allowed");
     }
 
     SECTION("Call to non-existent procedure")
@@ -84,6 +85,6 @@ TEST_CASE("Populate PKB")
             }
         )";
         auto prog = parseProgram(in);
-        REQUIRE_THROWS_WITH(processProgram(std::move(prog)), "Procedure 'C' is undefined");
+        REQUIRE_THROWS_WITH(DesignExtractor(std::move(prog)).run(), "Procedure 'C' is undefined");
     }
 }

@@ -1,17 +1,13 @@
 #define CATCH_CONFIG_FAST_COMPILE 1
 #include "catch.hpp"
 
+#include "design_extractor.h"
 #include "simple/parser.h"
 #include "pkb.h"
 #include "util.h"
 
 using namespace simple::parser;
 using namespace pkb;
-
-static void req(bool b)
-{
-    REQUIRE(b);
-}
 
 constexpr const auto sample_source = R"(
     procedure Example {
@@ -48,44 +44,48 @@ constexpr const auto sample_source = R"(
         x = z + x; } }
 )";
 
-auto kb_parents = processProgram(parseProgram(sample_source));
+static auto kb = DesignExtractor(parseProgram(sample_source)).run();
+static const Statement& get_stmt(const std::unique_ptr<pkb::ProgramKB>& pkb, simple::ast::StatementNum num)
+{
+    return *pkb->getStatementAtIndex(num);
+}
 
 TEST_CASE("Follows(a, b)")
 {
     SECTION("Follows(a,b) in top level statement list")
     {
-        req(kb_parents->isFollows(1, 2));
-        req(kb_parents->isFollows(4, 12));
-        req(kb_parents->isFollows(13, 21));
-        req(kb_parents->isFollows(18, 19));
+        CHECK(get_stmt(kb, 1).followedBy(2));
+        CHECK(get_stmt(kb, 4).followedBy(12));
+        CHECK(get_stmt(kb, 13).followedBy(21));
+        CHECK(get_stmt(kb, 18).followedBy(19));
     }
 
     SECTION("Follows(a,b) in if/while for 1 and 2 levels of nesting")
     {
-        req(kb_parents->isFollows(5, 6));
-        req(kb_parents->isFollows(6, 9));
-        req(kb_parents->isFollows(9, 10));
-        req(kb_parents->isFollows(10, 11));
-        req(kb_parents->isFollows(15, 16));
-        req(kb_parents->isFollows(14, 18));
+        CHECK(get_stmt(kb, 5).followedBy(6));
+        CHECK(get_stmt(kb, 6).followedBy(9));
+        CHECK(get_stmt(kb, 9).followedBy(10));
+        CHECK(get_stmt(kb, 10).followedBy(11));
+        CHECK(get_stmt(kb, 15).followedBy(16));
+        CHECK(get_stmt(kb, 14).followedBy(18));
     }
 
     SECTION("Follows(a,b) negative test cases for diff stmtList, diff procs")
     {
-        req(!kb_parents->isFollows(4, 5));
-        req(!kb_parents->isFollows(6, 7));
-        req(!kb_parents->isFollows(7, 8));
-        req(!kb_parents->isFollows(8, 9));
-        req(!kb_parents->isFollows(11, 12));
-        req(!kb_parents->isFollows(10, 22));
-        req(!kb_parents->isFollows(23, 24));
+        CHECK_FALSE(get_stmt(kb, 4).followedBy(5));
+        CHECK_FALSE(get_stmt(kb, 6).followedBy(7));
+        CHECK_FALSE(get_stmt(kb, 7).followedBy(8));
+        CHECK_FALSE(get_stmt(kb, 8).followedBy(9));
+        CHECK_FALSE(get_stmt(kb, 11).followedBy(12));
+        CHECK_FALSE(get_stmt(kb, 10).followedBy(22));
+        CHECK_FALSE(get_stmt(kb, 23).followedBy(24));
     }
 
     SECTION("Follows(a,b) fail from indices out of range")
     {
-        CHECK_THROWS_WITH(kb_parents->isFollows(0, 20), Catch::Matchers::Contains("StatementNum out of range."));
-        CHECK_THROWS_WITH(kb_parents->isFollows(-1, 0), Catch::Matchers::Contains("StatementNum out of range."));
-        CHECK_THROWS_WITH(kb_parents->isFollows(24, 25), Catch::Matchers::Contains("StatementNum out of range."));
+        CHECK_THROWS_WITH(get_stmt(kb, 0).followedBy(20), Catch::Matchers::Contains("StatementNum is out of range"));
+        CHECK_THROWS_WITH(get_stmt(kb, -1).followedBy(0), Catch::Matchers::Contains("StatementNum is out of range"));
+        CHECK_THROWS_WITH(get_stmt(kb, 25).followedBy(26), Catch::Matchers::Contains("StatementNum is out of range"));
     }
 }
 
@@ -93,47 +93,47 @@ TEST_CASE("Follows*(a, b)")
 {
     SECTION("Follows*(a,b) in top level statement list such that Follows(a, b) holds")
     {
-        req(kb_parents->isFollowsT(1, 2));
-        req(kb_parents->isFollowsT(4, 12));
-        req(kb_parents->isFollowsT(13, 21));
-        req(kb_parents->isFollowsT(18, 19));
+        CHECK(get_stmt(kb, 1).followedTransitivelyBy(2));
+        CHECK(get_stmt(kb, 4).followedTransitivelyBy(12));
+        CHECK(get_stmt(kb, 13).followedTransitivelyBy(21));
+        CHECK(get_stmt(kb, 18).followedTransitivelyBy(19));
     }
 
     SECTION("Follows*(a,b) in top level statement list")
     {
-        req(kb_parents->isFollowsT(1, 3));
-        req(kb_parents->isFollowsT(1, 4));
-        req(kb_parents->isFollowsT(1, 12));
-        req(kb_parents->isFollowsT(2, 12));
+        CHECK(get_stmt(kb, 1).followedTransitivelyBy(3));
+        CHECK(get_stmt(kb, 1).followedTransitivelyBy(4));
+        CHECK(get_stmt(kb, 1).followedTransitivelyBy(12));
+        CHECK(get_stmt(kb, 2).followedTransitivelyBy(12));
     }
 
     SECTION("Follows*(a,b) in if/while for 1 and 2 levels of nesting")
     {
-        req(kb_parents->isFollowsT(5, 6));
-        req(kb_parents->isFollowsT(5, 9));
-        req(kb_parents->isFollowsT(5, 10));
-        req(kb_parents->isFollowsT(5, 11));
-        req(kb_parents->isFollowsT(6, 11));
-        req(kb_parents->isFollowsT(14, 18));
-        req(kb_parents->isFollowsT(14, 19));
-        req(kb_parents->isFollowsT(15, 17));
+        CHECK(get_stmt(kb, 5).followedTransitivelyBy(6));
+        CHECK(get_stmt(kb, 5).followedTransitivelyBy(9));
+        CHECK(get_stmt(kb, 5).followedTransitivelyBy(10));
+        CHECK(get_stmt(kb, 5).followedTransitivelyBy(11));
+        CHECK(get_stmt(kb, 6).followedTransitivelyBy(11));
+        CHECK(get_stmt(kb, 14).followedTransitivelyBy(18));
+        CHECK(get_stmt(kb, 14).followedTransitivelyBy(19));
+        CHECK(get_stmt(kb, 15).followedTransitivelyBy(17));
     }
 
     SECTION("Follows*(a,b) negative test cases for diff stmtList, diff procs")
     {
-        req(!kb_parents->isFollowsT(4, 6));
-        req(!kb_parents->isFollowsT(6, 8));
-        req(!kb_parents->isFollowsT(7, 8));
-        req(!kb_parents->isFollowsT(8, 11));
-        req(!kb_parents->isFollowsT(12, 13));
-        req(!kb_parents->isFollowsT(10, 24));
-        req(!kb_parents->isFollowsT(22, 24));
+        CHECK_FALSE(get_stmt(kb, 4).followedTransitivelyBy(6));
+        CHECK_FALSE(get_stmt(kb, 6).followedTransitivelyBy(8));
+        CHECK_FALSE(get_stmt(kb, 7).followedTransitivelyBy(8));
+        CHECK_FALSE(get_stmt(kb, 8).followedTransitivelyBy(11));
+        CHECK_FALSE(get_stmt(kb, 12).followedTransitivelyBy(13));
+        CHECK_FALSE(get_stmt(kb, 10).followedTransitivelyBy(24));
+        CHECK_FALSE(get_stmt(kb, 22).followedTransitivelyBy(24));
     }
     SECTION("Follows*(a,b) fail from indices out of range")
     {
-        CHECK_THROWS_WITH(kb_parents->isFollowsT(0, 20), Catch::Matchers::Contains("StatementNum out of range."));
-        CHECK_THROWS_WITH(kb_parents->isFollowsT(-1, 0), Catch::Matchers::Contains("StatementNum out of range."));
-        CHECK_THROWS_WITH(kb_parents->isFollowsT(24, 25), Catch::Matchers::Contains("StatementNum out of range."));
+        CHECK_THROWS_WITH(get_stmt(kb, 0).followedTransitivelyBy(20), Catch::Matchers::Contains("StatementNum is out of range"));
+        CHECK_THROWS_WITH(get_stmt(kb, -1).followedTransitivelyBy(0), Catch::Matchers::Contains("StatementNum is out of range"));
+        CHECK_THROWS_WITH(get_stmt(kb, 25).followedTransitivelyBy(26), Catch::Matchers::Contains("StatementNum is out of range"));
     }
 }
 
@@ -142,63 +142,56 @@ TEST_CASE("getFollows")
 {
     SECTION("Follows(a,b) and Follows*(a,b) in top level statement list")
     {
-        auto fst_result = kb_parents->getFollows(1);
-        req(fst_result->directly_before == 0);
-        req(fst_result->directly_after == 2);
-        req(fst_result->before.size() == 0);
-        req(fst_result->after.size() == 4);
-        req(fst_result->after.count(2));
-        req(fst_result->after.count(3));
-        req(fst_result->after.count(4));
-        req(fst_result->after.count(12));
+        auto& fst_result = get_stmt(kb, 1);
+        CHECK(fst_result.getDirectFollowee() == 0);
+        CHECK(fst_result.getDirectFollower() == 2);
+        CHECK(fst_result.getTransitiveFollowees().size() == 0);
+        CHECK(fst_result.getTransitiveFollowers().size() == 4);
+        CHECK(fst_result.getTransitiveFollowers().count(2) > 0);
+        CHECK(fst_result.getTransitiveFollowers().count(3) > 0);
+        CHECK(fst_result.getTransitiveFollowers().count(4) > 0);
+        CHECK(fst_result.getTransitiveFollowers().count(12) > 0);
 
-        auto snd_result = kb_parents->getFollows(3);
-        req(snd_result->directly_before == 2);
-        req(snd_result->directly_after == 4);
-        req(snd_result->before.size() == 2);
-        req(snd_result->after.size() == 2);
-        req(snd_result->before.count(1));
-        req(snd_result->before.count(2));
-        req(snd_result->after.count(4));
-        req(snd_result->after.count(12));
+        auto& snd_result = get_stmt(kb, 3);
+        CHECK(snd_result.getDirectFollowee() == 2);
+        CHECK(snd_result.getDirectFollower() == 4);
+        CHECK(snd_result.getTransitiveFollowees().size() == 2);
+        CHECK(snd_result.getTransitiveFollowers().size() == 2);
+        CHECK(snd_result.getTransitiveFollowees().count(1) > 0);
+        CHECK(snd_result.getTransitiveFollowees().count(2) > 0);
+        CHECK(snd_result.getTransitiveFollowers().count(4) > 0);
+        CHECK(snd_result.getTransitiveFollowers().count(12) > 0);
     }
 
     SECTION("Follows(a,b) and Follows*(a,b) in if/while for 1 and 2 levels of nesting")
     {
-        auto fst_result = kb_parents->getFollows(5);
-        req(fst_result->directly_before == 0);
-        req(fst_result->directly_after == 6);
-        req(fst_result->before.size() == 0);
-        req(fst_result->after.size() == 4);
-        req(fst_result->after.count(6));
-        req(fst_result->after.count(9));
-        req(fst_result->after.count(10));
-        req(fst_result->after.count(11));
+        auto& fst_result = get_stmt(kb, 5);
+        CHECK(fst_result.getDirectFollowee() == 0);
+        CHECK(fst_result.getDirectFollower() == 6);
+        CHECK(fst_result.getTransitiveFollowees().size() == 0);
+        CHECK(fst_result.getTransitiveFollowers().size() == 4);
+        CHECK(fst_result.getTransitiveFollowers().count(6) > 0);
+        CHECK(fst_result.getTransitiveFollowers().count(9) > 0);
+        CHECK(fst_result.getTransitiveFollowers().count(10) > 0);
+        CHECK(fst_result.getTransitiveFollowers().count(11) > 0);
 
-        auto snd_result = kb_parents->getFollows(17);
-        req(snd_result->directly_before == 16);
-        req(snd_result->directly_after == 0);
-        req(snd_result->before.size() == 2);
-        req(snd_result->after.size() == 0);
-        req(snd_result->before.count(15));
-        req(snd_result->before.count(16));
+        auto& snd_result = get_stmt(kb, 17);
+        CHECK(snd_result.getDirectFollowee() == 16);
+        CHECK(snd_result.getDirectFollower() == 0);
+        CHECK(snd_result.getTransitiveFollowees().size() == 2);
+        CHECK(snd_result.getTransitiveFollowers().size() == 0);
+        CHECK(snd_result.getTransitiveFollowees().count(15) > 0);
+        CHECK(snd_result.getTransitiveFollowees().count(16) > 0);
     }
 
     SECTION("Follows(a,b) and Follows*(a,b) negative test cases for diff stmtList, diff procs")
     {
-        auto fst_result = kb_parents->getFollows(23);
-        req(fst_result->directly_before != 22);
-        req(fst_result->directly_after != 24);
+        auto& fst_result = get_stmt(kb, 23);
+        CHECK(fst_result.getDirectFollowee() != 22);
+        CHECK(fst_result.getDirectFollower() != 24);
 
-        auto snd_result = kb_parents->getFollows(16);
-        req(snd_result->directly_before == 15);
-        req(snd_result->directly_after != 22);
-    }
-
-    SECTION("getFollows(stmt_no) fail from indices out of range")
-    {
-        CHECK_THROWS_WITH(kb_parents->getFollows(0), Catch::Matchers::Contains("StatementNum out of range."));
-        CHECK_THROWS_WITH(kb_parents->getFollows(-1), Catch::Matchers::Contains("StatementNum out of range."));
-        CHECK_THROWS_WITH(kb_parents->getFollows(25), Catch::Matchers::Contains("StatementNum out of range."));
+        auto& snd_result = get_stmt(kb, 16);
+        CHECK(snd_result.getDirectFollowee() == 15);
+        CHECK(snd_result.getDirectFollower() != 22);
     }
 }

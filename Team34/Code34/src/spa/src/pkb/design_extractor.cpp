@@ -85,9 +85,7 @@ namespace pkb
     }
 
 
-    void DesignExtractor::processUses(const std::string& varname, Statement* stmt,
-        const std::vector<const s_ast::Stmt*>& stmt_stack, const std::vector<pkb::Procedure*>& proc_stack,
-        const std::vector<Statement*>& call_stack)
+    void DesignExtractor::processUses(const std::string& varname, Statement* stmt, const TraversalState& ts)
     {
         stmt->m_uses.insert(varname);
 
@@ -95,19 +93,25 @@ namespace pkb
 
         // transitively add the modifies
         var.used_by.insert(stmt->getAstStmt());
-        for(auto s : stmt_stack)
+        for(auto s : ts.local_stmt_stack)
         {
             var.used_by.insert(s);
             m_pkb->getStatementAtIndex(s->id)->m_uses.insert(varname);
         }
 
-        for(auto proc : proc_stack)
+        for(auto s : ts.global_stmt_stack)
+        {
+            var.used_by.insert(s);
+            m_pkb->getStatementAtIndex(s->id)->m_uses.insert(varname);
+        }
+
+        for(auto proc : ts.proc_stack)
         {
             var.used_by_procs.insert(proc);
             m_pkb->m_procedures[proc->ast_proc->name].uses.insert(varname);
         }
 
-        for(auto call : call_stack)
+        for(auto call : ts.call_stack)
         {
             call->m_uses.insert(varname);
             var.used_by.insert(call->getAstStmt());
@@ -115,9 +119,7 @@ namespace pkb
     }
 
 
-    void DesignExtractor::processModifies(const std::string& varname, Statement* stmt,
-        const std::vector<const s_ast::Stmt*>& stmt_stack, const std::vector<pkb::Procedure*>& proc_stack,
-        const std::vector<Statement*>& call_stack)
+    void DesignExtractor::processModifies(const std::string& varname, Statement* stmt, const TraversalState& ts)
     {
         stmt->m_modifies.insert(varname);
 
@@ -125,19 +127,25 @@ namespace pkb
 
         // transitively add the modifies
         var.modified_by.insert(stmt->getAstStmt());
-        for(auto s : stmt_stack)
+        for(auto s : ts.local_stmt_stack)
         {
             var.modified_by.insert(s);
             m_pkb->getStatementAtIndex(s->id)->m_modifies.insert(varname);
         }
 
-        for(auto proc : proc_stack)
+        for(auto s : ts.global_stmt_stack)
+        {
+            var.modified_by.insert(s);
+            m_pkb->getStatementAtIndex(s->id)->m_modifies.insert(varname);
+        }
+
+        for(auto proc : ts.proc_stack)
         {
             var.modified_by_procs.insert(proc);
             m_pkb->m_procedures[proc->ast_proc->name].modifies.insert(varname);
         }
 
-        for(auto call : call_stack)
+        for(auto call : ts.call_stack)
         {
             call->m_modifies.insert(varname);
             var.modified_by.insert(call->getAstStmt());
@@ -145,9 +153,7 @@ namespace pkb
     }
 
 
-    void DesignExtractor::processStmtList(const s_ast::StmtList* list,
-        const std::vector<const s_ast::Stmt*>& stmt_stack, const std::vector<pkb::Procedure*>& proc_stack,
-        const std::vector<Statement*>& call_stack)
+    void DesignExtractor::processStmtList(const s_ast::StmtList* list, const TraversalState& ts)
     {
         // indices are easier to work with here.
         // do one pass forwards and one pass in reverse to effeciently set
@@ -199,12 +205,12 @@ namespace pkb
             auto stmt = m_pkb->getStatementAtIndex(ast_stmt->id);
             auto sid = ast_stmt->id;
 
-            for(size_t i = 0; i < stmt_stack.size(); i++)
+            for(size_t i = 0; i < ts.local_stmt_stack.size(); i++)
             {
-                auto list_sid = stmt_stack[i]->id;
+                auto list_sid = ts.local_stmt_stack[i]->id;
 
                 // only set the direct parent/child for the top of the stack
-                if(i == stmt_stack.size() - 1)
+                if(i == ts.local_stmt_stack.size() - 1)
                 {
                     m_pkb->m_direct_parents[sid] = list_sid;
                     m_pkb->m_direct_children[list_sid].insert(sid);
@@ -219,33 +225,35 @@ namespace pkb
 
             if(auto if_stmt = CONST_DCAST(IfStmt, ast_stmt); if_stmt)
             {
-                auto new_stack = stmt_stack;
-                new_stack.push_back(if_stmt);
+                auto new_ts = ts;
+                new_ts.local_stmt_stack.push_back(if_stmt);
+                new_ts.global_stmt_stack.push_back(if_stmt);
 
-                this->processExpr(if_stmt->condition.get(), stmt, new_stack, proc_stack, call_stack);
-                this->processStmtList(&if_stmt->true_case, new_stack, proc_stack, call_stack);
-                this->processStmtList(&if_stmt->false_case, new_stack, proc_stack, call_stack);
+                this->processExpr(if_stmt->condition.get(), stmt, new_ts);
+                this->processStmtList(&if_stmt->true_case, new_ts);
+                this->processStmtList(&if_stmt->false_case, new_ts);
             }
             else if(auto while_loop = CONST_DCAST(WhileLoop, ast_stmt); while_loop)
             {
-                auto new_stack = stmt_stack;
-                new_stack.push_back(while_loop);
+                auto new_ts = ts;
+                new_ts.local_stmt_stack.push_back(while_loop);
+                new_ts.global_stmt_stack.push_back(while_loop);
 
-                this->processExpr(while_loop->condition.get(), stmt, new_stack, proc_stack, call_stack);
-                this->processStmtList(&while_loop->body, new_stack, proc_stack, call_stack);
+                this->processExpr(while_loop->condition.get(), stmt, new_ts);
+                this->processStmtList(&while_loop->body, new_ts);
             }
             else if(auto assign_stmt = CONST_DCAST(AssignStmt, ast_stmt); assign_stmt)
             {
-                this->processModifies(assign_stmt->lhs, stmt, stmt_stack, proc_stack, call_stack);
-                this->processExpr(assign_stmt->rhs.get(), stmt, stmt_stack, proc_stack, call_stack);
+                this->processModifies(assign_stmt->lhs, stmt, ts);
+                this->processExpr(assign_stmt->rhs.get(), stmt, ts);
             }
             else if(auto read_stmt = CONST_DCAST(ReadStmt, ast_stmt); read_stmt)
             {
-                this->processModifies(read_stmt->var_name, stmt, stmt_stack, proc_stack, call_stack);
+                this->processModifies(read_stmt->var_name, stmt, ts);
             }
             else if(auto print_stmt = CONST_DCAST(PrintStmt, ast_stmt); print_stmt)
             {
-                this->processUses(print_stmt->var_name, stmt, stmt_stack, proc_stack, call_stack);
+                this->processUses(print_stmt->var_name, stmt, ts);
             }
             else if(auto call_stmt = CONST_DCAST(ProcCall, ast_stmt); call_stmt)
             {
@@ -257,34 +265,31 @@ namespace pkb
                 auto* body = &callee.ast_proc->body;
 
                 // (b) cyclic calls
-                if(std::find(proc_stack.begin(), proc_stack.end(), &callee) != proc_stack.end())
+                if(std::find(ts.proc_stack.begin(), ts.proc_stack.end(), &callee) != ts.proc_stack.end())
                     throw util::PkbException("pkb", "illegal recursive call to procedure '{}'", call_stmt->proc_name);
 
 
-                for(size_t i = 0; i < proc_stack.size(); i++)
+                for(size_t i = 0; i < ts.proc_stack.size(); i++)
                 {
                     // only set the direct calls/called_by for the top of the stack
-                    if(i == proc_stack.size() - 1)
+                    if(i == ts.proc_stack.size() - 1)
                     {
-                        proc_stack[i]->calls.insert(callee.ast_proc->name);
-                        callee.called_by.insert(proc_stack[i]->ast_proc->name);
+                        ts.proc_stack[i]->calls.insert(callee.ast_proc->name);
+                        callee.called_by.insert(ts.proc_stack[i]->ast_proc->name);
                     }
 
-                    proc_stack[i]->calls_transitive.insert(callee.ast_proc->name);
-                    callee.called_by_transitive.insert(proc_stack[i]->ast_proc->name);
+                    ts.proc_stack[i]->calls_transitive.insert(callee.ast_proc->name);
+                    callee.called_by_transitive.insert(ts.proc_stack[i]->ast_proc->name);
                 }
 
-                auto new_stack = proc_stack;
-                new_stack.push_back(&callee);
+                auto new_ts = ts;
+                new_ts.local_stmt_stack.clear();
+                new_ts.proc_stack.push_back(&callee);
+                new_ts.call_stack.push_back(stmt);
 
                 m_visited_procs.insert(call_stmt->proc_name);
 
-                // start with an empty stack -- we cross procedure boundaries here,
-                // so parent/parent* no longer appies.
-                auto new_call_stack = call_stack;
-                new_call_stack.push_back(stmt);
-
-                this->processStmtList(body, {}, new_stack, new_call_stack);
+                this->processStmtList(body, new_ts);
             }
             else
             {
@@ -293,13 +298,11 @@ namespace pkb
         }
     }
 
-    void DesignExtractor::processExpr(const s_ast::Expr* expr, Statement* stmt,
-        const std::vector<const s_ast::Stmt*>& stmt_stack, const std::vector<pkb::Procedure*>& proc_stack,
-        const std::vector<Statement*>& call_stack)
+    void DesignExtractor::processExpr(const s_ast::Expr* expr, Statement* stmt, const TraversalState& ts)
     {
         if(auto vr = CONST_DCAST(VarRef, expr); vr)
         {
-            this->processUses(vr->name, stmt, stmt_stack, proc_stack, call_stack);
+            this->processUses(vr->name, stmt, ts);
         }
         else if(auto cnst = CONST_DCAST(Constant, expr); cnst)
         {
@@ -307,12 +310,12 @@ namespace pkb
         }
         else if(auto binop = CONST_DCAST(BinaryOp, expr); binop)
         {
-            this->processExpr(binop->lhs.get(), stmt, stmt_stack, proc_stack, call_stack);
-            this->processExpr(binop->rhs.get(), stmt, stmt_stack, proc_stack, call_stack);
+            this->processExpr(binop->lhs.get(), stmt, ts);
+            this->processExpr(binop->rhs.get(), stmt, ts);
         }
         else if(auto unaryop = CONST_DCAST(UnaryOp, expr); unaryop)
         {
-            this->processExpr(unaryop->expr.get(), stmt, stmt_stack, proc_stack, call_stack);
+            this->processExpr(unaryop->expr.get(), stmt, ts);
         }
         else
         {
@@ -348,7 +351,11 @@ namespace pkb
                 continue;
 
             auto body = &proc.ast_proc->body;
-            this->processStmtList(body, {}, { &proc }, {});
+
+            TraversalState ts {};
+            ts.proc_stack.push_back(&proc);
+
+            this->processStmtList(body, ts);
         }
 
         return std::move(this->m_pkb);

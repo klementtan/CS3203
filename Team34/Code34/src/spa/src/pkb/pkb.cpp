@@ -22,10 +22,9 @@ namespace pkb
 
     const Statement* ProgramKB::getStatementAtIndex(s_ast::StatementNum stmt_no) const
     {
-        if(stmt_no > m_statements.size())
-        {
-            throw util::PkbException("pkb", "Statement is out of range");
-        }
+        if(stmt_no > m_statements.size() || stmt_no == 0)
+            throw util::PkbException("pkb", "StatementNum is out of range");
+
         return &m_statements[stmt_no - 1];
     }
 
