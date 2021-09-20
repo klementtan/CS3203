@@ -138,44 +138,8 @@ namespace pkb
      * End of Parent methods
      */
 
-#if 0
-    /**
-     * Start of Uses and Modifies methods
-     */
-    bool ProgramKB::isUses(const simple::ast::StatementNum& stmt_num, const std::string& var) const
-    {
-        if(m_variables.find(var) == m_variables.end() || stmt_num > m_statements.size())
-        {
-            throw util::PkbException("pkb::eval", "Invalid query parameters.");
-        }
-        const auto& stmt = m_statements.at(stmt_num - 1);
-        if(auto c = dynamic_cast<const s_ast::ProcCall*>(stmt.getAstStmt()))
-        {
-            return m_procedures.at(c->proc_name).usesVariable(var) > 0;
-        }
-        else
-        {
-            return stmt.usesVariable(var);
-        }
-    }
 
-    bool ProgramKB::isUses(const std::string& proc, const std::string& var) const
-    {
-        if(m_variables.find(var) == m_variables.end() || m_procedures.find(proc) == m_procedures.end())
-            throw util::PkbException("pkb::eval", "Invalid query parameters.");
-
-        return this->getProcedureNamed(proc).usesVariable(var);
-    }
-
-    std::unordered_set<std::string> ProgramKB::getUsesVars(const std::string& proc) const
-    {
-        if(m_procedures.find(proc) == m_procedures.end())
-            throw util::PkbException("pkb::eval", "Procedure not found.");
-
-        return this->getProcedureNamed(proc).getUsedVariables();
-    }
-#endif
-    std::unordered_set<std::string> ProgramKB::getUses(const pql::ast::DESIGN_ENT& type, const std::string& var) const
+    std::unordered_set<std::string> ProgramKB::getUses(pql::ast::DESIGN_ENT type, const std::string& var) const
     {
         if(m_variables.find(var) == m_variables.end())
         {
@@ -234,44 +198,8 @@ namespace pkb
         }
         return uses;
     }
-#if 0
-    bool ProgramKB::isModifies(const simple::ast::StatementNum& stmt_num, const std::string& var) const
-    {
-        if(m_variables.find(var) == m_variables.end() || stmt_num > m_statements.size())
-        {
-            throw util::PkbException("pkb::eval", "Invalid query parameters.");
-        }
-        auto& stmt = m_statements.at(stmt_num - 1);
-        if(auto c = dynamic_cast<const s_ast::ProcCall*>(stmt.getAstStmt()))
-        {
-            return this->getProcedureNamed(c->proc_name).modifiesVariable(var);
-        }
-        else
-        {
-            return stmt.modifiesVariable(var);
-        }
-    }
 
-    bool ProgramKB::isModifies(const std::string& proc, const std::string& var) const
-    {
-        if(m_variables.find(var) == m_variables.end() || m_procedures.find(proc) == m_procedures.end())
-        {
-            throw util::PkbException("pkb::eval", "Invalid query parameters.");
-        }
-        return this->getProcedureNamed(proc).modifiesVariable(var);
-    }
-
-    std::unordered_set<std::string> ProgramKB::getModifiesVars(const std::string& proc) const
-    {
-        if(m_procedures.find(proc) == m_procedures.end())
-        {
-            throw util::PkbException("pkb::eval", "Procedure {} not found.", proc);
-        }
-        return this->getProcedureNamed(proc).getModifiedVariables();
-    }
-#endif
-
-    std::unordered_set<std::string> ProgramKB::getModifies(const pql::ast::DESIGN_ENT& type, const std::string& var) const
+    std::unordered_set<std::string> ProgramKB::getModifies(pql::ast::DESIGN_ENT type, const std::string& var) const
     {
         if(m_variables.find(var) == m_variables.end())
         {

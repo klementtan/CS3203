@@ -19,16 +19,6 @@ namespace simple::ast
     struct Stmt;
     struct StmtList
     {
-#if 0
-        // StmtList() { }
-        // ~StmtList();
-
-        // StmtList(const StmtList&) = delete;
-        // StmtList& operator=(const StmtList&) = delete;
-
-        // StmtList(StmtList&&);
-        // StmtList& operator=(StmtList&&);
-#endif
         std::vector<std::unique_ptr<Stmt>> statements {};
 
         const Stmt* parent_statement = nullptr;
