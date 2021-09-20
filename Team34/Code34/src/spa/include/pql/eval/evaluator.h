@@ -23,7 +23,7 @@ namespace pql::eval
         std::unique_ptr<ast::Query> m_query;
 
         // Stores initial domain for all types of declarations
-        std::unordered_map<ast::DESIGN_ENT, std::vector<simple::ast::Stmt*>> m_all_ent_stmt_map;
+        std::unordered_map<ast::DESIGN_ENT, std::vector<const simple::ast::Stmt*>> m_all_ent_stmt_map;
 
         void preprocessPkb(pkb::ProgramKB* pkb);
         void processDeclarations(const ast::DeclarationList& declaration_list);

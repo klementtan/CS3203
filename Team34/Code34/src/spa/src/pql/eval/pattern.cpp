@@ -41,7 +41,7 @@ namespace pql::ast
         for(auto it = domain.begin(); it != domain.end();)
         {
             bool should_erase = false;
-            auto assign_stmt = dynamic_cast<s_ast::AssignStmt*>(pkb->getStatementAtIndex(it->getStmtNum())->stmt);
+            auto assign_stmt = dynamic_cast<const s_ast::AssignStmt*>(pkb->getStatementAtIndex(it->getStmtNum())->getAstStmt());
             assert(assign_stmt);
 
             // check the rhs first, since it requires less table operations

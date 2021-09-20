@@ -13,6 +13,8 @@
 
 namespace pkb
 {
+    struct DesignExtractor;
+
     struct Procedure
     {
         simple::ast::Procedure* ast_proc = 0;
@@ -32,70 +34,52 @@ namespace pkb
     // the pre-processing is once off.
     struct Statement
     {
-        inline bool hasFollower() const
-        {
-            return this->directly_after != 0;
-        }
+        friend struct DesignExtractor;
 
-        inline bool isFollower() const
-        {
-            return this->directly_before != 0;
-        }
+        Statement(const simple::ast::Stmt* stmt);
 
-        inline bool follows(simple::ast::StatementNum id) const
-        {
-            return this->directly_before == id;
-        }
+        // cannot be copied
+        Statement(const Statement&) = delete;
+        Statement& operator=(const Statement&) = delete;
 
-        inline bool followsTransitively(simple::ast::StatementNum id) const
-        {
-            return this->before.count(id) > 0;
-        }
+        Statement(Statement&&) = default;
+        Statement& operator=(Statement&&) = default;
 
-        inline bool followedBy(simple::ast::StatementNum id) const
-        {
-            return this->directly_after == id;
-        }
+        bool hasFollower() const;
+        bool isFollower() const;
 
-        inline bool followedTransitivelyBy(simple::ast::StatementNum id) const
-        {
-            return this->after.count(id) > 0;
-        }
+        bool follows(simple::ast::StatementNum id) const;
+        bool followedBy(simple::ast::StatementNum id) const;
+        bool followsTransitively(simple::ast::StatementNum id) const;
+        bool followedTransitivelyBy(simple::ast::StatementNum id) const;
 
-        inline simple::ast::StatementNum getDirectFollower() const
-        {
-            return this->directly_after;
-        }
+        simple::ast::StatementNum getDirectFollower() const;
+        simple::ast::StatementNum getDirectFollowee() const;
+        const std::unordered_set<simple::ast::StatementNum>& getTransitiveFollowers() const;
+        const std::unordered_set<simple::ast::StatementNum>& getTransitiveFollowees() const;
 
-        inline simple::ast::StatementNum getDirectFollowee() const
-        {
-            return this->directly_before;
-        }
+        const simple::ast::Stmt* getAstStmt() const;
 
-        inline const std::unordered_set<simple::ast::StatementNum>& getTransitiveFollowers() const
-        {
-            return this->after;
-        }
+        bool usesVariable(const std::string& var_name) const;
+        bool modifiesVariable(const std::string& var_name) const;
 
-        inline const std::unordered_set<simple::ast::StatementNum>& getTransitiveFollowees() const
-        {
-            return this->before;
-        }
+        const std::unordered_set<std::string>& getUsedVariables() const;
+        const std::unordered_set<std::string>& getModifiedVariables() const;
 
-
-        simple::ast::Stmt* stmt = nullptr;
+    private:
+        const simple::ast::Stmt* m_stmt = nullptr;
 
         // stores uses and modifies information if the stmt is not a proc call
-        std::unordered_set<std::string> uses {};
-        std::unordered_set<std::string> modifies {};
+        std::unordered_set<std::string> m_uses {};
+        std::unordered_set<std::string> m_modifies {};
 
-        simple::ast::StatementNum directly_before = 0;
-        simple::ast::StatementNum directly_after = 0;
+        simple::ast::StatementNum m_directly_before = 0;
+        simple::ast::StatementNum m_directly_after = 0;
 
         // For a statement s, before stores all statements s1 for Follows*(s1, s) returns true,
         // after stores all statements s2 for Follows*(s, s1) returns true.
-        std::unordered_set<simple::ast::StatementNum> before {};
-        std::unordered_set<simple::ast::StatementNum> after {};
+        std::unordered_set<simple::ast::StatementNum> m_before {};
+        std::unordered_set<simple::ast::StatementNum> m_after {};
     };
 
     struct Variable
@@ -123,8 +107,6 @@ namespace pkb
         bool cycleExists();
         std::string missingProc(const std::vector<std::unique_ptr<simple::ast::Procedure>>& procs);
     };
-
-    struct DesignExtractor;
 
     struct ProgramKB
     {
@@ -159,7 +141,7 @@ namespace pkb
         // For queries of type Uses("main", "x")
         bool isUses(const std::string& proc, const std::string& var);
         // For queries of type Uses(3, _)
-        std::unordered_set<std::string> getUsesVars(const simple::ast::StatementNum& stmt_num);
+        // std::unordered_set<std::string> getUsesVars(const simple::ast::StatementNum& stmt_num);
         // For queries of type Uses("main", _)
         std::unordered_set<std::string> getUsesVars(const std::string& proc);
         // Returns the Statement numbers of queries of type Uses(a/r/s/p, "x")
@@ -170,7 +152,7 @@ namespace pkb
         // For queries of type Modifies("main", "x")
         bool isModifies(const std::string& proc, const std::string& var);
         // For queries of type Modifies(3, _)
-        std::unordered_set<std::string> getModifiesVars(const simple::ast::StatementNum& stmt_num);
+        // std::unordered_set<std::string> getModifiesVars(const simple::ast::StatementNum& stmt_num);
         // For queries of type Modifies("main", _)
         std::unordered_set<std::string> getModifiesVars(const std::string& var);
         // Returns the Statement numbers of queries of type Modifies(a/pn/s/p, "x")

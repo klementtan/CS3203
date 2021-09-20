@@ -21,15 +21,14 @@ namespace pkb
 
     void DesignExtractor::assignStatementNumbers(const s_ast::StmtList* list)
     {
-        std::function<void (s_ast::Stmt*, const s_ast::StmtList*)> processor {};
+        std::function<void(s_ast::Stmt*, const s_ast::StmtList*)> processor {};
         processor = [this, &processor](s_ast::Stmt* stmt, const s_ast::StmtList* parent) -> void {
-
-             // the statement should not have been seen yet.
+            // the statement should not have been seen yet.
             assert(stmt->id == 0);
 
             stmt->parent_list = parent;
             stmt->id = m_pkb->m_statements.size() + 1;
-            m_pkb->m_statements.emplace_back().stmt = stmt;
+            m_pkb->m_statements.emplace_back(stmt);
 
             if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt); i)
             {
@@ -87,18 +86,19 @@ namespace pkb
 
 
     void DesignExtractor::processUses(const std::string& varname, Statement* stmt,
-        const std::vector<const s_ast::Stmt*>& stmt_stack, const std::vector<pkb::Procedure*>& proc_stack, const std::vector<Statement*>& call_stack)
+        const std::vector<const s_ast::Stmt*>& stmt_stack, const std::vector<pkb::Procedure*>& proc_stack,
+        const std::vector<Statement*>& call_stack)
     {
-        stmt->uses.insert(varname);
+        stmt->m_uses.insert(varname);
 
         auto& var = m_pkb->m_variables[varname];
 
         // transitively add the modifies
-        var.used_by.insert(stmt->stmt);
+        var.used_by.insert(stmt->getAstStmt());
         for(auto s : stmt_stack)
         {
             var.used_by.insert(s);
-            m_pkb->getStatementAtIndex(s->id)->uses.insert(varname);
+            m_pkb->getStatementAtIndex(s->id)->m_uses.insert(varname);
         }
 
         for(auto proc : proc_stack)
@@ -109,25 +109,26 @@ namespace pkb
 
         for(auto call : call_stack)
         {
-            call->uses.insert(varname);
-            var.used_by.insert(call->stmt);
+            call->m_uses.insert(varname);
+            var.used_by.insert(call->getAstStmt());
         }
     }
 
 
     void DesignExtractor::processModifies(const std::string& varname, Statement* stmt,
-        const std::vector<const s_ast::Stmt*>& stmt_stack, const std::vector<pkb::Procedure*>& proc_stack, const std::vector<Statement*>& call_stack)
+        const std::vector<const s_ast::Stmt*>& stmt_stack, const std::vector<pkb::Procedure*>& proc_stack,
+        const std::vector<Statement*>& call_stack)
     {
-        stmt->modifies.insert(varname);
+        stmt->m_modifies.insert(varname);
 
         auto& var = m_pkb->m_variables[varname];
 
         // transitively add the modifies
-        var.modified_by.insert(stmt->stmt);
+        var.modified_by.insert(stmt->getAstStmt());
         for(auto s : stmt_stack)
         {
             var.modified_by.insert(s);
-            m_pkb->getStatementAtIndex(s->id)->modifies.insert(varname);
+            m_pkb->getStatementAtIndex(s->id)->m_modifies.insert(varname);
         }
 
         for(auto proc : proc_stack)
@@ -138,14 +139,15 @@ namespace pkb
 
         for(auto call : call_stack)
         {
-            call->modifies.insert(varname);
-            var.modified_by.insert(call->stmt);
+            call->m_modifies.insert(varname);
+            var.modified_by.insert(call->getAstStmt());
         }
     }
 
 
     void DesignExtractor::processStmtList(const s_ast::StmtList* list,
-        const std::vector<const s_ast::Stmt*>& stmt_stack, const std::vector<pkb::Procedure*>& proc_stack, const std::vector<Statement*>& call_stack)
+        const std::vector<const s_ast::Stmt*>& stmt_stack, const std::vector<pkb::Procedure*>& proc_stack,
+        const std::vector<Statement*>& call_stack)
     {
         // indices are easier to work with here.
         // do one pass forwards and one pass in reverse to effeciently set
@@ -160,9 +162,9 @@ namespace pkb
                 auto prev_id = list->statements[i - 1]->id;
                 auto prev_stmt = m_pkb->getStatementAtIndex(prev_id);
 
-                this_stmt->directly_before = prev_id;
-                this_stmt->before.insert(prev_id);
-                this_stmt->before.insert(prev_stmt->before.begin(), prev_stmt->before.end());
+                this_stmt->m_directly_before = prev_id;
+                this_stmt->m_before.insert(prev_id);
+                this_stmt->m_before.insert(prev_stmt->m_before.begin(), prev_stmt->m_before.end());
 
                 m_pkb->m_follows_exists = true;
             }
@@ -178,9 +180,9 @@ namespace pkb
                 auto prev_id = list->statements[i - 1]->id;
                 auto prev_stmt = m_pkb->getStatementAtIndex(prev_id);
 
-                prev_stmt->directly_after = this_id;
-                prev_stmt->after.insert(this_id);
-                prev_stmt->after.insert(this_stmt->after.begin(), this_stmt->after.end());
+                prev_stmt->m_directly_after = this_id;
+                prev_stmt->m_after.insert(this_id);
+                prev_stmt->m_after.insert(this_stmt->m_after.begin(), this_stmt->m_after.end());
 
                 m_pkb->m_follows_exists = true;
             }
@@ -282,8 +284,9 @@ namespace pkb
         }
     }
 
-    void DesignExtractor::processExpr(const s_ast::Expr* expr, Statement* stmt, const std::vector<const s_ast::Stmt*>& stmt_stack,
-        const std::vector<pkb::Procedure*>& proc_stack, const std::vector<Statement*>& call_stack)
+    void DesignExtractor::processExpr(const s_ast::Expr* expr, Statement* stmt,
+        const std::vector<const s_ast::Stmt*>& stmt_stack, const std::vector<pkb::Procedure*>& proc_stack,
+        const std::vector<Statement*>& call_stack)
     {
         if(auto vr = CONST_DCAST(VarRef, expr); vr)
         {
@@ -330,7 +333,7 @@ namespace pkb
         }
 
         // 4. process the entire thing
-        for(auto& [ name, proc ] : m_pkb->m_procedures)
+        for(auto& [name, proc] : m_pkb->m_procedures)
         {
             if(m_visited_procs.find(name) != m_visited_procs.end())
                 continue;

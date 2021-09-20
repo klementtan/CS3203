@@ -175,13 +175,13 @@ namespace pkb
             throw util::PkbException("pkb::eval", "Invalid query parameters.");
         }
         const auto& stmt = m_statements.at(stmt_num - 1);
-        if(auto c = dynamic_cast<const s_ast::ProcCall*>(stmt.stmt))
+        if(auto c = dynamic_cast<const s_ast::ProcCall*>(stmt.getAstStmt()))
         {
             return m_procedures[c->proc_name].uses.count(var) > 0;
         }
         else
         {
-            return stmt.uses.count(var) > 0;
+            return stmt.usesVariable(var);
         }
     }
 
@@ -192,15 +192,6 @@ namespace pkb
             throw util::PkbException("pkb::eval", "Invalid query parameters.");
         }
         return m_procedures.at(proc).uses.count(var) > 0;
-    }
-
-    std::unordered_set<std::string> ProgramKB::getUsesVars(const simple::ast::StatementNum& stmt_num)
-    {
-        if(stmt_num > m_statements.size())
-        {
-            throw util::PkbException("pkb::eval", "Invalid statement number.");
-        }
-        return m_statements.at(stmt_num - 1).uses;
     }
 
     std::unordered_set<std::string> ProgramKB::getUsesVars(const std::string& var)
@@ -279,13 +270,14 @@ namespace pkb
             throw util::PkbException("pkb::eval", "Invalid query parameters.");
         }
         auto& stmt = m_statements.at(stmt_num - 1);
-        if(auto c = dynamic_cast<const s_ast::ProcCall*>(stmt.stmt))
+        if(auto c = dynamic_cast<const s_ast::ProcCall*>(stmt.getAstStmt()))
         {
             return m_procedures[c->proc_name].modifies.count(var) > 0;
         }
         else
         {
-            return stmt.modifies.count(var) > 0;
+            // return stmt.modifies.count(var) > 0;
+            return stmt.modifiesVariable(var);
         }
     }
 
@@ -296,15 +288,6 @@ namespace pkb
             throw util::PkbException("pkb::eval", "Invalid query parameters.");
         }
         return m_procedures.at(proc).modifies.count(var) > 0;
-    }
-
-    std::unordered_set<std::string> ProgramKB::getModifiesVars(const simple::ast::StatementNum& stmt_num)
-    {
-        if(stmt_num > m_statements.size())
-        {
-            throw util::PkbException("pkb::eval", "Invalid statement number.");
-        }
-        return m_statements.at(stmt_num - 1).modifies;
     }
 
     std::unordered_set<std::string> ProgramKB::getModifiesVars(const std::string& var)

@@ -81,8 +81,7 @@ namespace pql::eval
 
             util::log("pql::eval", "Processing ModifiesP(DeclaredEnt, EntName)");
 
-            std::unordered_set<std::string> modifier_candidates =
-                m_pkb->getModifies(mod_decl->design_ent, ent_name);
+            std::unordered_set<std::string> modifier_candidates = m_pkb->getModifies(mod_decl->design_ent, ent_name);
             if(modifier_candidates.empty())
             {
                 throw PqlException("pql::eval", "{} will always evaluate to false. No procedures modifies {}",
@@ -216,7 +215,7 @@ namespace pql::eval
             std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
             for(auto it = mod_domain.begin(); it != mod_domain.end();)
             {
-                auto modified_vars = m_pkb->getModifiesVars(it->getStmtNum());
+                auto& modified_vars = m_pkb->getStatementAtIndex(it->getStmtNum())->getModifiedVariables();
                 if(modified_vars.empty())
                 {
                     it = mod_domain.erase(it);
@@ -247,8 +246,7 @@ namespace pql::eval
 
             util::log("pql::eval", "Processing ModifiesS(DeclaredStmt, EntName)");
 
-            std::unordered_set<std::string> modifier_candidates =
-                m_pkb->getModifies(mod_decl->design_ent, ent_name);
+            std::unordered_set<std::string> modifier_candidates = m_pkb->getModifies(mod_decl->design_ent, ent_name);
             if(modifier_candidates.empty())
             {
                 throw PqlException("pql::eval", "{} will always evaluate to false. No statements modifies {}",
@@ -277,8 +275,8 @@ namespace pql::eval
             std::unordered_set<table::Entry> prev_domain = m_table.getDomain(mod_decl);
             for(const table::Entry& entry : m_table.getDomain(mod_decl))
             {
-                simple::ast::StatementNum stmt_num = entry.getStmtNum();
-                if(!m_pkb->getModifiesVars(stmt_num).empty())
+                auto stmt = m_pkb->getStatementAtIndex(entry.getStmtNum());
+                if(!stmt->getModifiedVariables().empty())
                 {
                     curr_domain.insert(entry);
                     util::log("pql::eval", "{} adds {} to curr domain", rel->toString(), entry.toString());
@@ -292,7 +290,7 @@ namespace pql::eval
             auto ent_decl = ent_ent.declaration();
 
             util::log("pql::eval", "Processing ModifiesS(StmtId, DeclaredEnt)");
-            std::unordered_set<std::string> var_candidates = m_pkb->getModifiesVars(mod_stmt_id);
+            auto& var_candidates = m_pkb->getStatementAtIndex(mod_stmt_id)->getModifiedVariables();
             std::unordered_set<table::Entry> curr_domain;
             std::unordered_set<table::Entry> prev_domain = m_table.getDomain(ent_decl);
             for(const std::string& var : var_candidates)
@@ -309,7 +307,7 @@ namespace pql::eval
             auto mod_stmt_id = modifier_stmt.id();
 
             util::log("pql::eval", "Processing ModifiesS(StmtId, AllEnt)");
-            if(m_pkb->getModifiesVars(mod_stmt_id).empty())
+            if(m_pkb->getStatementAtIndex(mod_stmt_id)->getModifiedVariables().empty())
             {
                 throw PqlException("pql::eval",
                     "{} always evaluate to false. StatementNum {} does not modify any variable.", rel->toString(),
@@ -326,7 +324,7 @@ namespace pql::eval
             auto ent_name = ent_ent.name();
 
             util::log("pql::eval", "Processing ModifiesS(StmtId, EntName)");
-            if(m_pkb->getModifiesVars(mod_stmt_id).count(ent_name) > 0)
+            if(m_pkb->getStatementAtIndex(mod_stmt_id)->modifiesVariable(ent_name))
             {
                 util::log("pql::eval", "{} always evaluate to true.", rel->toString());
             }
