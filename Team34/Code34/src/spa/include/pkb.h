@@ -17,13 +17,22 @@ namespace pkb
 
     struct Procedure
     {
-        simple::ast::Procedure* ast_proc = 0;
+        Procedure() = default;
 
-        std::unordered_set<std::string> uses;
-        std::unordered_set<std::string> modifies;
+        Procedure(Procedure&&) = default;
+        Procedure& operator=(Procedure&&) = default;
 
-        std::unordered_set<std::string> calls;
-        std::unordered_set<std::string> called_by;
+        Procedure(const Procedure&) = delete;
+        Procedure& operator=(const Procedure&) = delete;
+
+
+        const simple::ast::Procedure* ast_proc = 0;
+
+        std::unordered_set<std::string> uses {};
+        std::unordered_set<std::string> modifies {};
+
+        std::unordered_set<std::string> calls {};
+        std::unordered_set<std::string> called_by {};
 
         std::unordered_set<std::string> calls_transitive {};
         std::unordered_set<std::string> called_by_transitive {};
@@ -86,11 +95,11 @@ namespace pkb
     {
         // a procedure isn't really a statement, so we need to keep two
         // separate lists for this.
-        std::unordered_set<const simple::ast::Stmt*> used_by;
-        std::unordered_set<const simple::ast::Stmt*> modified_by;
+        std::unordered_set<const simple::ast::Stmt*> used_by {};
+        std::unordered_set<const simple::ast::Stmt*> modified_by {};
 
-        std::unordered_set<simple::ast::Procedure*> used_by_procs;
-        std::unordered_set<simple::ast::Procedure*> modified_by_procs;
+        std::unordered_set<const Procedure*> used_by_procs {};
+        std::unordered_set<const Procedure*> modified_by_procs {};
     };
 
     struct CallGraph
@@ -115,6 +124,9 @@ namespace pkb
 
         Statement* getStatementAtIndex(simple::ast::StatementNum);
         const Statement* getStatementAtIndex(simple::ast::StatementNum) const;
+
+        const Procedure& getProcedureNamed(const std::string& name) const;
+        Procedure& getProcedureNamed(const std::string& name);
 
         bool parentRelationExists() const;
         bool followsRelationExists() const;
@@ -148,7 +160,6 @@ namespace pkb
         // Returns the Statement numbers of queries of type Modifies(a/pn/s/p, "x")
         std::unordered_set<std::string> getModifies(const pql::ast::DESIGN_ENT& type, const std::string& var) const;
 
-        const Procedure& getProcedureNamed(const std::string& name) const;
         const simple::ast::Program* getProgram() const;
 
         const std::vector<Statement>& getAllStatements() const;

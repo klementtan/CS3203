@@ -103,7 +103,7 @@ namespace pkb
 
         for(auto proc : proc_stack)
         {
-            var.used_by_procs.insert(proc->ast_proc);
+            var.used_by_procs.insert(proc);
             m_pkb->m_procedures[proc->ast_proc->name].uses.insert(varname);
         }
 
@@ -133,7 +133,7 @@ namespace pkb
 
         for(auto proc : proc_stack)
         {
-            var.modified_by_procs.insert(proc->ast_proc);
+            var.modified_by_procs.insert(proc);
             m_pkb->m_procedures[proc->ast_proc->name].modifies.insert(varname);
         }
 
@@ -249,8 +249,8 @@ namespace pkb
             }
             else if(auto call_stmt = CONST_DCAST(ProcCall, ast_stmt); call_stmt)
             {
-                auto callee = m_pkb->getProcedureNamed(call_stmt->proc_name);
-                auto body = &callee.ast_proc->body;
+                auto& callee = m_pkb->getProcedureNamed(call_stmt->proc_name);
+                auto* body = &callee.ast_proc->body;
 
                 for(size_t i = 0; i < proc_stack.size(); i++)
                 {

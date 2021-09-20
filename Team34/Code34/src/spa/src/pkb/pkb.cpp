@@ -34,6 +34,11 @@ namespace pkb
         return m_procedures.at(name);
     }
 
+    Procedure& ProgramKB::getProcedureNamed(const std::string& name)
+    {
+        return m_procedures.at(name);
+    }
+
     Procedure& ProgramKB::addProcedure(const std::string& name, simple::ast::Procedure* proc)
     {
         auto& p = m_procedures[name];
@@ -226,7 +231,7 @@ namespace pkb
                 break;
             case pql::ast::DESIGN_ENT::PROCEDURE:
                 for(auto& proc : m_variables.at(var).used_by_procs)
-                    uses.insert(proc->name);
+                    uses.insert(proc->ast_proc->name);
                 break;
             default:
                 throw util::PkbException("pkb::eval", "Invalid statement type.");
@@ -322,7 +327,7 @@ namespace pkb
                 break;
             case pql::ast::DESIGN_ENT::PROCEDURE:
                 for(auto& proc : m_variables.at(var).modified_by_procs)
-                    modifies.insert(proc->name);
+                    modifies.insert(proc->ast_proc->name);
 
                 break;
             default:
