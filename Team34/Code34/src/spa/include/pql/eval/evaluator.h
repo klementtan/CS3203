@@ -17,7 +17,7 @@ namespace pql::eval
     class Evaluator
     {
     private:
-        pkb::ProgramKB* m_pkb;
+        const pkb::ProgramKB* m_pkb;
 
         table::Table m_table;
         std::unique_ptr<ast::Query> m_query;
@@ -46,7 +46,7 @@ namespace pql::eval
         std::unordered_set<table::Entry> getInitialDomain(ast::Declaration* declaration);
 
     public:
-        Evaluator(pkb::ProgramKB* pkb, std::unique_ptr<ast::Query> query);
+        Evaluator(const pkb::ProgramKB* pkb, std::unique_ptr<ast::Query> query);
         std::list<std::string> evaluate();
     };
 }

@@ -116,48 +116,49 @@ namespace pkb
         Statement* getStatementAtIndex(simple::ast::StatementNum);
         const Statement* getStatementAtIndex(simple::ast::StatementNum) const;
 
-        bool parentRelationExists();
-        bool followsRelationExists();
+        bool parentRelationExists() const;
+        bool followsRelationExists() const;
 
 #if 1
-        bool isParent(simple::ast::StatementNum, simple::ast::StatementNum);
-        bool isParentT(simple::ast::StatementNum, simple::ast::StatementNum);
+        bool isParent(simple::ast::StatementNum, simple::ast::StatementNum) const;
+        bool isParentT(simple::ast::StatementNum, simple::ast::StatementNum) const;
 
-        std::optional<simple::ast::StatementNum> getParentOf(simple::ast::StatementNum);
-        std::unordered_set<simple::ast::StatementNum> getAncestorsOf(simple::ast::StatementNum);
-        std::unordered_set<simple::ast::StatementNum> getChildrenOf(simple::ast::StatementNum);
-        std::unordered_set<simple::ast::StatementNum> getDescendantsOf(simple::ast::StatementNum);
+        std::optional<simple::ast::StatementNum> getParentOf(simple::ast::StatementNum) const;
+        std::unordered_set<simple::ast::StatementNum> getAncestorsOf(simple::ast::StatementNum) const;
+        std::unordered_set<simple::ast::StatementNum> getChildrenOf(simple::ast::StatementNum) const;
+        std::unordered_set<simple::ast::StatementNum> getDescendantsOf(simple::ast::StatementNum) const;
 #endif
 
         // For queries of type Uses(3, "x")
-        bool isUses(const simple::ast::StatementNum& stmt_num, const std::string& var);
+        bool isUses(const simple::ast::StatementNum& stmt_num, const std::string& var) const;
         // For queries of type Uses("main", "x")
-        bool isUses(const std::string& proc, const std::string& var);
+        bool isUses(const std::string& proc, const std::string& var) const;
 
         // For queries of type Uses("main", _)
-        std::unordered_set<std::string> getUsesVars(const std::string& proc);
+        std::unordered_set<std::string> getUsesVars(const std::string& proc) const;
         // Returns the Statement numbers of queries of type Uses(a/r/s/p, "x")
-        std::unordered_set<std::string> getUses(const pql::ast::DESIGN_ENT& type, const std::string& var);
+        std::unordered_set<std::string> getUses(const pql::ast::DESIGN_ENT& type, const std::string& var) const;
 
         // For queries of type Modifies(3, "x")
-        bool isModifies(const simple::ast::StatementNum& stmt_num, const std::string& var);
+        bool isModifies(const simple::ast::StatementNum& stmt_num, const std::string& var) const;
         // For queries of type Modifies("main", "x")
-        bool isModifies(const std::string& proc, const std::string& var);
+        bool isModifies(const std::string& proc, const std::string& var) const;
         // For queries of type Modifies("main", _)
-        std::unordered_set<std::string> getModifiesVars(const std::string& proc);
+        std::unordered_set<std::string> getModifiesVars(const std::string& proc) const;
         // Returns the Statement numbers of queries of type Modifies(a/pn/s/p, "x")
-        std::unordered_set<std::string> getModifies(const pql::ast::DESIGN_ENT& type, const std::string& var);
+        std::unordered_set<std::string> getModifies(const pql::ast::DESIGN_ENT& type, const std::string& var) const;
 
         const Procedure& getProcedureNamed(const std::string& name) const;
         const simple::ast::Program* getProgram() const;
-
-        void addConstant(std::string value);
-        Procedure& addProcedure(const std::string& name, simple::ast::Procedure* proc);
 
         const std::vector<Statement>& getAllStatements() const;
         const std::unordered_set<std::string>& getAllConstants() const;
         const std::unordered_map<std::string, Variable>& getAllVariables() const;
         const std::unordered_map<std::string, Procedure>& getAllProcedures() const;
+
+        void addConstant(std::string value);
+        Procedure& addProcedure(const std::string& name, simple::ast::Procedure* proc);
+
 
     private:
         std::unique_ptr<simple::ast::Program> m_program {};

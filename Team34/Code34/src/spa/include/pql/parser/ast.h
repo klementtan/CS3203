@@ -282,14 +282,14 @@ namespace pql::ast
         virtual ~PatternCond();
         virtual std::string toString() const = 0;
 
-        virtual void evaluate(pkb::ProgramKB* pkb, eval::table::Table* table) const = 0;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const = 0;
     };
 
     /** Assignment pattern condition. ie `assign a; Select a pattern a ("x",_);`*/
     struct AssignPatternCond : PatternCond
     {
         virtual std::string toString() const override;
-        virtual void evaluate(pkb::ProgramKB* pkb, eval::table::Table* table) const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
 
         Declaration* assignment_declaration = nullptr;
 

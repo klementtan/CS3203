@@ -74,61 +74,61 @@ namespace pkb
     /**
      * Start of Parent methods
      */
-    bool ProgramKB::isParent(s_ast::StatementNum fst, s_ast::StatementNum snd)
+    bool ProgramKB::isParent(s_ast::StatementNum fst, s_ast::StatementNum snd) const
     {
-        if(m_direct_parents.count(snd) == 0)
-            return false;
+        if(auto it = m_direct_parents.find(snd); it != m_direct_parents.end())
+            return it->second == fst;
 
-        return m_direct_parents[snd] == fst;
+        return false;
     }
 
-    bool ProgramKB::isParentT(s_ast::StatementNum fst, s_ast::StatementNum snd)
+    bool ProgramKB::isParentT(s_ast::StatementNum fst, s_ast::StatementNum snd) const
     {
-        if(m_ancestors.count(snd) == 0)
-            return false;
+        if(auto it = m_ancestors.find(snd); it != m_ancestors.end())
+            return it->second.count(fst) > 0;
 
-        return m_ancestors[snd].count(fst);
+        return false;
     }
 
-    std::optional<s_ast::StatementNum> ProgramKB::getParentOf(s_ast::StatementNum fst)
+    std::optional<s_ast::StatementNum> ProgramKB::getParentOf(s_ast::StatementNum fst) const
     {
         // this will return 0 if it has no parent
-        if(m_direct_parents.count(fst) == 0)
+        if(auto it = m_direct_parents.find(fst); it != m_direct_parents.end())
+            return it->second;
+        else
             return std::nullopt;
-
-        return m_direct_parents[fst];
     }
 
-    std::unordered_set<s_ast::StatementNum> ProgramKB::getAncestorsOf(s_ast::StatementNum fst)
+    std::unordered_set<s_ast::StatementNum> ProgramKB::getAncestorsOf(s_ast::StatementNum fst) const
     {
-        if(m_ancestors.count(fst) == 0)
+        if(auto it = m_ancestors.find(fst); it != m_ancestors.end())
+            return it->second;
+        else
             return {};
-
-        return m_ancestors[fst];
     }
 
-    std::unordered_set<s_ast::StatementNum> ProgramKB::getChildrenOf(s_ast::StatementNum fst)
+    std::unordered_set<s_ast::StatementNum> ProgramKB::getChildrenOf(s_ast::StatementNum fst) const
     {
-        if(m_direct_children.count(fst) == 0)
+        if(auto it = m_direct_children.find(fst); it != m_direct_children.end())
+            return it->second;
+        else
             return {};
-
-        return m_direct_children[fst];
     }
 
-    std::unordered_set<s_ast::StatementNum> ProgramKB::getDescendantsOf(s_ast::StatementNum fst)
+    std::unordered_set<s_ast::StatementNum> ProgramKB::getDescendantsOf(s_ast::StatementNum fst) const
     {
-        if(m_descendants.count(fst) == 0)
+        if(auto it = m_descendants.find(fst); it != m_descendants.end())
+            return it->second;
+        else
             return {};
-
-        return m_descendants[fst];
     }
 
-    bool ProgramKB::followsRelationExists()
+    bool ProgramKB::followsRelationExists() const
     {
         return this->m_follows_exists;
     }
 
-    bool ProgramKB::parentRelationExists()
+    bool ProgramKB::parentRelationExists() const
     {
         return this->m_parent_exists;
     }
@@ -139,7 +139,7 @@ namespace pkb
     /**
      * Start of Uses and Modifies methods
      */
-    bool ProgramKB::isUses(const simple::ast::StatementNum& stmt_num, const std::string& var)
+    bool ProgramKB::isUses(const simple::ast::StatementNum& stmt_num, const std::string& var) const
     {
         if(m_variables.find(var) == m_variables.end() || stmt_num > m_statements.size())
         {
@@ -148,7 +148,7 @@ namespace pkb
         const auto& stmt = m_statements.at(stmt_num - 1);
         if(auto c = dynamic_cast<const s_ast::ProcCall*>(stmt.getAstStmt()))
         {
-            return m_procedures[c->proc_name].uses.count(var) > 0;
+            return m_procedures.at(c->proc_name).uses.count(var) > 0;
         }
         else
         {
@@ -156,7 +156,7 @@ namespace pkb
         }
     }
 
-    bool ProgramKB::isUses(const std::string& proc, const std::string& var)
+    bool ProgramKB::isUses(const std::string& proc, const std::string& var) const
     {
         if(m_variables.find(var) == m_variables.end() || m_procedures.find(proc) == m_procedures.end())
         {
@@ -165,7 +165,7 @@ namespace pkb
         return m_procedures.at(proc).uses.count(var) > 0;
     }
 
-    std::unordered_set<std::string> ProgramKB::getUsesVars(const std::string& var)
+    std::unordered_set<std::string> ProgramKB::getUsesVars(const std::string& var) const
     {
         if(m_procedures.find(var) == m_procedures.end())
         {
@@ -174,7 +174,7 @@ namespace pkb
         return m_procedures.at(var).uses;
     }
 
-    std::unordered_set<std::string> ProgramKB::getUses(const pql::ast::DESIGN_ENT& type, const std::string& var)
+    std::unordered_set<std::string> ProgramKB::getUses(const pql::ast::DESIGN_ENT& type, const std::string& var) const
     {
         if(m_variables.find(var) == m_variables.end())
         {
@@ -234,7 +234,7 @@ namespace pkb
         return uses;
     }
 
-    bool ProgramKB::isModifies(const simple::ast::StatementNum& stmt_num, const std::string& var)
+    bool ProgramKB::isModifies(const simple::ast::StatementNum& stmt_num, const std::string& var) const
     {
         if(m_variables.find(var) == m_variables.end() || stmt_num > m_statements.size())
         {
@@ -243,16 +243,15 @@ namespace pkb
         auto& stmt = m_statements.at(stmt_num - 1);
         if(auto c = dynamic_cast<const s_ast::ProcCall*>(stmt.getAstStmt()))
         {
-            return m_procedures[c->proc_name].modifies.count(var) > 0;
+            return m_procedures.at(c->proc_name).modifies.count(var) > 0;
         }
         else
         {
-            // return stmt.modifies.count(var) > 0;
             return stmt.modifiesVariable(var);
         }
     }
 
-    bool ProgramKB::isModifies(const std::string& proc, const std::string& var)
+    bool ProgramKB::isModifies(const std::string& proc, const std::string& var) const
     {
         if(m_variables.find(var) == m_variables.end() || m_procedures.find(proc) == m_procedures.end())
         {
@@ -261,7 +260,7 @@ namespace pkb
         return m_procedures.at(proc).modifies.count(var) > 0;
     }
 
-    std::unordered_set<std::string> ProgramKB::getModifiesVars(const std::string& proc)
+    std::unordered_set<std::string> ProgramKB::getModifiesVars(const std::string& proc) const
     {
         if(m_procedures.find(proc) == m_procedures.end())
         {
@@ -270,7 +269,7 @@ namespace pkb
         return m_procedures.at(proc).modifies;
     }
 
-    std::unordered_set<std::string> ProgramKB::getModifies(const pql::ast::DESIGN_ENT& type, const std::string& var)
+    std::unordered_set<std::string> ProgramKB::getModifies(const pql::ast::DESIGN_ENT& type, const std::string& var) const
     {
         if(m_variables.find(var) == m_variables.end())
         {

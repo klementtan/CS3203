@@ -24,7 +24,7 @@ namespace pql::ast
 
     using PqlException = util::PqlException;
 
-    void AssignPatternCond::evaluate(pkb::ProgramKB* pkb, table::Table* tbl) const
+    void AssignPatternCond::evaluate(const pkb::ProgramKB* pkb, table::Table* tbl) const
     {
         const auto& var_ent = this->ent;
         assert(this->assignment_declaration->design_ent == DESIGN_ENT::ASSIGN);
