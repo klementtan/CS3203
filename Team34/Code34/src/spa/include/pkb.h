@@ -35,6 +35,7 @@ namespace pkb
         const std::unordered_set<std::string>& getUsedVariables() const;
         const std::unordered_set<std::string>& getModifiedVariables() const;
 
+        std::string getName() const;
         const simple::ast::Procedure* getAstProc() const;
 
     private:
@@ -50,9 +51,6 @@ namespace pkb
         std::unordered_set<std::string> m_called_by_transitive {};
     };
 
-    // decided to go with 3 data structures because this would allow all 3 kinds of
-    // wildcard queries to be fast. I believe this would not cause consistency issues as
-    // the pre-processing is once off.
     struct Statement
     {
         MOVE_ONLY_TYPE(Statement);
@@ -60,6 +58,8 @@ namespace pkb
         friend struct DesignExtractor;
 
         Statement(const simple::ast::Stmt* stmt);
+
+        simple::ast::StatementNum getStmtNum() const;
 
         bool hasFollower() const;
         bool isFollower() const;
@@ -127,8 +127,8 @@ namespace pkb
         ProgramKB(std::unique_ptr<simple::ast::Program> program);
         ~ProgramKB();
 
-        Statement* getStatementAtIndex(simple::ast::StatementNum);
         const Statement* getStatementAtIndex(simple::ast::StatementNum) const;
+        Statement* getStatementAtIndex(simple::ast::StatementNum);
 
         const Procedure& getProcedureNamed(const std::string& name) const;
         Procedure& getProcedureNamed(const std::string& name);
@@ -157,7 +157,6 @@ namespace pkb
 
         void addConstant(std::string value);
         Procedure& addProcedure(const std::string& name, const simple::ast::Procedure* proc);
-
 
     private:
         std::unique_ptr<simple::ast::Program> m_program {};

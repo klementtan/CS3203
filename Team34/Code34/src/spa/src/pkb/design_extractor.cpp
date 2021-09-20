@@ -66,19 +66,19 @@ namespace pkb
         for(auto s : ts.local_stmt_stack)
         {
             var.m_used_by.insert(s);
-            m_pkb->getStatementAtIndex(s->getAstStmt()->id)->m_uses.insert(varname);
+            m_pkb->getStatementAtIndex(s->getStmtNum())->m_uses.insert(varname);
         }
 
         for(auto s : ts.global_stmt_stack)
         {
             var.m_used_by.insert(s);
-            m_pkb->getStatementAtIndex(s->getAstStmt()->id)->m_uses.insert(varname);
+            m_pkb->getStatementAtIndex(s->getStmtNum())->m_uses.insert(varname);
         }
 
         for(auto proc : ts.proc_stack)
         {
             var.m_used_by_procs.insert(proc);
-            m_pkb->getProcedureNamed(proc->getAstProc()->name).m_uses.insert(varname);
+            m_pkb->getProcedureNamed(proc->getName()).m_uses.insert(varname);
         }
 
         for(auto call : ts.call_stack)
@@ -100,19 +100,19 @@ namespace pkb
         for(auto s : ts.local_stmt_stack)
         {
             var.m_modified_by.insert(s);
-            m_pkb->getStatementAtIndex(s->getAstStmt()->id)->m_modifies.insert(varname);
+            m_pkb->getStatementAtIndex(s->getStmtNum())->m_modifies.insert(varname);
         }
 
         for(auto s : ts.global_stmt_stack)
         {
             var.m_modified_by.insert(s);
-            m_pkb->getStatementAtIndex(s->getAstStmt()->id)->m_modifies.insert(varname);
+            m_pkb->getStatementAtIndex(s->getStmtNum())->m_modifies.insert(varname);
         }
 
         for(auto proc : ts.proc_stack)
         {
             var.m_modified_by_procs.insert(proc);
-            m_pkb->getProcedureNamed(proc->getAstProc()->name).m_modifies.insert(varname);
+            m_pkb->getProcedureNamed(proc->getName()).m_modifies.insert(varname);
         }
 
         for(auto call : ts.call_stack)
@@ -177,7 +177,7 @@ namespace pkb
 
             for(size_t i = 0; i < ts.local_stmt_stack.size(); i++)
             {
-                auto list_sid = ts.local_stmt_stack[i]->getAstStmt()->id;
+                auto list_sid = ts.local_stmt_stack[i]->getStmtNum();
 
                 // only set the direct parent/child for the top of the stack
                 if(i == ts.local_stmt_stack.size() - 1)
@@ -244,12 +244,12 @@ namespace pkb
                     // only set the direct calls/called_by for the top of the stack
                     if(i == ts.proc_stack.size() - 1)
                     {
-                        ts.proc_stack[i]->m_calls.insert(callee.getAstProc()->name);
-                        callee.m_called_by.insert(ts.proc_stack[i]->getAstProc()->name);
+                        ts.proc_stack[i]->m_calls.insert(callee.getName());
+                        callee.m_called_by.insert(ts.proc_stack[i]->getName());
                     }
 
-                    ts.proc_stack[i]->m_calls_transitive.insert(callee.getAstProc()->name);
-                    callee.m_called_by_transitive.insert(ts.proc_stack[i]->getAstProc()->name);
+                    ts.proc_stack[i]->m_calls_transitive.insert(callee.getName());
+                    callee.m_called_by_transitive.insert(ts.proc_stack[i]->getName());
                 }
 
                 auto new_ts = ts;

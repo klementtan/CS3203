@@ -31,4 +31,8 @@ namespace pkb
         return m_modifies;
     }
 
+    std::string Procedure::getName() const
+    {
+        return m_ast_proc->name;
+    }
 }

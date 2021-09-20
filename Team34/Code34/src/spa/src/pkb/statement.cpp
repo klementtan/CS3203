@@ -11,6 +11,11 @@ namespace pkb
         return m_stmt;
     }
 
+    simple::ast::StatementNum Statement::getStmtNum() const
+    {
+        return m_stmt->id;
+    }
+
     bool Statement::hasFollower() const
     {
         return m_directly_after != 0;

@@ -49,7 +49,7 @@ namespace pkb
         std::unordered_set<StmtNum> ret {};
         for(const auto* stmt : m_used_by)
             if(design_entity_matches(stmt->getAstStmt(), ent))
-                ret.insert(stmt->getAstStmt()->id);
+                ret.insert(stmt->getStmtNum());
 
         return ret;
     }
@@ -62,7 +62,7 @@ namespace pkb
         std::unordered_set<StmtNum> ret {};
         for(const auto* stmt : m_modified_by)
             if(design_entity_matches(stmt->getAstStmt(), ent))
-                ret.insert(stmt->getAstStmt()->id);
+                ret.insert(stmt->getStmtNum());
 
         return ret;
     }
@@ -71,7 +71,7 @@ namespace pkb
     {
         std::unordered_set<std::string> ret {};
         for(const auto* proc : m_used_by_procs)
-            ret.insert(proc->getAstProc()->name);
+            ret.insert(proc->getName());
 
         return ret;
     }
@@ -80,7 +80,7 @@ namespace pkb
     {
         std::unordered_set<std::string> ret {};
         for(const auto* proc : m_modified_by_procs)
-            ret.insert(proc->getAstProc()->name);
+            ret.insert(proc->getName());
 
         return ret;
     }
