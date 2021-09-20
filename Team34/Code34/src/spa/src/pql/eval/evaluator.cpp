@@ -14,7 +14,7 @@ namespace pql::eval
         this->m_pkb = pkb;
         this->m_query = std::move(query);
 
-        preprocessPkb(this->m_pkb);
+        preprocessPkb();
     }
 
     ast::DESIGN_ENT getDesignEnt(const simple::ast::Stmt* stmt)
@@ -35,9 +35,9 @@ namespace pql::eval
     }
 
 
-    void Evaluator::preprocessPkb(pkb::ProgramKB* pkb)
+    void Evaluator::preprocessPkb()
     {
-        for(const auto& pkb_stmt : pkb->m_statements)
+        for(const auto& pkb_stmt : m_pkb->getAllStatements())
         {
             m_all_ent_stmt_map[getDesignEnt(pkb_stmt.getAstStmt())].push_back(pkb_stmt.getAstStmt());
             m_all_ent_stmt_map[ast::DESIGN_ENT::STMT].push_back(pkb_stmt.getAstStmt());
@@ -52,9 +52,10 @@ namespace pql::eval
             throw util::PqlException(
                 "pql::eval", "Cannot get initial domain(var) for non variable declaration {}", declaration->toString());
         }
-        util::log("pql::eval", "Adding {} variables to {} initial domain", m_pkb->m_variables.size(),
-            declaration->toString());
-        for(const auto& [name, var] : m_pkb->m_variables)
+
+        auto& var_list = m_pkb->getAllVariables();
+        util::log("pql::eval", "Adding {} variables to {} initial domain", var_list.size(), declaration->toString());
+        for(const auto& [name, var] : var_list)
         {
             util::log("pql::eval", "Adding {} to initial var domain", name);
             domain.insert(table::Entry(declaration, name));
@@ -69,9 +70,10 @@ namespace pql::eval
             throw util::PqlException("pql::eval", "Cannot get initial domain(proc) for non variable declaration {}",
                 declaration->toString());
         }
-        util::log("pql::eval", "Adding {} procedures to {} initial domain", m_pkb->m_procedures.size(),
-            declaration->toString());
-        for(const auto& [name, proc] : m_pkb->m_procedures)
+
+        auto& proc_list = m_pkb->getAllProcedures();
+        util::log("pql::eval", "Adding {} procedures to {} initial domain", proc_list.size(), declaration->toString());
+        for(const auto& [name, proc] : proc_list)
         {
             util::log("pql::eval", "Adding {} to initial proc domain", name);
             domain.insert(table::Entry(declaration, name));

@@ -45,55 +45,22 @@ namespace pkb
         this->_constants.insert(std::move(value));
     }
 
-    // Takes in two 1-indexed StatementNums
-    // bool ProgramKB::isFollows(s_ast::StatementNum fst, s_ast::StatementNum snd)
-    // {
-    //     // thinking of more elegant ways of handling this hmm
-    //     if(fst > this->follows.size() || snd > this->follows.size() || fst < 1 || snd < 1)
-    //         throw util::PkbException("pkb::eval", "StatementNum out of range.");
-
-    //     return this->follows[fst - 1]->directly_after == snd;
-    // }
-
-    // // Same as isFollows
-    // bool ProgramKB::isFollowsT(s_ast::StatementNum fst, s_ast::StatementNum snd)
-    // {
-    //     if(fst > this->follows.size() || snd > this->follows.size() || fst < 1 || snd < 1)
-    //         throw util::PkbException("pkb::eval", "StatementNum out of range.");
-
-    //     return this->follows[fst - 1]->after.count(snd) > 0;
-    // }
-
-#if 0
-    Follows* ProgramKB::getFollows(simple::ast::StatementNum fst)
+    const std::vector<Statement>& ProgramKB::getAllStatements() const
     {
-        if(fst > this->follows.size() || fst < 1)
-            throw util::PkbException("pkb::eval", "StatementNum out of range.");
-        return this->follows[fst - 1];
+        return m_statements;
     }
 
-    // Takes in two 1-indexed StatementNums. Allows for 0 to be used as a wildcard on 1 of the parameters.
-    std::unordered_set<s_ast::StatementNum> ProgramKB::getFollowsTList(s_ast::StatementNum fst, s_ast::StatementNum snd)
+    const std::unordered_map<std::string, Procedure>& ProgramKB::getAllProcedures() const
     {
-        // note: no need to check for < 0 since StatementNum is unsigned
-        if(fst > this->follows.size() || snd > this->follows.size())
-            throw util::PkbException("pkb::eval", "StatementNum out of range.");
-
-        if((fst < 1 && snd < 1) || (fst != 0 && snd != 0))
-            throw util::PkbException("pkb::eval", "Only 1 wildcard is to be used.");
-
-        if(fst == 0)
-        {
-            return this->follows[snd - 1]->before;
-        }
-        else if(snd == 0)
-        {
-            return this->follows[fst - 1]->after;
-        }
-
-        throw util::PkbException("pkb", "unreachable code reached");
+        return m_procedures;
     }
-#endif
+
+    const std::unordered_map<std::string, Variable>& ProgramKB::getAllVariables() const
+    {
+        return m_variables;
+    }
+
+
 
     /**
      * Start of Parent methods
@@ -290,13 +257,13 @@ namespace pkb
         return m_procedures.at(proc).modifies.count(var) > 0;
     }
 
-    std::unordered_set<std::string> ProgramKB::getModifiesVars(const std::string& var)
+    std::unordered_set<std::string> ProgramKB::getModifiesVars(const std::string& proc)
     {
-        if(m_procedures.find(var) == m_procedures.end())
+        if(m_procedures.find(proc) == m_procedures.end())
         {
-            throw util::PkbException("pkb::eval", "Procedure {} not found.", var);
+            throw util::PkbException("pkb::eval", "Procedure {} not found.", proc);
         }
-        return m_procedures.at(var).modifies;
+        return m_procedures.at(proc).modifies;
     }
 
     std::unordered_set<std::string> ProgramKB::getModifies(const pql::ast::DESIGN_ENT& type, const std::string& var)

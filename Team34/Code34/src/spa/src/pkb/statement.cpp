@@ -63,21 +63,21 @@ namespace pkb
 
     bool Statement::usesVariable(const std::string& var_name) const
     {
-		return m_uses.count(var_name) > 0;
+        return m_uses.count(var_name) > 0;
     }
 
     bool Statement::modifiesVariable(const std::string& var_name) const
     {
-		return m_modifies.count(var_name) > 0;
+        return m_modifies.count(var_name) > 0;
     }
 
     const std::unordered_set<std::string>& Statement::getUsedVariables() const
     {
-		return m_uses;
+        return m_uses;
     }
 
     const std::unordered_set<std::string>& Statement::getModifiedVariables() const
     {
-		return m_modifies;
+        return m_modifies;
     }
 }

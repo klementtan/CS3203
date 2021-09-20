@@ -120,11 +120,6 @@ namespace pkb
         bool followsRelationExists();
         bool parentRelationExists();
 
-        std::unordered_map<simple::ast::StatementNum, simple::ast::StatementNum> _direct_parents;
-        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _ancestors;
-        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _direct_children;
-        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _descendants;
-
         bool isParent(simple::ast::StatementNum, simple::ast::StatementNum);
         bool isParentT(simple::ast::StatementNum, simple::ast::StatementNum);
 
@@ -140,8 +135,7 @@ namespace pkb
         bool isUses(const simple::ast::StatementNum& stmt_num, const std::string& var);
         // For queries of type Uses("main", "x")
         bool isUses(const std::string& proc, const std::string& var);
-        // For queries of type Uses(3, _)
-        // std::unordered_set<std::string> getUsesVars(const simple::ast::StatementNum& stmt_num);
+
         // For queries of type Uses("main", _)
         std::unordered_set<std::string> getUsesVars(const std::string& proc);
         // Returns the Statement numbers of queries of type Uses(a/r/s/p, "x")
@@ -151,29 +145,37 @@ namespace pkb
         bool isModifies(const simple::ast::StatementNum& stmt_num, const std::string& var);
         // For queries of type Modifies("main", "x")
         bool isModifies(const std::string& proc, const std::string& var);
-        // For queries of type Modifies(3, _)
-        // std::unordered_set<std::string> getModifiesVars(const simple::ast::StatementNum& stmt_num);
         // For queries of type Modifies("main", _)
-        std::unordered_set<std::string> getModifiesVars(const std::string& var);
+        std::unordered_set<std::string> getModifiesVars(const std::string& proc);
         // Returns the Statement numbers of queries of type Modifies(a/pn/s/p, "x")
         std::unordered_set<std::string> getModifies(const pql::ast::DESIGN_ENT& type, const std::string& var);
 
         const Procedure& getProcedureNamed(const std::string& name) const;
-
         const simple::ast::Program* getProgram() const;
 
         void addConstant(std::string value);
         Procedure& addProcedure(const std::string& name, simple::ast::Procedure* proc);
 
+        const std::vector<Statement>& getAllStatements() const;
+        const std::unordered_map<std::string, Variable>& getAllVariables() const;
+        const std::unordered_map<std::string, Procedure>& getAllProcedures() const;
 
-        bool m_follows_exists = false;
-        bool m_parent_exists = false;
-
+    private:
         std::unique_ptr<simple::ast::Program> m_program {};
 
         std::unordered_map<std::string, Procedure> m_procedures {};
         std::unordered_map<std::string, Variable> m_variables {};
         std::vector<Statement> m_statements {};
+
+        std::unordered_map<simple::ast::StatementNum, simple::ast::StatementNum> _direct_parents;
+        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _ancestors;
+        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _direct_children;
+        std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> _descendants;
+
+
+        bool m_follows_exists = false;
+        bool m_parent_exists = false;
+
 
         friend struct DesignExtractor;
     };

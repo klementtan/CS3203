@@ -25,7 +25,7 @@ namespace pql::eval
         // Stores initial domain for all types of declarations
         std::unordered_map<ast::DESIGN_ENT, std::vector<const simple::ast::Stmt*>> m_all_ent_stmt_map;
 
-        void preprocessPkb(pkb::ProgramKB* pkb);
+        void preprocessPkb();
         void processDeclarations(const ast::DeclarationList& declaration_list);
         void handleSuchThat(const ast::SuchThatCl& such_that);
         void handlePattern(const ast::PatternCl& pattern);
