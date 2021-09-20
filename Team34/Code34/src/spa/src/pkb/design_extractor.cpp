@@ -78,7 +78,7 @@ namespace pkb
         for(auto proc : ts.proc_stack)
         {
             var.used_by_procs.insert(proc);
-            m_pkb->m_procedures[proc->ast_proc->name].uses.insert(varname);
+            m_pkb->getProcedureNamed(proc->getAstProc()->name).m_uses.insert(varname);
         }
 
         for(auto call : ts.call_stack)
@@ -112,7 +112,7 @@ namespace pkb
         for(auto proc : ts.proc_stack)
         {
             var.modified_by_procs.insert(proc);
-            m_pkb->m_procedures[proc->ast_proc->name].modifies.insert(varname);
+            m_pkb->getProcedureNamed(proc->getAstProc()->name).m_modifies.insert(varname);
         }
 
         for(auto call : ts.call_stack)
@@ -232,7 +232,7 @@ namespace pkb
                     throw util::PkbException("pkb", "call to undefined procedure '{}'", call_stmt->proc_name);
 
                 auto& callee = m_pkb->getProcedureNamed(call_stmt->proc_name);
-                auto* body = &callee.ast_proc->body;
+                auto* body = &callee.getAstProc()->body;
 
                 // (b) cyclic calls
                 if(std::find(ts.proc_stack.begin(), ts.proc_stack.end(), &callee) != ts.proc_stack.end())
@@ -244,12 +244,12 @@ namespace pkb
                     // only set the direct calls/called_by for the top of the stack
                     if(i == ts.proc_stack.size() - 1)
                     {
-                        ts.proc_stack[i]->calls.insert(callee.ast_proc->name);
-                        callee.called_by.insert(ts.proc_stack[i]->ast_proc->name);
+                        ts.proc_stack[i]->m_calls.insert(callee.getAstProc()->name);
+                        callee.m_called_by.insert(ts.proc_stack[i]->getAstProc()->name);
                     }
 
-                    ts.proc_stack[i]->calls_transitive.insert(callee.ast_proc->name);
-                    callee.called_by_transitive.insert(ts.proc_stack[i]->ast_proc->name);
+                    ts.proc_stack[i]->m_calls_transitive.insert(callee.getAstProc()->name);
+                    callee.m_called_by_transitive.insert(ts.proc_stack[i]->getAstProc()->name);
                 }
 
                 auto new_ts = ts;
@@ -299,9 +299,8 @@ namespace pkb
         // m_program, since the numbering depends on the order.
         for(const auto& proc : m_program->procedures)
         {
-            // collectStmtList(pkb.get(), &proc->body);
+            m_pkb->addProcedure(proc->name, proc.get());
             this->assignStatementNumbers(&proc->body);
-            m_pkb->m_procedures[proc->name].ast_proc = proc.get();
         }
 
         // process the entire thing
@@ -310,7 +309,7 @@ namespace pkb
             if(m_visited_procs.find(name) != m_visited_procs.end())
                 continue;
 
-            auto body = &proc.ast_proc->body;
+            auto body = &proc.getAstProc()->body;
 
             TraversalState ts {};
             ts.proc_stack.push_back(&proc);

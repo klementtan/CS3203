@@ -17,7 +17,9 @@ namespace pkb
 
     struct Procedure
     {
-        Procedure() = default;
+        friend struct DesignExtractor;
+
+        Procedure(const simple::ast::Procedure* ast_proc);
 
         Procedure(Procedure&&) = default;
         Procedure& operator=(Procedure&&) = default;
@@ -25,17 +27,25 @@ namespace pkb
         Procedure(const Procedure&) = delete;
         Procedure& operator=(const Procedure&) = delete;
 
+        bool usesVariable(const std::string& varname) const;
+        bool modifiesVariable(const std::string& varname) const;
 
-        const simple::ast::Procedure* ast_proc = 0;
+        const std::unordered_set<std::string>& getUsedVariables() const;
+        const std::unordered_set<std::string>& getModifiedVariables() const;
 
-        std::unordered_set<std::string> uses {};
-        std::unordered_set<std::string> modifies {};
+        const simple::ast::Procedure* getAstProc() const;
 
-        std::unordered_set<std::string> calls {};
-        std::unordered_set<std::string> called_by {};
+    private:
+        const simple::ast::Procedure* m_ast_proc = 0;
 
-        std::unordered_set<std::string> calls_transitive {};
-        std::unordered_set<std::string> called_by_transitive {};
+        std::unordered_set<std::string> m_uses {};
+        std::unordered_set<std::string> m_modifies {};
+
+        std::unordered_set<std::string> m_calls {};
+        std::unordered_set<std::string> m_called_by {};
+
+        std::unordered_set<std::string> m_calls_transitive {};
+        std::unordered_set<std::string> m_called_by_transitive {};
     };
 
     // decided to go with 3 data structures because this would allow all 3 kinds of
@@ -153,7 +163,7 @@ namespace pkb
         const std::unordered_map<std::string, Procedure>& getAllProcedures() const;
 
         void addConstant(std::string value);
-        Procedure& addProcedure(const std::string& name, simple::ast::Procedure* proc);
+        Procedure& addProcedure(const std::string& name, const simple::ast::Procedure* proc);
 
 
     private:
