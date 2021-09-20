@@ -26,10 +26,10 @@ TEST_CASE("Populate PKB")
         )";
 
         auto prog = parseProgram(in);
-        REQUIRE_THROWS_WITH(DesignExtractor(std::move(prog)).run(), "Cyclic or recursive calls are not allowed");
+        REQUIRE_THROWS_WITH(DesignExtractor(std::move(prog)).run(), "illegal cyclic/recursive call");
     }
 
-    SECTION("Recursive call")
+    SECTION("cyclic/recursive call")
     {
         constexpr const auto in = R"(
             procedure B {
@@ -38,7 +38,7 @@ TEST_CASE("Populate PKB")
         )";
 
         auto prog = parseProgram(in);
-        REQUIRE_THROWS_WITH(DesignExtractor(std::move(prog)).run(), "Cyclic or recursive calls are not allowed");
+        REQUIRE_THROWS_WITH(DesignExtractor(std::move(prog)).run(), "illegal cyclic/recursive call");
     }
 
     SECTION("Recursive calls in disjoint graphs")
@@ -71,7 +71,7 @@ TEST_CASE("Populate PKB")
         )";
 
         auto prog = parseProgram(in);
-        REQUIRE_THROWS_WITH(DesignExtractor(std::move(prog)).run(), "Cyclic or recursive calls are not allowed");
+        REQUIRE_THROWS_WITH(DesignExtractor(std::move(prog)).run(), "illegal cyclic/recursive call");
     }
 
     SECTION("Call to non-existent procedure")
@@ -85,6 +85,6 @@ TEST_CASE("Populate PKB")
             }
         )";
         auto prog = parseProgram(in);
-        REQUIRE_THROWS_WITH(DesignExtractor(std::move(prog)).run(), "Procedure 'C' is undefined");
+        REQUIRE_THROWS_WITH(DesignExtractor(std::move(prog)).run(), "call to undefined procedure 'C'");
     }
 }

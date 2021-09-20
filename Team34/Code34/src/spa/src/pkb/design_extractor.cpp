@@ -55,36 +55,6 @@ namespace pkb
             processor(stmt.get(), list);
     }
 
-    void DesignExtractor::processCallGraph()
-    {
-        std::function<void(const s_ast::StmtList&, const std::string&)> processor {};
-        processor = [this, &processor](const s_ast::StmtList& list, const std::string& name) -> void {
-            for(const auto& stmt : list.statements)
-            {
-                if(auto c = dynamic_cast<const s_ast::ProcCall*>(stmt.get()); c)
-                {
-                    m_pkb->m_call_graph.addEdge(name, c->proc_name);
-                }
-                else if(auto i = dynamic_cast<const s_ast::IfStmt*>(stmt.get()); i)
-                {
-                    processor(i->true_case, name);
-                    processor(i->false_case, name);
-                }
-                else if(auto w = dynamic_cast<const s_ast::WhileLoop*>(stmt.get()); w)
-                {
-                    processor(w->body, name);
-                }
-            }
-        };
-
-        for(const auto& proc : m_program->procedures)
-        {
-            m_pkb->addProcedure(proc->name, proc.get());
-            processor(proc->body, proc->name);
-        }
-    }
-
-
     void DesignExtractor::processUses(const std::string& varname, Statement* stmt, const TraversalState& ts)
     {
         stmt->m_uses.insert(varname);
@@ -266,7 +236,7 @@ namespace pkb
 
                 // (b) cyclic calls
                 if(std::find(ts.proc_stack.begin(), ts.proc_stack.end(), &callee) != ts.proc_stack.end())
-                    throw util::PkbException("pkb", "illegal recursive call to procedure '{}'", call_stmt->proc_name);
+                    throw util::PkbException("pkb", "illegal cyclic/recursive call", call_stmt->proc_name);
 
 
                 for(size_t i = 0; i < ts.proc_stack.size(); i++)
@@ -325,17 +295,7 @@ namespace pkb
 
     std::unique_ptr<ProgramKB> DesignExtractor::run()
     {
-        // 1. process the call graph
-        this->processCallGraph();
-
-        // 2. check for missing procedures or cyclic calls
-        if(m_pkb->m_call_graph.cycleExists())
-            throw util::PkbException("pkb", "Cyclic or recursive calls are not allowed");
-
-        else if(auto a = m_pkb->m_call_graph.missingProc(m_program->procedures); !a.empty())
-            throw util::PkbException("pkb", "Procedure '{}' is undefined", a);
-
-        // 3. assign the statement numbers. this has to use the vector of procedures in
+        // assign the statement numbers. this has to use the vector of procedures in
         // m_program, since the numbering depends on the order.
         for(const auto& proc : m_program->procedures)
         {
@@ -344,7 +304,7 @@ namespace pkb
             m_pkb->m_procedures[proc->name].ast_proc = proc.get();
         }
 
-        // 4. process the entire thing
+        // process the entire thing
         for(auto& [name, proc] : m_pkb->m_procedures)
         {
             if(m_visited_procs.find(name) != m_visited_procs.end())

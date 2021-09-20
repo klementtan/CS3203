@@ -12,8 +12,6 @@ namespace pkb
         std::unique_ptr<ProgramKB> run();
 
     private:
-        void processCallGraph();
-
         void assignStatementNumbers(const simple::ast::StmtList* list);
 
         struct TraversalState

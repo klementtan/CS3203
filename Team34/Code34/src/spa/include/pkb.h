@@ -102,21 +102,6 @@ namespace pkb
         std::unordered_set<const Procedure*> modified_by_procs {};
     };
 
-    struct CallGraph
-    {
-        // adjacency graph for the edges. Proc A calls proc B gives edge (A, B).
-        std::unordered_map<std::string, std::unordered_set<std::string>> adj;
-
-        void addEdge(const std::string& a, std::string b);
-        std::unordered_set<std::string>::iterator removeEdge(
-            std::string a, std::string b, std::unordered_map<std::string, std::unordered_set<std::string>>* adj);
-
-        bool dfs(std::string a, std::unordered_map<std::string, std::unordered_set<std::string>>* adj,
-            std::unordered_set<std::string>* visited);
-        bool cycleExists();
-        std::string missingProc(const std::vector<std::unique_ptr<simple::ast::Procedure>>& procs);
-    };
-
     struct ProgramKB
     {
         ProgramKB(std::unique_ptr<simple::ast::Program> program);
@@ -183,8 +168,6 @@ namespace pkb
         std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> m_ancestors {};
         std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> m_direct_children {};
         std::unordered_map<simple::ast::StatementNum, std::unordered_set<simple::ast::StatementNum>> m_descendants {};
-
-        CallGraph m_call_graph {};
 
         bool m_follows_exists = false;
         bool m_parent_exists = false;
