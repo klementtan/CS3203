@@ -175,22 +175,27 @@ namespace pkb
             auto stmt = m_pkb->getStatementAtIndex(ast_stmt->id);
             auto sid = ast_stmt->id;
 
-            for(size_t i = 0; i < ts.local_stmt_stack.size(); i++)
+            // we really only need to look at the last thing in the stack.
+            if(ts.local_stmt_stack.size() > 0)
             {
-                auto list_sid = ts.local_stmt_stack[i]->getStmtNum();
+                auto list_sid = ts.local_stmt_stack.back()->getStmtNum();
+                m_pkb->m_direct_parents[sid] = list_sid;
+                m_pkb->m_direct_children[list_sid].insert(sid);
 
-                // only set the direct parent/child for the top of the stack
-                if(i == ts.local_stmt_stack.size() - 1)
-                {
-                    m_pkb->m_direct_parents[sid] = list_sid;
-                    m_pkb->m_direct_children[list_sid].insert(sid);
-                }
-
+                // the ancestors of this statement are simply:
+                // 1. the direct parent (list_sid)
+                // 2. the ancestors of the parent (list_sid->ancestors)
                 m_pkb->m_ancestors[sid].insert(list_sid);
-                m_pkb->m_descendants[list_sid].insert(sid);
+                m_pkb->m_ancestors[sid].insert(m_pkb->m_ancestors[list_sid].begin(),
+                    m_pkb->m_ancestors[list_sid].end());
+
+                // for populating descendants, we still need to traverse upwards.
+                for(auto slist : ts.local_stmt_stack)
+                    m_pkb->m_descendants[slist->getStmtNum()].insert(sid);
 
                 m_pkb->m_parent_exists = true;
             }
+
 
 
             if(auto if_stmt = CONST_DCAST(IfStmt, ast_stmt); if_stmt)
