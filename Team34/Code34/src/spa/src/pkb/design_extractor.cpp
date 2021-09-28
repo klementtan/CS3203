@@ -186,8 +186,8 @@ namespace pkb
                 // 1. the direct parent (list_sid)
                 // 2. the ancestors of the parent (list_sid->ancestors)
                 m_pkb->m_ancestors[sid].insert(list_sid);
-                m_pkb->m_ancestors[sid].insert(m_pkb->m_ancestors[list_sid].begin(),
-                    m_pkb->m_ancestors[list_sid].end());
+                m_pkb->m_ancestors[sid].insert(
+                    m_pkb->m_ancestors[list_sid].begin(), m_pkb->m_ancestors[list_sid].end());
 
                 // for populating descendants, we still need to traverse upwards.
                 for(auto slist : ts.local_stmt_stack)
