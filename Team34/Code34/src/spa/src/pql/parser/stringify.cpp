@@ -168,4 +168,27 @@ namespace pql::ast
                 throw util::PqlException("pql", "invalid EntRef type");
         }
     }
+
+    std::string AttrRef::toString() const
+    {
+        return zpr::sprint("AttrRef(decl: {}, attr_name: {})", decl ? decl->toString() : "nullptr", attr_name);
+    }
+
+    std::string Elem::toString() const
+    {
+      std::string ret = zpr::sprint("Elem(ref_type: ");
+      switch(this->ref_type) {
+        case Type::Invalid:
+          ret += "Invalid";
+          break;
+        case Type::AttrRef:
+          ret += zpr::sprint("AttrRef, attr_ref: {}", attr_ref().toString());
+          break;
+        case Type::Declaration:
+          ret += zpr::sprint("Declaration, decl: {}",declaration()->toString()) ;
+          break;
+      }
+      ret += ")";
+      return ret;
+    }
 }

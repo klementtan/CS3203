@@ -210,4 +210,111 @@ namespace pql::ast
         return *this;
     }
 
+    Elem::Elem()
+    {
+        this->ref_type = Type::Invalid;
+    }
+    Elem::~Elem() { }
+
+    Elem::Elem(const Elem& other)
+    {
+        if(other.isAttrRef())
+        {
+            this->ref_type = Type::AttrRef;
+            this->_attr_ref = other._attr_ref;
+        }
+        else if(other.isDeclaration())
+        {
+            this->ref_type = Type::Declaration;
+            this->_attr_ref = other._attr_ref;
+        }
+        else
+        {
+            this->ref_type = Type::Invalid;
+        }
+    };
+    Elem& Elem::operator=(const Elem& other)
+    {
+        if(this != &other)
+        {
+            if(other.isAttrRef())
+            {
+                this->ref_type = Type::AttrRef;
+                this->_attr_ref = other._attr_ref;
+            }
+            else if(other.isDeclaration())
+            {
+                this->ref_type = Type::Declaration;
+                this->_attr_ref = other._attr_ref;
+            }
+            else
+            {
+                this->ref_type = Type::Invalid;
+            }
+        }
+        return *this;
+    };
+
+    Elem::Elem(Elem&& other)
+    {
+        if(other.isAttrRef())
+        {
+            this->ref_type = Type::AttrRef;
+            this->_attr_ref = std::move(other._attr_ref);
+        }
+        else if(other.isDeclaration())
+        {
+            this->ref_type = Type::Declaration;
+            this->_declaration = std::move(other._declaration);
+        }
+        else
+        {
+            this->ref_type = Type::Invalid;
+        }
+    };
+    Elem& Elem::operator=(Elem&& other)
+    {
+        if(this != &other)
+        {
+            if(other.isAttrRef())
+            {
+                this->ref_type = Type::AttrRef;
+                this->_attr_ref = std::move(other._attr_ref);
+            }
+            else if(other.isDeclaration())
+            {
+                this->ref_type = Type::Declaration;
+                this->_declaration = std::move(other._declaration);
+            }
+            else
+            {
+                this->ref_type = Type::Invalid;
+            }
+        }
+        return *this;
+    };
+
+    Declaration* Elem::declaration() const
+    {
+        if(this->ref_type != Type::Declaration)
+            throw util::PqlException("pql", "Elem is not a Declaration");
+
+        return this->_declaration;
+    }
+
+    Elem Elem::ofAttrRef(AttrRef attr_ref)
+    {
+        Elem ret {};
+        ret.ref_type = Type::AttrRef;
+        ret._attr_ref = attr_ref;
+        return ret;
+    }
+
+    Elem Elem::ofDeclaration(Declaration* decl)
+    {
+        Elem ret {};
+        ret.ref_type = Type::Declaration;
+        ret._declaration = decl;
+        return ret;
+    }
 }

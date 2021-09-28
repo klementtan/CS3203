@@ -175,6 +175,62 @@ namespace pql::ast
         static EntRef ofDeclaration(Declaration* decl);
     };
 
+
+    // Represents the reference to a attribute of a synonym
+    struct AttrRef
+    {
+        Declaration* decl = nullptr;
+        std::string attr_name = "";
+
+        std::string toString();
+    };
+
+    // Represents the element to return in select clause
+    /** Abstract class for Statement Reference. */
+    struct Elem
+    {
+        enum class Type
+        {
+            Invalid,
+            Declaration,
+            AttrRef,
+        };
+
+        std::string toString() const;
+
+        Type ref_type {};
+        union
+        {
+            Declaration* _declaration;
+            AttrRef _attr_ref;
+        };
+
+        Elem();
+        ~Elem();
+
+        Elem(const Elem& other);
+        Elem& operator=(const Elem& other);
+
+        Elem(Elem&& other);
+        Elem& operator=(Elem&& other);
+
+
+        Declaration* declaration() const;
+        AttrRef attr_ref() const;
+
+        inline bool isAttrRef() const
+        {
+            return ref_type == Type::AttrRef;
+        }
+        inline bool isDeclaration() const
+        {
+            return ref_type == Type::Declaration;
+        }
+
+        static Elem ofDeclaration(Declaration* decl);
+        static Elem ofAttrRef(AttrRef AttrRef);
+    };
+
     /** Abstract class for Relationship Conditions between Statements and Entities. */
     struct RelCond
     {
