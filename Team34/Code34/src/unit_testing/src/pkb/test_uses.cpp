@@ -3,16 +3,12 @@
 
 #include "simple/parser.h"
 #include "pkb.h"
+#include "design_extractor.h"
 #include "pql/parser/parser.h"
 #include "util.h"
 
 using namespace simple::parser;
 using namespace pkb;
-
-static void req(bool b)
-{
-    REQUIRE(b);
-}
 
 // adapted from sample query. Changed line 8 to not use "x", 17 to not use "i" for condition checking
 constexpr const auto sample_source = R"(
@@ -87,83 +83,98 @@ constexpr const auto trivial_source = R"(
     }
 )";
 
-auto kb_sample = processProgram(parseProgram(sample_source));
-auto kb_trivial = processProgram(parseProgram(trivial_source));
+static auto kb_sample = DesignExtractor(parseProgram(sample_source)).run();
+static auto kb_trivial = DesignExtractor(parseProgram(trivial_source)).run();
+
+static const Statement& get_stmt(const std::unique_ptr<pkb::ProgramKB>& pkb, simple::ast::StatementNum num)
+{
+    return *pkb->getStatementAt(num);
+}
+
+static const Procedure& get_proc(const std::unique_ptr<pkb::ProgramKB>& pkb, const char* name)
+{
+    return pkb->getProcedureNamed(name);
+}
+
+static const Variable& get_var(const std::unique_ptr<pkb::ProgramKB>& pkb, const char* name)
+{
+    return pkb->getVariableNamed(name);
+}
 
 TEST_CASE("Uses(DeclaredStmt, DeclaredVar)")
 {
     SECTION("Uses(DeclaredStmt, DeclaredVar) for assignment, condition and print")
     {
-        req(kb_sample->uses_modifies.isUses(4, "i"));
-        req(kb_sample->uses_modifies.isUses(6, "x"));
-        req(kb_sample->uses_modifies.isUses(9, "i"));
-        req(kb_sample->uses_modifies.isUses(9, "x"));
-        req(kb_sample->uses_modifies.isUses(9, "z"));
-        req(kb_sample->uses_modifies.isUses(13, "x"));
-        req(kb_sample->uses_modifies.isUses(14, "i"));
+        CHECK(get_stmt(kb_sample, 4).usesVariable("i"));
+        CHECK(get_stmt(kb_sample, 6).usesVariable("x"));
+        CHECK(get_stmt(kb_sample, 9).usesVariable("i"));
+        CHECK(get_stmt(kb_sample, 9).usesVariable("x"));
+        CHECK(get_stmt(kb_sample, 9).usesVariable("z"));
+        CHECK(get_stmt(kb_sample, 13).usesVariable("x"));
+        CHECK(get_stmt(kb_sample, 14).usesVariable("i"));
 
-        req(kb_trivial->uses_modifies.isUses(6, "flag"));
-        req(kb_trivial->uses_modifies.isUses(9, "normSq"));
-        req(kb_trivial->uses_modifies.isUses(14, "x"));
-        req(kb_trivial->uses_modifies.isUses(14, "y"));
-        req(kb_trivial->uses_modifies.isUses(19, "count"));
-        req(kb_trivial->uses_modifies.isUses(23, "cenX"));
-        req(kb_trivial->uses_modifies.isUses(23, "cenY"));
+        CHECK(get_stmt(kb_trivial, 6).usesVariable("flag"));
+        CHECK(get_stmt(kb_trivial, 9).usesVariable("normSq"));
+        CHECK(get_stmt(kb_trivial, 14).usesVariable("x"));
+        CHECK(get_stmt(kb_trivial, 14).usesVariable("y"));
+        CHECK(get_stmt(kb_trivial, 19).usesVariable("count"));
+        CHECK(get_stmt(kb_trivial, 23).usesVariable("cenX"));
+        CHECK(get_stmt(kb_trivial, 23).usesVariable("cenY"));
     }
 
     SECTION("Uses(DeclaredStmt, DeclaredVar) inside if/while")
     {
-        req(kb_sample->uses_modifies.isUses(4, "x"));
-        req(kb_sample->uses_modifies.isUses(4, "z"));
-        req(kb_sample->uses_modifies.isUses(6, "x"));
-        req(kb_sample->uses_modifies.isUses(6, "z"));
-        req(kb_sample->uses_modifies.isUses(13, "i"));
-        req(kb_sample->uses_modifies.isUses(13, "x"));
-        req(kb_sample->uses_modifies.isUses(13, "y"));
-        req(kb_sample->uses_modifies.isUses(13, "z"));
+        CHECK(get_stmt(kb_sample, 4).usesVariable("x"));
+        CHECK(get_stmt(kb_sample, 4).usesVariable("z"));
+        CHECK(get_stmt(kb_sample, 6).usesVariable("x"));
+        CHECK(get_stmt(kb_sample, 6).usesVariable("z"));
+        CHECK(get_stmt(kb_sample, 13).usesVariable("i"));
+        CHECK(get_stmt(kb_sample, 13).usesVariable("x"));
+        CHECK(get_stmt(kb_sample, 13).usesVariable("y"));
+        CHECK(get_stmt(kb_sample, 13).usesVariable("z"));
 
-        req(kb_trivial->uses_modifies.isUses(14, "cenX"));
-        req(kb_trivial->uses_modifies.isUses(14, "cenY"));
-        req(kb_trivial->uses_modifies.isUses(14, "count"));
-        req(kb_trivial->uses_modifies.isUses(14, "x"));
-        req(kb_trivial->uses_modifies.isUses(14, "y"));
-        req(kb_trivial->uses_modifies.isUses(19, "cenX"));
-        req(kb_trivial->uses_modifies.isUses(19, "cenY"));
-        req(kb_trivial->uses_modifies.isUses(19, "count"));
+        CHECK(get_stmt(kb_trivial, 14).usesVariable("cenX"));
+        CHECK(get_stmt(kb_trivial, 14).usesVariable("cenY"));
+        CHECK(get_stmt(kb_trivial, 14).usesVariable("count"));
+        CHECK(get_stmt(kb_trivial, 14).usesVariable("x"));
+        CHECK(get_stmt(kb_trivial, 14).usesVariable("y"));
+        CHECK(get_stmt(kb_trivial, 19).usesVariable("cenX"));
+        CHECK(get_stmt(kb_trivial, 19).usesVariable("cenY"));
+        CHECK(get_stmt(kb_trivial, 19).usesVariable("count"));
     }
 
     SECTION("Uses(DeclaredStmt, DeclaredVar) for procCall")
     {
-        req(kb_sample->uses_modifies.isUses(10, "x"));
-        req(kb_sample->uses_modifies.isUses(10, "z"));
-        req(kb_sample->uses_modifies.isUses(12, "i"));
-        req(kb_sample->uses_modifies.isUses(12, "x"));
-        req(kb_sample->uses_modifies.isUses(12, "y"));
-        req(kb_sample->uses_modifies.isUses(12, "z"));
+        CHECK(get_stmt(kb_sample, 10).usesVariable("x"));
+        CHECK(get_stmt(kb_sample, 10).usesVariable("z"));
+        CHECK(get_stmt(kb_sample, 12).usesVariable("i"));
+        CHECK(get_stmt(kb_sample, 12).usesVariable("x"));
+        CHECK(get_stmt(kb_sample, 12).usesVariable("y"));
+        CHECK(get_stmt(kb_sample, 12).usesVariable("z"));
 
-        req(kb_trivial->uses_modifies.isUses(2, "cenX"));
-        req(kb_trivial->uses_modifies.isUses(2, "cenY"));
-        req(kb_trivial->uses_modifies.isUses(2, "count"));
-        req(kb_trivial->uses_modifies.isUses(2, "x"));
-        req(kb_trivial->uses_modifies.isUses(2, "y"));
-        req(kb_trivial->uses_modifies.isUses(3, "cenX"));
-        req(kb_trivial->uses_modifies.isUses(3, "cenY"));
-        req(kb_trivial->uses_modifies.isUses(3, "flag"));
-        req(kb_trivial->uses_modifies.isUses(3, "normSq"));
+        CHECK(get_stmt(kb_trivial, 2).usesVariable("cenX"));
+        CHECK(get_stmt(kb_trivial, 2).usesVariable("cenY"));
+        CHECK(get_stmt(kb_trivial, 2).usesVariable("count"));
+        CHECK(get_stmt(kb_trivial, 2).usesVariable("x"));
+        CHECK(get_stmt(kb_trivial, 2).usesVariable("y"));
+        CHECK(get_stmt(kb_trivial, 3).usesVariable("cenX"));
+        CHECK(get_stmt(kb_trivial, 3).usesVariable("cenY"));
+        CHECK(get_stmt(kb_trivial, 3).usesVariable("flag"));
+        CHECK(get_stmt(kb_trivial, 3).usesVariable("normSq"));
     }
 
     SECTION("Uses(DeclaredStmt, DeclaredVar) negative test cases")
     {
-        req(!kb_sample->uses_modifies.isUses(3, "i"));
-        req(!kb_sample->uses_modifies.isUses(6, "y"));
-        req(!kb_sample->uses_modifies.isUses(7, "z"));
-        req(!kb_sample->uses_modifies.isUses(10, "i"));
+        CHECK_FALSE(get_stmt(kb_sample, 3).usesVariable("i"));
+        CHECK_FALSE(get_stmt(kb_sample, 6).usesVariable("y"));
+        CHECK_FALSE(get_stmt(kb_sample, 7).usesVariable("z"));
+        CHECK_FALSE(get_stmt(kb_sample, 10).usesVariable("i"));
 
 
-        req(!kb_trivial->uses_modifies.isUses(1, "flag"));
-        req(!kb_trivial->uses_modifies.isUses(14, "flag"));
-        req(!kb_trivial->uses_modifies.isUses(18, "x"));
-        req(!kb_trivial->uses_modifies.isUses(18, "y"));
+        CHECK_FALSE(get_stmt(kb_trivial, 1).usesVariable("flag"));
+        CHECK_FALSE(get_stmt(kb_trivial, 14).usesVariable("flag"));
+        CHECK_FALSE(get_stmt(kb_trivial, 18).usesVariable("x"));
+        CHECK_FALSE(get_stmt(kb_trivial, 18).usesVariable("y"));
     }
 }
 
@@ -171,45 +182,45 @@ TEST_CASE("Uses(DeclaredProc, DeclaredVar)")
 {
     SECTION("Uses(DeclaredProc, DeclaredVar)")
     {
-        req(kb_sample->uses_modifies.isUses("Example", "i"));
-        req(kb_sample->uses_modifies.isUses("Example", "x"));
-        req(kb_sample->uses_modifies.isUses("Example", "y"));
-        req(kb_sample->uses_modifies.isUses("Example", "z"));
-        req(kb_sample->uses_modifies.isUses("p", "i"));
-        req(kb_sample->uses_modifies.isUses("p", "x"));
-        req(kb_sample->uses_modifies.isUses("p", "y"));
-        req(kb_sample->uses_modifies.isUses("p", "z"));
-        req(kb_sample->uses_modifies.isUses("q", "x"));
-        req(kb_sample->uses_modifies.isUses("q", "z"));
+        CHECK(get_proc(kb_sample, "Example").usesVariable("i"));
+        CHECK(get_proc(kb_sample, "Example").usesVariable("x"));
+        CHECK(get_proc(kb_sample, "Example").usesVariable("y"));
+        CHECK(get_proc(kb_sample, "Example").usesVariable("z"));
+        CHECK(get_proc(kb_sample, "p").usesVariable("i"));
+        CHECK(get_proc(kb_sample, "p").usesVariable("x"));
+        CHECK(get_proc(kb_sample, "p").usesVariable("y"));
+        CHECK(get_proc(kb_sample, "p").usesVariable("z"));
+        CHECK(get_proc(kb_sample, "q").usesVariable("x"));
+        CHECK(get_proc(kb_sample, "q").usesVariable("z"));
 
-        req(kb_trivial->uses_modifies.isUses("main", "cenX"));
-        req(kb_trivial->uses_modifies.isUses("main", "cenY"));
-        req(kb_trivial->uses_modifies.isUses("main", "count"));
-        req(kb_trivial->uses_modifies.isUses("main", "flag"));
-        req(kb_trivial->uses_modifies.isUses("main", "normSq"));
-        req(kb_trivial->uses_modifies.isUses("main", "x"));
-        req(kb_trivial->uses_modifies.isUses("main", "y"));
-        req(kb_trivial->uses_modifies.isUses("printResults", "cenX"));
-        req(kb_trivial->uses_modifies.isUses("printResults", "cenY"));
-        req(kb_trivial->uses_modifies.isUses("printResults", "flag"));
-        req(kb_trivial->uses_modifies.isUses("printResults", "normSq"));
-        req(kb_trivial->uses_modifies.isUses("computeCentroid", "cenX"));
-        req(kb_trivial->uses_modifies.isUses("computeCentroid", "cenY"));
-        req(kb_trivial->uses_modifies.isUses("computeCentroid", "count"));
-        req(kb_trivial->uses_modifies.isUses("computeCentroid", "x"));
-        req(kb_trivial->uses_modifies.isUses("computeCentroid", "y"));
+        CHECK(get_proc(kb_trivial, "main").usesVariable("cenX"));
+        CHECK(get_proc(kb_trivial, "main").usesVariable("cenY"));
+        CHECK(get_proc(kb_trivial, "main").usesVariable("count"));
+        CHECK(get_proc(kb_trivial, "main").usesVariable("flag"));
+        CHECK(get_proc(kb_trivial, "main").usesVariable("normSq"));
+        CHECK(get_proc(kb_trivial, "main").usesVariable("x"));
+        CHECK(get_proc(kb_trivial, "main").usesVariable("y"));
+        CHECK(get_proc(kb_trivial, "printResults").usesVariable("cenX"));
+        CHECK(get_proc(kb_trivial, "printResults").usesVariable("cenY"));
+        CHECK(get_proc(kb_trivial, "printResults").usesVariable("flag"));
+        CHECK(get_proc(kb_trivial, "printResults").usesVariable("normSq"));
+        CHECK(get_proc(kb_trivial, "computeCentroid").usesVariable("cenX"));
+        CHECK(get_proc(kb_trivial, "computeCentroid").usesVariable("cenY"));
+        CHECK(get_proc(kb_trivial, "computeCentroid").usesVariable("count"));
+        CHECK(get_proc(kb_trivial, "computeCentroid").usesVariable("x"));
+        CHECK(get_proc(kb_trivial, "computeCentroid").usesVariable("y"));
     }
 
     SECTION("Uses(DeclaredProc, DeclaredVar) negative test cases")
     {
-        req(!kb_sample->uses_modifies.isUses("q", "y"));
-        req(!kb_sample->uses_modifies.isUses("q", "i"));
+        CHECK_FALSE(get_proc(kb_sample, "q").usesVariable("y"));
+        CHECK_FALSE(get_proc(kb_sample, "q").usesVariable("i"));
 
 
-        req(!kb_trivial->uses_modifies.isUses("printResults", "x"));
-        req(!kb_trivial->uses_modifies.isUses("printResults", "y"));
-        req(!kb_trivial->uses_modifies.isUses("computeCentroid", "flag"));
-        req(!kb_trivial->uses_modifies.isUses("computeCentroid", "normSq"));
+        CHECK_FALSE(get_proc(kb_trivial, "printResults").usesVariable("x"));
+        CHECK_FALSE(get_proc(kb_trivial, "printResults").usesVariable("y"));
+        CHECK_FALSE(get_proc(kb_trivial, "computeCentroid").usesVariable("flag"));
+        CHECK_FALSE(get_proc(kb_trivial, "computeCentroid").usesVariable("normSq"));
     }
 }
 
@@ -217,46 +228,46 @@ TEST_CASE("Uses(DeclaredStmt, AllVar)")
 {
     SECTION("Uses(DeclaredStmt, AllVar) for assignment and print")
     {
-        auto fst_result = kb_sample->uses_modifies.getUsesVars(1);
-        req(fst_result.size() == 0);
+        auto& fst_result = get_stmt(kb_sample, 1).getUsedVariables();
+        CHECK(fst_result.size() == 0);
 
-        auto snd_result = kb_sample->uses_modifies.getUsesVars(5);
-        req(snd_result.size() == 1);
-        req(snd_result.count("x"));
+        auto& snd_result = get_stmt(kb_sample, 5).getUsedVariables();
+        CHECK(snd_result.size() == 1);
+        CHECK(snd_result.count("x"));
 
-        auto trd_result = kb_trivial->uses_modifies.getUsesVars(6);
-        req(trd_result.size() == 1);
-        req(trd_result.count("flag"));
+        auto& trd_result = get_stmt(kb_trivial, 6).getUsedVariables();
+        CHECK(trd_result.size() == 1);
+        CHECK(trd_result.count("flag"));
     }
 
     SECTION("Uses(DeclaredStmt, AllVar) inside if/while")
     {
-        auto fst_result = kb_sample->uses_modifies.getUsesVars(6);
-        req(fst_result.size() == 2);
-        req(fst_result.count("x"));
-        req(fst_result.count("z"));
+        auto& fst_result = get_stmt(kb_sample, 6).getUsedVariables();
+        CHECK(fst_result.size() == 2);
+        CHECK(fst_result.count("x"));
+        CHECK(fst_result.count("z"));
 
-        auto snd_result = kb_sample->uses_modifies.getUsesVars(14);
-        req(snd_result.size() == 4);
-        req(snd_result.count("i"));
-        req(snd_result.count("x"));
-        req(snd_result.count("y"));
-        req(snd_result.count("z"));
+        auto& snd_result = get_stmt(kb_sample, 14).getUsedVariables();
+        CHECK(snd_result.size() == 4);
+        CHECK(snd_result.count("i"));
+        CHECK(snd_result.count("x"));
+        CHECK(snd_result.count("y"));
+        CHECK(snd_result.count("z"));
     }
 
     SECTION("Uses(DeclaredStmt, AllVar) for procCalls")
     {
-        auto fst_result = kb_trivial->uses_modifies.getUsesVars(3);
-        req(fst_result.size() == 4);
-        req(fst_result.count("cenX"));
-        req(fst_result.count("cenY"));
-        req(fst_result.count("flag"));
-        req(fst_result.count("normSq"));
+        auto& fst_result = get_stmt(kb_trivial, 3).getUsedVariables();
+        CHECK(fst_result.size() == 4);
+        CHECK(fst_result.count("cenX"));
+        CHECK(fst_result.count("cenY"));
+        CHECK(fst_result.count("flag"));
+        CHECK(fst_result.count("normSq"));
 
-        auto snd_result = kb_sample->uses_modifies.getUsesVars(10);
-        req(snd_result.size() == 2);
-        req(snd_result.count("x"));
-        req(snd_result.count("z"));
+        auto& snd_result = get_stmt(kb_sample, 10).getUsedVariables();
+        CHECK(snd_result.size() == 2);
+        CHECK(snd_result.count("x"));
+        CHECK(snd_result.count("z"));
     }
 }
 
@@ -264,33 +275,33 @@ TEST_CASE("Uses(DeclaredProc, AllVar)")
 {
     SECTION("Uses(DeclaredProc, AllVar) for assignment and print")
     {
-        auto fst_result = kb_trivial->uses_modifies.getUsesVars("main");
-        req(fst_result.size() == 7);
-        req(fst_result.count("cenX"));
-        req(fst_result.count("cenY"));
-        req(fst_result.count("count"));
-        req(fst_result.count("flag"));
-        req(fst_result.count("normSq"));
-        req(fst_result.count("x"));
-        req(fst_result.count("y"));
+        auto& fst_result = get_proc(kb_trivial, "main").getUsedVariables();
+        CHECK(fst_result.size() == 7);
+        CHECK(fst_result.count("cenX"));
+        CHECK(fst_result.count("cenY"));
+        CHECK(fst_result.count("count"));
+        CHECK(fst_result.count("flag"));
+        CHECK(fst_result.count("normSq"));
+        CHECK(fst_result.count("x"));
+        CHECK(fst_result.count("y"));
 
-        auto snd_result = kb_trivial->uses_modifies.getUsesVars("readPoint");
-        req(snd_result.size() == 0);
+        auto& snd_result = get_proc(kb_trivial, "readPoint").getUsedVariables();
+        CHECK(snd_result.size() == 0);
 
-        auto trd_result = kb_trivial->uses_modifies.getUsesVars("computeCentroid");
-        req(trd_result.size() == 5);
-        req(trd_result.count("cenX"));
-        req(trd_result.count("cenY"));
-        req(trd_result.count("count"));
-        req(trd_result.count("x"));
-        req(trd_result.count("y"));
+        auto& trd_result = get_proc(kb_trivial, "computeCentroid").getUsedVariables();
+        CHECK(trd_result.size() == 5);
+        CHECK(trd_result.count("cenX"));
+        CHECK(trd_result.count("cenY"));
+        CHECK(trd_result.count("count"));
+        CHECK(trd_result.count("x"));
+        CHECK(trd_result.count("y"));
 
-        auto frh_result = kb_trivial->uses_modifies.getUsesVars("printResults");
-        req(frh_result.size() == 4);
-        req(frh_result.count("cenX"));
-        req(frh_result.count("cenY"));
-        req(frh_result.count("flag"));
-        req(frh_result.count("normSq"));
+        auto& frh_result = get_proc(kb_trivial, "printResults").getUsedVariables();
+        CHECK(frh_result.size() == 4);
+        CHECK(frh_result.count("cenX"));
+        CHECK(frh_result.count("cenY"));
+        CHECK(frh_result.count("flag"));
+        CHECK(frh_result.count("normSq"));
     }
 }
 
@@ -298,105 +309,105 @@ TEST_CASE("Uses(Synonym, DeclaredVar)")
 {
     SECTION("Uses(ASSIGN, DeclaredVar)")
     {
-        auto fst_result = kb_trivial->uses_modifies.getUses(pql::ast::DESIGN_ENT::ASSIGN, "count");
-        req(fst_result.size() == 3);
-        req(fst_result.count("15"));
-        req(fst_result.count("21"));
-        req(fst_result.count("22"));
+        auto fst_result = get_var(kb_trivial, "count").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::ASSIGN);
+        CHECK(fst_result.size() == 3);
+        CHECK(fst_result.count(15));
+        CHECK(fst_result.count(21));
+        CHECK(fst_result.count(22));
 
-        auto snd_result = kb_trivial->uses_modifies.getUses(pql::ast::DESIGN_ENT::ASSIGN, "cenX");
-        req(snd_result.size() == 3);
-        req(snd_result.count("16"));
-        req(snd_result.count("21"));
-        req(snd_result.count("23"));
+        auto snd_result = get_var(kb_trivial, "cenX").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::ASSIGN);
+        CHECK(snd_result.size() == 3);
+        CHECK(snd_result.count(16));
+        CHECK(snd_result.count(21));
+        CHECK(snd_result.count(23));
     }
 
     SECTION("Uses(PRINT, DeclaredVar)")
     {
-        auto fst_result = kb_trivial->uses_modifies.getUses(pql::ast::DESIGN_ENT::PRINT, "flag");
-        req(fst_result.size() == 1);
-        req(fst_result.count("6"));
+        auto fst_result = get_var(kb_trivial, "flag").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::PRINT);
+        CHECK(fst_result.size() == 1);
+        CHECK(fst_result.count(6));
 
-        auto snd_result = kb_trivial->uses_modifies.getUses(pql::ast::DESIGN_ENT::PRINT, "cenX");
-        req(snd_result.size() == 1);
-        req(snd_result.count("7"));
+        auto snd_result = get_var(kb_trivial, "cenX").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::PRINT);
+        CHECK(snd_result.size() == 1);
+        CHECK(snd_result.count(7));
     }
 
     SECTION("Uses(CALL, DeclaredVar)")
     {
-        auto fst_result = kb_trivial->uses_modifies.getUses(pql::ast::DESIGN_ENT::CALL, "flag");
-        req(fst_result.size() == 1);
-        req(fst_result.count("3"));
+        auto fst_result = get_var(kb_trivial, "flag").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::CALL);
+        CHECK(fst_result.size() == 1);
+        CHECK(fst_result.count(3));
 
-        auto snd_result = kb_trivial->uses_modifies.getUses(pql::ast::DESIGN_ENT::CALL, "cenX");
-        req(snd_result.size() == 2);
-        req(snd_result.count("2"));
-        req(snd_result.count("3"));
+        auto snd_result = get_var(kb_trivial, "cenX").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::CALL);
+        CHECK(snd_result.size() == 2);
+        CHECK(snd_result.count(2));
+        CHECK(snd_result.count(3));
     }
 
     SECTION("Uses(IF, DeclaredVar)")
     {
-        auto fst_result = kb_sample->uses_modifies.getUses(pql::ast::DESIGN_ENT::IF, "x");
-        req(fst_result.size() == 3);
-        req(fst_result.count("6"));
-        req(fst_result.count("13"));
-        req(fst_result.count("22"));
+        auto fst_result = get_var(kb_sample, "x").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::IF);
+        CHECK(fst_result.size() == 3);
+        CHECK(fst_result.count(6));
+        CHECK(fst_result.count(13));
+        CHECK(fst_result.count(22));
 
-        auto snd_result = kb_sample->uses_modifies.getUses(pql::ast::DESIGN_ENT::IF, "i");
-        req(snd_result.size() == 1);
-        req(snd_result.count("13"));
+        auto snd_result = get_var(kb_sample, "i").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::IF);
+        CHECK(snd_result.size() == 1);
+        CHECK(snd_result.count(13));
     }
 
     SECTION("Uses(WHILE, DeclaredVar)")
     {
-        auto fst_result = kb_sample->uses_modifies.getUses(pql::ast::DESIGN_ENT::WHILE, "y");
-        req(fst_result.size() == 1);
-        req(fst_result.count("14"));
+        auto fst_result = get_var(kb_sample, "y").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::WHILE);
+        CHECK(fst_result.size() == 1);
+        CHECK(fst_result.count(14));
 
-        auto snd_result = kb_sample->uses_modifies.getUses(pql::ast::DESIGN_ENT::WHILE, "i");
-        req(snd_result.size() == 2);
-        req(snd_result.count("4"));
-        req(snd_result.count("14"));
+        auto snd_result = get_var(kb_sample, "i").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::WHILE);
+        CHECK(snd_result.size() == 2);
+        CHECK(snd_result.count(4));
+        CHECK(snd_result.count(14));
     }
 
     SECTION("Uses(STMT, DeclaredVar)")
     {
-        auto fst_result = kb_sample->uses_modifies.getUses(pql::ast::DESIGN_ENT::STMT, "x");
-        req(fst_result.size() == 16);
-        req(fst_result.count("4"));
-        req(fst_result.count("5"));
-        req(fst_result.count("6"));
-        req(fst_result.count("7"));
-        req(fst_result.count("9"));
-        req(fst_result.count("10"));
-        req(fst_result.count("12"));
-        req(fst_result.count("13"));
-        req(fst_result.count("14"));
-        req(fst_result.count("16"));
-        req(fst_result.count("18"));
-        req(fst_result.count("19"));
-        req(fst_result.count("21"));
-        req(fst_result.count("22"));
-        req(fst_result.count("23"));
-        req(fst_result.count("24"));
+        auto fst_result = get_var(kb_sample, "x").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::STMT);
+        CHECK(fst_result.size() == 16);
+        CHECK(fst_result.count(4));
+        CHECK(fst_result.count(5));
+        CHECK(fst_result.count(6));
+        CHECK(fst_result.count(7));
+        CHECK(fst_result.count(9));
+        CHECK(fst_result.count(10));
+        CHECK(fst_result.count(12));
+        CHECK(fst_result.count(13));
+        CHECK(fst_result.count(14));
+        CHECK(fst_result.count(16));
+        CHECK(fst_result.count(18));
+        CHECK(fst_result.count(19));
+        CHECK(fst_result.count(21));
+        CHECK(fst_result.count(22));
+        CHECK(fst_result.count(23));
+        CHECK(fst_result.count(24));
 
-        auto snd_result = kb_trivial->uses_modifies.getUses(pql::ast::DESIGN_ENT::STMT, "x");
-        req(snd_result.size() == 3);
-        req(snd_result.count("2"));
-        req(snd_result.count("14"));
-        req(snd_result.count("16"));
+        auto snd_result = get_var(kb_trivial, "x").getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT::STMT);
+        CHECK(snd_result.size() == 3);
+        CHECK(snd_result.count(2));
+        CHECK(snd_result.count(14));
+        CHECK(snd_result.count(16));
     }
 
     SECTION("Uses(PROCEDURE, DeclaredVar)")
     {
-        auto fst_result = kb_sample->uses_modifies.getUses(pql::ast::DESIGN_ENT::PROCEDURE, "y");
-        req(fst_result.size() == 2);
-        req(fst_result.count("Example"));
-        req(fst_result.count("p"));
+        auto fst_result = get_var(kb_sample, "y").getUsingProcNames();
+        CHECK(fst_result.size() == 2);
+        CHECK(fst_result.count("Example"));
+        CHECK(fst_result.count("p"));
 
-        auto snd_result = kb_trivial->uses_modifies.getUses(pql::ast::DESIGN_ENT::PROCEDURE, "flag");
-        req(snd_result.size() == 2);
-        req(snd_result.count("printResults"));
-        req(snd_result.count("main"));
+        auto snd_result = get_var(kb_trivial, "flag").getUsingProcNames();
+        CHECK(snd_result.size() == 2);
+        CHECK(snd_result.count("printResults"));
+        CHECK(snd_result.count("main"));
     }
 }

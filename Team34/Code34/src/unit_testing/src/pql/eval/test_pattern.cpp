@@ -6,6 +6,7 @@
 
 #include "pkb.h"
 #include "simple/parser.h"
+#include "design_extractor.h"
 #include "pql/parser/parser.h"
 #include "pql/eval/evaluator.h"
 
@@ -97,7 +98,7 @@ TEST_CASE("Select pattern assign(name, _subexpr_)")
 {
     // we're running a lot of things, so save time here by only processing once
     auto prog = simple::parser::parseProgram(prog_1);
-    auto pkb = pkb::processProgram(std::move(prog));
+    auto pkb = pkb::DesignExtractor(std::move(prog)).run();
 
     SECTION("xyz")
     {
@@ -179,7 +180,7 @@ TEST_CASE("Select pattern assign(name, _subexpr_)")
 TEST_CASE("Select pattern assign(name, fullexpr)")
 {
     auto prog = simple::parser::parseProgram(prog_1);
-    auto pkb = pkb::processProgram(std::move(prog));
+    auto pkb = pkb::DesignExtractor(std::move(prog)).run();
 
     SECTION("xyz")
     {
@@ -249,7 +250,7 @@ TEST_CASE("Select pattern assign(name, fullexpr)")
 TEST_CASE("Select pattern assign(decl, _)")
 {
     auto prog = simple::parser::parseProgram(prog_1);
-    auto pkb = pkb::processProgram(std::move(prog));
+    auto pkb = pkb::DesignExtractor(std::move(prog)).run();
 
     TEST_OK(
         pkb.get(), R"^(assign a; variable v; Select a pattern a(v, _))^", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
@@ -263,7 +264,7 @@ TEST_CASE("Select pattern assign(decl, _)")
 TEST_CASE("Select pattern assign(decl, _subexpr_)")
 {
     auto prog = simple::parser::parseProgram(prog_1);
-    auto pkb = pkb::processProgram(std::move(prog));
+    auto pkb = pkb::DesignExtractor(std::move(prog)).run();
 
     TEST_OK(pkb.get(), R"^(assign a; variable v; Select v pattern a(v, _"6"_))^", "x");
     TEST_OK(pkb.get(), R"^(assign a; variable v; Select v pattern a(v, _"b + c"_))^", "z");
@@ -280,7 +281,7 @@ TEST_CASE("Select pattern assign(decl, _subexpr_)")
 TEST_CASE("Select pattern assign(decl, fullexpr)")
 {
     auto prog = simple::parser::parseProgram(prog_1);
-    auto pkb = pkb::processProgram(std::move(prog));
+    auto pkb = pkb::DesignExtractor(std::move(prog)).run();
 
     TEST_OK(pkb.get(), R"^(assign a; variable v; Select v pattern a(v, "6"))^", "x");
     TEST_OK(pkb.get(), R"^(assign a; variable v; Select v pattern a(v, "18"))^", "y");
@@ -305,7 +306,7 @@ TEST_CASE("Select pattern assign(_, _)")
 TEST_CASE("Select pattern assign(_, _subexpr_)")
 {
     auto prog = simple::parser::parseProgram(prog_1);
-    auto pkb = pkb::processProgram(std::move(prog));
+    auto pkb = pkb::DesignExtractor(std::move(prog)).run();
 
     SECTION("a")
     {
@@ -367,7 +368,7 @@ TEST_CASE("Select pattern assign(_, _subexpr_)")
 TEST_CASE("Select pattern assign(_, fullexpr)")
 {
     auto prog = simple::parser::parseProgram(prog_1);
-    auto pkb = pkb::processProgram(std::move(prog));
+    auto pkb = pkb::DesignExtractor(std::move(prog)).run();
 
     SECTION("xyz")
     {

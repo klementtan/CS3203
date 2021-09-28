@@ -40,7 +40,7 @@ namespace pql::eval
             auto var_name = var_ent.name();
 
             util::log("pql::eval", "Processing UsesP(EntName, EntName)");
-            if(!m_pkb->uses_modifies.isUses(proc_name, var_name))
+            if(!m_pkb->getProcedureNamed(proc_name).usesVariable(var_name))
                 throw PqlException("pql::eval", "{} is always false", rel->toString(), var_name);
         }
         else if(proc_ent.isName() && var_ent.isDeclaration())
@@ -48,9 +48,8 @@ namespace pql::eval
             auto proc_name = proc_ent.name();
             auto var_decl = var_ent.declaration();
 
-
             util::log("pql::eval", "Processing UsesP(EntName, DeclaredStmt)");
-            auto used_vars = m_pkb->uses_modifies.getUsesVars(proc_name);
+            auto& used_vars = m_pkb->getProcedureNamed(proc_name).getUsedVariables();
             if(used_vars.empty())
                 throw PqlException("pql::eval", "{} is always false; {} doesn't use any variables", rel->toString());
 
@@ -67,7 +66,7 @@ namespace pql::eval
             auto proc_name = proc_ent.name();
 
             util::log("pql::eval", "Processing UsesP(EntName, _)");
-            auto used_vars = m_pkb->uses_modifies.getUsesVars(proc_name);
+            auto& used_vars = m_pkb->getProcedureNamed(proc_name).getUsedVariables();
             if(used_vars.empty())
                 throw PqlException("pql::eval", "{} is always false; {} doesn't use any variables", rel->toString());
         }
@@ -79,7 +78,7 @@ namespace pql::eval
 
             util::log("pql::eval", "Processing UsesP(DeclaredEnt, EntName)");
 
-            auto procs_using = m_pkb->uses_modifies.getUses(ast::DESIGN_ENT::PROCEDURE, var_name);
+            const auto& procs_using = m_pkb->getVariableNamed(var_name).getUsingProcNames();
             if(procs_using.empty())
                 throw PqlException(
                     "pql::eval", "{} is always false; {} no procedure uses '{}'", rel->toString(), var_name);
@@ -104,7 +103,7 @@ namespace pql::eval
 
             for(auto it = proc_domain.begin(); it != proc_domain.end();)
             {
-                auto used_vars = m_pkb->uses_modifies.getUsesVars(it->getVal());
+                auto& used_vars = m_pkb->getProcedureNamed(it->getVal()).getUsedVariables();
                 if(used_vars.empty())
                 {
                     it = proc_domain.erase(it);
@@ -136,7 +135,7 @@ namespace pql::eval
 
             for(const auto& entry : m_table.getDomain(proc_decl))
             {
-                auto proc_used_vars = m_pkb->uses_modifies.getUsesVars(entry.getVal());
+                auto& proc_used_vars = m_pkb->getProcedureNamed(entry.getVal()).getUsedVariables();
                 if(proc_used_vars.empty())
                     continue;
 
@@ -179,7 +178,7 @@ namespace pql::eval
             auto var_name = var_ent.name();
 
             util::log("pql::eval", "Processing UsesS(StmtId, EntName)");
-            if(!m_pkb->uses_modifies.isUses(user_sid, var_name))
+            if(!m_pkb->getStatementAt(user_sid)->usesVariable(var_name))
                 throw PqlException("pql::eval", "{} is always false", rel->toString(), var_name);
         }
         else if(user_stmt.isStatementId() && var_ent.isDeclaration())
@@ -190,7 +189,7 @@ namespace pql::eval
             util::log("pql::eval", "Processing UsesS(StmtId, DeclaredEnt)");
             std::unordered_set<table::Entry> new_domain {};
 
-            for(const auto& var : m_pkb->uses_modifies.getUsesVars(user_sid))
+            for(const auto& var : m_pkb->getStatementAt(user_sid)->getUsedVariables())
                 new_domain.emplace(var_decl, var);
 
             m_table.upsertDomains(var_decl, table::entry_set_intersect(new_domain, m_table.getDomain(var_decl)));
@@ -200,19 +199,28 @@ namespace pql::eval
             auto user_sid = user_stmt.id();
 
             util::log("pql::eval", "Processing UsesS(StmtId, _)");
-            if(m_pkb->uses_modifies.getUsesVars(user_sid).empty())
+            if(m_pkb->getStatementAt(user_sid)->getUsedVariables().empty())
                 throw PqlException("pql::eval", "{} is always false", rel->toString());
         }
         else if(user_stmt.isDeclaration() && var_ent.isName())
         {
             auto user_decl = user_stmt.declaration();
             auto var_name = var_ent.name();
+            auto& var = m_pkb->getVariableNamed(var_name);
 
             util::log("pql::eval", "Processing UsesS(DeclaredStmt, EntName)");
             std::unordered_set<table::Entry> new_domain {};
 
-            for(const auto& stmt : m_pkb->uses_modifies.getUses(user_decl->design_ent, var_name))
-                new_domain.emplace(user_decl, static_cast<simple::ast::StatementNum>(std::stoi(stmt)));
+            if(user_decl->design_ent == ast::DESIGN_ENT::PROCEDURE)
+            {
+                for(const auto& proc_name : var.getUsingProcNames())
+                    new_domain.emplace(user_decl, proc_name);
+            }
+            else
+            {
+                for(auto sid : var.getUsingStmtNumsFiltered(user_decl->design_ent))
+                    new_domain.emplace(user_decl, sid);
+            }
 
             m_table.upsertDomains(user_decl, table::entry_set_intersect(new_domain, m_table.getDomain(user_decl)));
         }
@@ -229,7 +237,7 @@ namespace pql::eval
 
             for(auto it = user_domain.begin(); it != user_domain.end();)
             {
-                auto used_vars = m_pkb->uses_modifies.getUsesVars(it->getStmtNum());
+                auto& used_vars = m_pkb->getStatementAt(it->getStmtNum())->getUsedVariables();
                 if(used_vars.empty())
                 {
                     it = user_domain.erase(it);
@@ -261,7 +269,7 @@ namespace pql::eval
             std::unordered_set<table::Entry> new_domain {};
             for(const auto& entry : m_table.getDomain(user_decl))
             {
-                auto used_vars = m_pkb->uses_modifies.getUsesVars(entry.getStmtNum());
+                auto& used_vars = m_pkb->getStatementAt(entry.getStmtNum())->getUsedVariables();
                 if(used_vars.empty())
                     continue;
 

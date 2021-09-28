@@ -9,38 +9,38 @@
 
 namespace pql::eval
 {
-    Evaluator::Evaluator(pkb::ProgramKB* pkb, std::unique_ptr<ast::Query> query)
+    Evaluator::Evaluator(const pkb::ProgramKB* pkb, std::unique_ptr<ast::Query> query)
     {
         this->m_pkb = pkb;
         this->m_query = std::move(query);
 
-        preprocessPkb(this->m_pkb);
+        preprocessPkb();
     }
 
-    ast::DESIGN_ENT getDesignEnt(simple::ast::Stmt* stmt)
+    ast::DESIGN_ENT getDesignEnt(const simple::ast::Stmt* stmt)
     {
-        if(dynamic_cast<simple::ast::AssignStmt*>(stmt))
+        if(dynamic_cast<const simple::ast::AssignStmt*>(stmt))
             return ast::DESIGN_ENT::ASSIGN;
-        if(dynamic_cast<simple::ast::IfStmt*>(stmt))
+        if(dynamic_cast<const simple::ast::IfStmt*>(stmt))
             return ast::DESIGN_ENT::IF;
-        if(dynamic_cast<simple::ast::PrintStmt*>(stmt))
+        if(dynamic_cast<const simple::ast::PrintStmt*>(stmt))
             return ast::DESIGN_ENT::PRINT;
-        if(dynamic_cast<simple::ast::ReadStmt*>(stmt))
+        if(dynamic_cast<const simple::ast::ReadStmt*>(stmt))
             return ast::DESIGN_ENT::READ;
-        if(dynamic_cast<simple::ast::WhileLoop*>(stmt))
+        if(dynamic_cast<const simple::ast::WhileLoop*>(stmt))
             return ast::DESIGN_ENT::WHILE;
-        if(dynamic_cast<simple::ast::ProcCall*>(stmt))
+        if(dynamic_cast<const simple::ast::ProcCall*>(stmt))
             return ast::DESIGN_ENT::CALL;
         throw util::PqlException("pql::eval", "{} does not have a design ent", stmt->toString(1));
     }
 
 
-    void Evaluator::preprocessPkb(pkb::ProgramKB* pkb)
+    void Evaluator::preprocessPkb()
     {
-        for(pkb::Statement* pkb_stmt : pkb->uses_modifies.statements)
+        for(const auto& pkb_stmt : m_pkb->getAllStatements())
         {
-            m_all_ent_stmt_map[getDesignEnt(pkb_stmt->stmt)].push_back(pkb_stmt->stmt);
-            m_all_ent_stmt_map[ast::DESIGN_ENT::STMT].push_back(pkb_stmt->stmt);
+            m_all_ent_stmt_map[getDesignEnt(pkb_stmt.getAstStmt())].push_back(pkb_stmt.getAstStmt());
+            m_all_ent_stmt_map[ast::DESIGN_ENT::STMT].push_back(pkb_stmt.getAstStmt());
         }
     }
 
@@ -52,9 +52,10 @@ namespace pql::eval
             throw util::PqlException(
                 "pql::eval", "Cannot get initial domain(var) for non variable declaration {}", declaration->toString());
         }
-        util::log("pql::eval", "Adding {} variables to {} initial domain", m_pkb->uses_modifies.variables.size(),
-            declaration->toString());
-        for(auto [name, var] : m_pkb->uses_modifies.variables)
+
+        auto& var_list = m_pkb->getAllVariables();
+        util::log("pql::eval", "Adding {} variables to {} initial domain", var_list.size(), declaration->toString());
+        for(const auto& [name, var] : var_list)
         {
             util::log("pql::eval", "Adding {} to initial var domain", name);
             domain.insert(table::Entry(declaration, name));
@@ -69,9 +70,10 @@ namespace pql::eval
             throw util::PqlException("pql::eval", "Cannot get initial domain(proc) for non variable declaration {}",
                 declaration->toString());
         }
-        util::log("pql::eval", "Adding {} procedures to {} initial domain", m_pkb->uses_modifies.procedures.size(),
-            declaration->toString());
-        for(auto [name, proc] : m_pkb->uses_modifies.procedures)
+
+        auto& proc_list = m_pkb->getAllProcedures();
+        util::log("pql::eval", "Adding {} procedures to {} initial domain", proc_list.size(), declaration->toString());
+        for(const auto& [name, proc] : proc_list)
         {
             util::log("pql::eval", "Adding {} to initial proc domain", name);
             domain.insert(table::Entry(declaration, name));
@@ -86,9 +88,9 @@ namespace pql::eval
             throw util::PqlException("pql::eval", "Cannot get initial domain(constant) for non constant declaration {}",
                 declaration->toString());
         }
-        util::log("pql::eval", "Adding {} constants to {} initial domain", m_pkb->uses_modifies.procedures.size(),
-            declaration->toString());
-        for(const auto& const_val : m_pkb->getConstants())
+        auto& const_list = m_pkb->getAllConstants();
+        util::log("pql::eval", "Adding {} constants to {} initial domain", const_list.size(), declaration->toString());
+        for(const auto& const_val : const_list)
         {
             util::log("pql::eval", "Adding {} to initial proc domain", const_val);
             domain.insert(table::Entry(declaration, const_val));
@@ -104,7 +106,7 @@ namespace pql::eval
             util::log("pql::eval", "No statement in source for {}", declaration->toString());
             return domain;
         }
-        for(simple::ast::Stmt* stmt : it->second)
+        for(const simple::ast::Stmt* stmt : it->second)
         {
             util::log("pql::eval", "Adding {} to initial stmt domain", stmt->toString(0));
             domain.insert(table::Entry(declaration, stmt->id));

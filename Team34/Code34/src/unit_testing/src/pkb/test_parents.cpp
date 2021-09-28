@@ -1,17 +1,13 @@
 #define CATCH_CONFIG_FAST_COMPILE 1
 #include "catch.hpp"
 
+#include "design_extractor.h"
 #include "simple/parser.h"
 #include "pkb.h"
 #include "util.h"
 
 using namespace simple::parser;
 using namespace pkb;
-
-static void req(bool b)
-{
-    REQUIRE(b);
-}
 
 constexpr const auto sample_source = R"(
     procedure Example {
@@ -48,60 +44,64 @@ constexpr const auto sample_source = R"(
         x = z + x; } }
 )";
 
-auto kb = processProgram(parseProgram(sample_source));
+static auto kb = DesignExtractor(parseProgram(sample_source)).run();
+static const Statement& get_stmt(const std::unique_ptr<pkb::ProgramKB>& pkb, simple::ast::StatementNum num)
+{
+    return *pkb->getStatementAt(num);
+}
 
 TEST_CASE("Parent(a, b)")
 {
     SECTION("testing statements directly inside while loops")
     {
-        req(kb->isParent(4, 5));
-        req(kb->isParent(4, 6));
-        req(kb->isParent(4, 10));
+        CHECK(get_stmt(kb, 4).isParentOf(5));
+        CHECK(get_stmt(kb, 4).isParentOf(6));
+        CHECK(get_stmt(kb, 4).isParentOf(10));
 
-        req(kb->isParent(14, 15));
-        req(kb->isParent(14, 17));
+        CHECK(get_stmt(kb, 14).isParentOf(15));
+        CHECK(get_stmt(kb, 14).isParentOf(17));
     }
 
     SECTION("testing statements not directly inside while loops")
     {
-        req(!kb->isParent(4, 3));
-        req(!kb->isParent(4, 4));
-        req(!kb->isParent(4, 7));
-        req(!kb->isParent(4, 8));
-        req(!kb->isParent(4, 12));
+        CHECK_FALSE(get_stmt(kb, 4).isParentOf(3));
+        CHECK_FALSE(get_stmt(kb, 4).isParentOf(4));
+        CHECK_FALSE(get_stmt(kb, 4).isParentOf(7));
+        CHECK_FALSE(get_stmt(kb, 4).isParentOf(8));
+        CHECK_FALSE(get_stmt(kb, 4).isParentOf(12));
 
-        req(!kb->isParent(14, 18));
-        req(!kb->isParent(14, 21));
+        CHECK_FALSE(get_stmt(kb, 14).isParentOf(18));
+        CHECK_FALSE(get_stmt(kb, 14).isParentOf(21));
     }
 
     SECTION("testing statements directly inside if statements")
     {
-        req(kb->isParent(6, 7));
-        req(kb->isParent(6, 8));
+        CHECK(get_stmt(kb, 6).isParentOf(7));
+        CHECK(get_stmt(kb, 6).isParentOf(8));
 
-        req(kb->isParent(13, 14));
-        req(kb->isParent(13, 18));
-        req(kb->isParent(13, 20));
+        CHECK(get_stmt(kb, 13).isParentOf(14));
+        CHECK(get_stmt(kb, 13).isParentOf(18));
+        CHECK(get_stmt(kb, 13).isParentOf(20));
 
-        req(kb->isParent(22, 23));
-        req(kb->isParent(22, 24));
+        CHECK(get_stmt(kb, 22).isParentOf(23));
+        CHECK(get_stmt(kb, 22).isParentOf(24));
     }
 
     SECTION("testing statements not directly inside if statements")
     {
-        req(!kb->isParent(6, 6));
-        req(!kb->isParent(6, 9));
+        CHECK_FALSE(get_stmt(kb, 6).isParentOf(6));
+        CHECK_FALSE(get_stmt(kb, 6).isParentOf(9));
 
-        req(!kb->isParent(13, 16));
-        req(!kb->isParent(13, 21));
+        CHECK_FALSE(get_stmt(kb, 13).isParentOf(16));
+        CHECK_FALSE(get_stmt(kb, 13).isParentOf(21));
     }
 
     SECTION("testing invalid queries")
     {
-        req(!kb->isParent(-1, -1));
-        req(!kb->isParent(0, 0));
-        req(!kb->isParent(0, 6));
-        req(!kb->isParent(6, 0));
+        CHECK_THROWS_WITH(get_stmt(kb, -1).isParentOf(-1), Catch::Matchers::Contains("StatementNum is out of range"));
+        CHECK_THROWS_WITH(get_stmt(kb, 0).isParentOf(0), Catch::Matchers::Contains("StatementNum is out of range"));
+        CHECK_THROWS_WITH(get_stmt(kb, 0).isParentOf(6), Catch::Matchers::Contains("StatementNum is out of range"));
+        CHECK_FALSE(get_stmt(kb, 6).isParentOf(0));
     }
 }
 
@@ -109,48 +109,48 @@ TEST_CASE("Parent*(a, b)")
 {
     SECTION("testing direct parents")
     {
-        req(kb->isParentT(4, 5));
-        req(kb->isParentT(4, 6));
-        req(kb->isParentT(4, 10));
+        CHECK(get_stmt(kb, 4).isAncestorOf(5));
+        CHECK(get_stmt(kb, 4).isAncestorOf(6));
+        CHECK(get_stmt(kb, 4).isAncestorOf(10));
 
-        req(kb->isParentT(14, 15));
-        req(kb->isParentT(14, 17));
+        CHECK(get_stmt(kb, 14).isAncestorOf(15));
+        CHECK(get_stmt(kb, 14).isAncestorOf(17));
 
-        req(kb->isParentT(6, 7));
-        req(kb->isParentT(6, 8));
+        CHECK(get_stmt(kb, 6).isAncestorOf(7));
+        CHECK(get_stmt(kb, 6).isAncestorOf(8));
 
-        req(kb->isParentT(13, 14));
-        req(kb->isParentT(13, 18));
-        req(kb->isParentT(13, 20));
+        CHECK(get_stmt(kb, 13).isAncestorOf(14));
+        CHECK(get_stmt(kb, 13).isAncestorOf(18));
+        CHECK(get_stmt(kb, 13).isAncestorOf(20));
 
-        req(kb->isParentT(22, 23));
-        req(kb->isParentT(22, 24));
+        CHECK(get_stmt(kb, 22).isAncestorOf(23));
+        CHECK(get_stmt(kb, 22).isAncestorOf(24));
     }
 
     SECTION("testing indirect parents")
     {
-        req(kb->isParentT(4, 7));
-        req(kb->isParentT(4, 8));
+        CHECK(get_stmt(kb, 4).isAncestorOf(7));
+        CHECK(get_stmt(kb, 4).isAncestorOf(8));
 
-        req(kb->isParentT(13, 16));
-        req(kb->isParentT(13, 17));
+        CHECK(get_stmt(kb, 13).isAncestorOf(16));
+        CHECK(get_stmt(kb, 13).isAncestorOf(17));
     }
 
     SECTION("testing neither direct nor indirect parents")
     {
-        req(!kb->isParentT(1, 2));
-        req(!kb->isParentT(4, 12));
-        req(!kb->isParentT(5, 7));
-        req(!kb->isParentT(5, 8));
-        req(!kb->isParentT(14, 20));
-        req(!kb->isParentT(14, 22));
+        CHECK_FALSE(get_stmt(kb, 1).isAncestorOf(2));
+        CHECK_FALSE(get_stmt(kb, 4).isAncestorOf(12));
+        CHECK_FALSE(get_stmt(kb, 5).isAncestorOf(7));
+        CHECK_FALSE(get_stmt(kb, 5).isAncestorOf(8));
+        CHECK_FALSE(get_stmt(kb, 14).isAncestorOf(20));
+        CHECK_FALSE(get_stmt(kb, 14).isAncestorOf(22));
     }
 
     SECTION("testing invalid queries")
     {
-        req(!kb->isParentT(-1, -1));
-        req(!kb->isParentT(0, 0));
-        req(!kb->isParentT(0, 6));
-        req(!kb->isParentT(6, 0));
+        CHECK_THROWS_WITH(get_stmt(kb, -1).isAncestorOf(-1), Catch::Matchers::Contains("StatementNum is out of range"));
+        CHECK_THROWS_WITH(get_stmt(kb, 0).isAncestorOf(0), Catch::Matchers::Contains("StatementNum is out of range"));
+        CHECK_THROWS_WITH(get_stmt(kb, 0).isAncestorOf(6), Catch::Matchers::Contains("StatementNum is out of range"));
+        CHECK_FALSE(get_stmt(kb, 6).isAncestorOf(0));
     }
 }

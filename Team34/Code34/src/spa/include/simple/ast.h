@@ -19,16 +19,6 @@ namespace simple::ast
     struct Stmt;
     struct StmtList
     {
-#if 0
-        // StmtList() { }
-        // ~StmtList();
-
-        // StmtList(const StmtList&) = delete;
-        // StmtList& operator=(const StmtList&) = delete;
-
-        // StmtList(StmtList&&);
-        // StmtList& operator=(StmtList&&);
-#endif
         std::vector<std::unique_ptr<Stmt>> statements {};
 
         const Stmt* parent_statement = nullptr;
@@ -145,6 +135,6 @@ namespace simple::ast
         std::vector<std::unique_ptr<Procedure>> procedures;
     };
 
-    bool exactMatch(Expr* subtree, Expr* tree);
-    bool partialMatch(Expr* subtree, Expr* tree);
+    bool exactMatch(const Expr* subtree, const Expr* tree);
+    bool partialMatch(const Expr* subtree, const Expr* tree);
 }

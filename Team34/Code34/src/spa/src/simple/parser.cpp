@@ -1,9 +1,9 @@
 // parser.cpp
 
-#include <zpr.h>
-
 #include <cassert>
+#include <unordered_set>
 
+#include <zpr.h>
 #include "util.h"
 #include "exceptions.h"
 #include "simple/ast.h"

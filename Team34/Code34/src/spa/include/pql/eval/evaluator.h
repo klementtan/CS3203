@@ -14,18 +14,20 @@
 
 namespace pql::eval
 {
+    ast::DESIGN_ENT getDesignEnt(const simple::ast::Stmt* stmt);
+
     class Evaluator
     {
     private:
-        pkb::ProgramKB* m_pkb;
+        const pkb::ProgramKB* m_pkb;
 
         table::Table m_table;
         std::unique_ptr<ast::Query> m_query;
 
         // Stores initial domain for all types of declarations
-        std::unordered_map<ast::DESIGN_ENT, std::vector<simple::ast::Stmt*>> m_all_ent_stmt_map;
+        std::unordered_map<ast::DESIGN_ENT, std::vector<const simple::ast::Stmt*>> m_all_ent_stmt_map;
 
-        void preprocessPkb(pkb::ProgramKB* pkb);
+        void preprocessPkb();
         void processDeclarations(const ast::DeclarationList& declaration_list);
         void handleSuchThat(const ast::SuchThatCl& such_that);
         void handlePattern(const ast::PatternCl& pattern);
@@ -46,7 +48,7 @@ namespace pql::eval
         std::unordered_set<table::Entry> getInitialDomain(ast::Declaration* declaration);
 
     public:
-        Evaluator(pkb::ProgramKB* pkb, std::unique_ptr<ast::Query> query);
+        Evaluator(const pkb::ProgramKB* pkb, std::unique_ptr<ast::Query> query);
         std::list<std::string> evaluate();
     };
 }

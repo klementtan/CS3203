@@ -8,6 +8,7 @@
 #include "util.h"
 #include "exceptions.h"
 #include "simple/parser.h"
+#include "design_extractor.h"
 #include "pql/parser/parser.h"
 #include "pql/eval/evaluator.h"
 
@@ -21,7 +22,7 @@ void TestWrapper::parse(std::string filename)
     auto text = util::readEntireFile(filename.c_str());
     auto program = simple::parser::parseProgram(text);
 
-    this->pkb = pkb::processProgram(std::move(program));
+    this->pkb = pkb::DesignExtractor(std::move(program)).run();
 }
 
 void TestWrapper::evaluate(std::string query, std::list<std::string>& results)
