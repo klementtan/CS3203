@@ -178,7 +178,7 @@ namespace pql::eval
             auto var_name = var_ent.name();
 
             util::log("pql::eval", "Processing UsesS(StmtId, EntName)");
-            if(!m_pkb->getStatementAtIndex(user_sid)->usesVariable(var_name))
+            if(!m_pkb->getStatementAt(user_sid)->usesVariable(var_name))
                 throw PqlException("pql::eval", "{} is always false", rel->toString(), var_name);
         }
         else if(user_stmt.isStatementId() && var_ent.isDeclaration())
@@ -189,7 +189,7 @@ namespace pql::eval
             util::log("pql::eval", "Processing UsesS(StmtId, DeclaredEnt)");
             std::unordered_set<table::Entry> new_domain {};
 
-            for(const auto& var : m_pkb->getStatementAtIndex(user_sid)->getUsedVariables())
+            for(const auto& var : m_pkb->getStatementAt(user_sid)->getUsedVariables())
                 new_domain.emplace(var_decl, var);
 
             m_table.upsertDomains(var_decl, table::entry_set_intersect(new_domain, m_table.getDomain(var_decl)));
@@ -199,7 +199,7 @@ namespace pql::eval
             auto user_sid = user_stmt.id();
 
             util::log("pql::eval", "Processing UsesS(StmtId, _)");
-            if(m_pkb->getStatementAtIndex(user_sid)->getUsedVariables().empty())
+            if(m_pkb->getStatementAt(user_sid)->getUsedVariables().empty())
                 throw PqlException("pql::eval", "{} is always false", rel->toString());
         }
         else if(user_stmt.isDeclaration() && var_ent.isName())
@@ -237,7 +237,7 @@ namespace pql::eval
 
             for(auto it = user_domain.begin(); it != user_domain.end();)
             {
-                auto& used_vars = m_pkb->getStatementAtIndex(it->getStmtNum())->getUsedVariables();
+                auto& used_vars = m_pkb->getStatementAt(it->getStmtNum())->getUsedVariables();
                 if(used_vars.empty())
                 {
                     it = user_domain.erase(it);
@@ -269,7 +269,7 @@ namespace pql::eval
             std::unordered_set<table::Entry> new_domain {};
             for(const auto& entry : m_table.getDomain(user_decl))
             {
-                auto& used_vars = m_pkb->getStatementAtIndex(entry.getStmtNum())->getUsedVariables();
+                auto& used_vars = m_pkb->getStatementAt(entry.getStmtNum())->getUsedVariables();
                 if(used_vars.empty())
                     continue;
 

@@ -46,12 +46,12 @@ namespace pkb
         return m_after.count(id) > 0;
     }
 
-    simple::ast::StatementNum Statement::getDirectStmtAfter() const
+    simple::ast::StatementNum Statement::getStmtDirectlyAfter() const
     {
         return m_directly_after;
     }
 
-    simple::ast::StatementNum Statement::getDirectStmtBefore() const
+    simple::ast::StatementNum Statement::getStmtDirectlyBefore() const
     {
         return m_directly_before;
     }
@@ -84,5 +84,46 @@ namespace pkb
     const std::unordered_set<std::string>& Statement::getModifiedVariables() const
     {
         return m_modifies;
+    }
+
+
+    bool Statement::isParentOf(StatementNum id) const
+    {
+        return m_children.count(id) > 0;
+    }
+
+    bool Statement::isAncestorOf(StatementNum id) const
+    {
+        return m_descendants.count(id) > 0;
+    }
+
+    bool Statement::isChildOf(StatementNum id) const
+    {
+        return m_parent.has_value() && *m_parent == id;
+    }
+
+    bool Statement::isDescendantOf(StatementNum id) const
+    {
+        return m_ancestors.count(id) > 0;
+    }
+
+    const StatementSet& Statement::getChildren() const
+    {
+        return m_children;
+    }
+
+    const StatementSet& Statement::getDescendants() const
+    {
+        return m_descendants;
+    }
+
+    std::optional<StatementNum> Statement::getParent() const
+    {
+        return m_parent;
+    }
+
+    const StatementSet& Statement::getAncestors() const
+    {
+        return m_ancestors;
     }
 }

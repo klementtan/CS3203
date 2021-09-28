@@ -47,7 +47,7 @@ constexpr const auto sample_source = R"(
 static auto kb = DesignExtractor(parseProgram(sample_source)).run();
 static const Statement& get_stmt(const std::unique_ptr<pkb::ProgramKB>& pkb, simple::ast::StatementNum num)
 {
-    return *pkb->getStatementAtIndex(num);
+    return *pkb->getStatementAt(num);
 }
 
 TEST_CASE("Follows(a, b)")
@@ -146,8 +146,8 @@ TEST_CASE("getFollows")
     SECTION("Follows(a,b) and Follows*(a,b) in top level statement list")
     {
         auto& fst_result = get_stmt(kb, 1);
-        CHECK(fst_result.getDirectStmtBefore() == 0);
-        CHECK(fst_result.getDirectStmtAfter() == 2);
+        CHECK(fst_result.getStmtDirectlyBefore() == 0);
+        CHECK(fst_result.getStmtDirectlyAfter() == 2);
         CHECK(fst_result.getStmtsTransitivelyBefore().size() == 0);
         CHECK(fst_result.getStmtsTransitivelyAfter().size() == 4);
         CHECK(fst_result.getStmtsTransitivelyAfter().count(2) > 0);
@@ -156,8 +156,8 @@ TEST_CASE("getFollows")
         CHECK(fst_result.getStmtsTransitivelyAfter().count(12) > 0);
 
         auto& snd_result = get_stmt(kb, 3);
-        CHECK(snd_result.getDirectStmtBefore() == 2);
-        CHECK(snd_result.getDirectStmtAfter() == 4);
+        CHECK(snd_result.getStmtDirectlyBefore() == 2);
+        CHECK(snd_result.getStmtDirectlyAfter() == 4);
         CHECK(snd_result.getStmtsTransitivelyBefore().size() == 2);
         CHECK(snd_result.getStmtsTransitivelyAfter().size() == 2);
         CHECK(snd_result.getStmtsTransitivelyBefore().count(1) > 0);
@@ -169,8 +169,8 @@ TEST_CASE("getFollows")
     SECTION("Follows(a,b) and Follows*(a,b) in if/while for 1 and 2 levels of nesting")
     {
         auto& fst_result = get_stmt(kb, 5);
-        CHECK(fst_result.getDirectStmtBefore() == 0);
-        CHECK(fst_result.getDirectStmtAfter() == 6);
+        CHECK(fst_result.getStmtDirectlyBefore() == 0);
+        CHECK(fst_result.getStmtDirectlyAfter() == 6);
         CHECK(fst_result.getStmtsTransitivelyBefore().size() == 0);
         CHECK(fst_result.getStmtsTransitivelyAfter().size() == 4);
         CHECK(fst_result.getStmtsTransitivelyAfter().count(6) > 0);
@@ -179,8 +179,8 @@ TEST_CASE("getFollows")
         CHECK(fst_result.getStmtsTransitivelyAfter().count(11) > 0);
 
         auto& snd_result = get_stmt(kb, 17);
-        CHECK(snd_result.getDirectStmtBefore() == 16);
-        CHECK(snd_result.getDirectStmtAfter() == 0);
+        CHECK(snd_result.getStmtDirectlyBefore() == 16);
+        CHECK(snd_result.getStmtDirectlyAfter() == 0);
         CHECK(snd_result.getStmtsTransitivelyBefore().size() == 2);
         CHECK(snd_result.getStmtsTransitivelyAfter().size() == 0);
         CHECK(snd_result.getStmtsTransitivelyBefore().count(15) > 0);
@@ -190,11 +190,11 @@ TEST_CASE("getFollows")
     SECTION("Follows(a,b) and Follows*(a,b) negative test cases for diff stmtList, diff procs")
     {
         auto& fst_result = get_stmt(kb, 23);
-        CHECK(fst_result.getDirectStmtBefore() != 22);
-        CHECK(fst_result.getDirectStmtAfter() != 24);
+        CHECK(fst_result.getStmtDirectlyBefore() != 22);
+        CHECK(fst_result.getStmtDirectlyAfter() != 24);
 
         auto& snd_result = get_stmt(kb, 16);
-        CHECK(snd_result.getDirectStmtBefore() == 15);
-        CHECK(snd_result.getDirectStmtAfter() != 22);
+        CHECK(snd_result.getStmtDirectlyBefore() == 15);
+        CHECK(snd_result.getStmtDirectlyAfter() != 22);
     }
 }

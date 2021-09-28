@@ -30,7 +30,7 @@ namespace pql::eval
             auto aft_stmt_id = after_stmt.id();
 
             util::log("pql::eval", "Processing Follows(StmtId,StmtId)");
-            if(m_pkb->getStatementAtIndex(aft_stmt_id)->doesFollow(bef_stmt_id))
+            if(m_pkb->getStatementAt(aft_stmt_id)->doesFollow(bef_stmt_id))
             {
                 util::log("pql::eval", "{} will always evaluate to true", follows->toString());
                 return;
@@ -45,7 +45,7 @@ namespace pql::eval
             auto bef_stmt_id = before_stmt.id();
 
             util::log("pql::eval", "Processing Follows(StmtId,_)");
-            if(!m_pkb->getStatementAtIndex(bef_stmt_id)->hasFollower())
+            if(!m_pkb->getStatementAt(bef_stmt_id)->hasFollower())
             {
                 throw PqlException("pql::eval", "{} will always evaluate to false", follows->toString());
             }
@@ -60,7 +60,7 @@ namespace pql::eval
             auto bef_stmt_id = before_stmt.id();
             auto aft_decl = after_stmt.declaration();
 
-            auto bef_stmt = m_pkb->getStatementAtIndex(bef_stmt_id);
+            auto bef_stmt = m_pkb->getStatementAt(bef_stmt_id);
 
             util::log("pql::eval", "Processing Follows(StmtId,DeclaredStmt)");
             if(!bef_stmt->hasFollower())
@@ -70,7 +70,7 @@ namespace pql::eval
             }
             else
             {
-                auto entry = table::Entry(aft_decl, bef_stmt->getDirectStmtAfter());
+                auto entry = table::Entry(aft_decl, bef_stmt->getStmtDirectlyAfter());
                 util::log("pql::eval", "{} updating domain to [{}]", follows->toString(), entry.toString());
                 table::Domain curr_domain = { entry };
                 table::Domain prev_domain = m_table.getDomain(aft_decl);
@@ -82,7 +82,7 @@ namespace pql::eval
             auto aft_stmt_id = after_stmt.id();
 
             util::log("pql::eval", "Processing Follows(_,StmtId)");
-            if(!m_pkb->getStatementAtIndex(aft_stmt_id)->isFollower())
+            if(!m_pkb->getStatementAt(aft_stmt_id)->isFollower())
             {
                 throw PqlException("pql::eval", "{} will always evaluate to false", follows->toString());
             }
@@ -115,7 +115,7 @@ namespace pql::eval
             auto domain = m_table.getDomain(aft_decl);
             for(auto it = domain.begin(); it != domain.end();)
             {
-                if(!m_pkb->getStatementAtIndex(it->getStmtNum())->isFollower())
+                if(!m_pkb->getStatementAt(it->getStmtNum())->isFollower())
                     it = domain.erase(it);
                 else
                     ++it;
@@ -128,7 +128,7 @@ namespace pql::eval
             auto bef_decl = before_stmt.declaration();
             auto aft_stmt_id = after_stmt.id();
 
-            auto aft_stmt = m_pkb->getStatementAtIndex(aft_stmt_id);
+            auto aft_stmt = m_pkb->getStatementAt(aft_stmt_id);
 
             util::log("pql::eval", "Processing Follows(DeclaredStmt,StmtId)");
             if(!aft_stmt->isFollower())
@@ -139,7 +139,7 @@ namespace pql::eval
             }
             else
             {
-                auto entry = table::Entry(bef_decl, aft_stmt->getDirectStmtBefore());
+                auto entry = table::Entry(bef_decl, aft_stmt->getStmtDirectlyBefore());
                 util::log("pql::eval", "{} adds {} to curr domain", follows->toString(), entry.toString());
                 table::Domain curr_domain = { entry };
                 table::Domain prev_domain = m_table.getDomain(bef_decl);
@@ -155,7 +155,7 @@ namespace pql::eval
             auto domain = m_table.getDomain(bef_decl);
             for(auto it = domain.begin(); it != domain.end();)
             {
-                if(!m_pkb->getStatementAtIndex(it->getStmtNum())->hasFollower())
+                if(!m_pkb->getStatementAt(it->getStmtNum())->hasFollower())
                     it = domain.erase(it);
                 else
                     ++it;
@@ -179,7 +179,7 @@ namespace pql::eval
 
             for(auto it = bef_domain.begin(); it != bef_domain.end();)
             {
-                auto bef_stmt = m_pkb->getStatementAtIndex(it->getStmtNum());
+                auto bef_stmt = m_pkb->getStatementAt(it->getStmtNum());
                 if(!bef_stmt->hasFollower())
                 {
                     it = bef_domain.erase(it);
@@ -187,7 +187,7 @@ namespace pql::eval
                 }
 
                 auto bef_entry = table::Entry(bef_decl, it->getStmtNum());
-                auto aft_entry = table::Entry(aft_decl, bef_stmt->getDirectStmtAfter());
+                auto aft_entry = table::Entry(aft_decl, bef_stmt->getStmtDirectlyAfter());
 
                 new_aft_domain.insert(aft_entry);
 
@@ -229,7 +229,7 @@ namespace pql::eval
             auto aft_stmt_id = after_stmt.id();
 
             util::log("pql::eval", "Processing Follows*(StmtId,StmtId)");
-            if(m_pkb->getStatementAtIndex(aft_stmt_id)->doesFollowTransitively(bef_stmt_id))
+            if(m_pkb->getStatementAt(aft_stmt_id)->doesFollowTransitively(bef_stmt_id))
             {
                 util::log("pql::eval", "{} will always evaluate to true", follows_t->toString());
                 return;
@@ -244,7 +244,7 @@ namespace pql::eval
             auto bef_stmt_id = before_stmt.id();
 
             util::log("pql::eval", "Processing Follows*(StmtId,_)");
-            if(!m_pkb->getStatementAtIndex(bef_stmt_id)->hasFollower())
+            if(!m_pkb->getStatementAt(bef_stmt_id)->hasFollower())
             {
                 throw PqlException("pql::eval", "{} will always evaluate to false", follows_t->toString());
             }
@@ -259,7 +259,7 @@ namespace pql::eval
             auto bef_stmt_id = before_stmt.id();
             auto aft_decl = after_stmt.declaration();
 
-            auto bef_stmt = m_pkb->getStatementAtIndex(bef_stmt_id);
+            auto bef_stmt = m_pkb->getStatementAt(bef_stmt_id);
 
             util::log("pql::eval", "Processing Follows*(StmtId,DeclaredStmt)");
             if(!bef_stmt->hasFollower())
@@ -285,7 +285,7 @@ namespace pql::eval
             auto aft_stmt_id = after_stmt.id();
 
             util::log("pql::eval", "Processing Follows*(_,StmtId)");
-            if(!m_pkb->getStatementAtIndex(aft_stmt_id)->isFollower())
+            if(!m_pkb->getStatementAt(aft_stmt_id)->isFollower())
             {
                 throw PqlException("pql::eval", "{} will always evaluate to false", follows_t->toString());
             }
@@ -318,7 +318,7 @@ namespace pql::eval
             auto domain = m_table.getDomain(aft_decl);
             for(auto it = domain.begin(); it != domain.end();)
             {
-                if(!m_pkb->getStatementAtIndex(it->getStmtNum())->isFollower())
+                if(!m_pkb->getStatementAt(it->getStmtNum())->isFollower())
                     it = domain.erase(it);
                 else
                     ++it;
@@ -331,7 +331,7 @@ namespace pql::eval
             auto aft_stmt_id = after_stmt.id();
             auto bef_decl = before_stmt.declaration();
 
-            auto aft_stmt = m_pkb->getStatementAtIndex(aft_stmt_id);
+            auto aft_stmt = m_pkb->getStatementAt(aft_stmt_id);
 
             util::log("pql::eval", "Processing Follows*(DeclaredStmt,StmtId)");
             if(!aft_stmt->isFollower())
@@ -362,7 +362,7 @@ namespace pql::eval
             auto domain = m_table.getDomain(bef_decl);
             for(auto it = domain.begin(); it != domain.end();)
             {
-                if(!m_pkb->getStatementAtIndex(it->getStmtNum())->hasFollower())
+                if(!m_pkb->getStatementAt(it->getStmtNum())->hasFollower())
                     it = domain.erase(it);
                 else
                     ++it;
@@ -384,7 +384,7 @@ namespace pql::eval
 
             for(auto it = bef_domain.begin(); it != bef_domain.end();)
             {
-                auto bef_stmt = m_pkb->getStatementAtIndex(it->getStmtNum());
+                auto bef_stmt = m_pkb->getStatementAt(it->getStmtNum());
                 if(!bef_stmt->hasFollower())
                 {
                     it = bef_domain.erase(it);

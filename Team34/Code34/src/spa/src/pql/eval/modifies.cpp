@@ -216,7 +216,7 @@ namespace pql::eval
             std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
             for(auto it = mod_domain.begin(); it != mod_domain.end();)
             {
-                auto& modified_vars = m_pkb->getStatementAtIndex(it->getStmtNum())->getModifiedVariables();
+                auto& modified_vars = m_pkb->getStatementAt(it->getStmtNum())->getModifiedVariables();
                 if(modified_vars.empty())
                 {
                     it = mod_domain.erase(it);
@@ -278,7 +278,7 @@ namespace pql::eval
             std::unordered_set<table::Entry> prev_domain = m_table.getDomain(mod_decl);
             for(const table::Entry& entry : m_table.getDomain(mod_decl))
             {
-                auto stmt = m_pkb->getStatementAtIndex(entry.getStmtNum());
+                auto stmt = m_pkb->getStatementAt(entry.getStmtNum());
                 if(!stmt->getModifiedVariables().empty())
                 {
                     curr_domain.insert(entry);
@@ -293,7 +293,7 @@ namespace pql::eval
             auto ent_decl = ent_ent.declaration();
 
             util::log("pql::eval", "Processing ModifiesS(StmtId, DeclaredEnt)");
-            auto& var_candidates = m_pkb->getStatementAtIndex(mod_stmt_id)->getModifiedVariables();
+            auto& var_candidates = m_pkb->getStatementAt(mod_stmt_id)->getModifiedVariables();
             std::unordered_set<table::Entry> curr_domain;
             std::unordered_set<table::Entry> prev_domain = m_table.getDomain(ent_decl);
             for(const std::string& var : var_candidates)
@@ -310,7 +310,7 @@ namespace pql::eval
             auto mod_stmt_id = modifier_stmt.id();
 
             util::log("pql::eval", "Processing ModifiesS(StmtId, AllEnt)");
-            if(m_pkb->getStatementAtIndex(mod_stmt_id)->getModifiedVariables().empty())
+            if(m_pkb->getStatementAt(mod_stmt_id)->getModifiedVariables().empty())
             {
                 throw PqlException("pql::eval",
                     "{} always evaluate to false. StatementNum {} does not modify any variable.", rel->toString(),
@@ -327,7 +327,7 @@ namespace pql::eval
             auto ent_name = ent_ent.name();
 
             util::log("pql::eval", "Processing ModifiesS(StmtId, EntName)");
-            if(m_pkb->getStatementAtIndex(mod_stmt_id)->modifiesVariable(ent_name))
+            if(m_pkb->getStatementAt(mod_stmt_id)->modifiesVariable(ent_name))
             {
                 util::log("pql::eval", "{} always evaluate to true.", rel->toString());
             }

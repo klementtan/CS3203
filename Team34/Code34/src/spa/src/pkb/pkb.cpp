@@ -13,14 +13,12 @@
 
 namespace pkb
 {
-    namespace s_ast = simple::ast;
-
-    Statement* ProgramKB::getStatementAtIndex(s_ast::StatementNum stmt_no)
+    Statement* ProgramKB::getStatementAt(StatementNum stmt_no)
     {
-        return const_cast<Statement*>(const_cast<const ProgramKB*>(this)->getStatementAtIndex(stmt_no));
+        return const_cast<Statement*>(const_cast<const ProgramKB*>(this)->getStatementAt(stmt_no));
     }
 
-    const Statement* ProgramKB::getStatementAtIndex(s_ast::StatementNum stmt_no) const
+    const Statement* ProgramKB::getStatementAt(StatementNum stmt_no) const
     {
         if(stmt_no > m_statements.size() || stmt_no == 0)
             throw util::PkbException("pkb", "StatementNum is out of range");
@@ -82,60 +80,6 @@ namespace pkb
         return m_variables;
     }
 
-
-
-    /**
-     * Start of Parent methods
-     */
-    bool ProgramKB::isParent(s_ast::StatementNum fst, s_ast::StatementNum snd) const
-    {
-        if(auto it = m_direct_parents.find(snd); it != m_direct_parents.end())
-            return it->second == fst;
-
-        return false;
-    }
-
-    bool ProgramKB::isParentT(s_ast::StatementNum fst, s_ast::StatementNum snd) const
-    {
-        if(auto it = m_ancestors.find(snd); it != m_ancestors.end())
-            return it->second.count(fst) > 0;
-
-        return false;
-    }
-
-    std::optional<s_ast::StatementNum> ProgramKB::getParentOf(s_ast::StatementNum fst) const
-    {
-        // this will return 0 if it has no parent
-        if(auto it = m_direct_parents.find(fst); it != m_direct_parents.end())
-            return it->second;
-        else
-            return std::nullopt;
-    }
-
-    std::unordered_set<s_ast::StatementNum> ProgramKB::getAncestorsOf(s_ast::StatementNum fst) const
-    {
-        if(auto it = m_ancestors.find(fst); it != m_ancestors.end())
-            return it->second;
-        else
-            return {};
-    }
-
-    std::unordered_set<s_ast::StatementNum> ProgramKB::getChildrenOf(s_ast::StatementNum fst) const
-    {
-        if(auto it = m_direct_children.find(fst); it != m_direct_children.end())
-            return it->second;
-        else
-            return {};
-    }
-
-    std::unordered_set<s_ast::StatementNum> ProgramKB::getDescendantsOf(s_ast::StatementNum fst) const
-    {
-        if(auto it = m_descendants.find(fst); it != m_descendants.end())
-            return it->second;
-        else
-            return {};
-    }
-
     bool ProgramKB::followsRelationExists() const
     {
         return this->m_follows_exists;
@@ -145,9 +89,7 @@ namespace pkb
     {
         return this->m_parent_exists;
     }
-    /**
-     * End of Parent methods
-     */
+
 
     ProgramKB::ProgramKB(std::unique_ptr<simple::ast::Program> program)
     {
