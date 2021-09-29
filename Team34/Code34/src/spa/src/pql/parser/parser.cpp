@@ -76,6 +76,8 @@ namespace pql::parser
     const std::vector<Token> KW_ParentT = { { "Parent", TT::Identifier }, { "*", TT::Asterisk } };
     const Token KW_Uses { "Uses", TT::Identifier };
     const Token KW_Modifies { "Modifies", TT::Identifier };
+    const Token KW_Calls { "Calls", TT::Identifier };
+    const std::vector<Token> KW_CallsT = { { "Calls", TT::Identifier }, { "*", TT::Asterisk } };
 
 
     // Attribute Names
@@ -412,6 +414,61 @@ namespace pql::parser
         return parent;
     }
 
+    std::unique_ptr<ast::CallsT> parse_calls_t(ParserState* ps, const ast::DeclarationList* declaration_list)
+    {
+        auto c = ps->next();
+        auto star = ps->next();
+        auto c_star = zst::str_view(c.text.data(), strlen("Calls*"));
+
+        if(c.text != "Calls" || star != TT::Asterisk || c_star != "Calls*")
+        {
+            throw PqlException("pql::parser", "CallsT relationship condition should start with 'Calls*'");
+        }
+        auto calls_t = std::make_unique<ast::CallsT>();
+        if(Token tok = ps->next(); tok != TT::LParen)
+        {
+            throw PqlException("pql::parser", "Expected '(' at the start of 'Calls*' instead of {}", tok.text);
+        }
+        calls_t->caller = parse_ent_ref(ps, declaration_list);
+        if(Token tok = ps->next(); tok != TT::Comma)
+        {
+            throw PqlException("pql::parser", "Expected ',' after declaring ent ref in Calls*");
+        }
+        calls_t->proc = parse_ent_ref(ps, declaration_list);
+        if(Token tok = ps->next(); tok != TT::RParen)
+        {
+            throw PqlException("pql::parser", "Expected ')' at the end of 'Calls*' instead of {}", tok.text);
+        }
+
+        return calls_t;
+    }
+
+    std::unique_ptr<ast::Calls> parse_calls(ParserState* ps, const ast::DeclarationList* declaration_list)
+    {
+        if(ps->next().text != "Calls")
+        {
+            throw PqlException("pql::parser", "Calls relationship condition should start with 'Calls'");
+        }
+        auto calls = std::make_unique<ast::Calls>();
+        if(Token tok = ps->next(); tok != TT::LParen)
+        {
+            throw PqlException("pql::parser", "Expected '(' at the start of 'Calls' instead of {}", tok.text);
+        }
+        calls->caller = parse_ent_ref(ps, declaration_list);
+        if(Token tok = ps->next(); tok != TT::Comma)
+        {
+            throw PqlException("pql::parser", "Expected ',' after declaring ent ref in Calls");
+        }
+        calls->proc = parse_ent_ref(ps, declaration_list);
+        if(Token tok = ps->next(); tok != TT::RParen)
+        {
+            throw PqlException("pql::parser", "Expected ')' at the end of 'Calls' instead of {}", tok.text);
+        }
+
+        return calls;
+    }
+
+
     bool is_next_stmt_ref(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         Token tok = ps->peek_one();
@@ -545,6 +602,7 @@ namespace pql::parser
         }
     }
 
+
     std::unique_ptr<ast::RelCond> parse_rel_cond(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         std::vector<Token> rel_cond_toks = ps->peek_two();
@@ -552,17 +610,28 @@ namespace pql::parser
         // Check relationship with 2 tokens first
         if(rel_cond_toks == KW_FollowsT)
             return parse_follows_t(ps, declaration_list);
-        if(rel_cond_toks == KW_ParentT)
+
+        else if(rel_cond_toks == KW_ParentT)
             return parse_parent_t(ps, declaration_list);
 
-        if(rel_cond_toks[0] == KW_Follows)
+        else if(rel_cond_toks == KW_CallsT)
+            return parse_calls_t(ps, declaration_list);
+
+        else if(rel_cond_toks[0] == KW_Follows)
             return parse_follows(ps, declaration_list);
-        if(rel_cond_toks[0] == KW_Parent)
+
+        else if(rel_cond_toks[0] == KW_Parent)
             return parse_parent(ps, declaration_list);
-        if(rel_cond_toks[0] == KW_Uses)
+
+        else if(rel_cond_toks[0] == KW_Uses)
             return parse_uses(ps, declaration_list);
-        if(rel_cond_toks[0] == KW_Modifies)
+
+        else if(rel_cond_toks[0] == KW_Modifies)
             return parse_modifies(ps, declaration_list);
+
+        else if(rel_cond_toks[0] == KW_Calls)
+            return parse_calls(ps, declaration_list);
+
         throw PqlException("pql::parser", "Invalid relationship condition tokens: {}, {}", rel_cond_toks[0].text,
             rel_cond_toks[1].text);
     }
