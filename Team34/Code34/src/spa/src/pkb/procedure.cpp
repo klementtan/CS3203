@@ -35,4 +35,44 @@ namespace pkb
     {
         return m_ast_proc->name;
     }
+
+    bool Procedure::callsProcedure(const std::string& procname) const
+    {
+        return m_calls.count(procname) > 0;
+    }
+
+    bool Procedure::callsProcedureTransitively(const std::string& procname) const
+    {
+        return m_calls_transitive.count(procname) > 0;
+    }
+
+    bool Procedure::isCalledByProcedure(const std::string& procname) const
+    {
+        return m_called_by.count(procname) > 0;
+    }
+
+    bool Procedure::isTransitivelyCalledByProcedure(const std::string& procname) const
+    {
+        return m_called_by_transitive.count(procname) > 0;
+    }
+
+    const std::unordered_set<std::string>& Procedure::getAllCallers() const
+    {
+        return m_called_by;
+    }
+
+    const std::unordered_set<std::string>& Procedure::getAllCalledProcedures() const
+    {
+        return m_calls;
+    }
+
+    const std::unordered_set<std::string>& Procedure::getAllTransitiveCallers() const
+    {
+        return m_called_by_transitive;
+    }
+
+    const std::unordered_set<std::string>& Procedure::getAllTransitivelyCalledProcedures() const
+    {
+        return m_calls_transitive;
+    }
 }

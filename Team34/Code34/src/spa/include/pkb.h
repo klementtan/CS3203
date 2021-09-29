@@ -38,6 +38,18 @@ namespace pkb
         const std::unordered_set<std::string>& getUsedVariables() const;
         const std::unordered_set<std::string>& getModifiedVariables() const;
 
+        bool callsProcedure(const std::string& procname) const;
+        bool callsProcedureTransitively(const std::string& procname) const;
+
+        bool isCalledByProcedure(const std::string& procname) const;
+        bool isTransitivelyCalledByProcedure(const std::string& procname) const;
+
+        const std::unordered_set<std::string>& getAllCallers() const;
+        const std::unordered_set<std::string>& getAllCalledProcedures() const;
+
+        const std::unordered_set<std::string>& getAllTransitiveCallers() const;
+        const std::unordered_set<std::string>& getAllTransitivelyCalledProcedures() const;
+
         std::string getName() const;
         const simple::ast::Procedure* getAstProc() const;
 
