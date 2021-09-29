@@ -593,7 +593,7 @@ namespace pql::parser
     {
         Token decl_tok = ps->next();
         if(decl_tok.type != TT::Identifier)
-            throw new PqlException(
+            throw PqlException(
                 "pql::parser", "Expected identifier as the first token of an Element, got '{}'", decl_tok.text);
 
         ast::Declaration* decl = declaration_list->getDeclaration(decl_tok.text.str());
