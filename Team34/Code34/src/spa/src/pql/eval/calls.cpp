@@ -78,7 +78,7 @@ namespace pql::eval
             util::logfmt("pql::eval", "Processing {}(EntRef, EntRef)", rel_name);
             auto& left_ = pkb->getProcedureNamed(left->name());
             if(!(left_.*relationHolds)(right->name()))
-                throw PqlException("pql::eval", "{} always evalutes to false", rel->toString());
+                throw PqlException("pql::eval", "{} always evaluates to false", rel->toString());
         }
         else if(left->isName() && right->isDeclaration())
         {
@@ -154,13 +154,13 @@ namespace pql::eval
             util::logfmt("pql::eval", "Processing {}(EntRef, _)", rel_name);
             auto& left_ = pkb->getProcedureNamed(left->name());
             if((left_.*getAllRelated)().empty())
-                throw PqlException("pql::eval", "{} always evalutes to false", rel->toString());
+                throw PqlException("pql::eval", "{} always evaluates to false", rel->toString());
         }
         else if(left->isWildcard() && right->isWildcard())
         {
             util::logfmt("pql::eval", "Processing {}(_, _)", rel_name);
             if(!pkb->callsRelationExists())
-                throw PqlException("pql::eval", "{} always evalutes to false", rel->toString());
+                throw PqlException("pql::eval", "{} always evaluates to false", rel->toString());
         }
         else
         {
