@@ -23,12 +23,25 @@ void TestWrapper::parse(std::string filename)
     auto text = util::readEntireFile(filename.c_str());
     auto program = simple::parser::parseProgram(text);
 
-    this->pkb = pkb::DesignExtractor(std::move(program)).run();
+    try
+    {
+        this->pkb = pkb::DesignExtractor(std::move(program)).run();
+    }
+    catch(const util::Exception& e)
+    {
+        util::logfmt("pkb", "exception caught during parsing or relation extraction: {}", e.what());
+        this->pkb.reset(nullptr);
+    }
 }
 
 void TestWrapper::evaluate(std::string query, std::list<std::string>& results)
 {
     results.clear();
+    if(!this->pkb)
+    {
+        util::logfmt("pql", "not evaluating query since PKB is invalid");
+        return;
+    }
 
     try
     {

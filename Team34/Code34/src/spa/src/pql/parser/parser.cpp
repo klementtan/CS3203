@@ -593,7 +593,9 @@ namespace pql::parser
     {
         Token decl_tok = ps->next();
         if(decl_tok.type != TT::Identifier)
-            throw new PqlException("pql::parser", "Expected identifier as the first token of an Element");
+            throw new PqlException(
+                "pql::parser", "Expected identifier as the first token of an Element, got '{}'", decl_tok.text);
+
         ast::Declaration* decl = declaration_list->getDeclaration(decl_tok.text.str());
         if(decl == nullptr)
             throw PqlException("pql::parser", "Undeclared entity {} provided.", decl_tok.text);
@@ -645,7 +647,7 @@ namespace pql::parser
         // Handle: elem
         if(ps->peek_one() != TT::LAngle)
         {
-            util::logfmt("pql::parser", "Parsing tuple as a single element without ''<>'");
+            util::logfmt("pql::parser", "Parsing tuple as a single element without '<>'");
             return { parse_elem(ps, declaration_list) };
         }
 
