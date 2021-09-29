@@ -7,38 +7,63 @@ import subprocess
 import result_parser as rp
 
 def run_autotester(autotester_exe, folder, source, query):
+	source = os.path.basename(source)
+	query = os.path.basename(query)
+
 	source_path = os.path.join(folder, source)
 	query_path = os.path.join(folder, query)
 
 	# we know query ends in ".txt"
 	xml_path = os.path.join(folder, f"output-{query[:-4]}.xml")
 
-	print(f"    running '{query}'")
+	print(f"    running '{query} - {source}'")
 	subprocess.run([autotester_exe, source_path, query_path, xml_path], stdout=subprocess.DEVNULL)
 
+
+def find_source_files(folder):
+	sources = []
+	for name in os.listdir(folder):
+		thing = os.path.join(folder, name)
+		if not os.path.isfile(thing):
+			continue
+		if (name.endswith(".simple") or name.endswith("_source.txt")) and ("numbered" not in thing):
+			sources.append(thing)
+
+	return sources
+
+def get_matching_source(query):
+	if query.endswith("_queries.txt"):
+		return f"{query[:-len('_queries.txt')]}_source.txt"
+	elif query.endswith(".query"):
+		return f"{query[:-len('.query')]}.simple"
+	else:
+		return None
+
 def run_tests_in_folder(autotester_exe, folder):
-	source = ""
+	sources = find_source_files(folder)
 	queries = []
+
+	if len(sources) == 0:
+		print(f"no sources in '{folder}', skipping")
+		return
+
+	print(f"test set {folder}:")
 
 	for name in os.listdir(folder):
 		thing = os.path.join(folder, name)
-		if os.path.isfile(thing) and thing.endswith(".simple") and not thing.endswith("-numbered.simple"):
-			if len(source) == 0:
-				source = name
+		if os.path.isfile(thing) and (thing.endswith("_queries.txt") or thing.endswith(".query")
+			or (thing.endswith(".txt") and not thing.endswith("_source.txt"))):
+			src = get_matching_source(thing)
+			if len(sources) == 1:
+				queries.append((sources[0], thing))
+			elif src is not None:
+				queries.append((src, thing))
 			else:
-				print(f"multiple source files in {folder}, skipping...")
-				return
+				print(f"could not find source for '{name}', skipping")
 
-		elif os.path.isfile(thing) and thing.endswith(".txt"):
-			queries.append(name)
 
-	if len(source) == 0:
-		return
-
-	print(f"test set {folder}: ({source})")
-
-	for query in queries:
-		run_autotester(autotester_exe, folder, source, query)
+	for s, q in queries:
+		run_autotester(autotester_exe, folder, s, q)
 
 
 def run_tests(autotester_exe, folder):
@@ -82,7 +107,7 @@ def main():
 
 	autotester_exe = sys.argv[1]
 	if (not os.path.exists(autotester_exe)) or (not os.path.isfile(autotester_exe)):
-		print(f"'{autotester_exe}' is not a valid thing")
+		print(f"'{autotester_exe}' is not a valid autotester executable")
 		sys.exit(1)
 
 	for folder in sys.argv[2:]:
@@ -104,7 +129,7 @@ def main():
 	total_tests = num_failed + num_passed
 
 	with open("autotester_summary.txt", "wb") as f:
-		log_string(f, f"{num_passed}/{total_tests} ({100 * num_passed / total_tests:.1f}%) " +
+		log_string(f, f"{num_passed}/{total_tests} ({100 * num_passed / max(1, total_tests):.1f}%) " +
 			f"test{'' if num_passed == 1 else 's'} passed, {num_failed} failed")
 
 		for (filename, tests) in failed_tests.items():

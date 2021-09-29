@@ -1,0 +1,1835 @@
+1 - Follows has 2 inputs, statement s1 and statement s2. Permutations of 8 different types (6 types of stmt).
+assign a, a1;
+Select a1 such that Follows (a, a1)
+none
+5000
+2 - assign x read
+assign a;read re1;
+Select re1 such that Follows (a, re1)
+none
+5000
+3 - assign x print
+assign a;print pn1;
+Select pn1 such that Follows (a, pn1)
+none
+5000
+4 - assign x if
+assign a;if ifs1;
+Select ifs1 such that Follows (a, ifs1)
+3
+5000
+5 - assign x while
+assign a;while w1;
+Select w1 such that Follows (a, w1)
+none
+5000
+6 - assign x call
+assign a;call cl1;
+Select cl1 such that Follows (a, cl1)
+none
+5000
+7 - assign x wildcard
+assign a;
+Select a such that Follows (a, _)
+2
+5000
+8 - assign x stmt number
+assign a;
+Select a such that Follows (a, 4)
+none
+5000
+9 - read x assign
+read re;assign a1;
+Select a1 such that Follows (re, a1)
+none
+5000
+10 - read x read
+read re;read re1;
+Select re1 such that Follows (re, re1)
+none
+5000
+11 - read x print
+read re;print pn1;
+Select pn1 such that Follows (re, pn1)
+13
+5000
+12 - read x if
+read re;if ifs1;
+Select ifs1 such that Follows (re, ifs1)
+none
+5000
+13 - read x while
+read re;while w1;
+Select w1 such that Follows (re, w1)
+none
+5000
+14 - read x call
+read re;call cl1;
+Select cl1 such that Follows (re, cl1)
+none
+5000
+15 - read x wildcard
+read re;
+Select re such that Follows (re, _)
+12
+5000
+16 - read x stmt number
+read re;
+Select re such that Follows (re, 4)
+none
+5000
+17 - print x assign
+print pn;assign a1;
+Select a1 such that Follows (pn, a1)
+none
+5000
+18 - print x read
+print pn;read re1;
+Select re1 such that Follows (pn, re1)
+12
+5000
+19 - print x print
+print pn;print pn1;
+Select pn1 such that Follows (pn, pn1)
+none
+5000
+20 - print x if
+print pn;if ifs1;
+Select ifs1 such that Follows (pn, ifs1)
+none
+5000
+21 - print x while
+print pn;while w1;
+Select w1 such that Follows (pn, w1)
+none
+5000
+22 - print x call
+print pn;call cl1;
+Select cl1 such that Follows (pn, cl1)
+none
+5000
+23 - print x wildcard
+print pn;
+Select pn such that Follows (pn, _)
+11
+5000
+24 - print x stmt number
+print pn;
+Select pn such that Follows (pn, 4)
+none
+5000
+25 - if x assign
+if ifs;assign a1;
+Select a1 such that Follows (ifs, a1)
+none
+5000
+26 - if x read
+if ifs;read re1;
+Select re1 such that Follows (ifs, re1)
+none
+5000
+27 - if x print
+if ifs;print pn1;
+Select pn1 such that Follows (ifs, pn1)
+none
+5000
+28 - if x if
+if ifs;if ifs1;
+Select ifs1 such that Follows (ifs, ifs1)
+none
+5000
+29 - if x while
+if ifs;while w1;
+Select w1 such that Follows (ifs, w1)
+none
+5000
+30 - if x call
+if ifs;call cl1;
+Select cl1 such that Follows (ifs, cl1)
+none
+5000
+31 - if x wildcard
+if ifs;
+Select ifs such that Follows (ifs, _)
+none
+5000
+32 - if x stmt number
+if ifs;
+Select ifs such that Follows (ifs, 4)
+none
+5000
+33 - while x assign
+while w;assign a1;
+Select a1 such that Follows (w, a1)
+none
+5000
+34 - while x read
+while w;read re1;
+Select re1 such that Follows (w, re1)
+none
+5000
+35 - while x print
+while w;print pn1;
+Select pn1 such that Follows (w, pn1)
+none
+5000
+36 - while x if
+while w;if ifs1;
+Select ifs1 such that Follows (w, ifs1)
+none
+5000
+37 - while x while
+while w;while w1;
+Select w1 such that Follows (w, w1)
+none
+5000
+38 - while x call
+while w;call cl1;
+Select cl1 such that Follows (w, cl1)
+none
+5000
+39 - while x wildcard
+while w;
+Select w such that Follows (w, _)
+none
+5000
+40 - while x stmt number
+while w;
+Select w such that Follows (w, 4)
+none
+5000
+41 - call x assign
+call cl;assign a1;
+Select a1 such that Follows (cl, a1)
+none
+5000
+42 - call x read
+call cl;read re1;
+Select re1 such that Follows (cl, re1)
+none
+5000
+43 - call x print
+call cl;print pn1;
+Select pn1 such that Follows (cl, pn1)
+none
+5000
+44 - call x if
+call cl;if ifs1;
+Select ifs1 such that Follows (cl, ifs1)
+none
+5000
+45 - call x while
+call cl;while w1;
+Select w1 such that Follows (cl, w1)
+none
+5000
+46 - call x call
+call cl;call cl1;
+Select cl1 such that Follows (cl, cl1)
+none
+5000
+47 - call x wildcard
+call cl;
+Select cl such that Follows (cl, _)
+none
+5000
+48 - call x stmt number
+call cl;
+Select 4 such that Follows (cl, 4)
+none
+5000
+49 - wildcard x assign
+assign a1;
+Select a1 such that Follows (_, a1)
+none
+5000
+50 - wildcard x read
+read re1;
+Select re1 such that Follows (_, re1)
+12
+5000
+51 - wildcard x print
+print pn1;
+Select pn1 such that Follows (_, pn1)
+13
+5000
+52 - wildcard x if
+if ifs1;
+Select ifs1 such that Follows (_, ifs1)
+3
+5000
+53 - wildcard x while
+while w1;
+Select w1 such that Follows (_, w1)
+none
+5000
+54 - wildcard x call
+call cl1;
+Select cl1 such that Follows (_, cl1)
+none
+5000
+55 - wildcard x wildcard
+stmt s;
+Select s such that Follows (_, _)
+1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
+5000
+56 - wildcard x stmt number
+stmt s;
+Select s such that Follows (_, 4)
+none
+5000
+57 - stmt number x assign
+assign a1;
+Select a1 such that Follows (2, a1)
+none
+5000
+58 - stmt number x read
+read re1;
+Select re1 such that Follows (2, re1)
+none
+5000
+59 - stmt number x print
+print pn1;
+Select pn1 such that Follows (2, pn1)
+none
+5000
+60 - stmt number x if
+if ifs1;
+Select ifs1 such that Follows (2, ifs1)
+3
+5000
+61 - stmt number x while
+while w1;
+Select w1 such that Follows (2, w1)
+none
+5000
+62 - stmt number x call
+call cl1;
+Select cl1 such that Follows (2, cl1)
+none
+5000
+63 - stmt number x wildcard
+stmt s;
+Select s such that Follows (2, _)
+1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
+5000
+64 - stmt number x stmt number
+stmt s;
+Select s such that Follows (2, 4)
+none
+5000
+65 - invalid follows
+stmt s; variable v;
+Select s such that Follows (2, v)
+none
+5000
+1 - Follows* has 2 inputs, statement s1 and statement s2. Permutations of 8 different types (6 types of stmt).
+assign a, a1;
+Select a1 such that Follows* (a, a1)
+none
+5000
+2 - assign x read
+assign a;read re1;
+Select re1 such that Follows* (a, re1)
+none
+5000
+3 - assign x print
+assign a;print pn1;
+Select pn1 such that Follows* (a, pn1)
+none
+5000
+4 - assign x if
+assign a;if ifs1;
+Select ifs1 such that Follows* (a, ifs1)
+3
+5000
+5 - assign x while
+assign a;while w1;
+Select w1 such that Follows* (a, w1)
+none
+5000
+6 - assign x call
+assign a;call cl1;
+Select cl1 such that Follows* (a, cl1)
+none
+5000
+7 - assign x wildcard
+assign a;
+Select a such that Follows* (a, _)
+2
+5000
+8 - assign x stmt number
+assign a;
+Select a such that Follows* (a, 4)
+none
+5000
+9 - read x assign
+read re;assign a1;
+Select a1 such that Follows* (re, a1)
+none
+5000
+10 - read x read
+read re;read re1;
+Select re1 such that Follows* (re, re1)
+none
+5000
+11 - read x print
+read re;print pn1;
+Select pn1 such that Follows* (re, pn1)
+13
+5000
+12 - read x if
+read re;if ifs1;
+Select ifs1 such that Follows* (re, ifs1)
+none
+5000
+13 - read x while
+read re;while w1;
+Select w1 such that Follows* (re, w1)
+none
+5000
+14 - read x call
+read re;call cl1;
+Select cl1 such that Follows* (re, cl1)
+none
+5000
+15 - read x wildcard
+read re;
+Select re such that Follows* (re, _)
+12
+5000
+16 - read x stmt number
+read re;
+Select re such that Follows* (re, 4)
+none
+5000
+17 - print x assign
+print pn;assign a1;
+Select a1 such that Follows* (pn, a1)
+none
+5000
+18 - print x read
+print pn;read re1;
+Select re1 such that Follows* (pn, re1)
+12
+5000
+19 - print x print
+print pn;print pn1;
+Select pn1 such that Follows* (pn, pn1)
+13
+5000
+20 - print x if
+print pn;if ifs1;
+Select ifs1 such that Follows* (pn, ifs1)
+none
+5000
+21 - print x while
+print pn;while w1;
+Select w1 such that Follows* (pn, w1)
+none
+5000
+22 - print x call
+print pn;call cl1;
+Select cl1 such that Follows* (pn, cl1)
+none
+5000
+23 - print x wildcard
+print pn;
+Select pn such that Follows* (pn, _)
+11
+5000
+24 - print x stmt number
+print pn;
+Select pn such that Follows* (pn, 4)
+none
+5000
+25 - if x assign
+if ifs;assign a1;
+Select a1 such that Follows* (ifs, a1)
+none
+5000
+26 - if x read
+if ifs;read re1;
+Select re1 such that Follows* (ifs, re1)
+none
+5000
+27 - if x print
+if ifs;print pn1;
+Select pn1 such that Follows* (ifs, pn1)
+none
+5000
+28 - if x if
+if ifs;if ifs1;
+Select ifs1 such that Follows* (ifs, ifs1)
+none
+5000
+29 - if x while
+if ifs;while w1;
+Select w1 such that Follows* (ifs, w1)
+none
+5000
+30 - if x call
+if ifs;call cl1;
+Select cl1 such that Follows* (ifs, cl1)
+none
+5000
+31 - if x wildcard
+if ifs;
+Select ifs such that Follows* (ifs, _)
+none
+5000
+32 - if x stmt number
+if ifs;
+Select ifs such that Follows* (ifs, 4)
+none
+5000
+33 - while x assign
+while w;assign a1;
+Select a1 such that Follows* (w, a1)
+none
+5000
+34 - while x read
+while w;read re1;
+Select re1 such that Follows* (w, re1)
+none
+5000
+35 - while x print
+while w;print pn1;
+Select pn1 such that Follows* (w, pn1)
+none
+5000
+36 - while x if
+while w;if ifs1;
+Select ifs1 such that Follows* (w, ifs1)
+none
+5000
+37 - while x while
+while w;while w1;
+Select w1 such that Follows* (w, w1)
+none
+5000
+38 - while x call
+while w;call cl1;
+Select cl1 such that Follows* (w, cl1)
+none
+5000
+39 - while x wildcard
+while w;
+Select w such that Follows* (w, _)
+none
+5000
+40 - while x stmt number
+while w;
+Select w such that Follows* (w, 4)
+none
+5000
+41 - call x assign
+call cl;assign a1;
+Select a1 such that Follows* (cl, a1)
+none
+5000
+42 - call x read
+call cl;read re1;
+Select re1 such that Follows* (cl, re1)
+none
+5000
+43 - call x print
+call cl;print pn1;
+Select pn1 such that Follows* (cl, pn1)
+none
+5000
+44 - call x if
+call cl;if ifs1;
+Select ifs1 such that Follows* (cl, ifs1)
+none
+5000
+45 - call x while
+call cl;while w1;
+Select w1 such that Follows* (cl, w1)
+none
+5000
+46 - call x call
+call cl;call cl1;
+Select cl1 such that Follows* (cl, cl1)
+none
+5000
+47 - call x wildcard
+call cl;
+Select cl such that Follows* (cl, _)
+none
+5000
+48 - call x stmt number
+call cl;
+Select 4 such that Follows* (cl, 4)
+none
+5000
+49 - wildcard x assign
+assign a1;
+Select a1 such that Follows* (_, a1)
+none
+5000
+50 - wildcard x read
+read re1;
+Select re1 such that Follows* (_, re1)
+12
+5000
+51 - wildcard x print
+print pn1;
+Select pn1 such that Follows* (_, pn1)
+13
+5000
+52 - wildcard x if
+if ifs1;
+Select ifs1 such that Follows* (_, ifs1)
+3
+5000
+53 - wildcard x while
+while w1;
+Select w1 such that Follows* (_, w1)
+none
+5000
+54 - wildcard x call
+call cl1;
+Select cl1 such that Follows* (_, cl1)
+none
+5000
+55 - wildcard x wildcard
+stmt s;
+Select s such that Follows* (_, _)
+1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
+5000
+56 - wildcard x stmt number
+stmt s;
+Select s such that Follows* (_, 4)
+none
+5000
+57 - stmt number x assign
+assign a1;
+Select a1 such that Follows* (2, a1)
+none
+5000
+58 - stmt number x read
+read re1;
+Select re1 such that Follows* (2, re1)
+none
+5000
+59 - stmt number x print
+print pn1;
+Select pn1 such that Follows* (2, pn1)
+none
+5000
+60 - stmt number x if
+if ifs1;
+Select ifs1 such that Follows* (2, ifs1)
+3
+5000
+61 - stmt number x while
+while w1;
+Select w1 such that Follows* (2, w1)
+none
+5000
+62 - stmt number x call
+call cl1;
+Select cl1 such that Follows* (2, cl1)
+none
+5000
+63 - stmt number x wildcard
+stmt s;
+Select s such that Follows* (2, _)
+1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
+5000
+64 - stmt number x stmt number
+stmt s;
+Select s such that Follows* (2, 4)
+none
+5000
+65 - invalid Follows*
+stmt s; variable v;
+Select s such that Follows* (2, v)
+none
+5000
+1 - 20 declaration with no such that.
+assign a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20;
+Select a1
+2,14,6,7,17
+5000
+2 - 20 declaration with such that.
+assign a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20; variable v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15;
+Select a1 such that Modifies(a1,v1) pattern a1(v1,_"y"_)
+none
+5000
+3 - 4 declaration with 2 joins
+variable v, v1; assign a, a1;
+Select v1 such that Modifies (a, v) pattern a1(v1, _)
+x,z,a,y
+5000
+1 - Invalid modifies due to semantically indifferentiable wildcard
+assign a;
+Select a1 such that Modifies (_, "b")
+none
+5000
+2 - Invalid modifies (wrong arg type)
+assign a;
+Select re1 such that Modifies (a, "f")
+none
+5000
+3 - assign (return a)
+assign a;variable v;
+Select a such that Modifies (a, v)
+2,6,14,7,17
+5000
+4 - assign (return v)
+assign a;variable v;
+Select v such that Modifies (a, v)
+x,z,a,y
+5000
+5 - assign
+assign a;
+Select a such that Modifies (a, "a")
+17
+5000
+6 - assign
+assign a;
+Select a such that Modifies (a, "8000")
+none
+5000
+7 - assign
+assign a;
+Select a such that Modifies (a, "1")
+none
+5000
+8 - assign
+assign a;
+Select a such that Modifies (a, "non-existent")
+none
+5000
+9 - assign
+assign a;
+Select a such that Modifies (a, _)
+2,6,14,7,17
+5000
+10 - read positive
+read re;
+Select re such that Modifies (re, "c1")
+none
+5000
+11 - read negative
+read re;
+Select re such that Modifies (re, "level8000")
+none
+5000
+12 - read wild
+read re;
+Select re such that Modifies (re, _)
+9,12
+5000
+13 - read var
+read re; variable v;
+Select re such that Modifies (re, v)
+9,12
+5000
+14 - if (in cond, positive)
+if i;
+Select i such that Modifies (i, "a1")
+none
+5000
+15 - if (in cond/body, negative)
+if i;
+Select i such that Modifies (i, "a1*level8000")
+none
+5000
+16 - if (in body, positive)
+if i;
+Select i such that Modifies (i, "a3")
+none
+5000
+17 - if (in cond, positive)
+while i;
+Select i such that Modifies (i, "2")
+none
+5000
+18 - if (in cond/body, negative)
+while i;
+Select i such that Modifies (i, "a1*level8000")
+none
+5000
+19 - if (in body, positive)
+while w;
+Select w such that Modifies (w, "d2")
+none
+5000
+20 - in proc (direct call)
+procedure i;
+Select i such that Modifies (i, "r1")
+none
+5000
+21 - in proc (indirect call)
+procedure i;
+Select i such that Modifies (i, "r2")
+none
+5000
+22 - proc call
+call i;
+Select i such that Modifies (i, "r1")
+none
+5000
+23 - proc call
+call i;
+Select i such that Modifies (i, "r2")
+none
+5000
+1 - assign
+assign a;
+Select a
+2,14,6,7,17
+5000
+2 - read
+read re;
+Select re
+9,12
+5000
+3 - print
+print pn;
+Select pn
+8,11,13
+5000
+4 - if
+if ifs;
+Select ifs
+3,4,5,10,15
+5000
+5 - while
+while w;
+Select w
+1,16
+5000
+6 - call
+call cl;
+Select cl
+18
+5000
+1 - Parent has 2 inputs, statement s1 and statement s2. Permutations of 8 different types (6 types of stmt).
+assign a, a1;
+Select a1 such that Parent (a, a1)
+none
+5000
+2 - assign x read
+assign a;read re1;
+Select re1 such that Parent (a, re1)
+none
+5000
+3 - assign x print
+assign a;print pn1;
+Select pn1 such that Parent (a, pn1)
+none
+5000
+4 - assign x if
+assign a;if ifs1;
+Select ifs1 such that Parent (a, ifs1)
+none
+5000
+5 - assign x while
+assign a;while w1;
+Select w1 such that Parent (a, w1)
+none
+5000
+6 - assign x call
+assign a;call cl1;
+Select cl1 such that Parent (a, cl1)
+none
+5000
+7 - assign x wildcard
+assign a;
+Select a such that Parent (a, _)
+none
+5000
+8 - assign x stmt number
+assign a;
+Select a such that Parent (a, 4)
+none
+5000
+9 - read x assign
+read re;assign a1;
+Select a1 such that Parent (re, a1)
+none
+5000
+10 - read x read
+read re;read re1;
+Select re1 such that Parent (re, re1)
+none
+5000
+11 - read x print
+read re;print pn1;
+Select pn1 such that Parent (re, pn1)
+none
+5000
+12 - read x if
+read re;if ifs1;
+Select ifs1 such that Parent (re, ifs1)
+none
+5000
+13 - read x while
+read re;while w1;
+Select w1 such that Parent (re, w1)
+none
+5000
+14 - read x call
+read re;call cl1;
+Select cl1 such that Parent (re, cl1)
+none
+5000
+15 - read x wildcard
+read re;
+Select re such that Parent (re, _)
+none
+5000
+16 - read x stmt number
+read re;
+Select re such that Parent (re, 4)
+none
+5000
+17 - print x assign
+print pn;assign a1;
+Select a1 such that Parent (pn, a1)
+none
+5000
+18 - print x read
+print pn;read re1;
+Select re1 such that Parent (pn, re1)
+none
+5000
+19 - print x print
+print pn;print pn1;
+Select pn1 such that Parent (pn, pn1)
+none
+5000
+20 - print x if
+print pn;if ifs1;
+Select ifs1 such that Parent (pn, ifs1)
+none
+5000
+21 - print x while
+print pn;while w1;
+Select w1 such that Parent (pn, w1)
+none
+5000
+22 - print x call
+print pn;call cl1;
+Select cl1 such that Parent (pn, cl1)
+none
+5000
+23 - print x wildcard
+print pn;
+Select pn such that Parent (pn, _)
+none
+5000
+24 - print x stmt number
+print pn;
+Select pn such that Parent (pn, 4)
+none
+5000
+25 - if x assign
+if ifs;assign a1;
+Select a1 such that Parent (ifs, a1)
+6,14,7
+5000
+26 - if x read
+if ifs;read re1;
+Select re1 such that Parent (ifs, re1)
+12,9
+5000
+27 - if x print
+if ifs;print pn1;
+Select pn1 such that Parent (ifs, pn1)
+8,11,13
+5000
+28 - if x if
+if ifs;if ifs1;
+Select ifs1 such that Parent (ifs, ifs1)
+4,5
+5000
+29 - if x while
+if ifs;while w1;
+Select w1 such that Parent (ifs, w1)
+16
+5000
+30 - if x call
+if ifs;call cl1;
+Select cl1 such that Parent (ifs, cl1)
+18
+5000
+31 - if x wildcard
+if ifs;
+Select ifs such that Parent (ifs, _)
+3,4,5,10,15
+5000
+32 - if x stmt number
+if ifs;
+Select ifs such that Parent (ifs, 4)
+3
+5000
+33 - while x assign
+while w;assign a1;
+Select a1 such that Parent (w, a1)
+2,17
+5000
+34 - while x read
+while w;read re1;
+Select re1 such that Parent (w, re1)
+none
+5000
+35 - while x print
+while w;print pn1;
+Select pn1 such that Parent (w, pn1)
+none
+5000
+36 - while x if
+while w;if ifs1;
+Select ifs1 such that Parent (w, ifs1)
+3
+5000
+37 - while x while
+while w;while w1;
+Select w1 such that Parent (w, w1)
+none
+5000
+38 - while x call
+while w;call cl1;
+Select cl1 such that Parent (w, cl1)
+none
+5000
+39 - while x wildcard
+while w;
+Select w such that Parent (w, _)
+1,16
+5000
+40 - while x stmt number
+while w;
+Select w such that Parent (w, 4)
+none
+5000
+41 - call x assign
+call cl;assign a1;
+Select a1 such that Parent (cl, a1)
+none
+5000
+42 - call x read
+call cl;read re1;
+Select re1 such that Parent (cl, re1)
+none
+5000
+43 - call x print
+call cl;print pn1;
+Select pn1 such that Parent (cl, pn1)
+none
+5000
+44 - call x if
+call cl;if ifs1;
+Select ifs1 such that Parent (cl, ifs1)
+none
+5000
+45 - call x while
+call cl;while w1;
+Select w1 such that Parent (cl, w1)
+none
+5000
+46 - call x call
+call cl;call cl1;
+Select cl1 such that Parent (cl, cl1)
+none
+5000
+47 - call x wildcard
+call cl;
+Select cl such that Parent (cl, _)
+none
+5000
+48 - call x stmt number
+call cl;
+Select 4 such that Parent (cl, 4)
+none
+5000
+49 - wildcard x assign
+assign a1;
+Select a1 such that Parent (_, a1)
+2,14,6,7,17
+5000
+50 - wildcard x read
+read re1;
+Select re1 such that Parent (_, re1)
+9,12
+5000
+51 - wildcard x print
+print pn1;
+Select pn1 such that Parent (_, pn1)
+8,11,13
+5000
+52 - wildcard x if
+if ifs1;
+Select ifs1 such that Parent (_, ifs1)
+3,4,5
+5000
+53 - wildcard x while
+while w1;
+Select w1 such that Parent (_, w1)
+16
+5000
+54 - wildcard x call
+call cl1;
+Select cl1 such that Parent (_, cl1)
+18
+5000
+55 - wildcard x wildcard
+stmt s;
+Select s such that Parent (_, _)
+1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
+5000
+56 - wildcard x stmt number
+stmt s;
+Select s such that Parent (_, 4)
+1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
+5000
+57 - stmt number x assign
+assign a1;
+Select a1 such that Parent (2, a1)
+none
+5000
+58 - stmt number x read
+read re1;
+Select re1 such that Parent (2, re1)
+none
+5000
+59 - stmt number x print
+print pn1;
+Select pn1 such that Parent (2, pn1)
+none
+5000
+60 - stmt number x if
+if ifs1;
+Select ifs1 such that Parent (2, ifs1)
+none
+5000
+61 - stmt number x while
+while w1;
+Select w1 such that Parent (2, w1)
+none
+5000
+62 - stmt number x call
+call cl1;
+Select cl1 such that Parent (2, cl1)
+none
+5000
+63 - stmt number x wildcard
+stmt s;
+Select s such that Parent (2, _)
+none
+5000
+64 - stmt number x stmt number
+stmt s;
+Select s such that Parent (2, 4)
+none
+5000
+65 - invalid Parent
+stmt s; variable v;
+Select s such that Parent (2, v)
+none
+5000
+1 - Parent* has 2 inputs, statement s1 and statement s2. Permutations of 8 different types (6 types of stmt).
+assign a, a1;
+Select a1 such that Parent* (a, a1)
+none
+5000
+2 - assign x read
+assign a;read re1;
+Select re1 such that Parent* (a, re1)
+none
+5000
+3 - assign x print
+assign a;print pn1;
+Select pn1 such that Parent* (a, pn1)
+none
+5000
+4 - assign x if
+assign a;if ifs1;
+Select ifs1 such that Parent* (a, ifs1)
+none
+5000
+5 - assign x while
+assign a;while w1;
+Select w1 such that Parent* (a, w1)
+none
+5000
+6 - assign x call
+assign a;call cl1;
+Select cl1 such that Parent* (a, cl1)
+none
+5000
+7 - assign x wildcard
+assign a;
+Select a such that Parent* (a, _)
+none
+5000
+8 - assign x stmt number
+assign a;
+Select a such that Parent* (a, 4)
+none
+5000
+9 - read x assign
+read re;assign a1;
+Select a1 such that Parent* (re, a1)
+none
+5000
+10 - read x read
+read re;read re1;
+Select re1 such that Parent* (re, re1)
+none
+5000
+11 - read x print
+read re;print pn1;
+Select pn1 such that Parent* (re, pn1)
+none
+5000
+12 - read x if
+read re;if ifs1;
+Select ifs1 such that Parent* (re, ifs1)
+none
+5000
+13 - read x while
+read re;while w1;
+Select w1 such that Parent* (re, w1)
+none
+5000
+14 - read x call
+read re;call cl1;
+Select cl1 such that Parent* (re, cl1)
+none
+5000
+15 - read x wildcard
+read re;
+Select re such that Parent* (re, _)
+none
+5000
+16 - read x stmt number
+read re;
+Select re such that Parent* (re, 4)
+none
+5000
+17 - print x assign
+print pn;assign a1;
+Select a1 such that Parent* (pn, a1)
+none
+5000
+18 - print x read
+print pn;read re1;
+Select re1 such that Parent* (pn, re1)
+none
+5000
+19 - print x print
+print pn;print pn1;
+Select pn1 such that Parent* (pn, pn1)
+none
+5000
+20 - print x if
+print pn;if ifs1;
+Select ifs1 such that Parent* (pn, ifs1)
+none
+5000
+21 - print x while
+print pn;while w1;
+Select w1 such that Parent* (pn, w1)
+none
+5000
+22 - print x call
+print pn;call cl1;
+Select cl1 such that Parent* (pn, cl1)
+none
+5000
+23 - print x wildcard
+print pn;
+Select pn such that Parent* (pn, _)
+none
+5000
+24 - print x stmt number
+print pn;
+Select pn such that Parent* (pn, 4)
+none
+5000
+25 - if x assign
+if ifs;assign a1;
+Select a1 such that Parent* (ifs, a1)
+6,14,7,17
+5000
+26 - if x read
+if ifs;read re1;
+Select re1 such that Parent* (ifs, re1)
+12,9
+5000
+27 - if x print
+if ifs;print pn1;
+Select pn1 such that Parent* (ifs, pn1)
+8,11,13
+5000
+28 - if x if
+if ifs;if ifs1;
+Select ifs1 such that Parent* (ifs, ifs1)
+4,5
+5000
+29 - if x while
+if ifs;while w1;
+Select w1 such that Parent* (ifs, w1)
+16
+5000
+30 - if x call
+if ifs;call cl1;
+Select cl1 such that Parent* (ifs, cl1)
+18
+5000
+31 - if x wildcard
+if ifs;
+Select ifs such that Parent* (ifs, _)
+3,4,5,10,15
+5000
+32 - if x stmt number
+if ifs;
+Select ifs such that Parent* (ifs, 4)
+3
+5000
+33 - while x assign
+while w;assign a1;
+Select a1 such that Parent* (w, a1)
+2,6,7,17
+5000
+34 - while x read
+while w;read re1;
+Select re1 such that Parent* (w, re1)
+9
+5000
+35 - while x print
+while w;print pn1;
+Select pn1 such that Parent* (w, pn1)
+8
+5000
+36 - while x if
+while w;if ifs1;
+Select ifs1 such that Parent* (w, ifs1)
+3,4,5
+5000
+37 - while x while
+while w;while w1;
+Select w1 such that Parent* (w, w1)
+none
+5000
+38 - while x call
+while w;call cl1;
+Select cl1 such that Parent* (w, cl1)
+none
+5000
+39 - while x wildcard
+while w;
+Select w such that Parent* (w, _)
+1,16
+5000
+40 - while x stmt number
+while w;
+Select w such that Parent* (w, 4)
+1
+5000
+41 - call x assign
+call cl;assign a1;
+Select a1 such that Parent* (cl, a1)
+none
+5000
+42 - call x read
+call cl;read re1;
+Select re1 such that Parent* (cl, re1)
+none
+5000
+43 - call x print
+call cl;print pn1;
+Select pn1 such that Parent* (cl, pn1)
+none
+5000
+44 - call x if
+call cl;if ifs1;
+Select ifs1 such that Parent* (cl, ifs1)
+none
+5000
+45 - call x while
+call cl;while w1;
+Select w1 such that Parent* (cl, w1)
+none
+5000
+46 - call x call
+call cl;call cl1;
+Select cl1 such that Parent* (cl, cl1)
+none
+5000
+47 - call x wildcard
+call cl;
+Select cl such that Parent* (cl, _)
+none
+5000
+48 - call x stmt number
+call cl;
+Select 4 such that Parent* (cl, 4)
+none
+5000
+49 - wildcard x assign
+assign a1;
+Select a1 such that Parent* (_, a1)
+2,14,6,7,17
+5000
+50 - wildcard x read
+read re1;
+Select re1 such that Parent* (_, re1)
+9,12
+5000
+51 - wildcard x print
+print pn1;
+Select pn1 such that Parent* (_, pn1)
+8,11,13
+5000
+52 - wildcard x if
+if ifs1;
+Select ifs1 such that Parent* (_, ifs1)
+3,4,5
+5000
+53 - wildcard x while
+while w1;
+Select w1 such that Parent* (_, w1)
+16
+5000
+54 - wildcard x call
+call cl1;
+Select cl1 such that Parent* (_, cl1)
+18
+5000
+55 - wildcard x wildcard
+stmt s;
+Select s such that Parent* (_, _)
+1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
+5000
+56 - wildcard x stmt number
+stmt s;
+Select s such that Parent* (_, 4)
+1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
+5000
+57 - stmt number x assign
+assign a1;
+Select a1 such that Parent* (2, a1)
+none
+5000
+58 - stmt number x read
+read re1;
+Select re1 such that Parent* (2, re1)
+none
+5000
+59 - stmt number x print
+print pn1;
+Select pn1 such that Parent* (2, pn1)
+none
+5000
+60 - stmt number x if
+if ifs1;
+Select ifs1 such that Parent* (2, ifs1)
+none
+5000
+61 - stmt number x while
+while w1;
+Select w1 such that Parent* (2, w1)
+none
+5000
+62 - stmt number x call
+call cl1;
+Select cl1 such that Parent* (2, cl1)
+none
+5000
+63 - stmt number x wildcard
+stmt s;
+Select s such that Parent* (2, _)
+none
+5000
+64 - stmt number x stmt number
+stmt s;
+Select s such that Parent* (2, 4)
+none
+5000
+65 - invalid Parent*
+stmt s; variable v;
+Select s such that Parent* (2, v)
+none
+5000
+1 - invalid pattern (single _)
+assign a;
+Select a pattern a(_,_"1")
+none
+5000
+2 - invalid pattern (single _)
+assign a;
+Select a pattern a(_,"1"_)
+none
+5000
+3 - invalid pattern (invalid token/no match)
+assign a;
+Select a pattern a(_,_"@1"_)
+none
+5000
+4 - valid complete match
+assign a;
+Select a pattern a(_,"y * (2) + x * (a + 1) * b")
+none
+5000
+5 - invalid complete match due to missing ()
+assign a;
+Select a pattern a(_,"y * (2) + x * a + 1 * b")
+none
+5000
+6 - valid complete match with () removed
+assign a;call cl1;
+Select a pattern a(_,"y * 2 + x * (a + 1) * b")
+none
+5000
+7 - valid complete match with constant only
+assign a;call cl1;
+Select a pattern a(_,"1")
+none
+5000
+8 - complete match with variable only
+assign a;variable v;
+Select a pattern a(v,"v")
+none
+5000
+9 - complete match with an always true pattern
+assign a, a1;
+Select a1 pattern a(_,"y * (2) + x * a + 1 * b")
+none
+5000
+10 - valid lowest layer sub match
+assign a;
+Select a pattern a(_,_"a + 1"_)
+none
+5000
+11 - valid 2 layers sub match
+assign a;
+Select a pattern a(_,_"(a + 1) * b"_)
+none
+5000
+12 - valid submatch with messed up formatting
+assign a;
+Select a pattern a(_,_"(a+1  )*b  "_)
+none
+5000
+13 - valid submatch with complete match pattern
+assign a;
+Select a pattern a(_,_"y * (2) + x * (a + 1) * b"_)
+none
+5000
+14 - invalid submatch due to wrong precedence
+assign a;
+Select a pattern a(_,_"1 * b"_)
+none
+5000
+15 - invalid submatch due to additional element
+assign a;
+Select a pattern a(_,_"y * (2) + x * (a + 1) * b + 1"_)
+none
+5000
+16 - valid variable only submatch
+assign a;variable v;
+Select a pattern a(v,_"v"_)
+none
+5000
+17 - valid constant only submatch
+assign a;
+Select a pattern a(_,_"2"_)
+none
+5000
+1 - Invalid Uses due to semantically indifferentiable wildcard
+assign a;
+Select a such that Uses (_, "b")
+none
+5000
+2 - Invalid Uses (wrong arg type)
+assign a;
+Select re1 such that Uses (a, "f")
+none
+5000
+3 - assign
+assign a;variable v;
+Select a such that Uses (a, v)
+2,6,14,7
+5000
+4 - assign
+assign a;
+Select a such that Uses (a, "a")
+none
+5000
+5 - assign
+assign a;
+Select a such that Uses (a, "8000")
+none
+5000
+6 - assign
+assign a;
+Select a such that Uses (a, "1")
+none
+5000
+7 - assign
+assign a;
+Select a such that Uses (a, "#$@%")
+none
+5000
+8 - assign
+assign a;
+Select a such that Uses (a, _)
+2,14,6,7
+5000
+9 - read positive
+read re;
+Select re such that Uses (re, "c1")
+none
+5000
+10 - read negative
+read re;
+Select re such that Uses (re, "level8000")
+none
+5000
+11 - read wild
+read re;
+Select re such that Uses (re, _)
+none
+5000
+12 - read var
+read re; variable v;
+Select re such that Uses (re, v)
+none
+5000
+13 - if (in cond, positive)
+if i;
+Select i such that Uses (i, "a1")
+none
+5000
+14 - if (in cond/body, negative)
+if i;
+Select i such that Uses (i, "a1*level8000")
+none
+5000
+15 - if (in body, positive)
+if i;
+Select i such that Uses (i, "a3")
+none
+5000
+16 - while (in cond, positive)
+while i;
+Select i such that Uses (i, "2")
+none
+5000
+17 - while (in cond/body, negative)
+while i;
+Select i such that Uses (i, "a1*level8000")
+none
+5000
+18 - while (in body, positive)
+while w;
+Select w such that Uses (w, "e2")
+none
+5000
+19 - in proc (direct call)
+procedure i;
+Select i such that Uses (i, "p1")
+none
+5000
+20 - in proc (indirect call)
+procedure i;
+Select i such that Uses (i, "p2")
+none
+5000
+21 - proc call
+call i;
+Select i such that Uses (i, "p1")
+none
+5000
+22 - proc call
+call i;
+Select i such that Uses (i, "p2")
+none
+5000
+00 - 2 clause, 1 overlap
+assign a;
+Select a such that Parent*(9, a) pattern a("b",_)
+none
+5000
+01 - 2 clause, 2 overlap
+assign a; variable v;
+Select a pattern a(v,_) such that Uses(a, v)
+2,14
+5000
+02 - 2 clause, 0 overlap
+while w; assign a; variable v;
+Select w such that Uses(w,v) pattern a(_,_)
+1,16
+5000
+03 - uses(s, _) pattern a(v, _)
+stmt s; variable v;
+Select s such that Uses(s, _) pattern a(v, _"a + 1"_)
+none
+5000
+04 - uses(a, _) pattern a(v, _)
+stmt s; variable v; assign a;
+Select s such that Uses(s, _) pattern a(v, _"v + x"_)
+none
+5000
+05 - uses(s, _) pattern a(v, _)
+stmt s; variable v; assign a;
+Select s such that Uses(s, _) pattern a(_, "a + 1")
+none
+5000
+06 - uses(a, _) pattern a(v, _)
+assign a;
+Select a such that Uses(a, _) pattern a(_, "a + 1")
+none
+5000
+07 - modifies(a, 'v') pattern a(_, _'ex'_)
+assign a;
+select a such that Modifies(a, "a") pattern a(_, _"z + t"_)
+none
+5000
+08 - modifies(a, 'v') pattern a(_, _'ex'_)
+assign a;
+Select a such that Modifies(a, _) pattern a(_, _"a + 1"_)
+none
+5000
+09 - modifies(a, 'v') pattern a('v', _'ex'_)
+assign a;
+Select a such that Modifies(a, _) pattern a("a", _"99"_)
+none
+5000
+10 - uses(a, 'v') pattern a('v', _'ex'_)
+assign a;
+Select a such that Uses(a, "aa") pattern a("a", "aa")
+none
+5000
+11 - uses(a, _) pattern a(_, _)
+assign a;
+Select a such that Uses(a, _) pattern a(_, _)
+2,14,6,7
+5000
+12 - uses(a, _) pattern a(_, c)
+assign a;
+Select a such that Modifies(a, _) pattern a(_, "1")
+none
+5000
+13 - parent*(s, n)
+assign a;
+Select a such that Parent*(a, 14) pattern a(_, _)
+none
+5000
+14 - parent*(s, n)
+assign a;
+Select a such that Parent*(a, 14) pattern a(_, _)
+none
+5000
+15 - parent*(s, n)
+assign a;
+Select a such that Parent*(_, a) pattern a(_, _)
+2,14,6,7,17
+5000
+16 - parent*(s, n)
+assign a;
+Select a such that Parent*(_, _) pattern a(_, _)
+2,14,6,7,17
+5000
+17 - follows(a, a)
+assign a; stmt s;
+Select a such that Follows(a, s) pattern a(_, _)
+2
+5000
+18 - follows(a, a)
+assign a; stmt s;
+Select a such that Follows(a, s) pattern a(_, "a")
+none
+5000
+19 - follows(a, a)
+assign a; stmt s;
+Select a such that Follows(a, s) pattern a(_, _"a"_)
+none
+5000
+20 - follows(a, a)
+assign a; stmt s;
+Select s such that Follows*(a, s) pattern a(_, _"a"_)
+none
+5000
+21 - follows(a, a)
+assign a; stmt s;
+Select s such that Follows*(_, _) pattern a(_, "p")
+none
+5000
+22 - follows(a, a)
+assign a;
+Select a such that Follows*(a, _) pattern a(_, "p")
+none
+5000
+23 - follows(a, a)
+assign a;
+Select a such that Follows*(a, _) pattern a("p", _"p"_)
+none
+5000
+24 - follows(const, const)
+assign a;
+Select a such that Follows(1, 2) pattern a(_, _)
+none
+5000
+25 - follows(const, const)
+assign a;
+Select a such that Follows(1, 2) pattern a("p", _)
+none
+5000
+26 - follows(const, const)
+assign a;
+Select a such that Follows(1, 2) pattern a(_, _"a"_)
+none
+5000
+27 - parent*(const, const)
+assign a;
+Select a such that Parent*(_, a) pattern a(_, _"p"_)
+none
+5000
+28 - pattern()
+assign a;
+Select a such that pattern a(_, _" "_)
+none
+5000
+29 - Uses(w, v) pattern
+while w; variable v; assign a;
+Select v such that Uses(w, v) pattern a (v,_"2"_)
+none
+5000
+30 - Modifies(a, v) pattern
+assign a;
+Select a pattern a(_,_"b"_) such that Modifies(a, "x")
+none
+5000
+31 - Follows(a, s) pattern
+stmt s; assign a;
+Select s such that Follows(a, s) pattern a(_,_"zzz"_)
+none
+5000
+32 - Follows* and pattern
+stmt s; assign a;
+Select s such that Follows*(s, a) pattern a (_,_"a"_)
+none
+5000
+33 - Parent and pattern
+assign a; while w;
+Select a pattern a (_,_) such that Parent(w, a)
+2,17
+5000
+34 - Parent* and pattern
+assign a; if ifs;
+Select a such that Parent* (ifs, a) pattern a(_,_"zzz"_)
+none
+5000
+35 - Parent* and pattern
+constant c; assign a;
+Select c such that Modifies(a, _)
+1000000,122220008,1,3,0
+5000

@@ -1,0 +1,38 @@
+procedure complexxxxx {
+    while (i!=0) {
+		x = x - 1;
+		if (x==1) then {
+			if (x!=1) then {
+				if (x==1) then {
+					z = x + 1 / 122220008;
+				}
+				else {
+					y = z + x % qw * 3;
+				}
+			} else {
+				print a;
+			}
+		} else {
+			read KNN;
+		}
+    }
+}
+
+procedure q {
+    if (x==1) then {
+        print a;
+        read a;
+        print then;
+    }
+    else {
+    x = z + x;} }
+
+procedure q100000 {
+    if (1 == 1) then {
+        while (1 == aaaaa) {
+            a = 1000000;
+        }
+    } else {
+        call q;
+    }
+}
