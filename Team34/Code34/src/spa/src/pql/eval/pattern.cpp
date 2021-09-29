@@ -65,7 +65,7 @@ namespace pql::ast
                 }
                 else if(var_ent.isDeclaration())
                 {
-                    util::log("pql::eval", "Processing pattern a (v, ...)");
+                    util::logfmt("pql::eval", "Processing pattern a (v, ...)");
                     // in theory, we also need to check if there aren't any variables, and if so yeet this
                     // assignment from the domain; however, any valid SIMPLE program has at least one variable,
                     // so in reality this should not be triggered.

@@ -54,10 +54,10 @@ namespace pql::eval
         }
 
         auto& var_list = m_pkb->getAllVariables();
-        util::log("pql::eval", "Adding {} variables to {} initial domain", var_list.size(), declaration->toString());
+        util::logfmt("pql::eval", "Adding {} variables to {} initial domain", var_list.size(), declaration->toString());
         for(const auto& [name, var] : var_list)
         {
-            util::log("pql::eval", "Adding {} to initial var domain", name);
+            util::logfmt("pql::eval", "Adding {} to initial var domain", name);
             domain.insert(table::Entry(declaration, name));
         }
         return domain;
@@ -72,10 +72,10 @@ namespace pql::eval
         }
 
         auto& proc_list = m_pkb->getAllProcedures();
-        util::log("pql::eval", "Adding {} procedures to {} initial domain", proc_list.size(), declaration->toString());
+        util::logfmt("pql::eval", "Adding {} procedures to {} initial domain", proc_list.size(), declaration->toString());
         for(const auto& [name, proc] : proc_list)
         {
-            util::log("pql::eval", "Adding {} to initial proc domain", name);
+            util::logfmt("pql::eval", "Adding {} to initial proc domain", name);
             domain.insert(table::Entry(declaration, name));
         }
         return domain;
@@ -89,10 +89,10 @@ namespace pql::eval
                 declaration->toString());
         }
         auto& const_list = m_pkb->getAllConstants();
-        util::log("pql::eval", "Adding {} constants to {} initial domain", const_list.size(), declaration->toString());
+        util::logfmt("pql::eval", "Adding {} constants to {} initial domain", const_list.size(), declaration->toString());
         for(const auto& const_val : const_list)
         {
-            util::log("pql::eval", "Adding {} to initial proc domain", const_val);
+            util::logfmt("pql::eval", "Adding {} to initial proc domain", const_val);
             domain.insert(table::Entry(declaration, const_val));
         }
         return domain;
@@ -103,12 +103,12 @@ namespace pql::eval
         auto it = m_all_ent_stmt_map.find(declaration->design_ent);
         if(it == m_all_ent_stmt_map.end())
         {
-            util::log("pql::eval", "No statement in source for {}", declaration->toString());
+            util::logfmt("pql::eval", "No statement in source for {}", declaration->toString());
             return domain;
         }
         for(const simple::ast::Stmt* stmt : it->second)
         {
-            util::log("pql::eval", "Adding {} to initial stmt domain", stmt->toString(0));
+            util::logfmt("pql::eval", "Adding {} to initial stmt domain", stmt->toString(0));
             domain.insert(table::Entry(declaration, stmt->id));
         }
         return domain;
@@ -116,7 +116,7 @@ namespace pql::eval
 
     std::unordered_set<table::Entry> Evaluator::getInitialDomain(ast::Declaration* declaration)
     {
-        util::log("pql::eval", "Getting initial domain for {}", declaration->toString());
+        util::logfmt("pql::eval", "Getting initial domain for {}", declaration->toString());
         if(declaration->design_ent == ast::DESIGN_ENT::VARIABLE)
             return getInitialDomainVar(declaration);
         if(declaration->design_ent == ast::DESIGN_ENT::PROCEDURE)
@@ -134,9 +134,9 @@ namespace pql::eval
 
     std::list<std::string> Evaluator::evaluate()
     {
-        util::log("pql::eval", "Evaluating query: {}", m_query->toString());
+        util::logfmt("pql::eval", "Evaluating query: {}", m_query->toString());
         processDeclarations(m_query->declarations);
-        util::log("pql::eval", "Table after initial processing of declaration: {}", m_table.toString());
+        util::logfmt("pql::eval", "Table after initial processing of declaration: {}", m_table.toString());
 
         // All queries should have select clause
         if(m_query->select.result.isTuple())
@@ -156,14 +156,14 @@ namespace pql::eval
         if(m_query->select.pattern)
             this->handlePattern(*m_query->select.pattern);
 
-        util::log("pql::eval", "Table after processing of such that: {}", m_table.toString());
+        util::logfmt("pql::eval", "Table after processing of such that: {}", m_table.toString());
         // TODO(#138): Get result from all tuple instead of the first
         return this->m_table.getResult(m_query->select.result.tuple().front().declaration());
     }
 
     void Evaluator::handleSuchThat(const ast::SuchThatCl& such_that)
     {
-        util::log("pql::eval", "Handling such that:{}", such_that.toString());
+        util::logfmt("pql::eval", "Handling such that:{}", such_that.toString());
         for(const auto& rel_cond : such_that.rel_conds)
         {
             if(auto follows = dynamic_cast<ast::Follows*>(rel_cond.get()); follows)

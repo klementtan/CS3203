@@ -97,7 +97,7 @@ namespace pql::parser
         if(declaration_list->hasDeclaration(var.text.str()))
             throw util::PqlException("pql::parser", "duplicate declaration '{}'", var.text);
 
-        util::log("pql::parser", "Adding declaration {} to declaration list", var.text);
+        util::logfmt("pql::parser", "Adding declaration {} to declaration list", var.text);
         declaration_list->addDeclaration(var.text.str(), ent);
     }
 
@@ -120,11 +120,11 @@ namespace pql::parser
         }
 
         std::string ent_string { ps->next().text.str() };
-        util::log("pql::parser", "Parsing declaration with design_ent:{}", ent_string);
+        util::logfmt("pql::parser", "Parsing declaration with design_ent:{}", ent_string);
 
         if(ast::DESIGN_ENT_MAP.count(ent_string) == 0)
         {
-            util::log("pql::parser", "Invalid entity provided in declaration {}", ent_string);
+            util::logfmt("pql::parser", "Invalid entity provided in declaration {}", ent_string);
         }
         ast::DESIGN_ENT ent = ast::DESIGN_ENT_MAP.find(ent_string)->second;
         insert_var_to_declarations(ps, declaration_list, ent);
@@ -272,7 +272,7 @@ namespace pql::parser
                 ast::INV_DESIGN_ENT_MAP.find(declaration->design_ent)->second);
         }
 
-        util::log("pql::parser", "Parsing pattern clause with assignment condition {}", declaration->toString());
+        util::logfmt("pql::parser", "Parsing pattern clause with assignment condition {}", declaration->toString());
 
         // TOOD refactor to a smaller method.
         auto pattern_cond = std::make_unique<ast::AssignPatternCond>();
@@ -296,7 +296,7 @@ namespace pql::parser
             throw PqlException("pql::parser", "Expected ')' after expr spec in Pattern clause instead of {}", tok.text);
         }
 
-        util::log("pql::parser", "Completed parsing pattern cond: {}", pattern_cond->toString());
+        util::logfmt("pql::parser", "Completed parsing pattern cond: {}", pattern_cond->toString());
         pattern_conds.push_back(std::move(pattern_cond));
 
         return ast::PatternCl { std::move(pattern_conds) };
@@ -353,7 +353,7 @@ namespace pql::parser
         {
             throw PqlException("pql::parser", "Expected ')' at the end of 'Follows' instead of {}", tok.text);
         }
-        util::log("pql::parser", "Parsed: {}", follows->toString());
+        util::logfmt("pql::parser", "Parsed: {}", follows->toString());
 
         return follows;
     }
@@ -579,13 +579,13 @@ namespace pql::parser
         if(such.text != "such" || that.text != "that" || tmp_token != "such that")
             throw PqlException("pql::parser", "Such That clause should start with 'such that'");
 
-        util::log("pql::parser", "Parsing such that clause. Remaining {}", ps->stream);
+        util::logfmt("pql::parser", "Parsing such that clause. Remaining {}", ps->stream);
         ast::SuchThatCl such_that {};
 
         // TODO(iteration 2): Handle AND condition here
         such_that.rel_conds.push_back(parse_rel_cond(ps, declaration_list));
 
-        util::log("pql::parser", "Complete parsing such that clause: {}", such_that.toString());
+        util::logfmt("pql::parser", "Complete parsing such that clause: {}", such_that.toString());
         return such_that;
     }
 
@@ -706,7 +706,7 @@ namespace pql::parser
 
         ast::ResultCl result = parse_result(ps, declaration_list);
 
-        util::log("pql::parser", "Result for Select clause: {}", result.toString());
+        util::logfmt("pql::parser", "Result for Select clause: {}", result.toString());
 
         ast::Select select {};
         select.result = result;
@@ -720,26 +720,26 @@ namespace pql::parser
         {
             if(clause_tok[0] == KW_Pattern)
             {
-                util::log("pql::parser", "Parsing pattern clause");
+                util::logfmt("pql::parser", "Parsing pattern clause");
                 select.pattern = parse_pattern(ps, declaration_list);
                 allow_pattern = false;
             }
             else if(clause_tok == KW_SuchThat)
             {
-                util::log("pql::parser", "Parsing such that clause");
+                util::logfmt("pql::parser", "Parsing such that clause");
                 select.such_that = parse_such_that(ps, declaration_list);
                 allow_such_that = false;
             }
             clause_tok = ps->peek_two();
         }
-        util::log("pql::parser", "Completed parsing Select clause :{}", select.toString());
+        util::logfmt("pql::parser", "Completed parsing Select clause :{}", select.toString());
 
         return select;
     }
 
     std::unique_ptr<ast::Query> parsePQL(zst::str_view input)
     {
-        util::log("pql::parer", "Parsing input {}", input);
+        util::logfmt("pql::parer", "Parsing input {}", input);
         auto ps = ParserState { input };
         auto query = std::make_unique<ast::Query>();
 
@@ -748,7 +748,7 @@ namespace pql::parser
         {
             if(t == KW_Select)
             {
-                util::log("pql::parser", "parsing Select");
+                util::logfmt("pql::parser", "parsing Select");
                 query->select = parse_select(&ps, &query->declarations);
 
                 found_select = true;
@@ -760,7 +760,7 @@ namespace pql::parser
             }
             else
             {
-                util::log("pql::parser", "parsing declaration");
+                util::logfmt("pql::parser", "parsing declaration");
                 insert_declaration(&ps, &query->declarations);
             }
         }
@@ -768,7 +768,7 @@ namespace pql::parser
         if(!found_select)
             throw util::PqlException("pql::parser", "All queries should contain a select clause");
 
-        util::log("pql::parser", "Completed parsing AST: {}", query->toString());
+        util::logfmt("pql::parser", "Completed parsing AST: {}", query->toString());
         return query;
     }
 }

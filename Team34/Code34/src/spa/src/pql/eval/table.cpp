@@ -107,12 +107,12 @@ namespace pql::eval::table
         {
             if(b.count(entry_a))
             {
-                util::log("pql::eval::table", "{} added to intersect", entry_a.toString());
+                util::logfmt("pql::eval::table", "{} added to intersect", entry_a.toString());
                 intersect.insert(entry_a);
             }
             else
             {
-                util::log("pql::eval::table", "{} does not exists in intersect", entry_a.toString());
+                util::logfmt("pql::eval::table", "{} does not exists in intersect", entry_a.toString());
             }
         }
         return intersect;
@@ -168,7 +168,7 @@ namespace pql::eval::table
 
     void Table::upsertDomains(ast::Declaration* decl, const std::unordered_set<Entry>& entries)
     {
-        util::log("pql::eval::table", "Updating domain of {} with {} entries", decl->toString(), entries.size());
+        util::logfmt("pql::eval::table", "Updating domain of {} with {} entries", decl->toString(), entries.size());
         m_domains[decl] = entries;
     }
     void Table::addJoin(const Join& join)
@@ -205,7 +205,7 @@ namespace pql::eval::table
 
         for(ast::Declaration* decl : decls)
         {
-            util::log("pql::eval::table", "Adding {} to rows", decl->toString());
+            util::logfmt("pql::eval::table", "Adding {} to rows", decl->toString());
             Domain entries = Table::getDomain(decl);
             std::vector<Row> new_rows;
             for(const Entry& entry : entries)
@@ -224,7 +224,7 @@ namespace pql::eval::table
                 bool is_valid = true;
                 if(decl_joins.count(decl) == 0)
                 {
-                    util::log("pql::eval::table", "Cannot prune as {} has not join dependency", decl->toString());
+                    util::logfmt("pql::eval::table", "Cannot prune as {} has not join dependency", decl->toString());
                     continue;
                 }
                 for(const Join& join : decl_joins.find(decl)->second)
@@ -274,7 +274,7 @@ namespace pql::eval::table
         std::vector<Row> valid_rows;
         for(auto row : candidate_rows)
         {
-            util::log("pql::eval::row", "Checking if row fulfill all {} join condition: {}", m_joins.size(),
+            util::logfmt("pql::eval::row", "Checking if row fulfill all {} join condition: {}", m_joins.size(),
                 rowToString(row));
             bool is_valid = true;
             for(const Join& join : m_joins)
@@ -297,7 +297,7 @@ namespace pql::eval::table
                     }
                     assert(actual_entry_a == expected_entry_a);
                     assert(actual_entry_b == expected_entry_b);
-                    util::log("pql::eval::row", "Found a valid Join({}={}, {}={}) ", decl_ptr_a->toString(),
+                    util::logfmt("pql::eval::row", "Found a valid Join({}={}, {}={}) ", decl_ptr_a->toString(),
                         actual_entry_a.toString(), decl_ptr_b->toString(), actual_entry_b.toString());
                     has_valid_join = true;
                     break;
@@ -339,12 +339,12 @@ namespace pql::eval::table
     {
         for(ast::Declaration* decl : m_select_decls)
         {
-            util::log("pql::eval::table", "Checking if {} has non empty domain", decl->toString());
+            util::logfmt("pql::eval::table", "Checking if {} has non empty domain", decl->toString());
             std::unordered_set<Entry> domain = getDomain(decl);
             // All declarations should have at least one entry in domain
             if(domain.empty())
             {
-                util::log("pql::eval", "{} has empty domain", decl->toString());
+                util::logfmt("pql::eval", "{} has empty domain", decl->toString());
                 return false;
             }
         }

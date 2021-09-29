@@ -29,10 +29,10 @@ namespace pql::eval
             auto bef_stmt_id = before_stmt.id();
             auto aft_stmt_id = after_stmt.id();
 
-            util::log("pql::eval", "Processing Follows(StmtId,StmtId)");
+            util::logfmt("pql::eval", "Processing Follows(StmtId,StmtId)");
             if(m_pkb->getStatementAt(aft_stmt_id)->doesFollow(bef_stmt_id))
             {
-                util::log("pql::eval", "{} will always evaluate to true", follows->toString());
+                util::logfmt("pql::eval", "{} will always evaluate to true", follows->toString());
                 return;
             }
             else
@@ -44,14 +44,14 @@ namespace pql::eval
         {
             auto bef_stmt_id = before_stmt.id();
 
-            util::log("pql::eval", "Processing Follows(StmtId,_)");
+            util::logfmt("pql::eval", "Processing Follows(StmtId,_)");
             if(!m_pkb->getStatementAt(bef_stmt_id)->hasFollower())
             {
                 throw PqlException("pql::eval", "{} will always evaluate to false", follows->toString());
             }
             else
             {
-                util::log("pql::eval", "{} will always evaluate to true", follows->toString());
+                util::logfmt("pql::eval", "{} will always evaluate to true", follows->toString());
                 return;
             }
         }
@@ -62,7 +62,7 @@ namespace pql::eval
 
             auto bef_stmt = m_pkb->getStatementAt(bef_stmt_id);
 
-            util::log("pql::eval", "Processing Follows(StmtId,DeclaredStmt)");
+            util::logfmt("pql::eval", "Processing Follows(StmtId,DeclaredStmt)");
             if(!bef_stmt->hasFollower())
             {
                 throw PqlException("pql::eval", "{} will always evaluate to false. No statement directly after {}",
@@ -71,7 +71,7 @@ namespace pql::eval
             else
             {
                 auto entry = table::Entry(aft_decl, bef_stmt->getStmtDirectlyAfter());
-                util::log("pql::eval", "{} updating domain to [{}]", follows->toString(), entry.toString());
+                util::logfmt("pql::eval", "{} updating domain to [{}]", follows->toString(), entry.toString());
                 table::Domain curr_domain = { entry };
                 table::Domain prev_domain = m_table.getDomain(aft_decl);
                 m_table.upsertDomains(aft_decl, table::entry_set_intersect(prev_domain, curr_domain));
@@ -81,23 +81,23 @@ namespace pql::eval
         {
             auto aft_stmt_id = after_stmt.id();
 
-            util::log("pql::eval", "Processing Follows(_,StmtId)");
+            util::logfmt("pql::eval", "Processing Follows(_,StmtId)");
             if(!m_pkb->getStatementAt(aft_stmt_id)->isFollower())
             {
                 throw PqlException("pql::eval", "{} will always evaluate to false", follows->toString());
             }
             else
             {
-                util::log("pql::eval", "{} will always evaluate to true", follows->toString());
+                util::logfmt("pql::eval", "{} will always evaluate to true", follows->toString());
                 return;
             }
         }
         else if(before_stmt.isWildcard() && after_stmt.isWildcard())
         {
-            util::log("pql::eval", "Processing Follows(_,_)");
+            util::logfmt("pql::eval", "Processing Follows(_,_)");
             if(m_pkb->followsRelationExists())
             {
-                util::log("pql::eval", "{} will always evaluate to true", follows->toString());
+                util::logfmt("pql::eval", "{} will always evaluate to true", follows->toString());
                 return;
             }
             else
@@ -110,7 +110,7 @@ namespace pql::eval
         {
             auto aft_decl = after_stmt.declaration();
 
-            util::log("pql::eval", "Processing Follows(_,DeclaredStmt)");
+            util::logfmt("pql::eval", "Processing Follows(_,DeclaredStmt)");
 
             auto domain = m_table.getDomain(aft_decl);
             for(auto it = domain.begin(); it != domain.end();)
@@ -130,7 +130,7 @@ namespace pql::eval
 
             auto aft_stmt = m_pkb->getStatementAt(aft_stmt_id);
 
-            util::log("pql::eval", "Processing Follows(DeclaredStmt,StmtId)");
+            util::logfmt("pql::eval", "Processing Follows(DeclaredStmt,StmtId)");
             if(!aft_stmt->isFollower())
             {
                 throw PqlException("pql::eval",
@@ -140,7 +140,7 @@ namespace pql::eval
             else
             {
                 auto entry = table::Entry(bef_decl, aft_stmt->getStmtDirectlyBefore());
-                util::log("pql::eval", "{} adds {} to curr domain", follows->toString(), entry.toString());
+                util::logfmt("pql::eval", "{} adds {} to curr domain", follows->toString(), entry.toString());
                 table::Domain curr_domain = { entry };
                 table::Domain prev_domain = m_table.getDomain(bef_decl);
                 m_table.upsertDomains(bef_decl, table::entry_set_intersect(prev_domain, curr_domain));
@@ -150,7 +150,7 @@ namespace pql::eval
         {
             auto bef_decl = before_stmt.declaration();
 
-            util::log("pql::eval", "Processing Follows(DeclaredStmt,_)");
+            util::logfmt("pql::eval", "Processing Follows(DeclaredStmt,_)");
 
             auto domain = m_table.getDomain(bef_decl);
             for(auto it = domain.begin(); it != domain.end();)
@@ -168,7 +168,7 @@ namespace pql::eval
             auto bef_decl = before_stmt.declaration();
             auto aft_decl = after_stmt.declaration();
 
-            util::log("pql::eval", "Processing Follows(DeclaredStmt,DeclaredStmt)");
+            util::logfmt("pql::eval", "Processing Follows(DeclaredStmt,DeclaredStmt)");
 
             // use a combination of pruning and intersection in this case, to obviate the need for
             // explicitly doing a nested loop.
@@ -191,7 +191,7 @@ namespace pql::eval
 
                 new_aft_domain.insert(aft_entry);
 
-                util::log("pql::eval", "{} adds Join({}, {})", follows->toString(), bef_entry.toString(),
+                util::logfmt("pql::eval", "{} adds Join({}, {})", follows->toString(), bef_entry.toString(),
                     aft_entry.toString());
                 allowed_entries.insert({ bef_entry, aft_entry });
                 ++it;
@@ -228,10 +228,10 @@ namespace pql::eval
             auto bef_stmt_id = before_stmt.id();
             auto aft_stmt_id = after_stmt.id();
 
-            util::log("pql::eval", "Processing Follows*(StmtId,StmtId)");
+            util::logfmt("pql::eval", "Processing Follows*(StmtId,StmtId)");
             if(m_pkb->getStatementAt(aft_stmt_id)->doesFollowTransitively(bef_stmt_id))
             {
-                util::log("pql::eval", "{} will always evaluate to true", follows_t->toString());
+                util::logfmt("pql::eval", "{} will always evaluate to true", follows_t->toString());
                 return;
             }
             else
@@ -243,14 +243,14 @@ namespace pql::eval
         {
             auto bef_stmt_id = before_stmt.id();
 
-            util::log("pql::eval", "Processing Follows*(StmtId,_)");
+            util::logfmt("pql::eval", "Processing Follows*(StmtId,_)");
             if(!m_pkb->getStatementAt(bef_stmt_id)->hasFollower())
             {
                 throw PqlException("pql::eval", "{} will always evaluate to false", follows_t->toString());
             }
             else
             {
-                util::log("pql::eval", "{} will always evaluate to true", follows_t->toString());
+                util::logfmt("pql::eval", "{} will always evaluate to true", follows_t->toString());
                 return;
             }
         }
@@ -261,7 +261,7 @@ namespace pql::eval
 
             auto bef_stmt = m_pkb->getStatementAt(bef_stmt_id);
 
-            util::log("pql::eval", "Processing Follows*(StmtId,DeclaredStmt)");
+            util::logfmt("pql::eval", "Processing Follows*(StmtId,DeclaredStmt)");
             if(!bef_stmt->hasFollower())
             {
                 throw PqlException("pql::eval", "{} will always evaluate to false. No statement directly after {}",
@@ -273,7 +273,7 @@ namespace pql::eval
                 for(auto after_stmt_num : bef_stmt->getStmtsTransitivelyAfter())
                 {
                     table::Entry entry = table::Entry(aft_decl, after_stmt_num);
-                    util::log("pql::eval", "{} updating domain to [{}]", follows_t->toString(), entry.toString());
+                    util::logfmt("pql::eval", "{} updating domain to [{}]", follows_t->toString(), entry.toString());
                     curr_domain.insert(entry);
                 }
                 std::unordered_set<table::Entry> prev_domain = m_table.getDomain(aft_decl);
@@ -284,23 +284,23 @@ namespace pql::eval
         {
             auto aft_stmt_id = after_stmt.id();
 
-            util::log("pql::eval", "Processing Follows*(_,StmtId)");
+            util::logfmt("pql::eval", "Processing Follows*(_,StmtId)");
             if(!m_pkb->getStatementAt(aft_stmt_id)->isFollower())
             {
                 throw PqlException("pql::eval", "{} will always evaluate to false", follows_t->toString());
             }
             else
             {
-                util::log("pql::eval", "{} will always evaluate to true", follows_t->toString());
+                util::logfmt("pql::eval", "{} will always evaluate to true", follows_t->toString());
                 return;
             }
         }
         else if(before_stmt.isWildcard() && after_stmt.isWildcard())
         {
-            util::log("pql::eval", "Processing Follows*(_,_)");
+            util::logfmt("pql::eval", "Processing Follows*(_,_)");
             if(m_pkb->followsRelationExists())
             {
-                util::log("pql::eval", "{} will always evaluate to true", follows_t->toString());
+                util::logfmt("pql::eval", "{} will always evaluate to true", follows_t->toString());
                 return;
             }
             else
@@ -313,7 +313,7 @@ namespace pql::eval
         {
             auto aft_decl = after_stmt.declaration();
 
-            util::log("pql::eval", "Processing Follows*(_,DeclaredStmt)");
+            util::logfmt("pql::eval", "Processing Follows*(_,DeclaredStmt)");
 
             auto domain = m_table.getDomain(aft_decl);
             for(auto it = domain.begin(); it != domain.end();)
@@ -333,7 +333,7 @@ namespace pql::eval
 
             auto aft_stmt = m_pkb->getStatementAt(aft_stmt_id);
 
-            util::log("pql::eval", "Processing Follows*(DeclaredStmt,StmtId)");
+            util::logfmt("pql::eval", "Processing Follows*(DeclaredStmt,StmtId)");
             if(!aft_stmt->isFollower())
             {
                 throw PqlException("pql::eval",
@@ -348,7 +348,7 @@ namespace pql::eval
                 {
                     auto entry = table::Entry(bef_decl, bef_stmt_id);
                     curr_domain.insert(entry);
-                    util::log("pql::eval", "{} adds {} to curr domain", follows_t->toString(), entry.toString());
+                    util::logfmt("pql::eval", "{} adds {} to curr domain", follows_t->toString(), entry.toString());
                 }
                 m_table.upsertDomains(bef_decl, table::entry_set_intersect(prev_domain, curr_domain));
             }
@@ -357,7 +357,7 @@ namespace pql::eval
         {
             auto bef_decl = before_stmt.declaration();
 
-            util::log("pql::eval", "Processing Follows*(DeclaredStmt,_)");
+            util::logfmt("pql::eval", "Processing Follows*(DeclaredStmt,_)");
 
             auto domain = m_table.getDomain(bef_decl);
             for(auto it = domain.begin(); it != domain.end();)
@@ -375,7 +375,7 @@ namespace pql::eval
             auto bef_decl = before_stmt.declaration();
             auto aft_decl = after_stmt.declaration();
 
-            util::log("pql::eval", "Processing Follows*(DeclaredStmt,DeclaredStmt)");
+            util::logfmt("pql::eval", "Processing Follows*(DeclaredStmt,DeclaredStmt)");
 
             // same strategy as Follows
             auto bef_domain = m_table.getDomain(bef_decl);
@@ -396,7 +396,7 @@ namespace pql::eval
                     auto bef_entry = table::Entry(bef_decl, it->getStmtNum());
                     auto aft_entry = table::Entry(aft_decl, aft_stmt_num);
 
-                    util::log("pql::eval", "{} adds Join({}, {})", follows_t->toString(), bef_entry.toString(),
+                    util::logfmt("pql::eval", "{} adds Join({}, {})", follows_t->toString(), bef_entry.toString(),
                         aft_entry.toString());
 
                     new_aft_domain.insert(aft_entry);

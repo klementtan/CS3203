@@ -20,17 +20,13 @@ namespace util
     FILE* getLogFile();
 
 #ifndef ENABLE_LOGGING
-    inline void dummy_fn() { }
+    static constexpr inline void dummy_fn() { }
 
-#ifdef log
-#undef log
-#endif
-
-#define log(...) dummy_fn()
+#define logfmt(...) dummy_fn()
 
 #else
     template <typename... Args>
-    inline void log(const char* who, const char* fmt, Args&&... args)
+    inline void logfmt(const char* who, const char* fmt, Args&&... args)
     {
         auto file = getLogFile();
         if(file == nullptr)
@@ -48,7 +44,7 @@ namespace util
 
         // note: this prints to stderr, but we probably also want to print this to the log file.
         zpr::fprintln(stderr, "[{} ERROR]: {}", who, zpr::fwd(fmt, args...));
-        log(zpr::sprint("{} ERROR", who).c_str(), fmt, args...);
+        logfmt(zpr::sprint("{} ERROR", who).c_str(), fmt, args...);
 
         exit(1);
     }
