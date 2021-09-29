@@ -30,15 +30,19 @@ static const Procedure& get_proc(const std::unique_ptr<pkb::ProgramKB>& pkb, con
     return pkb->getProcedureNamed(name);
 }
 
-#define CHECK_CALLS(a, b) do { \
-    CHECK(get_proc(kb, a).callsProcedure(b));       \
-    CHECK(get_proc(kb, b).isCalledByProcedure(a));  \
-} while(0)
+#define CHECK_CALLS(a, b)                              \
+    do                                                 \
+    {                                                  \
+        CHECK(get_proc(kb, a).callsProcedure(b));      \
+        CHECK(get_proc(kb, b).isCalledByProcedure(a)); \
+    } while(0)
 
-#define CHECK_NOT_CALLS(a, b) do { \
-    CHECK_FALSE(get_proc(kb, a).callsProcedure(b));       \
-    CHECK_FALSE(get_proc(kb, b).isCalledByProcedure(a));  \
-} while(0)
+#define CHECK_NOT_CALLS(a, b)                                \
+    do                                                       \
+    {                                                        \
+        CHECK_FALSE(get_proc(kb, a).callsProcedure(b));      \
+        CHECK_FALSE(get_proc(kb, b).isCalledByProcedure(a)); \
+    } while(0)
 
 
 TEST_CASE("Calls(a, b)")
@@ -74,15 +78,19 @@ TEST_CASE("Calls(a, b)")
     }
 }
 
-#define CHECK_CALLS_STAR(a, b) do { \
-    CHECK(get_proc(kb, a).callsProcedureTransitively(b));       \
-    CHECK(get_proc(kb, b).isTransitivelyCalledByProcedure(a));  \
-} while(0)
+#define CHECK_CALLS_STAR(a, b)                                     \
+    do                                                             \
+    {                                                              \
+        CHECK(get_proc(kb, a).callsProcedureTransitively(b));      \
+        CHECK(get_proc(kb, b).isTransitivelyCalledByProcedure(a)); \
+    } while(0)
 
-#define CHECK_NOT_CALLS_STAR(a, b) do { \
-    CHECK_FALSE(get_proc(kb, a).callsProcedureTransitively(b));       \
-    CHECK_FALSE(get_proc(kb, b).isTransitivelyCalledByProcedure(a));  \
-} while(0)
+#define CHECK_NOT_CALLS_STAR(a, b)                                       \
+    do                                                                   \
+    {                                                                    \
+        CHECK_FALSE(get_proc(kb, a).callsProcedureTransitively(b));      \
+        CHECK_FALSE(get_proc(kb, b).isTransitivelyCalledByProcedure(a)); \
+    } while(0)
 
 TEST_CASE("Calls*(a, b)")
 {

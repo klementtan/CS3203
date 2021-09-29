@@ -184,6 +184,10 @@ namespace pql::eval
                 handleParent(parent);
             else if(auto parent_t = dynamic_cast<ast::ParentT*>(rel_cond.get()); parent_t)
                 handleParentT(parent_t);
+            else if(auto calls = dynamic_cast<ast::Calls*>(rel_cond.get()); calls)
+                handleCalls(calls);
+            else if(auto calls_t = dynamic_cast<ast::CallsT*>(rel_cond.get()); calls_t)
+                handleCallsT(calls_t);
             else
                 throw util::PqlException("pql::eval", "unknown relation type");
         }

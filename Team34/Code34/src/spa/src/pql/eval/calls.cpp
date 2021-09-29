@@ -54,11 +54,11 @@ namespace pql::eval
 
         // to prevent the syntax from becoming atrocious
         // eg. ((pkb->getProcedureNamed(left->name())).*(fns.relationHolds))(right->name())
-        auto& relationHolds = fns.relationHolds;
-        auto& invRelationHolds = fns.inverseRelationHolds;
+        auto relationHolds = fns.relationHolds;
+        auto invRelationHolds = fns.inverseRelationHolds;
 
-        auto& getAllRelated = fns.getAllRelated;
-        auto& getAllInverselyRelated = fns.getAllInverselyRelated;
+        auto getAllRelated = fns.getAllRelated;
+        auto getAllInverselyRelated = fns.getAllInverselyRelated;
 
         // we can also deduplicate the Rel(X, Y) vs Rel(Y, X) code. in the 3x3 matrix of
         // permutations, this lets us eliminate 3 identical branches, which is a good.
@@ -88,7 +88,7 @@ namespace pql::eval
             auto domain = table->getDomain(right->declaration());
             for(auto it = domain.begin(); it != domain.end();)
             {
-                if(!(left_.*invRelationHolds)(it->getVal()))
+                if(!(left_.*relationHolds)(it->getVal()))
                     it = domain.erase(it);
                 else
                     ++it;
