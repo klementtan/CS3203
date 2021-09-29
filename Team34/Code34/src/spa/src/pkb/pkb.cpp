@@ -90,6 +90,11 @@ namespace pkb
         return this->m_parent_exists;
     }
 
+    bool ProgramKB::callsRelationExists() const
+    {
+        return this->m_calls_exists;
+    }
+
 
     ProgramKB::ProgramKB(std::unique_ptr<simple::ast::Program> program)
     {

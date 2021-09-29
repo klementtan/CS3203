@@ -170,6 +170,7 @@ namespace pkb
 
         const Variable& getVariableNamed(const std::string& name) const;
 
+        bool callsRelationExists() const;
         bool parentRelationExists() const;
         bool followsRelationExists() const;
 
@@ -193,6 +194,7 @@ namespace pkb
 
         bool m_follows_exists = false;
         bool m_parent_exists = false;
+        bool m_calls_exists = false;
 
         friend struct DesignExtractor;
     };
