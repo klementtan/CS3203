@@ -82,3 +82,67 @@ TEST_CASE("Calls(_, _)")
     TEST_OK(src, "print p; Select p such that Calls(_, _)", 8, 14, 15, 16);
     TEST_EMPTY("procedure a { x = 1; }", "procedure p; Select p such that Calls(_, _)");
 }
+
+
+
+
+
+TEST_CASE("Calls*(EntRef, EntRef)")
+{
+    TEST_OK(src, "print p; Select p such that Calls*(\"A\", \"B\")", 8, 14, 15, 16);
+    TEST_OK(src, "print p; Select p such that Calls*(\"G\", \"X\")", 8, 14, 15, 16);
+    TEST_OK(src, "print p; Select p such that Calls*(\"A\", \"E\")", 8, 14, 15, 16);
+}
+
+TEST_CASE("Calls*(EntRef, Decl)")
+{
+    TEST_OK(src, "procedure p; Select p such that Calls*(\"B\", p)", "C", "D", "E", "F", "G", "H", "X", "P");
+    TEST_OK(src, "procedure p; Select p such that Calls*(\"F\", p)", "G", "H", "X", "P");
+
+    TEST_EMPTY(src, "procedure p; Select p such that Calls*(\"D\", p)");
+}
+
+TEST_CASE("Calls*(EntRef, _)")
+{
+    TEST_OK(src, "print p; Select p such that Calls*(\"A\", _)", 8, 14, 15, 16);
+    TEST_EMPTY(src, "print p; Select p such that Calls*(\"D\", _)");
+}
+
+TEST_CASE("Calls*(Decl, EntRef)")
+{
+    TEST_OK(src, "procedure p; Select p such that Calls*(p, \"B\")", "A");
+    TEST_OK(src, "procedure p; Select p such that Calls*(p, \"D\")", "A", "B", "C");
+    TEST_OK(src, "procedure p; Select p such that Calls*(p, \"E\")", "A", "B", "C");
+    TEST_OK(src, "procedure p; Select p such that Calls*(p, \"X\")", "G", "F", "E", "C", "B", "A");
+    TEST_EMPTY(src, "procedure p; Select p such that Calls*(p, \"A\")");
+    TEST_EMPTY(src, "procedure p; Select p such that Calls*(p, \"Z\")");
+}
+
+TEST_CASE("Calls*(Decl, Decl)")
+{
+    TEST_OK(src, "procedure p, q; Select p such that Calls*(p, q)", "A", "B", "C", "E", "F", "G", "H");
+    TEST_OK(src, "procedure p, q; Select q such that Calls*(p, q)", "B", "C", "D", "E", "F", "G", "H", "X", "P");
+}
+
+TEST_CASE("Calls*(Decl, _)")
+{
+    TEST_OK(src, "procedure p; Select p such that Calls*(p, _)", "A", "B", "C", "E", "F", "G", "H");
+}
+
+TEST_CASE("Calls*(_, EntRef)")
+{
+    TEST_OK(src, "print p; Select p such that Calls*(_, \"D\")", 8, 14, 15, 16);
+    TEST_EMPTY(src, "print p; Select p such that Calls*(_, \"A\")");
+}
+
+TEST_CASE("Calls*(_, Decl)")
+{
+    TEST_OK(src, "procedure p; Select p such that Calls*(_, p)", "B", "C", "D", "E", "F", "G", "H", "X", "P");
+}
+
+TEST_CASE("Calls*(_, _)")
+{
+    TEST_OK(src, "print p; Select p such that Calls*(_, _)", 8, 14, 15, 16);
+    TEST_EMPTY("procedure a { x = 1; }", "procedure p; Select p such that Calls*(_, _)");
+}
+
