@@ -60,7 +60,6 @@ struct Runner
         {
             result = eval.evaluate();
         }
-
         return std::unordered_set<std::string>(result.begin(), result.end());
     }
 

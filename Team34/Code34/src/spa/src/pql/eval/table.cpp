@@ -398,7 +398,6 @@ namespace pql::eval::table
         {
             result.push_back(entry.getType() == EntryType::kStmt ? std::to_string(entry.getStmtNum()) : entry.getVal());
         }
-
         return result;
     }
     std::string Table::toString() const
