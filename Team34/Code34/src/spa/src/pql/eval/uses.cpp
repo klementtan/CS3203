@@ -39,7 +39,7 @@ namespace pql::eval
             auto proc_name = proc_ent.name();
             auto var_name = var_ent.name();
 
-            util::log("pql::eval", "Processing UsesP(EntName, EntName)");
+            util::logfmt("pql::eval", "Processing UsesP(EntName, EntName)");
             if(!m_pkb->getProcedureNamed(proc_name).usesVariable(var_name))
                 throw PqlException("pql::eval", "{} is always false", rel->toString(), var_name);
         }
@@ -48,7 +48,7 @@ namespace pql::eval
             auto proc_name = proc_ent.name();
             auto var_decl = var_ent.declaration();
 
-            util::log("pql::eval", "Processing UsesP(EntName, DeclaredStmt)");
+            util::logfmt("pql::eval", "Processing UsesP(EntName, DeclaredStmt)");
             auto& used_vars = m_pkb->getProcedureNamed(proc_name).getUsedVariables();
             if(used_vars.empty())
                 throw PqlException("pql::eval", "{} is always false; {} doesn't use any variables", rel->toString());
@@ -65,7 +65,7 @@ namespace pql::eval
         {
             auto proc_name = proc_ent.name();
 
-            util::log("pql::eval", "Processing UsesP(EntName, _)");
+            util::logfmt("pql::eval", "Processing UsesP(EntName, _)");
             auto& used_vars = m_pkb->getProcedureNamed(proc_name).getUsedVariables();
             if(used_vars.empty())
                 throw PqlException("pql::eval", "{} is always false; {} doesn't use any variables", rel->toString());
@@ -76,7 +76,7 @@ namespace pql::eval
             auto proc_decl = proc_ent.declaration();
             auto var_name = var_ent.name();
 
-            util::log("pql::eval", "Processing UsesP(DeclaredEnt, EntName)");
+            util::logfmt("pql::eval", "Processing UsesP(DeclaredEnt, EntName)");
 
             const auto& procs_using = m_pkb->getVariableNamed(var_name).getUsingProcNames();
             if(procs_using.empty())
@@ -95,7 +95,7 @@ namespace pql::eval
             auto proc_decl = proc_ent.declaration();
             auto var_decl = var_ent.declaration();
 
-            util::log("pql::eval", "Processing UsesP(DeclaredEnt, DeclaredStmt)");
+            util::logfmt("pql::eval", "Processing UsesP(DeclaredEnt, DeclaredStmt)");
 
             auto proc_domain = m_table.getDomain(proc_decl);
             auto new_var_domain = table::Domain {};
@@ -114,7 +114,7 @@ namespace pql::eval
                 for(const auto& var_name : used_vars)
                 {
                     auto var_entry = table::Entry(var_decl, var_name);
-                    util::log("pql::eval", "{} adds Join({}, {}),", rel->toString(), proc_entry.toString(),
+                    util::logfmt("pql::eval", "{} adds Join({}, {}),", rel->toString(), proc_entry.toString(),
                         var_entry.toString());
                     allowed_entries.insert({ proc_entry, var_entry });
                     new_var_domain.insert(var_entry);
@@ -130,7 +130,7 @@ namespace pql::eval
         {
             auto proc_decl = proc_ent.declaration();
 
-            util::log("pql::eval", "Processing UsesP(DeclaredEnt, _)");
+            util::logfmt("pql::eval", "Processing UsesP(DeclaredEnt, _)");
             std::unordered_set<table::Entry> new_domain {};
 
             for(const auto& entry : m_table.getDomain(proc_decl))
@@ -177,7 +177,7 @@ namespace pql::eval
             auto user_sid = user_stmt.id();
             auto var_name = var_ent.name();
 
-            util::log("pql::eval", "Processing UsesS(StmtId, EntName)");
+            util::logfmt("pql::eval", "Processing UsesS(StmtId, EntName)");
             if(!m_pkb->getStatementAt(user_sid)->usesVariable(var_name))
                 throw PqlException("pql::eval", "{} is always false", rel->toString(), var_name);
         }
@@ -186,7 +186,7 @@ namespace pql::eval
             auto user_sid = user_stmt.id();
             auto var_decl = var_ent.declaration();
 
-            util::log("pql::eval", "Processing UsesS(StmtId, DeclaredEnt)");
+            util::logfmt("pql::eval", "Processing UsesS(StmtId, DeclaredEnt)");
             std::unordered_set<table::Entry> new_domain {};
 
             for(const auto& var : m_pkb->getStatementAt(user_sid)->getUsedVariables())
@@ -198,7 +198,7 @@ namespace pql::eval
         {
             auto user_sid = user_stmt.id();
 
-            util::log("pql::eval", "Processing UsesS(StmtId, _)");
+            util::logfmt("pql::eval", "Processing UsesS(StmtId, _)");
             if(m_pkb->getStatementAt(user_sid)->getUsedVariables().empty())
                 throw PqlException("pql::eval", "{} is always false", rel->toString());
         }
@@ -208,7 +208,7 @@ namespace pql::eval
             auto var_name = var_ent.name();
             auto& var = m_pkb->getVariableNamed(var_name);
 
-            util::log("pql::eval", "Processing UsesS(DeclaredStmt, EntName)");
+            util::logfmt("pql::eval", "Processing UsesS(DeclaredStmt, EntName)");
             std::unordered_set<table::Entry> new_domain {};
 
             if(user_decl->design_ent == ast::DESIGN_ENT::PROCEDURE)
@@ -229,7 +229,7 @@ namespace pql::eval
             auto user_decl = user_stmt.declaration();
             auto var_decl = var_ent.declaration();
 
-            util::log("pql::eval", "Processing UsesS(DeclaredStmt, DeclaredEnt)");
+            util::logfmt("pql::eval", "Processing UsesS(DeclaredStmt, DeclaredEnt)");
 
             auto user_domain = m_table.getDomain(user_decl);
             auto new_var_domain = table::Domain {};
@@ -248,7 +248,7 @@ namespace pql::eval
                 for(const auto& var_name : used_vars)
                 {
                     auto var_entry = table::Entry(var_decl, var_name);
-                    util::log("pql::eval", "{} adds Join({}, {}),", rel->toString(), user_entry.toString(),
+                    util::logfmt("pql::eval", "{} adds Join({}, {}),", rel->toString(), user_entry.toString(),
                         var_entry.toString());
                     allowed_entries.insert({ user_entry, var_entry });
                     new_var_domain.insert(var_entry);
@@ -264,7 +264,7 @@ namespace pql::eval
         {
             auto user_decl = user_stmt.declaration();
 
-            util::log("pql::eval", "Processing UsesS(DeclaredStmt, _)");
+            util::logfmt("pql::eval", "Processing UsesS(DeclaredStmt, _)");
 
             std::unordered_set<table::Entry> new_domain {};
             for(const auto& entry : m_table.getDomain(user_decl))

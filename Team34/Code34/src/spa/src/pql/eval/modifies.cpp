@@ -42,7 +42,7 @@ namespace pql::eval
             auto mod_decl = modifier_ent.declaration();
             auto ent_decl = ent_ent.declaration();
 
-            util::log("pql::eval", "Processing ModifiesP(DeclaredEnt, DeclaredEnt)");
+            util::logfmt("pql::eval", "Processing ModifiesP(DeclaredEnt, DeclaredEnt)");
 
             auto mod_domain = m_table.getDomain(mod_decl);
             auto new_ent_domain = table::Domain {};
@@ -61,7 +61,7 @@ namespace pql::eval
                 for(const auto& var_name : modified_vars)
                 {
                     auto ent_entry = table::Entry(ent_decl, var_name);
-                    util::log("pql::eval", "{} adds Join({}, {})", rel->toString(), mod_entry.toString(),
+                    util::logfmt("pql::eval", "{} adds Join({}, {})", rel->toString(), mod_entry.toString(),
                         ent_entry.toString());
 
                     allowed_entries.insert({ mod_entry, ent_entry });
@@ -79,7 +79,7 @@ namespace pql::eval
             auto mod_decl = modifier_ent.declaration();
             auto ent_name = ent_ent.name();
 
-            util::log("pql::eval", "Processing ModifiesP(DeclaredEnt, EntName)");
+            util::logfmt("pql::eval", "Processing ModifiesP(DeclaredEnt, EntName)");
 
             const auto& modifier_candidates = m_pkb->getVariableNamed(ent_name).getModifyingProcNames();
             if(modifier_candidates.empty())
@@ -95,7 +95,7 @@ namespace pql::eval
                 {
                     auto entry = table::Entry(mod_decl, proc_name);
                     curr_domain.insert(entry);
-                    util::log("pql::eval", "{} adds {} to curr domain", rel->toString(), entry.toString());
+                    util::logfmt("pql::eval", "{} adds {} to curr domain", rel->toString(), entry.toString());
                 }
                 m_table.upsertDomains(mod_decl, table::entry_set_intersect(prev_domain, curr_domain));
             }
@@ -104,7 +104,7 @@ namespace pql::eval
         {
             auto mod_decl = modifier_ent.declaration();
 
-            util::log("pql::eval", "Processing ModifiesP(DeclaredEnt, _)");
+            util::logfmt("pql::eval", "Processing ModifiesP(DeclaredEnt, _)");
             std::unordered_set<table::Entry> curr_domain;
             std::unordered_set<table::Entry> prev_domain = m_table.getDomain(mod_decl);
             for(const table::Entry& entry : m_table.getDomain(mod_decl))
@@ -113,7 +113,7 @@ namespace pql::eval
                 if(!m_pkb->getProcedureNamed(proc_name).getModifiedVariables().empty())
                 {
                     curr_domain.insert(entry);
-                    util::log("pql::eval", "{} adds {} to curr domain", rel->toString(), entry.toString());
+                    util::logfmt("pql::eval", "{} adds {} to curr domain", rel->toString(), entry.toString());
                 }
             }
             m_table.upsertDomains(mod_decl, table::entry_set_intersect(prev_domain, curr_domain));
@@ -123,17 +123,17 @@ namespace pql::eval
             auto mod_name = modifier_ent.name();
             auto ent_decl = ent_ent.declaration();
 
-            util::log("pql::eval", "Processing ModifiesP(EntName, DeclaredEnt)");
+            util::logfmt("pql::eval", "Processing ModifiesP(EntName, DeclaredEnt)");
             auto& var_candidates = m_pkb->getProcedureNamed(mod_name).getModifiedVariables();
 
             std::unordered_set<table::Entry> curr_domain;
             std::unordered_set<table::Entry> prev_domain = m_table.getDomain(ent_decl);
             for(const std::string& var : var_candidates)
             {
-                util::log("pql::eval", "Adding {} modifies {}", mod_name, var);
+                util::logfmt("pql::eval", "Adding {} modifies {}", mod_name, var);
                 auto entry = table::Entry(ent_decl, var);
                 curr_domain.insert(entry);
-                util::log("pql::eval", "{} adds {} to curr domain", rel->toString(), entry.toString());
+                util::logfmt("pql::eval", "{} adds {} to curr domain", rel->toString(), entry.toString());
             }
             m_table.upsertDomains(ent_decl, table::entry_set_intersect(curr_domain, prev_domain));
         }
@@ -141,7 +141,7 @@ namespace pql::eval
         {
             auto mod_name = modifier_ent.name();
 
-            util::log("pql::eval", "Processing ModifiesP(EntName, AllEnt)");
+            util::logfmt("pql::eval", "Processing ModifiesP(EntName, AllEnt)");
             if(m_pkb->getProcedureNamed(mod_name).getModifiedVariables().empty())
             {
                 throw PqlException("pql::eval", "{} always evaluate to false. {} does not modify any variable.",
@@ -149,7 +149,7 @@ namespace pql::eval
             }
             else
             {
-                util::log("pql::eval", "{} always evaluate to true.", rel->toString());
+                util::logfmt("pql::eval", "{} always evaluate to true.", rel->toString());
             }
         }
         else if(modifier_ent.isName() && ent_ent.isName())
@@ -157,10 +157,10 @@ namespace pql::eval
             auto mod_name = modifier_ent.name();
             auto ent_name = ent_ent.name();
 
-            util::log("pql::eval", "Processing ModifiesP(EntName, EntName)");
+            util::logfmt("pql::eval", "Processing ModifiesP(EntName, EntName)");
             if(m_pkb->getProcedureNamed(mod_name).modifiesVariable(ent_name))
             {
-                util::log("pql::eval", "{} always evaluate to true.", rel->toString());
+                util::logfmt("pql::eval", "{} always evaluate to true.", rel->toString());
             }
             else
             {
@@ -208,7 +208,7 @@ namespace pql::eval
             auto mod_decl = modifier_stmt.declaration();
             auto ent_decl = ent_ent.declaration();
 
-            util::log("pql::eval", "Processing ModifiesS(DeclaredStmt, DeclaredEnt)");
+            util::logfmt("pql::eval", "Processing ModifiesS(DeclaredStmt, DeclaredEnt)");
 
             auto mod_domain = m_table.getDomain(mod_decl);
             auto new_ent_domain = table::Domain {};
@@ -227,7 +227,7 @@ namespace pql::eval
                 for(const auto& var_name : modified_vars)
                 {
                     auto ent_entry = table::Entry(ent_decl, var_name);
-                    util::log("pql::eval", "{} adds Join({}, {}),", rel->toString(), mod_entry.toString(),
+                    util::logfmt("pql::eval", "{} adds Join({}, {}),", rel->toString(), mod_entry.toString(),
                         ent_entry.toString());
                     allowed_entries.insert({ mod_entry, ent_entry });
 
@@ -247,7 +247,7 @@ namespace pql::eval
 
             auto& var = m_pkb->getVariableNamed(ent_name);
 
-            util::log("pql::eval", "Processing ModifiesS(DeclaredStmt, EntName)");
+            util::logfmt("pql::eval", "Processing ModifiesS(DeclaredStmt, EntName)");
 
             std::unordered_set<table::Entry> new_domain {};
             if(mod_decl->design_ent == ast::DESIGN_ENT::PROCEDURE)
@@ -273,7 +273,7 @@ namespace pql::eval
         {
             auto mod_decl = modifier_stmt.declaration();
 
-            util::log("pql::eval", "Processing ModifiesS(DeclaredStmt, _)");
+            util::logfmt("pql::eval", "Processing ModifiesS(DeclaredStmt, _)");
             std::unordered_set<table::Entry> curr_domain;
             std::unordered_set<table::Entry> prev_domain = m_table.getDomain(mod_decl);
             for(const table::Entry& entry : m_table.getDomain(mod_decl))
@@ -282,7 +282,7 @@ namespace pql::eval
                 if(!stmt->getModifiedVariables().empty())
                 {
                     curr_domain.insert(entry);
-                    util::log("pql::eval", "{} adds {} to curr domain", rel->toString(), entry.toString());
+                    util::logfmt("pql::eval", "{} adds {} to curr domain", rel->toString(), entry.toString());
                 }
             }
             m_table.upsertDomains(mod_decl, table::entry_set_intersect(prev_domain, curr_domain));
@@ -292,16 +292,16 @@ namespace pql::eval
             auto mod_stmt_id = modifier_stmt.id();
             auto ent_decl = ent_ent.declaration();
 
-            util::log("pql::eval", "Processing ModifiesS(StmtId, DeclaredEnt)");
+            util::logfmt("pql::eval", "Processing ModifiesS(StmtId, DeclaredEnt)");
             auto& var_candidates = m_pkb->getStatementAt(mod_stmt_id)->getModifiedVariables();
             std::unordered_set<table::Entry> curr_domain;
             std::unordered_set<table::Entry> prev_domain = m_table.getDomain(ent_decl);
             for(const std::string& var : var_candidates)
             {
-                util::log("pql::eval", "Adding StatementNum: {} modifies {}", mod_stmt_id, var);
+                util::logfmt("pql::eval", "Adding StatementNum: {} modifies {}", mod_stmt_id, var);
                 auto entry = table::Entry(ent_decl, var);
                 curr_domain.insert(entry);
-                util::log("pql::eval", "{} adds {} to curr domain", rel->toString(), entry.toString());
+                util::logfmt("pql::eval", "{} adds {} to curr domain", rel->toString(), entry.toString());
             }
             m_table.upsertDomains(ent_decl, table::entry_set_intersect(curr_domain, prev_domain));
         }
@@ -309,7 +309,7 @@ namespace pql::eval
         {
             auto mod_stmt_id = modifier_stmt.id();
 
-            util::log("pql::eval", "Processing ModifiesS(StmtId, AllEnt)");
+            util::logfmt("pql::eval", "Processing ModifiesS(StmtId, AllEnt)");
             if(m_pkb->getStatementAt(mod_stmt_id)->getModifiedVariables().empty())
             {
                 throw PqlException("pql::eval",
@@ -318,7 +318,7 @@ namespace pql::eval
             }
             else
             {
-                util::log("pql::eval", "{} always evaluate to true.", rel->toString());
+                util::logfmt("pql::eval", "{} always evaluate to true.", rel->toString());
             }
         }
         else if(modifier_stmt.isStatementId() && ent_ent.isName())
@@ -326,10 +326,10 @@ namespace pql::eval
             auto mod_stmt_id = modifier_stmt.id();
             auto ent_name = ent_ent.name();
 
-            util::log("pql::eval", "Processing ModifiesS(StmtId, EntName)");
+            util::logfmt("pql::eval", "Processing ModifiesS(StmtId, EntName)");
             if(m_pkb->getStatementAt(mod_stmt_id)->modifiesVariable(ent_name))
             {
-                util::log("pql::eval", "{} always evaluate to true.", rel->toString());
+                util::logfmt("pql::eval", "{} always evaluate to true.", rel->toString());
             }
             else
             {

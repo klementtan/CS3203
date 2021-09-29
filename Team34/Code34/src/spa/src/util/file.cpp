@@ -31,7 +31,7 @@ namespace util
             contents += std::string_view(buf, n);
         }
 
-        util::log("misc", "read input file '{}'", path);
+        util::logfmt("misc", "read input file '{}'", path);
         fclose(file);
 
         return contents;

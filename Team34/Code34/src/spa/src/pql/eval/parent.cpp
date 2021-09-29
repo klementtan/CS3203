@@ -25,7 +25,7 @@ namespace pql::eval
 
         if(parent_stmt.isStatementId() && child_stmt.isStatementId())
         {
-            util::log("pql::eval", "processing Parent(StmtId, StmtId)");
+            util::logfmt("pql::eval", "processing Parent(StmtId, StmtId)");
 
             auto parent_sid = parent_stmt.id();
             auto child_sid = child_stmt.id();
@@ -35,7 +35,7 @@ namespace pql::eval
         }
         else if(parent_stmt.isStatementId() && child_stmt.isDeclaration())
         {
-            util::log("pql::eval", "processing Parent(StmtId, DeclaredStmt)");
+            util::logfmt("pql::eval", "processing Parent(StmtId, DeclaredStmt)");
 
             auto parent_sid = parent_stmt.id();
             auto child_decl = child_stmt.declaration();
@@ -48,7 +48,7 @@ namespace pql::eval
         }
         else if(parent_stmt.isStatementId() && child_stmt.isWildcard())
         {
-            util::log("pql::eval", "processing Parent(StmtId, _)");
+            util::logfmt("pql::eval", "processing Parent(StmtId, _)");
 
             auto parent_sid = parent_stmt.id();
             if(m_pkb->getStatementAt(parent_sid)->getChildren().empty())
@@ -58,7 +58,7 @@ namespace pql::eval
 
         else if(parent_stmt.isDeclaration() && child_stmt.isStatementId())
         {
-            util::log("pql::eval", "processing Parent(DeclaredStmt, StmtId)");
+            util::logfmt("pql::eval", "processing Parent(DeclaredStmt, StmtId)");
 
             auto parent_decl = parent_stmt.declaration();
             auto child_sid = child_stmt.id();
@@ -73,7 +73,7 @@ namespace pql::eval
         }
         else if(parent_stmt.isDeclaration() && child_stmt.isDeclaration())
         {
-            util::log("pql::eval", "processing Parent(DeclaredStmt, DeclaredStmt)");
+            util::logfmt("pql::eval", "processing Parent(DeclaredStmt, DeclaredStmt)");
 
             auto parent_decl = parent_stmt.declaration();
             auto child_decl = child_stmt.declaration();
@@ -109,7 +109,7 @@ namespace pql::eval
         }
         else if(parent_stmt.isDeclaration() && child_stmt.isWildcard())
         {
-            util::log("pql::eval", "processing Parent(DeclaredStmt, _)");
+            util::logfmt("pql::eval", "processing Parent(DeclaredStmt, _)");
 
             auto parent_decl = parent_stmt.declaration();
             std::unordered_set<table::Entry> new_domain {};
@@ -127,7 +127,7 @@ namespace pql::eval
 
         else if(parent_stmt.isWildcard() && child_stmt.isStatementId())
         {
-            util::log("pql::eval", "processing Parent(_, StmtId)");
+            util::logfmt("pql::eval", "processing Parent(_, StmtId)");
 
             auto child_sid = child_stmt.id();
             if(!m_pkb->getStatementAt(child_sid)->getParent().has_value())
@@ -135,7 +135,7 @@ namespace pql::eval
         }
         else if(parent_stmt.isWildcard() && child_stmt.isDeclaration())
         {
-            util::log("pql::eval", "processing Parent(_, DeclaredStmt)");
+            util::logfmt("pql::eval", "processing Parent(_, DeclaredStmt)");
 
             auto child_decl = child_stmt.declaration();
             std::unordered_set<table::Entry> new_domain {};
@@ -152,7 +152,7 @@ namespace pql::eval
         }
         else if(parent_stmt.isWildcard() && child_stmt.isWildcard())
         {
-            util::log("pql::eval", "Processing Parent(_, _)");
+            util::logfmt("pql::eval", "Processing Parent(_, _)");
             if(!m_pkb->parentRelationExists())
                 throw PqlException("pql::eval", "{} is always false (no consecutive statements)", rel->toString());
         }
@@ -181,7 +181,7 @@ namespace pql::eval
 
         if(ancestor_stmt.isStatementId() && descendant_stmt.isStatementId())
         {
-            util::log("pql::eval", "processing Parent*(StmtId, StmtId)");
+            util::logfmt("pql::eval", "processing Parent*(StmtId, StmtId)");
 
             auto parent_sid = ancestor_stmt.id();
             auto child_sid = descendant_stmt.id();
@@ -191,7 +191,7 @@ namespace pql::eval
         }
         else if(ancestor_stmt.isStatementId() && descendant_stmt.isDeclaration())
         {
-            util::log("pql::eval", "processing Parent*(StmtId, DeclaredStmt)");
+            util::logfmt("pql::eval", "processing Parent*(StmtId, DeclaredStmt)");
 
             auto parent_sid = ancestor_stmt.id();
             auto child_decl = descendant_stmt.declaration();
@@ -204,7 +204,7 @@ namespace pql::eval
         }
         else if(ancestor_stmt.isStatementId() && descendant_stmt.isWildcard())
         {
-            util::log("pql::eval", "processing Parent*(StmtId, _)");
+            util::logfmt("pql::eval", "processing Parent*(StmtId, _)");
 
             auto parent_sid = ancestor_stmt.id();
             if(m_pkb->getStatementAt(parent_sid)->getDescendants().empty())
@@ -214,7 +214,7 @@ namespace pql::eval
 
         else if(ancestor_stmt.isDeclaration() && descendant_stmt.isStatementId())
         {
-            util::log("pql::eval", "processing Parent*(DeclaredStmt, StmtId)");
+            util::logfmt("pql::eval", "processing Parent*(DeclaredStmt, StmtId)");
 
             auto parent_decl = ancestor_stmt.declaration();
             auto child_sid = descendant_stmt.id();
@@ -227,7 +227,7 @@ namespace pql::eval
         }
         else if(ancestor_stmt.isDeclaration() && descendant_stmt.isDeclaration())
         {
-            util::log("pql::eval", "processing Parent*(DeclaredStmt, DeclaredStmt)");
+            util::logfmt("pql::eval", "processing Parent*(DeclaredStmt, DeclaredStmt)");
 
             auto parent_decl = ancestor_stmt.declaration();
             auto child_decl = descendant_stmt.declaration();
@@ -262,7 +262,7 @@ namespace pql::eval
         }
         else if(ancestor_stmt.isDeclaration() && descendant_stmt.isWildcard())
         {
-            util::log("pql::eval", "processing Parent*(DeclaredStmt, _)");
+            util::logfmt("pql::eval", "processing Parent*(DeclaredStmt, _)");
 
             auto parent_decl = ancestor_stmt.declaration();
             std::unordered_set<table::Entry> new_domain {};
@@ -280,7 +280,7 @@ namespace pql::eval
 
         else if(ancestor_stmt.isWildcard() && descendant_stmt.isStatementId())
         {
-            util::log("pql::eval", "processing Parent*(_, StmtId)");
+            util::logfmt("pql::eval", "processing Parent*(_, StmtId)");
 
             auto child_sid = descendant_stmt.id();
             if(m_pkb->getStatementAt(child_sid)->getAncestors().empty())
@@ -288,7 +288,7 @@ namespace pql::eval
         }
         else if(ancestor_stmt.isWildcard() && descendant_stmt.isDeclaration())
         {
-            util::log("pql::eval", "processing Parent*(_, DeclaredStmt)");
+            util::logfmt("pql::eval", "processing Parent*(_, DeclaredStmt)");
 
             auto child_decl = descendant_stmt.declaration();
             std::unordered_set<table::Entry> new_domain {};
@@ -305,7 +305,7 @@ namespace pql::eval
         }
         else if(ancestor_stmt.isWildcard() && descendant_stmt.isWildcard())
         {
-            util::log("pql::eval", "Processing Parent*(_, _)");
+            util::logfmt("pql::eval", "Processing Parent*(_, _)");
             if(!m_pkb->parentRelationExists())
                 throw PqlException("pql::eval", "{} is always false (no consecutive statements)", rel->toString());
         }
