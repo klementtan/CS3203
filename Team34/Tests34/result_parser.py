@@ -29,8 +29,8 @@ def parse_one(filename):
 
 	try:
 		root = ET.parse(filename).getroot()
-	except:
-		print(f"malformed xml file '{filename}'")
+	except Exception as e:
+		print(f"malformed xml file '{filename}': {e}")
 		return
 
 	passed_tests[filename] = []
@@ -47,6 +47,10 @@ def parse_one(filename):
 			if query.find("exception") is not None:
 				print(f"warning: {test_name_str} threw exception")
 				failed_tests[filename].append((num, name))
+				num_failed += 1
+				continue
+			elif query.find("timeout") is not None:
+				print(f"query '{test_name_str}' timed out")
 				num_failed += 1
 				continue
 			else:
