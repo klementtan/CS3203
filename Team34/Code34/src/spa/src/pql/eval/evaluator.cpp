@@ -72,7 +72,8 @@ namespace pql::eval
         }
 
         auto& proc_list = m_pkb->getAllProcedures();
-        util::logfmt("pql::eval", "Adding {} procedures to {} initial domain", proc_list.size(), declaration->toString());
+        util::logfmt(
+            "pql::eval", "Adding {} procedures to {} initial domain", proc_list.size(), declaration->toString());
         for(const auto& [name, proc] : proc_list)
         {
             util::logfmt("pql::eval", "Adding {} to initial proc domain", name);
@@ -89,7 +90,8 @@ namespace pql::eval
                 declaration->toString());
         }
         auto& const_list = m_pkb->getAllConstants();
-        util::logfmt("pql::eval", "Adding {} constants to {} initial domain", const_list.size(), declaration->toString());
+        util::logfmt(
+            "pql::eval", "Adding {} constants to {} initial domain", const_list.size(), declaration->toString());
         for(const auto& const_val : const_list)
         {
             util::logfmt("pql::eval", "Adding {} to initial proc domain", const_val);
