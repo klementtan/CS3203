@@ -14,12 +14,16 @@ namespace pql::parser
 
         LParen,
         RParen,
+        LAngle,
+        RAngle,
 
         Asterisk,
         Underscore,
         Semicolon,
         DoubleQuotes,
         Comma,
+        Dot,
+        HashTag,
 
         Identifier,
         Number,
@@ -47,6 +51,7 @@ namespace pql::parser
     Token getNextToken(zst::str_view& sv);
     Token peekNextOneToken(zst::str_view sv);
     std::vector<Token> peekNextTwoTokens(zst::str_view sv);
+    int eatWhitespace(zst::str_view& sv);
 }
 
 template <>

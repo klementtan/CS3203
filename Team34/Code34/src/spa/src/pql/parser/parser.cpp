@@ -37,10 +37,19 @@ namespace pql::parser
         {
             return peekNextTwoTokens(this->stream);
         }
+
+        void assert_whitespace(int expected_whitespace, std::string msg)
+        {
+            int count = eatWhitespace(this->stream);
+            if(count != expected_whitespace)
+                throw PqlException(
+                    "pql::parser", "Expected {} whitespace but got {} instead. {}", expected_whitespace, count, msg);
+        }
     };
 
     // Clauses
     const Token KW_Select { "Select", TT::Identifier };
+    const Token KW_Boolean { "BOOLEAN", TT::Identifier };
     const std::vector<Token> KW_SuchThat = { { "such", TT::Identifier }, { "that", TT::Identifier } };
     const Token KW_Pattern { "pattern", TT::Identifier };
 
@@ -67,6 +76,13 @@ namespace pql::parser
     const std::vector<Token> KW_ParentT = { { "Parent", TT::Identifier }, { "*", TT::Asterisk } };
     const Token KW_Uses { "Uses", TT::Identifier };
     const Token KW_Modifies { "Modifies", TT::Identifier };
+
+
+    // Attribute Names
+    const Token KW_AttrName_ProcName { "procName", TT::Identifier };
+    const Token KW_AttrName_VarName { "varName", TT::Identifier };
+    const Token KW_AttrName_Value { "value", TT::Identifier };
+    const Token KW_AttrName_StmtNum { "call", TT::Identifier };
 
     // Process the next token as a variable and insert it into declaration_list
     void insert_var_to_declarations(ParserState* ps, ast::DeclarationList* declaration_list, ast::DESIGN_ENT ent)
@@ -573,6 +589,112 @@ namespace pql::parser
         return such_that;
     }
 
+    ast::Elem parse_elem(ParserState* ps, const ast::DeclarationList* declaration_list)
+    {
+        Token decl_tok = ps->next();
+        if(decl_tok.type != TT::Identifier)
+            throw new PqlException("pql::parser", "Expected identifier as the first token of an Element");
+        ast::Declaration* decl = declaration_list->getDeclaration(decl_tok.text.str());
+        if(decl == nullptr)
+            throw PqlException("pql::parser", "Undeclared entity {} provided.", decl_tok.text);
+        if(ps->peek_one() == TT::Dot)
+        {
+            ps->assert_whitespace(0, "should not have any whitespace between decl and dot");
+            // Eat dot
+            ps->next();
+            ps->assert_whitespace(0, "should not have any whitespace between dot and attrName");
+
+
+            std::vector<Token> attr_toks = ps->peek_two();
+            if(attr_toks[0].type != TT::Identifier)
+                throw PqlException(
+                    "pql::parser", "Mutli Element tuple: Expected first token after '.' to be a identifier.");
+
+            std::string attr_name_string;
+
+            if(attr_toks[1].type == TT::HashTag)
+            {
+                auto stmt = ps->next();
+                // should not have any whitespace between
+                ps->assert_whitespace(0, "should not have any whitespace between the 'stmt' and '#'");
+                auto hash_tag = ps->next();
+                if(stmt.text != "stmt" || hash_tag.type != TT::HashTag)
+                    throw PqlException("pql::parser", "Invalid \"{}{}\" attribute name expected 'stmt#' instead.",
+                        stmt.text.str(), hash_tag.text.str());
+                attr_name_string = "stmt#";
+            }
+            else
+            {
+                attr_name_string = ps->next().text.str();
+            }
+            auto it = pql::ast::AttrNameMap.find(attr_name_string);
+            if(it == pql::ast::AttrNameMap.end())
+                throw PqlException("pql::parser", "Invalid attrName: {}", attr_name_string);
+
+            ast::AttrRef attr_ref { decl, it->second };
+            return ast::Elem::ofAttrRef(attr_ref);
+        }
+        else
+        {
+            return ast::Elem::ofDeclaration(decl);
+        }
+    }
+
+    std::vector<ast::Elem> parse_tuple(ParserState* ps, const ast::DeclarationList* declaration_list)
+    {
+        // Handle: elem
+        if(ps->peek_one() != TT::LAngle)
+        {
+            util::log("pql::parser", "Parsing tuple as a single element without ''<>'");
+            return { parse_elem(ps, declaration_list) };
+        }
+
+        // Handle: '<' elem (',' elem)*'>'
+        if(Token tok = ps->next(); tok != TT::LAngle)
+            throw PqlException("pql::parser", "Multiple elem tuple should start with `<` instead of {}", tok.text);
+        std::vector<ast::Elem> ret;
+        while(ps->peek_one() != TT::RAngle &&
+              // prevent infinite loop
+              ps->peek_one() != TT::EndOfFile)
+        {
+            if(!ret.empty() && ps->peek_one() != TT::Comma)
+            {
+                throw PqlException("pql::parser", "Multiple element tuple should be comma separated instead of {}.",
+                    ps->peek_one().text);
+            }
+            if(ret.empty() && ps->peek_one() == TT::Comma)
+            {
+                throw PqlException("pql::parser", "Multiple element tuple should not start with `,`");
+            }
+            // Should be safe to eat comma if it is present
+            if(ps->peek_one() == TT::Comma)
+                ps->next();
+            ast::Elem elem = parse_elem(ps, declaration_list);
+            util::log("pql::ast", "Parsed new Elem {}", elem.toString());
+            ret.push_back(elem);
+        }
+        if(Token tok = ps->next(); tok != TT::RAngle)
+        {
+            throw PqlException("pql::parser", "Multiple elem tuple should end with `>` instead of {}", tok.text);
+        }
+        if(ret.empty())
+            throw PqlException("pql::parser", "Tuple in result clause cannot be empty");
+        return ret;
+    }
+
+    ast::ResultCl parse_result(ParserState* ps, const ast::DeclarationList* declaration_list)
+    {
+        if(ps->peek_one() == KW_Boolean)
+        {
+            ps->next();
+            return ast::ResultCl::ofBool();
+        }
+        else
+        {
+            return ast::ResultCl::ofTuple(parse_tuple(ps, declaration_list));
+        }
+    }
+
     ast::Select parse_select(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         Token select_tok = ps->next();
@@ -582,21 +704,12 @@ namespace pql::parser
                 "pql::parser", "Select clauses should start with `Select` instead of {}", select_tok.text);
         }
 
-        Token var_tok = ps->next();
-        if(var_tok.type != TT::Identifier)
-        {
-            throw PqlException(
-                "pql::parser", "Expected synonym at the start of Select clause instead of {}", var_tok.text);
-        }
+        ast::ResultCl result = parse_result(ps, declaration_list);
 
-        auto ent = declaration_list->getDeclaration(var_tok.text.str());
-        if(ent == nullptr)
-            throw PqlException("pql::parser", "Undeclared {} entity provided.", var_tok.text.str());
-
-        util::log("pql::parser", "Return ent for Select clause: {}", ent->toString());
+        util::log("pql::parser", "Result for Select clause: {}", result.toString());
 
         ast::Select select {};
-        select.ent = ent;
+        select.result = result;
 
         std::vector<Token> clause_tok = ps->peek_two();
         bool allow_pattern = true;

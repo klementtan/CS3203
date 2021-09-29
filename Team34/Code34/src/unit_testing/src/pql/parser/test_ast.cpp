@@ -292,8 +292,9 @@ TEST_CASE("Select")
 
     pql::ast::PatternCl pattern_cl {};
     pattern_cl.pattern_conds.push_back(std::move(assign_pattern_cond));
+    auto resutl_cl = pql::ast::ResultCl::ofTuple({ pql::ast::Elem::ofDeclaration(&declaration1) });
 
-    pql::ast::Select select { std::move(such_that_cl), std::move(pattern_cl), &declaration1 };
+    pql::ast::Select select { std::move(such_that_cl), std::move(pattern_cl), resutl_cl };
     INFO(select.toString());
     REQUIRE(select.toString() == "Select(such_that:SuchThatCl[\n"
                                  "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:"
@@ -302,7 +303,8 @@ TEST_CASE("Select")
                                  "\tPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)), "
                                  "assignment_declaration:Declaration(ent:assign, name:foo), expr_spec:ExprSpec"
                                  "(is_subexpr:true, expr:(x + y)))\n"
-                                 "], ent:Declaration(ent:assign, name:foo))");
+                                 "], result:ResultCl(type: Tuple, tuple :[Elem(ref_type: Declaration, decl: "
+                                 "Declaration(ent:assign, name:foo))])");
 }
 
 TEST_CASE("Query")
@@ -343,7 +345,8 @@ TEST_CASE("Query")
     pql::ast::PatternCl pattern_cl {};
     pattern_cl.pattern_conds.push_back(std::move(assign_pattern_cond));
 
-    pql::ast::Select select { std::move(such_that_cl), std::move(pattern_cl), declaration1 };
+    auto resutl_cl = pql::ast::ResultCl::ofTuple({ pql::ast::Elem::ofDeclaration(declaration1) });
+    pql::ast::Select select { std::move(such_that_cl), std::move(pattern_cl), resutl_cl };
 
     pql::ast::Query query {};
     query.select = std::move(select);
@@ -358,7 +361,8 @@ TEST_CASE("Query")
                               "\tPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:buzz)), "
                               "assignment_declaration:Declaration(ent:assign, name:buzz), expr_spec:ExprSpec"
                               "(is_subexpr:true, expr:(x + y)))\n"
-                              "], ent:Declaration(ent:assign, name:foo)), declarations:DeclarationList[\n"
+                              "], result:ResultCl(type: Tuple, tuple :[Elem(ref_type: Declaration, decl: "
+                              "Declaration(ent:assign, name:foo))]), declarations:DeclarationList[\n"
                               "\tname:bar, declaration:Declaration(ent:assign, name:bar)\n"
                               "\tname:buzz, declaration:Declaration(ent:assign, name:buzz)\n"
                               "\tname:foo, declaration:Declaration(ent:assign, name:foo)\n"

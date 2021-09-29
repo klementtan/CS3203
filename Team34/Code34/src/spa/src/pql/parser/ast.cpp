@@ -40,6 +40,21 @@ namespace pql::ast
         { DESIGN_ENT::PROCEDURE, "procedure" },
     };
 
+    const std::unordered_map<std::string, AttrName> AttrNameMap = {
+        { "procName", AttrName::kProcName },
+        { "varName", AttrName::kVarName },
+        { "value", AttrName::kValue },
+        { "stmt#", AttrName::kStmtNum },
+    };
+
+    const std::unordered_map<AttrName, std::string> InvAttrNameMap = {
+        { AttrName::kProcName, "procName" },
+        { AttrName::kVarName, "varName" },
+        { AttrName::kValue, "value" },
+        { AttrName::kStmtNum, "stmt#" },
+        { AttrName::kInvalid, "invalid" },
+    };
+
     bool DeclarationList::hasDeclaration(const std::string& name) const
     {
         return this->declarations.find(name) != this->declarations.end();
@@ -214,7 +229,11 @@ namespace pql::ast
     {
         this->ref_type = Type::Invalid;
     }
-    Elem::~Elem() { }
+    Elem::~Elem()
+    {
+        if(ref_type == Type::AttrRef)
+            _attr_ref.~AttrRef();
+    }
 
     Elem::Elem(const Elem& other)
     {
@@ -226,7 +245,7 @@ namespace pql::ast
         else if(other.isDeclaration())
         {
             this->ref_type = Type::Declaration;
-            this->_attr_ref = other._attr_ref;
+            this->_declaration = other._declaration;
         }
         else
         {
@@ -245,7 +264,7 @@ namespace pql::ast
             else if(other.isDeclaration())
             {
                 this->ref_type = Type::Declaration;
-                this->_attr_ref = other._attr_ref;
+                this->_declaration = other._declaration;
             }
             else
             {
@@ -302,6 +321,15 @@ namespace pql::ast
         return this->_declaration;
     }
 
+
+    AttrRef Elem::attrRef() const
+    {
+        if(this->ref_type != Type::AttrRef)
+            throw util::PqlException("pql", "Elem is not a AttrRef");
+
+        return this->_attr_ref;
+    }
+
     Elem Elem::ofAttrRef(AttrRef attr_ref)
     {
         Elem ret {};
@@ -328,11 +356,12 @@ namespace pql::ast
     ResultCl ResultCl::ofTuple(const std::vector<Elem>& tuple)
     {
         ResultCl ret {};
+        ret.type = Type::Tuple;
         ret._tuple = std::move(tuple);
         return ret;
     };
 
-    inline std::vector<Elem> ResultCl::tuple() const
+    std::vector<Elem> ResultCl::tuple() const
     {
         if(this->type != Type::Tuple)
         {

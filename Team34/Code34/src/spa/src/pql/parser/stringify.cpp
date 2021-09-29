@@ -118,9 +118,9 @@ namespace pql::ast
 
     std::string Select::toString() const
     {
-        return zpr::sprint("Select(such_that:{}, pattern:{}, ent:{})",
+        return zpr::sprint("Select(such_that:{}, pattern:{}, result:{})",
             this->such_that ? this->such_that->toString() : "nullptr",
-            this->pattern ? this->pattern->toString() : "nullptr", this->ent ? this->ent->toString() : "nullptr");
+            this->pattern ? this->pattern->toString() : "nullptr", this->result.toString());
     }
 
     std::string Query::toString() const
@@ -171,6 +171,8 @@ namespace pql::ast
 
     std::string AttrRef::toString() const
     {
+        auto it = InvAttrNameMap.find(this->attr_name);
+        std::string attr_name = it == InvAttrNameMap.end() ? "invalid" : it->second;
         return zpr::sprint("AttrRef(decl: {}, attr_name: {})", decl ? decl->toString() : "nullptr", attr_name);
     }
 
@@ -183,10 +185,11 @@ namespace pql::ast
                 ret += "Invalid";
                 break;
             case Type::AttrRef:
-                ret += zpr::sprint("AttrRef, attr_ref: {}", attr_ref().toString());
+                ret += zpr::sprint("AttrRef, attr_ref: {}", _attr_ref.toString());
                 break;
             case Type::Declaration:
-                ret += zpr::sprint("Declaration, decl: {}", declaration()->toString());
+                assert(_declaration);
+                ret += zpr::sprint("Declaration, decl: {}", _declaration->toString());
                 break;
         }
         ret += ")";
@@ -206,6 +209,7 @@ namespace pql::ast
             {
                 ret += zpr::sprint("{}", elem.toString());
             }
+            ret += "]";
             return ret;
         }
         else

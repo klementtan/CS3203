@@ -41,6 +41,15 @@ namespace pql::ast
         PROCEDURE
     };
 
+    enum class AttrName
+    {
+        kInvalid,
+        kProcName,
+        kVarName,
+        kValue,
+        kStmtNum
+    };
+
     // Set of all statement design entities
     const std::unordered_set<DESIGN_ENT> kStmtDesignEntities = { DESIGN_ENT::STMT, DESIGN_ENT::READ, DESIGN_ENT::PRINT,
         DESIGN_ENT::CALL, DESIGN_ENT::WHILE, DESIGN_ENT::IF, DESIGN_ENT::ASSIGN };
@@ -50,6 +59,10 @@ namespace pql::ast
     // Maps enum representation of design ent to string representation of it. ie: {DESIGN_ENT::IF: "if"}
     extern const std::unordered_map<DESIGN_ENT, std::string> INV_DESIGN_ENT_MAP;
 
+    // Maps string representation of  attribute name to enum representation of it. ie: {"procName": AttrName::kProcName}
+    extern const std::unordered_map<std::string, AttrName> AttrNameMap;
+    // Maps enum representation of attribute name to string. ie: {AttrName::kProcName, "procName"}
+    extern const std::unordered_map<AttrName, std::string> InvAttrNameMap;
     /** List of design entity declaration. ie Represents [`assign a`, `print p`]. */
     struct DeclarationList
     {
@@ -180,7 +193,7 @@ namespace pql::ast
     struct AttrRef
     {
         Declaration* decl = nullptr;
-        std::string attr_name = "";
+        AttrName attr_name = AttrName::kInvalid;
 
         std::string toString() const;
     };
@@ -216,7 +229,7 @@ namespace pql::ast
 
 
         Declaration* declaration() const;
-        AttrRef attr_ref() const;
+        AttrRef attrRef() const;
 
         inline bool isAttrRef() const
         {
@@ -397,7 +410,7 @@ namespace pql::ast
 
         static ResultCl ofTuple(const std::vector<Elem>& tuple);
 
-        inline std::vector<Elem> tuple() const;
+        std::vector<Elem> tuple() const;
 
         std::string toString() const;
     };
@@ -407,7 +420,7 @@ namespace pql::ast
     {
         std::optional<SuchThatCl> such_that {};
         std::optional<PatternCl> pattern {};
-        Declaration* ent = nullptr;
+        ResultCl result {};
 
         std::string toString() const;
     };
