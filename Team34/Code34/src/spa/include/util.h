@@ -22,7 +22,7 @@ namespace util
 #ifndef ENABLE_LOGGING
     inline void dummy_fn() { }
 
-    #define log(...) dummy_fn()
+#define log(...) dummy_fn()
 #else
     template <typename... Args>
     inline void log(const char* who, const char* fmt, Args&&... args)
