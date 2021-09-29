@@ -182,7 +182,7 @@ namespace pql::ast
         Declaration* decl = nullptr;
         std::string attr_name = "";
 
-        std::string toString();
+        std::string toString() const;
     };
 
     // Represents the element to return in select clause
@@ -368,6 +368,37 @@ namespace pql::ast
         // Support multiple RelCond for forward compatibility. Future iteration
         // requires ANDing multiple RelCond
         std::vector<std::unique_ptr<RelCond>> rel_conds;
+        std::string toString() const;
+    };
+
+    struct ResultCl
+    {
+        enum class Type
+        {
+            Invalid,
+            Bool,
+            Tuple,
+        };
+
+        Type type;
+        std::vector<Elem> _tuple;
+
+        inline bool isBool() const
+        {
+            return type == Type::Bool;
+        }
+
+        inline bool isTuple() const
+        {
+            return type == Type::Tuple;
+        }
+
+        static ResultCl ofBool();
+
+        static ResultCl ofTuple(const std::vector<Elem>& tuple);
+
+        inline std::vector<Elem> tuple() const;
+
         std::string toString() const;
     };
 

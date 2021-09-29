@@ -176,19 +176,41 @@ namespace pql::ast
 
     std::string Elem::toString() const
     {
-      std::string ret = zpr::sprint("Elem(ref_type: ");
-      switch(this->ref_type) {
-        case Type::Invalid:
-          ret += "Invalid";
-          break;
-        case Type::AttrRef:
-          ret += zpr::sprint("AttrRef, attr_ref: {}", attr_ref().toString());
-          break;
-        case Type::Declaration:
-          ret += zpr::sprint("Declaration, decl: {}",declaration()->toString()) ;
-          break;
-      }
-      ret += ")";
-      return ret;
+        std::string ret = zpr::sprint("Elem(ref_type: ");
+        switch(this->ref_type)
+        {
+            case Type::Invalid:
+                ret += "Invalid";
+                break;
+            case Type::AttrRef:
+                ret += zpr::sprint("AttrRef, attr_ref: {}", attr_ref().toString());
+                break;
+            case Type::Declaration:
+                ret += zpr::sprint("Declaration, decl: {}", declaration()->toString());
+                break;
+        }
+        ret += ")";
+        return ret;
+    }
+
+    std::string ResultCl::toString() const
+    {
+        if(this->type == Type::Bool)
+        {
+            return "ResultCl(type: Bool)";
+        }
+        else if(this->type == Type::Tuple)
+        {
+            std::string ret { "ResultCl(type: Tuple, tuple :[" };
+            for(const Elem& elem : _tuple)
+            {
+                ret += zpr::sprint("{}", elem.toString());
+            }
+            return ret;
+        }
+        else
+        {
+            return "ResultCl(type: Invalid)";
+        }
     }
 }

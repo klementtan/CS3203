@@ -317,4 +317,27 @@ namespace pql::ast
         ret._declaration = decl;
         return ret;
     }
+
+    ResultCl ResultCl::ofBool()
+    {
+        ResultCl ret {};
+        ret.type = Type::Bool;
+        return ret;
+    };
+
+    ResultCl ResultCl::ofTuple(const std::vector<Elem>& tuple)
+    {
+        ResultCl ret {};
+        ret._tuple = std::move(tuple);
+        return ret;
+    };
+
+    inline std::vector<Elem> ResultCl::tuple() const
+    {
+        if(this->type != Type::Tuple)
+        {
+            throw util::PqlException("pql::ast", "Cannot get tuple from non-tuple type ResultCl.");
+        }
+        return _tuple;
+    }
 }
