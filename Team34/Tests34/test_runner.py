@@ -53,9 +53,10 @@ def run_tests_in_folder(autotester_exe, folder):
 		thing = os.path.join(folder, name)
 		if os.path.isfile(thing) and (thing.endswith("_queries.txt") or thing.endswith(".query")
 			or (thing.endswith(".txt") and not thing.endswith("_source.txt"))):
+			src = get_matching_source(thing)
 			if len(sources) == 1:
 				queries.append((sources[0], thing))
-			elif (src := get_matching_source(thing)) is not None:
+			elif src is not None:
 				queries.append((src, thing))
 			else:
 				print(f"could not find source for '{name}', skipping")
