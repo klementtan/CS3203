@@ -19,19 +19,21 @@ namespace util
     std::string readEntireFile(const char* path);
     FILE* getLogFile();
 
+#ifndef ENABLE_LOGGING
+    inline void dummy_fn() { }
+
+    #define log(...) dummy_fn()
+#else
     template <typename... Args>
     inline void log(const char* who, const char* fmt, Args&&... args)
     {
-#ifndef ENABLE_LOGGING
-        return;
-#endif
-
         auto file = getLogFile();
         if(file == nullptr)
             return;
 
         zpr::fprintln(file, "[{}]: {}", who, zpr::fwd(fmt, static_cast<Args&&>(args)...));
     }
+#endif
 
     template <typename... Args>
     [[noreturn]] void error(const char* who, const char* fmt, const Args&... args)
