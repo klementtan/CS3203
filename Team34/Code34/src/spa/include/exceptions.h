@@ -23,7 +23,7 @@ namespace util
         template <typename... Args>
         BaseException(const char* who, const char* fmt, const Args&... args)
         {
-            util::log(zpr::sprint("{} exception", who).c_str(), fmt, args...);
+            util::logfmt(zpr::sprint("{} exception", who).c_str(), fmt, args...);
             this->message = zpr::sprint(fmt, args...);
         }
 

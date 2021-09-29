@@ -17,7 +17,15 @@ C++ Standard | C++17
 
 ### Additional Build Instructions
 
-No additional instructions required.
+On UNIX
+```shell
+$ cd Team34/Code34
+
+# Add `-DENABLE_LOGGING=ON` flag if you would like to enable logging to debug.log
+$ cmake -S . -B build/
+
+$ make -C build/ 
+```
 
 # Team Members
 
