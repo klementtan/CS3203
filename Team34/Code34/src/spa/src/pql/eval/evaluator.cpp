@@ -139,8 +139,16 @@ namespace pql::eval
         util::log("pql::eval", "Table after initial processing of declaration: {}", m_table.toString());
 
         // All queries should have select clause
-        assert(m_query->select.ent);
-        m_table.addSelectDecl(m_query->select.ent);
+        if(m_query->select.result.isTuple())
+        {
+            for(const ast::Elem& elem : m_query->select.result.tuple())
+            {
+                if(elem.isAttrRef())
+                    m_table.addSelectDecl(elem.attrRef().decl);
+                else if(elem.isDeclaration())
+                    m_table.addSelectDecl(elem.declaration());
+            }
+        }
 
         if(m_query->select.such_that)
             handleSuchThat(*m_query->select.such_that);
@@ -149,7 +157,8 @@ namespace pql::eval
             this->handlePattern(*m_query->select.pattern);
 
         util::log("pql::eval", "Table after processing of such that: {}", m_table.toString());
-        return this->m_table.getResult(m_query->select.ent);
+        // TODO(#138): Get result from all tuple instead of the first
+        return this->m_table.getResult(m_query->select.result.tuple().front().declaration());
     }
 
     void Evaluator::handleSuchThat(const ast::SuchThatCl& such_that)

@@ -41,6 +41,15 @@ namespace pql::ast
         PROCEDURE
     };
 
+    enum class AttrName
+    {
+        kInvalid,
+        kProcName,
+        kVarName,
+        kValue,
+        kStmtNum
+    };
+
     // Set of all statement design entities
     const std::unordered_set<DESIGN_ENT> kStmtDesignEntities = { DESIGN_ENT::STMT, DESIGN_ENT::READ, DESIGN_ENT::PRINT,
         DESIGN_ENT::CALL, DESIGN_ENT::WHILE, DESIGN_ENT::IF, DESIGN_ENT::ASSIGN };
@@ -50,6 +59,10 @@ namespace pql::ast
     // Maps enum representation of design ent to string representation of it. ie: {DESIGN_ENT::IF: "if"}
     extern const std::unordered_map<DESIGN_ENT, std::string> INV_DESIGN_ENT_MAP;
 
+    // Maps string representation of  attribute name to enum representation of it. ie: {"procName": AttrName::kProcName}
+    extern const std::unordered_map<std::string, AttrName> AttrNameMap;
+    // Maps enum representation of attribute name to string. ie: {AttrName::kProcName, "procName"}
+    extern const std::unordered_map<AttrName, std::string> InvAttrNameMap;
     /** List of design entity declaration. ie Represents [`assign a`, `print p`]. */
     struct DeclarationList
     {
@@ -173,6 +186,62 @@ namespace pql::ast
         static EntRef ofWildcard();
         static EntRef ofName(std::string name);
         static EntRef ofDeclaration(Declaration* decl);
+    };
+
+
+    // Represents the reference to a attribute of a synonym
+    struct AttrRef
+    {
+        Declaration* decl = nullptr;
+        AttrName attr_name = AttrName::kInvalid;
+
+        std::string toString() const;
+    };
+
+    // Represents the element to return in select clause
+    /** Abstract class for Statement Reference. */
+    struct Elem
+    {
+        enum class Type
+        {
+            Invalid,
+            Declaration,
+            AttrRef,
+        };
+
+        std::string toString() const;
+
+        Type ref_type {};
+        union
+        {
+            Declaration* _declaration;
+            AttrRef _attr_ref;
+        };
+
+        Elem();
+        ~Elem();
+
+        Elem(const Elem& other);
+        Elem& operator=(const Elem& other);
+
+        Elem(Elem&& other);
+        Elem& operator=(Elem&& other);
+
+
+        Declaration* declaration() const;
+        AttrRef attrRef() const;
+
+        inline bool isAttrRef() const
+        {
+            return ref_type == Type::AttrRef;
+        }
+        inline bool isDeclaration() const
+        {
+            return ref_type == Type::Declaration;
+        }
+
+        static Elem ofDeclaration(Declaration* decl);
+        static Elem ofAttrRef(AttrRef AttrRef);
     };
 
     /** Abstract class for Relationship Conditions between Statements and Entities. */
@@ -315,12 +384,43 @@ namespace pql::ast
         std::string toString() const;
     };
 
+    struct ResultCl
+    {
+        enum class Type
+        {
+            Invalid,
+            Bool,
+            Tuple,
+        };
+
+        Type type;
+        std::vector<Elem> _tuple;
+
+        inline bool isBool() const
+        {
+            return type == Type::Bool;
+        }
+
+        inline bool isTuple() const
+        {
+            return type == Type::Tuple;
+        }
+
+        static ResultCl ofBool();
+
+        static ResultCl ofTuple(const std::vector<Elem>& tuple);
+
+        std::vector<Elem> tuple() const;
+
+        std::string toString() const;
+    };
+
     /** Select query. */
     struct Select
     {
         std::optional<SuchThatCl> such_that {};
         std::optional<PatternCl> pattern {};
-        Declaration* ent = nullptr;
+        ResultCl result {};
 
         std::string toString() const;
     };

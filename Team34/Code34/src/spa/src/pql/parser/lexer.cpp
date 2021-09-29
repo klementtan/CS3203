@@ -7,10 +7,15 @@
 
 namespace pql::parser
 {
-    static void eat_whitespace(zst::str_view& sv)
+    int eatWhitespace(zst::str_view& sv)
     {
+        int count = 0;
         while(!sv.empty() && (sv[0] == '\n' || sv[0] == '\r' || sv[0] == '\t' || sv[0] == ' '))
+        {
+            count++;
             sv.remove_prefix(1);
+        }
+        return count;
     }
 
     static bool is_letter(char c)
@@ -49,7 +54,7 @@ namespace pql::parser
 
     Token getNextToken(zst::str_view& sv)
     {
-        eat_whitespace(sv);
+        eatWhitespace(sv);
 
         if(sv.empty() || sv[0] == '\0')
         {
@@ -81,11 +86,15 @@ namespace pql::parser
             {
                 case '(':   tt = TT::LParen; break;
                 case ')':   tt = TT::RParen; break;
+                case '<':   tt = TT::LAngle; break;
+                case '>':   tt = TT::RAngle; break;
                 case '_':   tt = TT::Underscore; break;
                 case '"':   tt = TT::DoubleQuotes; break;
                 case ';':   tt = TT::Semicolon; break;
                 case '*':   tt = TT::Asterisk; break;
                 case ',':   tt = TT::Comma; break;
+                case '.':   tt = TT::Dot; break;
+                case '#':   tt = TT::HashTag; break;
                 default:
                     throw util::PqlException("pql::parser","invalid token '{}'", sv[0]);
             }

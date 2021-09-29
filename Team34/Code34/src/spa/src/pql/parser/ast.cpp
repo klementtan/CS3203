@@ -40,6 +40,21 @@ namespace pql::ast
         { DESIGN_ENT::PROCEDURE, "procedure" },
     };
 
+    const std::unordered_map<std::string, AttrName> AttrNameMap = {
+        { "procName", AttrName::kProcName },
+        { "varName", AttrName::kVarName },
+        { "value", AttrName::kValue },
+        { "stmt#", AttrName::kStmtNum },
+    };
+
+    const std::unordered_map<AttrName, std::string> InvAttrNameMap = {
+        { AttrName::kProcName, "procName" },
+        { AttrName::kVarName, "varName" },
+        { AttrName::kValue, "value" },
+        { AttrName::kStmtNum, "stmt#" },
+        { AttrName::kInvalid, "invalid" },
+    };
+
     bool DeclarationList::hasDeclaration(const std::string& name) const
     {
         return this->declarations.find(name) != this->declarations.end();
@@ -210,4 +225,148 @@ namespace pql::ast
         return *this;
     }
 
+    Elem::Elem()
+    {
+        this->ref_type = Type::Invalid;
+    }
+    Elem::~Elem()
+    {
+        if(ref_type == Type::AttrRef)
+            _attr_ref.~AttrRef();
+    }
+
+    Elem::Elem(const Elem& other)
+    {
+        if(other.isAttrRef())
+        {
+            this->ref_type = Type::AttrRef;
+            this->_attr_ref = other._attr_ref;
+        }
+        else if(other.isDeclaration())
+        {
+            this->ref_type = Type::Declaration;
+            this->_declaration = other._declaration;
+        }
+        else
+        {
+            this->ref_type = Type::Invalid;
+        }
+    };
+    Elem& Elem::operator=(const Elem& other)
+    {
+        if(this != &other)
+        {
+            if(other.isAttrRef())
+            {
+                this->ref_type = Type::AttrRef;
+                this->_attr_ref = other._attr_ref;
+            }
+            else if(other.isDeclaration())
+            {
+                this->ref_type = Type::Declaration;
+                this->_declaration = other._declaration;
+            }
+            else
+            {
+                this->ref_type = Type::Invalid;
+            }
+        }
+        return *this;
+    };
+
+    Elem::Elem(Elem&& other)
+    {
+        if(other.isAttrRef())
+        {
+            this->ref_type = Type::AttrRef;
+            this->_attr_ref = std::move(other._attr_ref);
+        }
+        else if(other.isDeclaration())
+        {
+            this->ref_type = Type::Declaration;
+            this->_declaration = std::move(other._declaration);
+        }
+        else
+        {
+            this->ref_type = Type::Invalid;
+        }
+    };
+    Elem& Elem::operator=(Elem&& other)
+    {
+        if(this != &other)
+        {
+            if(other.isAttrRef())
+            {
+                this->ref_type = Type::AttrRef;
+                this->_attr_ref = std::move(other._attr_ref);
+            }
+            else if(other.isDeclaration())
+            {
+                this->ref_type = Type::Declaration;
+                this->_declaration = std::move(other._declaration);
+            }
+            else
+            {
+                this->ref_type = Type::Invalid;
+            }
+        }
+        return *this;
+    };
+
+    Declaration* Elem::declaration() const
+    {
+        if(this->ref_type != Type::Declaration)
+            throw util::PqlException("pql", "Elem is not a Declaration");
+
+        return this->_declaration;
+    }
+
+
+    AttrRef Elem::attrRef() const
+    {
+        if(this->ref_type != Type::AttrRef)
+            throw util::PqlException("pql", "Elem is not a AttrRef");
+
+        return this->_attr_ref;
+    }
+
+    Elem Elem::ofAttrRef(AttrRef attr_ref)
+    {
+        Elem ret {};
+        ret.ref_type = Type::AttrRef;
+        ret._attr_ref = attr_ref;
+        return ret;
+    }
+
+    Elem Elem::ofDeclaration(Declaration* decl)
+    {
+        Elem ret {};
+        ret.ref_type = Type::Declaration;
+        ret._declaration = decl;
+        return ret;
+    }
+
+    ResultCl ResultCl::ofBool()
+    {
+        ResultCl ret {};
+        ret.type = Type::Bool;
+        return ret;
+    };
+
+    ResultCl ResultCl::ofTuple(const std::vector<Elem>& tuple)
+    {
+        ResultCl ret {};
+        ret.type = Type::Tuple;
+        ret._tuple = std::move(tuple);
+        return ret;
+    };
+
+    std::vector<Elem> ResultCl::tuple() const
+    {
+        if(this->type != Type::Tuple)
+        {
+            throw util::PqlException("pql::ast", "Cannot get tuple from non-tuple type ResultCl.");
+        }
+        return _tuple;
+    }
 }

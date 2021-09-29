@@ -16,7 +16,7 @@ TEST_CASE("Basic Query")
     auto v_declaration = query->declarations.getDeclaration("v");
     REQUIRE(v_declaration->design_ent == pql::ast::DESIGN_ENT::VARIABLE);
     REQUIRE(v_declaration->name == "v");
-    REQUIRE(query->select.ent == v_declaration);
+    REQUIRE(query->select.result.tuple().front().declaration() == v_declaration);
     REQUIRE(!query->select.such_that.has_value());
     REQUIRE(!query->select.pattern.has_value());
 }
@@ -29,7 +29,7 @@ TEST_CASE("Follows* Query")
     pql::ast::Declaration* s_declaration = query->declarations.getDeclaration("s");
     REQUIRE(s_declaration->design_ent == pql::ast::DESIGN_ENT::STMT);
     REQUIRE(s_declaration->name == "s");
-    REQUIRE(query->select.ent == s_declaration);
+    REQUIRE(query->select.result.tuple().front().declaration() == s_declaration);
     pql::ast::SuchThatCl& such_that_cl = *query->select.such_that;
     REQUIRE(such_that_cl.rel_conds.size() == 1);
     auto follows_t = dynamic_cast<pql::ast::FollowsT*>(such_that_cl.rel_conds.begin()->get());
@@ -47,7 +47,7 @@ TEST_CASE("ModifiesS Query")
     pql::ast::Declaration* v_declaration = query->declarations.getDeclaration("v");
     REQUIRE(v_declaration->design_ent == pql::ast::DESIGN_ENT::VARIABLE);
     REQUIRE(v_declaration->name == "v");
-    REQUIRE(query->select.ent == v_declaration);
+    REQUIRE(query->select.result.tuple().front().declaration() == v_declaration);
     pql::ast::SuchThatCl& such_that_cl = *query->select.such_that;
     REQUIRE(such_that_cl.rel_conds.size() == 1);
     auto modifies_s = dynamic_cast<pql::ast::ModifiesS*>(such_that_cl.rel_conds.begin()->get());
@@ -65,7 +65,7 @@ TEST_CASE("ModifiesP Query")
     pql::ast::Declaration* p_declaration = query->declarations.getDeclaration("p");
     REQUIRE(p_declaration->design_ent == pql::ast::DESIGN_ENT::PROCEDURE);
     REQUIRE(p_declaration->name == "p");
-    REQUIRE(query->select.ent == p_declaration);
+    REQUIRE(query->select.result.tuple().front().declaration() == p_declaration);
     pql::ast::SuchThatCl& such_that_cl = *query->select.such_that;
     REQUIRE(such_that_cl.rel_conds.size() == 1);
     auto modifies_p = dynamic_cast<pql::ast::ModifiesP*>(such_that_cl.rel_conds.begin()->get());
@@ -83,7 +83,7 @@ TEST_CASE("UsesS Query")
     pql::ast::Declaration* v_declaration = query->declarations.getDeclaration("v");
     REQUIRE(v_declaration->design_ent == pql::ast::DESIGN_ENT::VARIABLE);
     REQUIRE(v_declaration->name == "v");
-    REQUIRE(query->select.ent == v_declaration);
+    REQUIRE(query->select.result.tuple().front().declaration() == v_declaration);
     pql::ast::SuchThatCl& such_that_cl = *query->select.such_that;
     REQUIRE(such_that_cl.rel_conds.size() == 1);
     auto uses_s = dynamic_cast<pql::ast::UsesS*>(such_that_cl.rel_conds.begin()->get());
@@ -101,7 +101,7 @@ TEST_CASE("Pattern Query")
     pql::ast::Declaration* a_declaration = query->declarations.getDeclaration("a");
     REQUIRE(a_declaration->design_ent == pql::ast::DESIGN_ENT::ASSIGN);
     REQUIRE(a_declaration->name == "a");
-    REQUIRE(query->select.ent == a_declaration);
+    REQUIRE(query->select.result.tuple().front().declaration() == a_declaration);
     pql::ast::PatternCl& pattern_cl = *query->select.pattern;
     REQUIRE(pattern_cl.pattern_conds.size() == 1);
     pql::ast::AssignPatternCond* assign_pattern_cond =
@@ -134,7 +134,7 @@ TEST_CASE("Parent Query")
         pql::ast::Declaration* s_declaration = query->declarations.getDeclaration("s");
         REQUIRE(s_declaration->design_ent == pql::ast::DESIGN_ENT::STMT);
         REQUIRE(s_declaration->name == "s");
-        REQUIRE(query->select.ent == s_declaration);
+        REQUIRE(query->select.result.tuple().front().declaration() == s_declaration);
         pql::ast::SuchThatCl& such_that_cl = *query->select.such_that;
         REQUIRE(such_that_cl.rel_conds.size() == 1);
         auto parent = dynamic_cast<pql::ast::Parent*>(such_that_cl.rel_conds.begin()->get());
@@ -147,6 +147,117 @@ TEST_CASE("Parent Query")
     {
         REQUIRE_THROWS_WITH(pql::parser::parsePQL("stmt s;\nSelect s such that Parentt(6, s)"),
             Catch::Contains("Invalid relationship condition tokens"));
+    }
+}
+
+TEST_CASE("Result Clause")
+{
+    SECTION("Tuple with Single Element no multi element syntax")
+    {
+        auto query = pql::parser::parsePQL("stmt s;\n"
+                                           "Select s such that Follows(s,_)");
+        REQUIRE(query->declarations.getAllDeclarations().size() == 1);
+        pql::ast::Declaration* s_declaration = query->declarations.getDeclaration("s");
+        REQUIRE(s_declaration->design_ent == pql::ast::DESIGN_ENT::STMT);
+        REQUIRE(s_declaration->name == "s");
+        REQUIRE(query->select.result.isTuple());
+        REQUIRE(query->select.result.tuple().size() == 1);
+        REQUIRE(query->select.result.tuple().front().declaration() == s_declaration);
+    }
+    SECTION("Tuple with Single AttrRef Element no multi element syntax")
+    {
+        auto query = pql::parser::parsePQL("stmt s;\n"
+                                           "Select s.stmt# such that Follows(s,_)");
+        REQUIRE(query->declarations.getAllDeclarations().size() == 1);
+        pql::ast::Declaration* s_declaration = query->declarations.getDeclaration("s");
+        REQUIRE(s_declaration->design_ent == pql::ast::DESIGN_ENT::STMT);
+        REQUIRE(s_declaration->name == "s");
+        REQUIRE(query->select.result.isTuple());
+        REQUIRE(query->select.result.tuple().size() == 1);
+        pql::ast::Elem elem = query->select.result.tuple().front();
+        REQUIRE(elem.isAttrRef());
+        REQUIRE(elem.attrRef().decl == s_declaration);
+        REQUIRE(elem.attrRef().attr_name == pql::ast::AttrName::kStmtNum);
+    }
+    SECTION("BOOLEAN result clause")
+    {
+        auto query = pql::parser::parsePQL("stmt s;\n"
+                                           "Select BOOLEAN such that Follows(s,_)");
+        REQUIRE(query->select.result.isBool());
+    }
+    SECTION("Tuple with Single Element using multi element syntax")
+    {
+        auto query = pql::parser::parsePQL("stmt s;\n"
+                                           "Select <s> such that Follows(s,_)");
+        REQUIRE(query->declarations.getAllDeclarations().size() == 1);
+        pql::ast::Declaration* s_declaration = query->declarations.getDeclaration("s");
+        REQUIRE(s_declaration->design_ent == pql::ast::DESIGN_ENT::STMT);
+        REQUIRE(s_declaration->name == "s");
+        REQUIRE(query->select.result.isTuple());
+        REQUIRE(query->select.result.tuple().size() == 1);
+        REQUIRE(query->select.result.tuple().front().declaration() == s_declaration);
+    }
+    SECTION("Tuple with Multiple Element")
+    {
+        auto query = pql::parser::parsePQL("stmt s1, s2, s3;\n"
+                                           "Select <s1,s2,s3.procName> such that Follows(s1,_)");
+        pql::ast::Declaration* s1_declaration = query->declarations.getDeclaration("s1");
+        pql::ast::Declaration* s2_declaration = query->declarations.getDeclaration("s2");
+        pql::ast::Declaration* s3_declaration = query->declarations.getDeclaration("s3");
+        REQUIRE(query->select.result.isTuple());
+        REQUIRE(query->select.result.tuple().size() == 3);
+        REQUIRE(query->select.result.tuple()[0].declaration() == s1_declaration);
+        REQUIRE(query->select.result.tuple()[1].declaration() == s2_declaration);
+        REQUIRE(query->select.result.tuple()[2].attrRef().decl == s3_declaration);
+        REQUIRE(query->select.result.tuple()[2].attrRef().attr_name == pql::ast::AttrName::kProcName);
+    }
+    SECTION("Valid weird white spaces")
+    {
+        auto query = pql::parser::parsePQL("stmt s1, s2, s3;\n"
+                                           "Select      <   s1    , s2 ,     s3   > such that Follows(s1,_)");
+        pql::ast::Declaration* s1_declaration = query->declarations.getDeclaration("s1");
+        pql::ast::Declaration* s2_declaration = query->declarations.getDeclaration("s2");
+        pql::ast::Declaration* s3_declaration = query->declarations.getDeclaration("s3");
+        REQUIRE(query->select.result.isTuple());
+        REQUIRE(query->select.result.tuple().size() == 3);
+        REQUIRE(query->select.result.tuple()[0].declaration() == s1_declaration);
+        REQUIRE(query->select.result.tuple()[1].declaration() == s2_declaration);
+        REQUIRE(query->select.result.tuple()[2].declaration() == s3_declaration);
+    }
+    SECTION("Invalid ResultCl")
+    {
+        // comma before first element in tuple
+        CHECK_THROWS_WITH(pql::parser::parsePQL("stmt s1, s2, s3;\n"
+                                                "Select <,s1,s2,s3> such that Follows(s1,_)"),
+            "Multiple element tuple should not start with `,`");
+        // No comma between elements
+        CHECK_THROWS_WITH(pql::parser::parsePQL("stmt s1, s2, s3;\n"
+                                                "Select <s1 s2,s3> such that Follows(s1,_)"),
+            Catch::Contains("Multiple element tuple should be comma separated"));
+        // No ending '>'
+        CHECK_THROWS_WITH(pql::parser::parsePQL("stmt s1, s2, s3;\n"
+                                                "Select <s1,s2,s3"),
+            Catch::Contains("Multiple elem tuple should end with `>`"));
+        // No empty tuple
+        CHECK_THROWS_WITH(pql::parser::parsePQL("stmt s1, s2, s3;\n"
+                                                "Select <>"),
+            Catch::Contains("Tuple in result clause cannot be empty"));
+
+        // Space between 'stmt' and '#'
+        CHECK_THROWS_WITH(pql::parser::parsePQL("stmt s1, s2, s3;\n"
+                                                "Select s1.stmt #"),
+            Catch::Contains(
+                "Expected 0 whitespace but got 1 instead. should not have any whitespace between the 'stmt' and '#"));
+        // Space between '.' and 'stmt'
+        CHECK_THROWS_WITH(pql::parser::parsePQL("stmt s1, s2, s3;\n"
+                                                "Select s1. stmt#"),
+            Catch::Contains(
+                "Expected 0 whitespace but got 1 instead. should not have any whitespace between dot and attrName"));
+        // Space between decl and '.'
+        CHECK_THROWS_WITH(pql::parser::parsePQL("stmt s1, s2, s3;\n"
+                                                "Select s1 .stmt#"),
+            Catch::Contains(
+                "Expected 0 whitespace but got 1 instead. should not have any whitespace between decl and dot"));
     }
 }
 
