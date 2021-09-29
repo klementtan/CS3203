@@ -235,7 +235,7 @@ Select cl such that Follows (cl, _)
 5000
 48 - call x stmt number
 call cl;
-Select 4 such that Follows (cl, 4)
+Select cl such that Follows (cl, 4)
 none
 5000
 49 - wildcard x assign
@@ -560,7 +560,7 @@ Select cl such that Follows* (cl, _)
 5000
 48 - call x stmt number
 call cl;
-Select 4 such that Follows* (cl, 4)
+Select cl such that Follows* (cl, 4)
 none
 5000
 49 - wildcard x assign
@@ -1045,7 +1045,7 @@ none
 5000
 48 - call x stmt number
 call cl;
-Select 4 such that Parent (cl, 4)
+Select cl such that Parent (cl, 4)
 none
 5000
 49 - wildcard x assign
@@ -1370,7 +1370,7 @@ none
 5000
 48 - call x stmt number
 call cl;
-Select 4 such that Parent* (cl, 4)
+Select cl such that Parent* (cl, 4)
 none
 5000
 49 - wildcard x assign
