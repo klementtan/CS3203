@@ -645,7 +645,7 @@ namespace pql::parser
         // Handle: elem
         if(ps->peek_one() != TT::LAngle)
         {
-            util::log("pql::parser", "Parsing tuple as a single element without ''<>'");
+            util::logfmt("pql::parser", "Parsing tuple as a single element without ''<>'");
             return { parse_elem(ps, declaration_list) };
         }
 
@@ -670,7 +670,7 @@ namespace pql::parser
             if(ps->peek_one() == TT::Comma)
                 ps->next();
             ast::Elem elem = parse_elem(ps, declaration_list);
-            util::log("pql::ast", "Parsed new Elem {}", elem.toString());
+            util::logfmt("pql::ast", "Parsed new Elem {}", elem.toString());
             ret.push_back(elem);
         }
         if(Token tok = ps->next(); tok != TT::RAngle)
