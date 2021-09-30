@@ -287,12 +287,13 @@ namespace pql::parser
         auto pattern_cond = std::make_unique<ast::IfPatternCond>();
 
         if(Token tok = ps->next(); tok != TT::LParen)
-            throw PqlException("pql::parser", "Expected '(' after synonym in Pattern clause instead of {}", tok.text);
+            throw PqlException("pql::parser", "Expected '(' after synonym in Pattern clause instead of '{}'", tok.text);
 
         pattern_cond->if_declaration = if_decl;
+        pattern_cond->ent = parse_ent_ref(ps, declaration_list);
 
         if(Token tok = ps->next(); tok != TT::Comma)
-            throw PqlException("pql::parser", "Expected ',' after ent ref declaration instead of {}", tok.text);
+            throw PqlException("pql::parser", "Expected ',' after ent ref declaration instead of '{}'", tok.text);
 
         if(auto tok = ps->next(); tok != TT::Underscore)
             throw PqlException("pql::parser", "second argument of if-pattern can only be '_'");
@@ -304,7 +305,7 @@ namespace pql::parser
             throw PqlException("pql::parser", "third argument of if-pattern can only be '_'");
 
         if(Token tok = ps->next(); tok != TT::RParen)
-            throw PqlException("pql::parser", "Expected ')' after expr spec in Pattern clause instead of {}", tok.text);
+            throw PqlException("pql::parser", "Expected ')' after expr spec in Pattern clause instead of '{}'", tok.text);
 
         return pattern_cond;
     }
@@ -319,18 +320,19 @@ namespace pql::parser
         auto pattern_cond = std::make_unique<ast::WhilePatternCond>();
 
         if(Token tok = ps->next(); tok != TT::LParen)
-            throw PqlException("pql::parser", "Expected '(' after synonym in Pattern clause instead of {}", tok.text);
+            throw PqlException("pql::parser", "Expected '(' after synonym in Pattern clause instead of '{}'", tok.text);
 
         pattern_cond->while_declaration = while_decl;
+        pattern_cond->ent = parse_ent_ref(ps, declaration_list);
 
         if(Token tok = ps->next(); tok != TT::Comma)
-            throw PqlException("pql::parser", "Expected ',' after ent ref declaration instead of {}", tok.text);
+            throw PqlException("pql::parser", "Expected ',' after ent ref declaration instead of '{}'", tok.text);
 
         if(auto tok = ps->next(); tok != TT::Underscore)
             throw PqlException("pql::parser", "second argument of while-pattern can only be '_'");
 
         if(Token tok = ps->next(); tok != TT::RParen)
-            throw PqlException("pql::parser", "Expected ')' after expr spec in Pattern clause instead of {}", tok.text);
+            throw PqlException("pql::parser", "Expected ')' after expr spec in Pattern clause instead of '{}'", tok.text);
 
         return pattern_cond;
     }
