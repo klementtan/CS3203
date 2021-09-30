@@ -126,4 +126,9 @@ namespace pkb
     {
         return m_ancestors;
     }
+
+    const std::unordered_set<std::string>& Statement::getVariablesUsedInCondition() const
+    {
+        return m_condition_uses;
+    }
 }

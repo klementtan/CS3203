@@ -112,11 +112,16 @@ namespace pkb
         std::optional<StatementNum> getParent() const;
         const StatementSet& getAncestors() const;
 
+        const std::unordered_set<std::string>& getVariablesUsedInCondition() const;
+
     private:
         const simple::ast::Stmt* m_stmt = nullptr;
 
         std::unordered_set<std::string> m_uses {};
         std::unordered_set<std::string> m_modifies {};
+
+        // only populated if the statement is an if or while.
+        std::unordered_set<std::string> m_condition_uses {};
 
         StatementNum m_directly_before = 0;
         StatementNum m_directly_after = 0;

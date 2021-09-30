@@ -86,6 +86,10 @@ namespace pkb
             call->m_uses.insert(varname);
             var.m_used_by.insert(call);
         }
+
+        // populate condition_uses for ifs and whiles
+        if(auto astmt = stmt->getAstStmt(); CONST_DCAST(WhileLoop, astmt) || CONST_DCAST(IfStmt, astmt))
+            stmt->m_condition_uses.insert(varname);
     }
 
 

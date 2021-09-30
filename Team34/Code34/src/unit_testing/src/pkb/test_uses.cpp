@@ -411,3 +411,51 @@ TEST_CASE("Uses(Synonym, DeclaredVar)")
         CHECK(snd_result.count("main"));
     }
 }
+
+
+// does not test the Uses condition, but tests specifically variables being used in the condition.
+// this is used for the pattern evaluation, but is contingent on the PKB extracting it correctly.
+TEST_CASE("if statement condition uses")
+{
+    auto c1 = get_stmt(kb_sample, 6).getVariablesUsedInCondition();
+    CHECK(c1.size() == 1);
+    CHECK(c1.count("x") == 1);
+    CHECK(c1.count("z") == 0);
+    CHECK(c1.count("y") == 0);
+
+    auto c2 = get_stmt(kb_sample, 13).getVariablesUsedInCondition();
+    CHECK(c2.size() == 1);
+    CHECK(c2.count("x") == 1);
+    CHECK(c2.count("z") == 0);
+    CHECK(c2.count("y") == 0);
+
+    auto c3 = get_stmt(kb_sample, 22).getVariablesUsedInCondition();
+    CHECK(c3.size() == 1);
+    CHECK(c3.count("x") == 1);
+    CHECK(c3.count("z") == 0);
+    CHECK(c3.count("y") == 0);
+
+    CHECK(get_stmt(kb_sample, 10).getVariablesUsedInCondition().empty());
+}
+
+
+TEST_CASE("while loop condition uses")
+{
+    auto c1 = get_stmt(kb_sample, 4).getVariablesUsedInCondition();
+    CHECK(c1.size() == 1);
+    CHECK(c1.count("i") == 1);
+    CHECK(c1.count("z") == 0);
+    CHECK(c1.count("y") == 0);
+
+    auto c2 = get_stmt(kb_sample, 14).getVariablesUsedInCondition();
+    CHECK(c2.size() == 1);
+    CHECK(c2.count("i") == 1);
+    CHECK(c2.count("z") == 0);
+    CHECK(c2.count("y") == 0);
+
+    auto c3 = get_stmt(kb_trivial, 14).getVariablesUsedInCondition();
+    CHECK(c3.size() == 2);
+    CHECK(c3.count("x") == 1);
+    CHECK(c3.count("y") == 1);
+    CHECK(c3.count("z") == 0);
+}
