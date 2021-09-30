@@ -79,6 +79,127 @@ constexpr const auto prog_3 = R"(
     }
 )";
 
+constexpr const auto prog_4 = R"(
+    procedure main {
+        if((x == 0) || (z < y)) then {
+            print a;
+        } else {
+            print b;
+        }
+
+        if(3 == 7) then {
+            while(x + 3 < 7 * 4) {
+                print f;
+            }
+            print y;
+        } else {
+            while(1 > 2) {
+                print g;
+                print x;
+
+                if(p + q < 42) then {
+                    read www;
+                } else {
+                    read owo;
+                }
+            }
+        }
+    }
+)";
+
+
+
+TEST_CASE("Select pattern if(name, _, _)")
+{
+    auto prog = simple::parser::parseProgram(prog_4);
+    auto pkb = pkb::DesignExtractor(std::move(prog)).run();
+
+    SECTION("positive cases")
+    {
+        TEST_OK(pkb.get(), R"(if i; Select i pattern i("x", _, _))", 1);
+        TEST_OK(pkb.get(), R"(if i; Select i pattern i("y", _, _))", 1);
+        TEST_OK(pkb.get(), R"(if i; Select i pattern i("z", _, _))", 1);
+    }
+
+    SECTION("negative cases")
+    {
+        TEST_EMPTY(pkb.get(), R"(if i; Select i pattern i("a", _, _))");
+        TEST_EMPTY(pkb.get(), R"(if i; Select i pattern i("b", _, _))");
+        TEST_EMPTY(pkb.get(), R"(if i; Select i pattern i("f", _, _))");
+        TEST_EMPTY(pkb.get(), R"(if i; Select i pattern i("g", _, _))");
+    }
+}
+
+TEST_CASE("Select pattern if(decl, _, _)")
+{
+    auto prog = simple::parser::parseProgram(prog_4);
+    auto pkb = pkb::DesignExtractor(std::move(prog)).run();
+
+    SECTION("positive cases")
+    {
+        TEST_OK(pkb.get(), R"(variable v; if i; Select i pattern i(v, _, _))", 1, 11);
+    }
+
+    SECTION("negative cases")
+    {
+        TEST_EMPTY(pkb.get(), R"(stmt s; variable v; if i; Select i such that Modifies(s, v) pattern i(v, _, _))");
+    }
+}
+
+TEST_CASE("Select pattern if(_, _, _)")
+{
+    TEST_OK(prog_4, R"(if i; Select i pattern i(_, _, _))", 1, 11);
+}
+
+
+
+
+TEST_CASE("Select pattern while(name, _, _)")
+{
+    auto prog = simple::parser::parseProgram(prog_4);
+    auto pkb = pkb::DesignExtractor(std::move(prog)).run();
+
+    SECTION("positive cases")
+    {
+        TEST_OK(pkb.get(), R"(while w; Select w pattern w("x", _))", 5);
+    }
+
+    SECTION("negative cases")
+    {
+        TEST_EMPTY(pkb.get(), R"(while w; Select w pattern w("a", _))");
+        TEST_EMPTY(pkb.get(), R"(while w; Select w pattern w("b", _))");
+        TEST_EMPTY(pkb.get(), R"(while w; Select w pattern w("f", _))");
+        TEST_EMPTY(pkb.get(), R"(while w; Select w pattern w("g", _))");
+        TEST_EMPTY(pkb.get(), R"(while w; Select w pattern w("y", _))");
+        TEST_EMPTY(pkb.get(), R"(while w; Select w pattern w("z", _))");
+    }
+}
+
+TEST_CASE("Select pattern while(decl, _)")
+{
+    auto prog = simple::parser::parseProgram(prog_4);
+    auto pkb = pkb::DesignExtractor(std::move(prog)).run();
+
+    SECTION("positive cases")
+    {
+        TEST_OK(pkb.get(), R"(variable v; while w; Select w pattern w(v, _))", 5);
+    }
+
+    SECTION("negative cases")
+    {
+        TEST_EMPTY(pkb.get(), R"(stmt s; variable v; while w; Select w such that Modifies(s, v) pattern w(v, _))");
+    }
+}
+
+TEST_CASE("Select pattern while(_, _)")
+{
+    TEST_OK(prog_4, R"(while w; Select w pattern w(_, _))", 5);
+}
+
+
+
+
+
 TEST_CASE("Select pattern assign(name, _)")
 {
     SECTION("positive cases")

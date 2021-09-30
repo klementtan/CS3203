@@ -224,11 +224,12 @@ TEST_CASE("PatternCl")
     pattern_cl.pattern_conds.push_back(std::move(assign_pattern_cond));
 
     INFO(pattern_cl.toString());
-    REQUIRE(pattern_cl.toString() == "PatternCl[\n"
-                                     "\tPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)), "
-                                     "assignment_declaration:Declaration(ent:assign, name:foo), expr_spec:ExprSpec"
-                                     "(is_subexpr:true, expr:(x + y)))\n"
-                                     "]");
+    REQUIRE(pattern_cl.toString() ==
+            "PatternCl[\n"
+            "\tAssignPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)), "
+            "assignment_declaration:Declaration(ent:assign, name:foo), expr_spec:ExprSpec"
+            "(is_subexpr:true, expr:(x + y)))\n"
+            "]");
 }
 
 TEST_CASE("SuchThat")
@@ -300,7 +301,7 @@ TEST_CASE("Select")
                                  "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:"
                                  "bar)), ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))\n"
                                  "], pattern:PatternCl[\n"
-                                 "\tPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)), "
+                                 "\tAssignPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)), "
                                  "assignment_declaration:Declaration(ent:assign, name:foo), expr_spec:ExprSpec"
                                  "(is_subexpr:true, expr:(x + y)))\n"
                                  "], result:ResultCl(type: Tuple, tuple :[Elem(ref_type: Declaration, decl: "
@@ -358,7 +359,7 @@ TEST_CASE("Query")
                               "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:"
                               "bar)), ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))\n"
                               "], pattern:PatternCl[\n"
-                              "\tPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:buzz)), "
+                              "\tAssignPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:buzz)), "
                               "assignment_declaration:Declaration(ent:assign, name:buzz), expr_spec:ExprSpec"
                               "(is_subexpr:true, expr:(x + y)))\n"
                               "], result:ResultCl(type: Tuple, tuple :[Elem(ref_type: Declaration, decl: "
