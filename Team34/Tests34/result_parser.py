@@ -9,6 +9,8 @@ failed_tests = { }
 num_failed = 0
 num_passed = 0
 
+test_times = []
+
 def get_dupes(xs):
 	dupes = set()
 	uniq = set()
@@ -26,6 +28,8 @@ def parse_one(filename):
 	global failed_tests
 	global num_failed
 	global num_passed
+
+	global test_times
 
 	try:
 		root = ET.parse(filename).getroot()
@@ -60,9 +64,17 @@ def parse_one(filename):
 		if query.find("failed") is not None:
 			failed_tests[filename].append((num, name))
 			num_failed += 1
-		else:
+		elif query.find("passed") is not None:
 			passed_tests[filename].append((num, name))
 			num_passed += 1
+		else:
+			print(f"warning: {test_name_str} neither passed nor failed...")
+			continue
+
+		if query.find("time_taken") is not None:
+			time_taken = float(query.find("time_taken").text)
+			test_times.append(time_taken)
+
 
 		correct_ans = query.find("correct").text
 		if correct_ans is None:
@@ -73,6 +85,8 @@ def parse_one(filename):
 		if len(dupes) > 0:
 			print(f"warning: duplicate answers for {test_name_str}:")
 			print(f"    {dupes}")
+
+
 
 def iterate_dir(dir):
 	for root, dirs, files in os.walk(dir):
@@ -95,8 +109,8 @@ def get_num_failed():
 def get_num_passed():
 	return num_passed
 
-
-
+def get_test_times():
+	return test_times
 
 def main():
 	if len(sys.argv) < 2:
