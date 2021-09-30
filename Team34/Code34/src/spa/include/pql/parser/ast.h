@@ -384,6 +384,26 @@ namespace pql::ast
         ExprSpec expr_spec {};
     };
 
+    /** If pattern condition. ie `if i; Select i pattern i ("x", _, _);` */
+    struct IfPatternCond : PatternCond
+    {
+        virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
+
+        Declaration* if_declaration = nullptr;
+        EntRef ent {};
+    };
+
+    /** While pattern condition. ie `while w; Select w pattern w ("x", _);` */
+    struct WhilePatternCond : PatternCond
+    {
+        virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
+
+        Declaration* while_declaration = nullptr;
+        EntRef ent {};
+    };
+
     /** Pattern Clause. */
     struct PatternCl
     {

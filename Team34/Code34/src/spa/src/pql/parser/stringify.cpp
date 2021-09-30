@@ -101,10 +101,23 @@ namespace pql::ast
 
     std::string AssignPatternCond::toString() const
     {
-        return zpr::sprint("PatternCl(ent:{}, assignment_declaration:{}, expr_spec:{})", this->ent.toString(),
+        return zpr::sprint("AssignPatternCl(ent:{}, assignment_declaration:{}, expr_spec:{})", this->ent.toString(),
             this->assignment_declaration ? this->assignment_declaration->toString() : "nullptr",
             this->expr_spec.toString());
     }
+
+    std::string IfPatternCond::toString() const
+    {
+        return zpr::sprint("IfPatternCl(ent:{}, if_declaration:{})", this->ent.toString(),
+            this->if_declaration ? this->if_declaration->toString() : "nullptr");
+    }
+
+    std::string WhilePatternCond::toString() const
+    {
+        return zpr::sprint("WhilePatternCl(ent:{}, if_declaration:{})", this->ent.toString(),
+            this->while_declaration ? this->while_declaration->toString() : "nullptr");
+    }
+
 
     std::string PatternCl::toString() const
     {

@@ -107,4 +107,14 @@ namespace pql::ast
 
         tbl->upsertDomains(this->assignment_declaration, domain);
     }
+
+
+
+    void IfPatternCond::evaluate(const pkb::ProgramKB* pkb, table::Table* tbl) const
+    {
+    }
+
+    void WhilePatternCond::evaluate(const pkb::ProgramKB* pkb, table::Table* tbl) const
+    {
+    }
 }
