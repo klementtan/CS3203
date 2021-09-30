@@ -17,31 +17,33 @@ namespace pql::eval
     {
         assert(rel);
 
-        RelationAbstractor<Statement, StatementNum, ast::StmtRef, /* SetsAreConstRef: */ true> abs {};
-        abs.relationName = "Parent";
-        abs.leftDeclEntity = {};
-        abs.rightDeclEntity = {};
+        static RelationAbstractor<Statement, StatementNum, ast::StmtRef, /* SetsAreConstRef: */ true> abs {};
+        if(abs.relationName == nullptr)
+        {
+            abs.relationName = "Parent";
+            abs.leftDeclEntity = {};
+            abs.rightDeclEntity = {};
 
-        abs.relationHolds = [](const Statement& a, const Statement& b) -> bool {
-            return a.isParentOf(b.getStmtNum());
-        };
+            abs.relationHolds = [](const Statement& a, const Statement& b) -> bool {
+                return a.isParentOf(b.getStmtNum());
+            };
 
-        abs.inverseRelationHolds = [](const Statement& a, const Statement& b) -> bool {
-            return a.isChildOf(b.getStmtNum());
-        };
+            abs.inverseRelationHolds = [](const Statement& a, const Statement& b) -> bool {
+                return a.isChildOf(b.getStmtNum());
+            };
 
-        abs.getAllRelated = [](const Statement& s) -> decltype(auto) {
-            return s.getChildren();
-        };
+            abs.getAllRelated = [](const Statement& s) -> decltype(auto) {
+                return s.getChildren();
+            };
 
-        abs.getAllInverselyRelated = [](const Statement& s) -> decltype(auto) {
-            return s.getParent();
-        };
+            abs.getAllInverselyRelated = [](const Statement& s) -> decltype(auto) {
+                return s.getParent();
+            };
 
-        abs.relationExists = &pkb::ProgramKB::parentRelationExists;
-        abs.getEntity = &pkb::ProgramKB::getStatementAt;
-        abs.getEntryValue = &table::Entry::getStmtNum;
-
+            abs.relationExists = &pkb::ProgramKB::parentRelationExists;
+            abs.getEntity = &pkb::ProgramKB::getStatementAt;
+            abs.getEntryValue = &table::Entry::getStmtNum;
+        }
         abs.evaluate(m_pkb, &m_table, rel, &rel->parent, &rel->child);
     }
 
@@ -52,31 +54,33 @@ namespace pql::eval
     {
         assert(rel);
 
-        RelationAbstractor<Statement, StatementNum, ast::StmtRef, /* SetsAreConstRef: */ true> abs {};
-        abs.relationName = "Parent*";
-        abs.leftDeclEntity = {};
-        abs.rightDeclEntity = {};
+        static RelationAbstractor<Statement, StatementNum, ast::StmtRef, /* SetsAreConstRef: */ true> abs {};
+        if(abs.relationName == nullptr)
+        {
+            abs.relationName = "Parent*";
+            abs.leftDeclEntity = {};
+            abs.rightDeclEntity = {};
 
-        abs.relationHolds = [](const Statement& a, const Statement& b) -> bool {
-            return a.isAncestorOf(b.getStmtNum());
-        };
+            abs.relationHolds = [](const Statement& a, const Statement& b) -> bool {
+                return a.isAncestorOf(b.getStmtNum());
+            };
 
-        abs.inverseRelationHolds = [](const Statement& a, const Statement& b) -> bool {
-            return a.isDescendantOf(b.getStmtNum());
-        };
+            abs.inverseRelationHolds = [](const Statement& a, const Statement& b) -> bool {
+                return a.isDescendantOf(b.getStmtNum());
+            };
 
-        abs.getAllRelated = [](const Statement& s) -> decltype(auto) {
-            return s.getDescendants();
-        };
+            abs.getAllRelated = [](const Statement& s) -> decltype(auto) {
+                return s.getDescendants();
+            };
 
-        abs.getAllInverselyRelated = [](const Statement& s) -> decltype(auto) {
-            return s.getAncestors();
-        };
+            abs.getAllInverselyRelated = [](const Statement& s) -> decltype(auto) {
+                return s.getAncestors();
+            };
 
-        abs.relationExists = &pkb::ProgramKB::parentRelationExists;
-        abs.getEntity = &pkb::ProgramKB::getStatementAt;
-        abs.getEntryValue = &table::Entry::getStmtNum;
-
+            abs.relationExists = &pkb::ProgramKB::parentRelationExists;
+            abs.getEntity = &pkb::ProgramKB::getStatementAt;
+            abs.getEntryValue = &table::Entry::getStmtNum;
+        }
         abs.evaluate(m_pkb, &m_table, rel, &rel->ancestor, &rel->descendant);
     }
 }

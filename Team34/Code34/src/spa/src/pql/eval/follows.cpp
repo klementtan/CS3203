@@ -16,37 +16,39 @@ namespace pql::eval
     {
         assert(rel);
 
-        RelationAbstractor<Statement, StatementNum, ast::StmtRef, /* SetsAreConstRef: */ false> abs {};
-        abs.relationName = "Follows";
-        abs.leftDeclEntity = {};
-        abs.rightDeclEntity = {};
+        static RelationAbstractor<Statement, StatementNum, ast::StmtRef, /* SetsAreConstRef: */ false> abs {};
+        if(abs.relationName == nullptr)
+        {
+            abs.relationName = "Follows";
+            abs.leftDeclEntity = {};
+            abs.rightDeclEntity = {};
 
-        abs.relationHolds = [](const Statement& a, const Statement& b) -> bool {
-            return a.isFollowedBy(b.getStmtNum());
-        };
+            abs.relationHolds = [](const Statement& a, const Statement& b) -> bool {
+                return a.isFollowedBy(b.getStmtNum());
+            };
 
-        abs.inverseRelationHolds = [](const Statement& a, const Statement& b) -> bool {
-            return a.doesFollow(b.getStmtNum());
-        };
+            abs.inverseRelationHolds = [](const Statement& a, const Statement& b) -> bool {
+                return a.doesFollow(b.getStmtNum());
+            };
 
-        abs.getAllRelated = [](const Statement& s) -> StatementSet {
-            if(auto tmp = s.getStmtDirectlyAfter(); tmp != 0)
-                return { tmp };
-            else
-                return {};
-        };
+            abs.getAllRelated = [](const Statement& s) -> StatementSet {
+                if(auto tmp = s.getStmtDirectlyAfter(); tmp != 0)
+                    return { tmp };
+                else
+                    return {};
+            };
 
-        abs.getAllInverselyRelated = [](const Statement& s) -> StatementSet {
-            if(auto tmp = s.getStmtDirectlyBefore(); tmp != 0)
-                return { tmp };
-            else
-                return {};
-        };
+            abs.getAllInverselyRelated = [](const Statement& s) -> StatementSet {
+                if(auto tmp = s.getStmtDirectlyBefore(); tmp != 0)
+                    return { tmp };
+                else
+                    return {};
+            };
 
-        abs.relationExists = &pkb::ProgramKB::followsRelationExists;
-        abs.getEntity = &pkb::ProgramKB::getStatementAt;
-        abs.getEntryValue = &table::Entry::getStmtNum;
-
+            abs.relationExists = &pkb::ProgramKB::followsRelationExists;
+            abs.getEntity = &pkb::ProgramKB::getStatementAt;
+            abs.getEntryValue = &table::Entry::getStmtNum;
+        }
         abs.evaluate(m_pkb, &m_table, rel, &rel->directly_before, &rel->directly_after);
     }
 
@@ -57,31 +59,33 @@ namespace pql::eval
     {
         assert(rel);
 
-        RelationAbstractor<Statement, StatementNum, ast::StmtRef, /* SetsAreConstRef: */ true> abs {};
-        abs.relationName = "Follows*";
-        abs.leftDeclEntity = {};
-        abs.rightDeclEntity = {};
+        static RelationAbstractor<Statement, StatementNum, ast::StmtRef, /* SetsAreConstRef: */ true> abs {};
+        if(abs.relationName == nullptr)
+        {
+            abs.relationName = "Follows*";
+            abs.leftDeclEntity = {};
+            abs.rightDeclEntity = {};
 
-        abs.relationHolds = [](const Statement& a, const Statement& b) -> bool {
-            return a.isFollowedTransitivelyBy(b.getStmtNum());
-        };
+            abs.relationHolds = [](const Statement& a, const Statement& b) -> bool {
+                return a.isFollowedTransitivelyBy(b.getStmtNum());
+            };
 
-        abs.inverseRelationHolds = [](const Statement& a, const Statement& b) -> bool {
-            return a.doesFollowTransitively(b.getStmtNum());
-        };
+            abs.inverseRelationHolds = [](const Statement& a, const Statement& b) -> bool {
+                return a.doesFollowTransitively(b.getStmtNum());
+            };
 
-        abs.getAllRelated = [](const Statement& s) -> decltype(auto) {
-            return s.getStmtsTransitivelyAfter();
-        };
+            abs.getAllRelated = [](const Statement& s) -> decltype(auto) {
+                return s.getStmtsTransitivelyAfter();
+            };
 
-        abs.getAllInverselyRelated = [](const Statement& s) -> decltype(auto) {
-            return s.getStmtsTransitivelyBefore();
-        };
+            abs.getAllInverselyRelated = [](const Statement& s) -> decltype(auto) {
+                return s.getStmtsTransitivelyBefore();
+            };
 
-        abs.relationExists = &pkb::ProgramKB::followsRelationExists;
-        abs.getEntity = &pkb::ProgramKB::getStatementAt;
-        abs.getEntryValue = &table::Entry::getStmtNum;
-
+            abs.relationExists = &pkb::ProgramKB::followsRelationExists;
+            abs.getEntity = &pkb::ProgramKB::getStatementAt;
+            abs.getEntryValue = &table::Entry::getStmtNum;
+        }
         abs.evaluate(m_pkb, &m_table, rel, &rel->before, &rel->after);
     }
 }

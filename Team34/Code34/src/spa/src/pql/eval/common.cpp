@@ -37,7 +37,7 @@ namespace pql::eval
 
     template <typename Entity, typename RelationParam, typename RefType, bool SetsAreConstRef>
     void RelationAbstractor<Entity, RelationParam, RefType, SetsAreConstRef>::evaluate(const pkb::ProgramKB* pkb,
-        table::Table* table, const ast::RelCond* rel, const RefType* leftRef, const RefType* rightRef)
+        table::Table* table, const ast::RelCond* rel, const RefType* leftRef, const RefType* rightRef) const
     {
         if(leftRef->isDeclaration())
         {
@@ -59,13 +59,17 @@ namespace pql::eval
             }
         }
 
+        auto relation_holds = this->relationHolds;
+        auto get_all_related = this->getAllRelated;
+
         // we can also deduplicate the Rel(X, Y) vs Rel(Y, X) code. in the 3x3 matrix of
         // permutations, this lets us eliminate 3 identical branches, which is a good.
         if((leftRef->isDeclaration() && is_concrete(rightRef)) || (leftRef->isWildcard() && is_concrete(rightRef)) ||
             (leftRef->isWildcard() && rightRef->isDeclaration()))
         {
-            std::swap(relationHolds, inverseRelationHolds);
-            std::swap(getAllRelated, getAllInverselyRelated);
+            relation_holds = this->inverseRelationHolds;
+            get_all_related = this->getAllInverselyRelated;
+
             std::swap(leftRef, rightRef);
         }
 
@@ -77,7 +81,7 @@ namespace pql::eval
             auto& left_ = (pkb->*getEntity)(get_concrete_value(leftRef));
             auto& right_ = (pkb->*getEntity)(get_concrete_value(rightRef));
 
-            if(!this->relationHolds(left_, right_))
+            if(!relation_holds(left_, right_))
                 throw PqlException("pql::eval", "{} always evaluates to false", rel->toString());
         }
         else if(is_concrete(leftRef) && rightRef->isDeclaration())
@@ -89,7 +93,7 @@ namespace pql::eval
             for(auto it = domain.begin(); it != domain.end();)
             {
                 auto& right_ = (pkb->*getEntity)(((*it).*getEntryValue)());
-                if(!this->relationHolds(left_, right_))
+                if(!relation_holds(left_, right_))
                     it = domain.erase(it);
                 else
                     ++it;
@@ -104,7 +108,7 @@ namespace pql::eval
             for(auto it = domain.begin(); it != domain.end();)
             {
                 auto& left = (pkb->*getEntity)(((*it).*getEntryValue)());
-                if(this->getAllRelated(left).empty())
+                if(get_all_related(left).empty())
                     it = domain.erase(it);
                 else
                     ++it;
@@ -125,7 +129,7 @@ namespace pql::eval
             for(auto it = left_domain.begin(); it != left_domain.end();)
             {
                 auto& left_ = (pkb->*getEntity)(((*it).*getEntryValue)());
-                decltype(auto) all_related = this->getAllRelated(left_);
+                decltype(auto) all_related = get_all_related(left_);
                 if(all_related.empty())
                 {
                     it = left_domain.erase(it);
@@ -155,7 +159,7 @@ namespace pql::eval
         {
             util::logfmt("pql::eval", "Processing {}(EntRef, _)", this->relationName);
             auto& left_ = (pkb->*getEntity)(get_concrete_value(leftRef));
-            if(this->getAllRelated(left_).empty())
+            if(get_all_related(left_).empty())
                 throw PqlException("pql::eval", "{} always evaluates to false", rel->toString());
         }
         else if(leftRef->isWildcard() && rightRef->isWildcard())

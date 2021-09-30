@@ -90,6 +90,6 @@ namespace pql::eval
         bool (pkb::ProgramKB::*relationExists)() const;
 
         void evaluate(const pkb::ProgramKB* pkb, table::Table* table, const ast::RelCond* rel, const RefType* left,
-            const RefType* right);
+            const RefType* right) const;
     };
 }
