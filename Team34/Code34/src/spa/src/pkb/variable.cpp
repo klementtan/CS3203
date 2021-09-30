@@ -1,6 +1,4 @@
 // variable.cpp
-// Copyright (c) 2021, zhiayang
-// Licensed under the Apache License Version 2.0.
 
 #include "pkb.h"
 #include "exceptions.h"
@@ -41,12 +39,12 @@ namespace pkb
         }
     }
 
-    std::unordered_set<StmtNum> Variable::getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT ent) const
+    StatementSet Variable::getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT ent) const
     {
         if(ent == pql::ast::DESIGN_ENT::PROCEDURE)
             throw util::PkbException("pkb", "invalid design entity for getUsingStmtNumsFiltered");
 
-        std::unordered_set<StmtNum> ret {};
+        StatementSet ret {};
         for(const auto* stmt : m_used_by)
             if(design_entity_matches(stmt->getAstStmt(), ent))
                 ret.insert(stmt->getStmtNum());
@@ -54,12 +52,12 @@ namespace pkb
         return ret;
     }
 
-    std::unordered_set<StmtNum> Variable::getModifyingStmtNumsFiltered(pql::ast::DESIGN_ENT ent) const
+    StatementSet Variable::getModifyingStmtNumsFiltered(pql::ast::DESIGN_ENT ent) const
     {
         if(ent == pql::ast::DESIGN_ENT::PROCEDURE)
             throw util::PkbException("pkb", "invalid design entity for getModifyingStmtNumsFiltered");
 
-        std::unordered_set<StmtNum> ret {};
+        StatementSet ret {};
         for(const auto* stmt : m_modified_by)
             if(design_entity_matches(stmt->getAstStmt(), ent))
                 ret.insert(stmt->getStmtNum());
@@ -67,22 +65,14 @@ namespace pkb
         return ret;
     }
 
-    std::unordered_set<std::string> Variable::getUsingProcNames() const
+    const std::unordered_set<std::string>& Variable::getUsingProcNames() const
     {
-        std::unordered_set<std::string> ret {};
-        for(const auto* proc : m_used_by_procs)
-            ret.insert(proc->getName());
-
-        return ret;
+        return m_used_by_procs;
     }
 
-    std::unordered_set<std::string> Variable::getModifyingProcNames() const
+    const std::unordered_set<std::string>& Variable::getModifyingProcNames() const
     {
-        std::unordered_set<std::string> ret {};
-        for(const auto* proc : m_modified_by_procs)
-            ret.insert(proc->getName());
-
-        return ret;
+        return m_modified_by_procs;
     }
 
 }

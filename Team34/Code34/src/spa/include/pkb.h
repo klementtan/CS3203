@@ -151,17 +151,15 @@ namespace pkb
         StatementSet getUsingStmtNumsFiltered(pql::ast::DESIGN_ENT ent) const;
         StatementSet getModifyingStmtNumsFiltered(pql::ast::DESIGN_ENT ent) const;
 
-        std::unordered_set<std::string> getUsingProcNames() const;
-        std::unordered_set<std::string> getModifyingProcNames() const;
+        const std::unordered_set<std::string>& getUsingProcNames() const;
+        const std::unordered_set<std::string>& getModifyingProcNames() const;
 
     private:
-        // a procedure isn't really a statement, so we need to keep two
-        // separate lists for this.
         std::unordered_set<const Statement*> m_used_by {};
         std::unordered_set<const Statement*> m_modified_by {};
 
-        std::unordered_set<const Procedure*> m_used_by_procs {};
-        std::unordered_set<const Procedure*> m_modified_by_procs {};
+        std::unordered_set<std::string> m_used_by_procs {};
+        std::unordered_set<std::string> m_modified_by_procs {};
     };
 
     struct ProgramKB

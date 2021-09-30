@@ -77,7 +77,7 @@ namespace pkb
 
         for(auto proc : ts.proc_stack)
         {
-            var.m_used_by_procs.insert(proc);
+            var.m_used_by_procs.insert(proc->getName());
             m_pkb->getProcedureNamed(proc->getName()).m_uses.insert(varname);
         }
 
@@ -115,7 +115,7 @@ namespace pkb
 
         for(auto proc : ts.proc_stack)
         {
-            var.m_modified_by_procs.insert(proc);
+            var.m_modified_by_procs.insert(proc->getName());
             m_pkb->getProcedureNamed(proc->getName()).m_modifies.insert(varname);
         }
 
