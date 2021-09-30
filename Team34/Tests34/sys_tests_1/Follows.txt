@@ -486,7 +486,7 @@ Select a such that Follows (2, 3) pattern a(_,_)
 98 - with pattern with no common syn
 read r; print pn; while w; if ifs; assign a; variable v; procedure p; stmt s; constant c;
 Select a such that Follows (2, 3) pattern ifs(_,_,_)
-none
+9,65,1,66,2,6,71,7,72,8,11,12,14,79,15,22,23,24,25,26,27,28,29,30,31,33,34,39,40,45,46,51,52,53,57,59,60,80,81,82
 5000
 99 - with pattern with no common syn
 read r; print pn; while w; if ifs; assign a; variable v; procedure p; stmt s; constant c;
