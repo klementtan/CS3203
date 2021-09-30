@@ -264,6 +264,8 @@ namespace pql::parser
 
         pattern_cond->assignment_declaration = assign_decl;
         pattern_cond->ent = parse_ent_ref(ps, declaration_list);
+        if(pattern_cond->ent.isDeclaration() && pattern_cond->ent.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
+            throw PqlException("pql::parser", "synonym in first argument of assign pattern must be a variable");
 
         if(Token tok = ps->next(); tok != TT::Comma)
         {
@@ -291,6 +293,8 @@ namespace pql::parser
 
         pattern_cond->if_declaration = if_decl;
         pattern_cond->ent = parse_ent_ref(ps, declaration_list);
+        if(pattern_cond->ent.isDeclaration() && pattern_cond->ent.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
+            throw PqlException("pql::parser", "synonym in first argument of if pattern must be a variable");
 
         if(Token tok = ps->next(); tok != TT::Comma)
             throw PqlException("pql::parser", "Expected ',' after ent ref declaration instead of '{}'", tok.text);
@@ -324,6 +328,8 @@ namespace pql::parser
 
         pattern_cond->while_declaration = while_decl;
         pattern_cond->ent = parse_ent_ref(ps, declaration_list);
+        if(pattern_cond->ent.isDeclaration() && pattern_cond->ent.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
+            throw PqlException("pql::parser", "synonym in first argument of while pattern must be a variable");
 
         if(Token tok = ps->next(); tok != TT::Comma)
             throw PqlException("pql::parser", "Expected ',' after ent ref declaration instead of '{}'", tok.text);
