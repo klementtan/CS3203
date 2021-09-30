@@ -1,5 +1,6 @@
 // statement.cpp
 
+#include <cassert>
 #include "pkb.h"
 
 namespace pkb
