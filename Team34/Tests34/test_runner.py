@@ -3,7 +3,6 @@
 import os
 import sys
 import subprocess
-
 import result_parser as rp
 
 def run_autotester(autotester_exe, folder, source, query):
@@ -95,7 +94,6 @@ def log_string(f, s):
 	f.write((s + "\n").encode())
 	print(s)
 
-
 def main():
 	if len(sys.argv) < 3:
 		print("usage: ./test_runner.py [clean] <autotester_path> <folders>...")
@@ -128,9 +126,14 @@ def main():
 	num_passed = rp.get_num_passed()
 	total_tests = num_failed + num_passed
 
+	test_times = rp.get_test_times()
+
 	with open("autotester_summary.txt", "wb") as f:
 		log_string(f, f"{num_passed}/{total_tests} ({100 * num_passed / max(1, total_tests):.1f}%) " +
 			f"test{'' if num_passed == 1 else 's'} passed, {num_failed} failed")
+
+		log_string(f, f"min: {min(test_times):.2f} ms, max: {max(test_times):.2f} ms, "
+			+ f"avg: {sum(test_times) / max(1, len(test_times)):.2f} ms, total: {sum(test_times):.1f} ms")
 
 		for (filename, tests) in failed_tests.items():
 			if len(tests) == 0:
