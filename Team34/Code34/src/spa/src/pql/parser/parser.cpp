@@ -1,5 +1,6 @@
 // pql/parser.cpp
 
+#include <cassert>
 #include <unordered_set>
 
 #include <zpr.h>
