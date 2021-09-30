@@ -37,7 +37,7 @@ namespace pql::ast
 
         tbl->addSelectDecl(assignment_declaration);
 
-        // Stores dependency when pattern a(v, ...)
+        // join pairs are needed in case of `pattern a(v, ...)` (two decls)
         std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
         auto domain = tbl->getDomain(this->assignment_declaration);
@@ -122,7 +122,7 @@ namespace pql::ast
 
         tbl->addSelectDecl(stmt_decl);
 
-        // Stores dependency when pattern a(v, ...)
+        // join pairs are needed in case of `pattern if/while (v, ...)` (two decls)
         std::unordered_set<std::pair<table::Entry, table::Entry>> join_pairs;
 
         auto domain = tbl->getDomain(stmt_decl);
@@ -153,11 +153,7 @@ namespace pql::ast
                     {
                         auto var_name = entry.getVal();
                         if(condition_vars.count(var_name) > 0)
-                        {
-                            // For 'pattern a (v,...)', when a = i, v must equal to the lhs
-                            // of stmt i
                             join_pairs.insert({ *it, entry });
-                        }
                     }
                 }
                 else if(var_ent.isWildcard())
