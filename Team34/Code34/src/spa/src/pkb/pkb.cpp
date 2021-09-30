@@ -13,12 +13,12 @@
 
 namespace pkb
 {
-    Statement& ProgramKB::getStatementAt(StatementNum stmt_no)
+    Statement& ProgramKB::getStatementAt(const StatementNum& stmt_no)
     {
         return const_cast<Statement&>(const_cast<const ProgramKB*>(this)->getStatementAt(stmt_no));
     }
 
-    const Statement& ProgramKB::getStatementAt(StatementNum stmt_no) const
+    const Statement& ProgramKB::getStatementAt(const StatementNum& stmt_no) const
     {
         if(stmt_no > m_statements.size() || stmt_no == 0)
             throw util::PkbException("pkb", "StatementNum is out of range");

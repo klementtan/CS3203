@@ -184,7 +184,8 @@ namespace pkb
             {
                 auto list = ts.local_stmt_stack.back();
                 auto list_sid = list->getStmtNum();
-                stmt->m_parent = list_sid;
+                stmt->m_parent = { list_sid };
+
                 list->m_children.insert(sid);
 
                 // m_pkb->m_direct_parents[sid] = list_sid;

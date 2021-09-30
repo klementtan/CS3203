@@ -13,6 +13,40 @@ namespace pql::eval
 
     void Evaluator::handleFollows(const ast::Follows* follows)
     {
+    #if 0
+        assert(rel);
+
+        RelationAbstractor<Statement, StatementNum, ast::StmtRef> abs {};
+        abs.relationName = "Follows";
+        abs.rel = rel;
+        abs.leftRef = &rel->directly_before;
+        abs.rightRef = &rel->directly_after;
+        abs.leftDeclEntity = {};
+        abs.rightDeclEntity = {};
+
+        abs.relationHolds = [](const Statement& a, const Statement& b) -> bool {
+            return a.isFollowedBy(b.getStmtNum());
+        };
+
+        abs.inverseRelationHolds = [](const Statement& a, const Statement& b) -> bool {
+            return a.doesFollow(b.getStmtNum());
+        };
+
+        abs.getAllRelated = [](const Statement& s) -> auto& {
+            return s.getStmtDirectlyAfter();
+        };
+
+        abs.getAllInverselyRelated = [](const Statement& s) -> auto& {
+            return s.getStmtDirectlyBefore();
+        };
+
+        abs.getEntity = &pkb::ProgramKB::getStatementAt;
+        abs.getEntryValue = &table::Entry::getStmtNum;
+
+        abs.evaluate(m_pkb, &m_table);
+    #endif
+
+    #if 1
         assert(follows);
 
         const auto& before_stmt = follows->directly_before;
@@ -205,6 +239,7 @@ namespace pql::eval
         {
             throw PqlException("pql::eval", "unreachable: invalid combination of argument types");
         }
+    #endif
     }
 
 

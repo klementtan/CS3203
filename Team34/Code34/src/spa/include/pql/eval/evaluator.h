@@ -6,6 +6,7 @@
 
 #include <list>
 #include <memory>
+#include <functional>
 
 #include "pkb.h"
 #include "pql/parser/ast.h"
@@ -56,16 +57,41 @@ namespace pql::eval
 
 
 
-    // template <typename Entity, typename RelationParam>
-    // struct RelationAbstractor
-    // {
-    //     // Calls[*](A, B) <=> A.relationHolds(B) <=> B.inverseRelationHolds(A)
-    //     bool (Entity::*relationHolds)(const RelationParam&) const;
-    //     bool (Entity::*inverseRelationHolds)(const RelationParam&) const;
+    // extern template -- the templated combinations of types are explicitly instantiated
+    // in eval/common.cpp
+    template <typename Entity, typename RelationParam, typename RefType>
+    struct RelationAbstractor
+    {
+        const ast::RelCond* rel = nullptr;
+        const char* relationName = nullptr;
 
-    //     // Calls[*](A, _) <=> A.getAllRelated()
-    //     // Calls[*](_, B) <=> B.getAllInverselyRelated()
-    //     const std::unordered_set<RelationParam>& (Entity::*getAllRelated)() const;
-    //     const std::unordered_set<RelationParam>& (Entity::*getAllInverselyRelated)() const;
-    // };
+        // either StmtRef or EntRef
+        const RefType* leftRef = nullptr;
+        const RefType* rightRef = nullptr;
+
+        // what kind of entity must the declaration be, if the left/right refs are indeed decls.
+        // optional; if empty, then this is not enforced.
+        std::optional<ast::DESIGN_ENT> leftDeclEntity {};
+        std::optional<ast::DESIGN_ENT> rightDeclEntity {};
+
+        // Calls[*](A, B) <=> A.relationHolds(B) <=> B.inverseRelationHolds(A)
+        std::function<bool (const Entity&, const Entity&)> relationHolds {};
+        std::function<bool (const Entity&, const Entity&)> inverseRelationHolds {};
+
+        // Calls[*](A, _) <=> A.getAllRelated()
+        // Calls[*](_, B) <=> B.getAllInverselyRelated()
+        std::function<const std::unordered_set<RelationParam>& (const Entity&)> getAllRelated {};
+        std::function<const std::unordered_set<RelationParam>& (const Entity&)> getAllInverselyRelated {};
+
+        // getStatementAt, getProcedureNamed, getVariableNamed
+        const Entity& (pkb::ProgramKB::*getEntity)(const RelationParam&) const;
+
+        // Entry::getVal(), getStmtNum()
+        RelationParam (table::Entry::*getEntryValue)() const;
+
+        // callsRelationExists, parentRelationExists, etc.
+        bool (pkb::ProgramKB::*relationExists)() const;
+
+        void evaluate(const pkb::ProgramKB* pkb, table::Table* table);
+    };
 }

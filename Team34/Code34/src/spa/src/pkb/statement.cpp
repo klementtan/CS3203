@@ -26,22 +26,22 @@ namespace pkb
         return m_directly_before != 0;
     }
 
-    bool Statement::doesFollow(simple::ast::StatementNum id) const
+    bool Statement::doesFollow(StatementNum id) const
     {
         return m_directly_before == id;
     }
 
-    bool Statement::doesFollowTransitively(simple::ast::StatementNum id) const
+    bool Statement::doesFollowTransitively(StatementNum id) const
     {
         return m_before.count(id) > 0;
     }
 
-    bool Statement::isFollowedBy(simple::ast::StatementNum id) const
+    bool Statement::isFollowedBy(StatementNum id) const
     {
         return m_directly_after == id;
     }
 
-    bool Statement::isFollowedTransitivelyBy(simple::ast::StatementNum id) const
+    bool Statement::isFollowedTransitivelyBy(StatementNum id) const
     {
         return m_after.count(id) > 0;
     }
@@ -99,7 +99,7 @@ namespace pkb
 
     bool Statement::isChildOf(StatementNum id) const
     {
-        return m_parent.has_value() && *m_parent == id;
+        return m_parent.count(id) > 0;
     }
 
     bool Statement::isDescendantOf(StatementNum id) const
@@ -117,8 +117,9 @@ namespace pkb
         return m_descendants;
     }
 
-    std::optional<StatementNum> Statement::getParent() const
+    const StatementSet& Statement::getParent() const
     {
+        assert(m_parent.size() <= 1);
         return m_parent;
     }
 

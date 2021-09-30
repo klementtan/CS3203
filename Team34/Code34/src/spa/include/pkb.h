@@ -109,7 +109,7 @@ namespace pkb
 
         const StatementSet& getChildren() const;
         const StatementSet& getDescendants() const;
-        std::optional<StatementNum> getParent() const;
+        const StatementSet& getParent() const;
         const StatementSet& getAncestors() const;
 
         const std::unordered_set<std::string>& getVariablesUsedInCondition() const;
@@ -131,7 +131,9 @@ namespace pkb
         StatementSet m_before {};
         StatementSet m_after {};
 
-        std::optional<StatementNum> m_parent {};
+        // this must be a set because of the "unified" interface for relation evaluation,
+        // even though there there can only be one parent.
+        StatementSet m_parent {};
         StatementSet m_children {};
 
         StatementSet m_ancestors {};
@@ -167,8 +169,8 @@ namespace pkb
         ProgramKB(std::unique_ptr<simple::ast::Program> program);
         ~ProgramKB();
 
-        const Statement& getStatementAt(StatementNum id) const;
-        Statement& getStatementAt(StatementNum id);
+        const Statement& getStatementAt(const StatementNum& id) const;
+        Statement& getStatementAt(const StatementNum& id);
 
         const Procedure& getProcedureNamed(const std::string& name) const;
         Procedure& getProcedureNamed(const std::string& name);
