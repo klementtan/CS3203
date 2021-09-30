@@ -35,8 +35,9 @@ namespace pql::eval
 
 
 
-    template <typename Entity, typename RelationParam, typename RefType>
-    void RelationAbstractor<Entity, RelationParam, RefType>::evaluate(const pkb::ProgramKB* pkb, table::Table* table)
+    template <typename Entity, typename RelationParam, typename RefType, bool SetsAreConstRef>
+    void RelationAbstractor<Entity, RelationParam, RefType, SetsAreConstRef>::evaluate(const pkb::ProgramKB* pkb,
+        table::Table* table, const ast::RelCond* rel, const RefType* leftRef, const RefType* rightRef)
     {
         if(leftRef->isDeclaration())
         {
@@ -124,7 +125,7 @@ namespace pql::eval
             for(auto it = left_domain.begin(); it != left_domain.end();)
             {
                 auto& left_ = (pkb->*getEntity)(((*it).*getEntryValue)());
-                auto& all_related = this->getAllRelated(left_);
+                decltype(auto) all_related = this->getAllRelated(left_);
                 if(all_related.empty())
                 {
                     it = left_domain.erase(it);
@@ -169,6 +170,7 @@ namespace pql::eval
         }
     }
 
-    template struct RelationAbstractor<pkb::Statement, pkb::StatementNum, ast::StmtRef>;
-    template struct RelationAbstractor<pkb::Procedure, std::string, ast::EntRef>;
+    template struct RelationAbstractor<pkb::Statement, pkb::StatementNum, ast::StmtRef, false>;
+    template struct RelationAbstractor<pkb::Statement, pkb::StatementNum, ast::StmtRef, true>;
+    template struct RelationAbstractor<pkb::Procedure, std::string, ast::EntRef, true>;
 }

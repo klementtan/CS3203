@@ -15,11 +15,8 @@ namespace pql::eval
     {
         assert(rel);
 
-        RelationAbstractor<pkb::Procedure, std::string, ast::EntRef> abs {};
+        RelationAbstractor<pkb::Procedure, std::string, ast::EntRef, /* SetsAreConstRef: */ true> abs {};
         abs.relationName = "Calls";
-        abs.rel = rel;
-        abs.leftRef = &rel->caller;
-        abs.rightRef = &rel->proc;
         abs.leftDeclEntity = ast::DESIGN_ENT::PROCEDURE;
         abs.rightDeclEntity = ast::DESIGN_ENT::PROCEDURE;
 
@@ -31,11 +28,11 @@ namespace pql::eval
             return a.isCalledByProcedure(b.getName());
         };
 
-        abs.getAllRelated = [](const Procedure& p) -> auto& {
+        abs.getAllRelated = [](const Procedure& p) -> decltype(auto) {
             return p.getAllCalledProcedures();
         };
 
-        abs.getAllInverselyRelated = [](const Procedure& p) -> auto& {
+        abs.getAllInverselyRelated = [](const Procedure& p) -> decltype(auto) {
             return p.getAllCallers();
         };
 
@@ -43,7 +40,7 @@ namespace pql::eval
         abs.getEntity = &pkb::ProgramKB::getProcedureNamed;
         abs.getEntryValue = &table::Entry::getVal;
 
-        abs.evaluate(m_pkb, &m_table);
+        abs.evaluate(m_pkb, &m_table, rel, &rel->caller, &rel->proc);
     }
 
 
@@ -51,11 +48,8 @@ namespace pql::eval
     {
         assert(rel);
 
-        RelationAbstractor<pkb::Procedure, std::string, ast::EntRef> abs {};
+        RelationAbstractor<pkb::Procedure, std::string, ast::EntRef, /* SetsAreConstRef: */ true> abs {};
         abs.relationName = "Calls*";
-        abs.rel = rel;
-        abs.leftRef = &rel->caller;
-        abs.rightRef = &rel->proc;
         abs.leftDeclEntity = ast::DESIGN_ENT::PROCEDURE;
         abs.rightDeclEntity = ast::DESIGN_ENT::PROCEDURE;
 
@@ -67,11 +61,11 @@ namespace pql::eval
             return a.isTransitivelyCalledByProcedure(b.getName());
         };
 
-        abs.getAllRelated = [](const Procedure& p) -> auto& {
+        abs.getAllRelated = [](const Procedure& p) -> decltype(auto) {
             return p.getAllTransitivelyCalledProcedures();
         };
 
-        abs.getAllInverselyRelated = [](const Procedure& p) -> auto& {
+        abs.getAllInverselyRelated = [](const Procedure& p) -> decltype(auto) {
             return p.getAllTransitiveCallers();
         };
 
@@ -79,6 +73,6 @@ namespace pql::eval
         abs.getEntity = &pkb::ProgramKB::getProcedureNamed;
         abs.getEntryValue = &table::Entry::getVal;
 
-        abs.evaluate(m_pkb, &m_table);
+        abs.evaluate(m_pkb, &m_table, rel, &rel->caller, &rel->proc);
     }
 }

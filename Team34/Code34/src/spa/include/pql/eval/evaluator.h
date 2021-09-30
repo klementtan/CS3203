@@ -57,31 +57,28 @@ namespace pql::eval
 
 
 
-    // extern template -- the templated combinations of types are explicitly instantiated
-    // in eval/common.cpp
-    template <typename Entity, typename RelationParam, typename RefType>
+
+    template <typename Entity, typename RelationParam, typename RefType, bool SetsAreConstRef>
     struct RelationAbstractor
     {
-        const ast::RelCond* rel = nullptr;
         const char* relationName = nullptr;
-
-        // either StmtRef or EntRef
-        const RefType* leftRef = nullptr;
-        const RefType* rightRef = nullptr;
 
         // what kind of entity must the declaration be, if the left/right refs are indeed decls.
         // optional; if empty, then this is not enforced.
         std::optional<ast::DESIGN_ENT> leftDeclEntity {};
         std::optional<ast::DESIGN_ENT> rightDeclEntity {};
 
-        // Calls[*](A, B) <=> A.relationHolds(B) <=> B.inverseRelationHolds(A)
-        std::function<bool (const Entity&, const Entity&)> relationHolds {};
-        std::function<bool (const Entity&, const Entity&)> inverseRelationHolds {};
+        // Relation[*](A, B) <=> A.relationHolds(B) <=> B.inverseRelationHolds(A)
+        std::function<bool(const Entity&, const Entity&)> relationHolds {};
+        std::function<bool(const Entity&, const Entity&)> inverseRelationHolds {};
 
-        // Calls[*](A, _) <=> A.getAllRelated()
-        // Calls[*](_, B) <=> B.getAllInverselyRelated()
-        std::function<const std::unordered_set<RelationParam>& (const Entity&)> getAllRelated {};
-        std::function<const std::unordered_set<RelationParam>& (const Entity&)> getAllInverselyRelated {};
+        template <typename T>
+        using SetWrapper = std::conditional_t<SetsAreConstRef, const std::unordered_set<T>&, std::unordered_set<T>>;
+
+        // Relation[*](A, _) <=> A.getAllRelated()
+        // Relation[*](_, B) <=> B.getAllInverselyRelated()
+        std::function<SetWrapper<RelationParam>(const Entity&)> getAllRelated {};
+        std::function<SetWrapper<RelationParam>(const Entity&)> getAllInverselyRelated {};
 
         // getStatementAt, getProcedureNamed, getVariableNamed
         const Entity& (pkb::ProgramKB::*getEntity)(const RelationParam&) const;
@@ -92,6 +89,7 @@ namespace pql::eval
         // callsRelationExists, parentRelationExists, etc.
         bool (pkb::ProgramKB::*relationExists)() const;
 
-        void evaluate(const pkb::ProgramKB* pkb, table::Table* table);
+        void evaluate(const pkb::ProgramKB* pkb, table::Table* table, const ast::RelCond* rel, const RefType* left,
+            const RefType* right);
     };
 }
