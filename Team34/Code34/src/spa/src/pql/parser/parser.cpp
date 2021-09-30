@@ -249,8 +249,8 @@ namespace pql::parser
     }
 
     // the declaration has already been eaten.
-    std::unique_ptr<ast::AssignPatternCond> parse_assign_pattern(ParserState* ps, ast::Declaration* assign_decl,
-        const ast::DeclarationList* declaration_list)
+    std::unique_ptr<ast::AssignPatternCond> parse_assign_pattern(
+        ParserState* ps, ast::Declaration* assign_decl, const ast::DeclarationList* declaration_list)
     {
         assert(assign_decl->design_ent == ast::DESIGN_ENT::ASSIGN);
         util::logfmt("pql::parser", "Parsing pattern clause with assignment condition {}", assign_decl->toString());
@@ -264,7 +264,8 @@ namespace pql::parser
 
         pattern_cond->assignment_declaration = assign_decl;
         pattern_cond->ent = parse_ent_ref(ps, declaration_list);
-        if(pattern_cond->ent.isDeclaration() && pattern_cond->ent.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
+        if(pattern_cond->ent.isDeclaration() &&
+            pattern_cond->ent.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
             throw PqlException("pql::parser", "synonym in first argument of assign pattern must be a variable");
 
         if(Token tok = ps->next(); tok != TT::Comma)
@@ -280,8 +281,8 @@ namespace pql::parser
         return pattern_cond;
     }
 
-    std::unique_ptr<ast::IfPatternCond> parse_if_pattern(ParserState* ps, ast::Declaration* if_decl,
-        const ast::DeclarationList* declaration_list)
+    std::unique_ptr<ast::IfPatternCond> parse_if_pattern(
+        ParserState* ps, ast::Declaration* if_decl, const ast::DeclarationList* declaration_list)
     {
         assert(if_decl->design_ent == ast::DESIGN_ENT::IF);
         util::logfmt("pql::parser", "Parsing pattern clause with if condition {}", if_decl->toString());
@@ -293,7 +294,8 @@ namespace pql::parser
 
         pattern_cond->if_declaration = if_decl;
         pattern_cond->ent = parse_ent_ref(ps, declaration_list);
-        if(pattern_cond->ent.isDeclaration() && pattern_cond->ent.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
+        if(pattern_cond->ent.isDeclaration() &&
+            pattern_cond->ent.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
             throw PqlException("pql::parser", "synonym in first argument of if pattern must be a variable");
 
         if(Token tok = ps->next(); tok != TT::Comma)
@@ -309,14 +311,15 @@ namespace pql::parser
             throw PqlException("pql::parser", "third argument of if-pattern can only be '_'");
 
         if(Token tok = ps->next(); tok != TT::RParen)
-            throw PqlException("pql::parser", "Expected ')' after expr spec in Pattern clause instead of '{}'", tok.text);
+            throw PqlException(
+                "pql::parser", "Expected ')' after expr spec in Pattern clause instead of '{}'", tok.text);
 
         return pattern_cond;
     }
 
 
-    std::unique_ptr<ast::WhilePatternCond> parse_while_pattern(ParserState* ps, ast::Declaration* while_decl,
-        const ast::DeclarationList* declaration_list)
+    std::unique_ptr<ast::WhilePatternCond> parse_while_pattern(
+        ParserState* ps, ast::Declaration* while_decl, const ast::DeclarationList* declaration_list)
     {
         assert(while_decl->design_ent == ast::DESIGN_ENT::WHILE);
         util::logfmt("pql::parser", "Parsing pattern clause with while condition {}", while_decl->toString());
@@ -328,7 +331,8 @@ namespace pql::parser
 
         pattern_cond->while_declaration = while_decl;
         pattern_cond->ent = parse_ent_ref(ps, declaration_list);
-        if(pattern_cond->ent.isDeclaration() && pattern_cond->ent.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
+        if(pattern_cond->ent.isDeclaration() &&
+            pattern_cond->ent.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
             throw PqlException("pql::parser", "synonym in first argument of while pattern must be a variable");
 
         if(Token tok = ps->next(); tok != TT::Comma)
@@ -338,7 +342,8 @@ namespace pql::parser
             throw PqlException("pql::parser", "second argument of while-pattern can only be '_'");
 
         if(Token tok = ps->next(); tok != TT::RParen)
-            throw PqlException("pql::parser", "Expected ')' after expr spec in Pattern clause instead of '{}'", tok.text);
+            throw PqlException(
+                "pql::parser", "Expected ')' after expr spec in Pattern clause instead of '{}'", tok.text);
 
         return pattern_cond;
     }
@@ -383,8 +388,10 @@ namespace pql::parser
         }
         else
         {
-            throw PqlException("pql::parser", "pattern clause can only have 'assign', 'if', or 'while'"
-                " synonyms; found '{}'", ast::INV_DESIGN_ENT_MAP.at(pattern_decl->design_ent));
+            throw PqlException("pql::parser",
+                "pattern clause can only have 'assign', 'if', or 'while'"
+                " synonyms; found '{}'",
+                ast::INV_DESIGN_ENT_MAP.at(pattern_decl->design_ent));
         }
 
         return ast::PatternCl { std::move(pattern_conds) };

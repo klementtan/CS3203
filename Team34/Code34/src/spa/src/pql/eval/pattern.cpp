@@ -111,8 +111,8 @@ namespace pql::ast
         tbl->upsertDomains(this->assignment_declaration, domain);
     }
 
-    void evaluate_if_while_pattern(const pkb::ProgramKB* pkb, table::Table* tbl, Declaration* stmt_decl,
-        const EntRef& var_ent)
+    void evaluate_if_while_pattern(
+        const pkb::ProgramKB* pkb, table::Table* tbl, Declaration* stmt_decl, const EntRef& var_ent)
     {
         if(var_ent.isDeclaration())
         {

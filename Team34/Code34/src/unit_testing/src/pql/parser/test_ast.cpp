@@ -224,11 +224,12 @@ TEST_CASE("PatternCl")
     pattern_cl.pattern_conds.push_back(std::move(assign_pattern_cond));
 
     INFO(pattern_cl.toString());
-    REQUIRE(pattern_cl.toString() == "PatternCl[\n"
-                                     "\tAssignPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)), "
-                                     "assignment_declaration:Declaration(ent:assign, name:foo), expr_spec:ExprSpec"
-                                     "(is_subexpr:true, expr:(x + y)))\n"
-                                     "]");
+    REQUIRE(pattern_cl.toString() ==
+            "PatternCl[\n"
+            "\tAssignPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)), "
+            "assignment_declaration:Declaration(ent:assign, name:foo), expr_spec:ExprSpec"
+            "(is_subexpr:true, expr:(x + y)))\n"
+            "]");
 }
 
 TEST_CASE("SuchThat")
