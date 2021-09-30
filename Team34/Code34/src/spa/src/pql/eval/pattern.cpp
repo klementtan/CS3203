@@ -30,7 +30,10 @@ namespace pql::ast
         assert(this->assignment_declaration->design_ent == DESIGN_ENT::ASSIGN);
 
         if(var_ent.isDeclaration())
+        {
+            assert(var_ent.declaration()->design_ent == DESIGN_ENT::VARIABLE);
             tbl->addSelectDecl(var_ent.declaration());
+        }
 
         tbl->addSelectDecl(assignment_declaration);
 
@@ -112,7 +115,10 @@ namespace pql::ast
         const EntRef& var_ent)
     {
         if(var_ent.isDeclaration())
+        {
+            assert(var_ent.declaration()->design_ent == DESIGN_ENT::VARIABLE);
             tbl->addSelectDecl(var_ent.declaration());
+        }
 
         tbl->addSelectDecl(stmt_decl);
 
