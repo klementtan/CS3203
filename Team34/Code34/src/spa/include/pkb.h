@@ -38,6 +38,18 @@ namespace pkb
         const std::unordered_set<std::string>& getUsedVariables() const;
         const std::unordered_set<std::string>& getModifiedVariables() const;
 
+        bool callsProcedure(const std::string& procname) const;
+        bool callsProcedureTransitively(const std::string& procname) const;
+
+        bool isCalledByProcedure(const std::string& procname) const;
+        bool isTransitivelyCalledByProcedure(const std::string& procname) const;
+
+        const std::unordered_set<std::string>& getAllCallers() const;
+        const std::unordered_set<std::string>& getAllCalledProcedures() const;
+
+        const std::unordered_set<std::string>& getAllTransitiveCallers() const;
+        const std::unordered_set<std::string>& getAllTransitivelyCalledProcedures() const;
+
         std::string getName() const;
         const simple::ast::Procedure* getAstProc() const;
 
@@ -158,6 +170,7 @@ namespace pkb
 
         const Variable& getVariableNamed(const std::string& name) const;
 
+        bool callsRelationExists() const;
         bool parentRelationExists() const;
         bool followsRelationExists() const;
 
@@ -181,6 +194,7 @@ namespace pkb
 
         bool m_follows_exists = false;
         bool m_parent_exists = false;
+        bool m_calls_exists = false;
 
         friend struct DesignExtractor;
     };

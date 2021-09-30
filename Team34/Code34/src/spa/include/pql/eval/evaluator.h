@@ -40,6 +40,8 @@ namespace pql::eval
         void handleModifiesS(const ast::ModifiesS* modifies_s);
         void handleParent(const ast::Parent* parent);
         void handleParentT(const ast::ParentT* parent_t);
+        void handleCalls(const ast::Calls* rel);
+        void handleCallsT(const ast::CallsT* rel);
 
         std::unordered_set<table::Entry> getInitialDomainVar(ast::Declaration* declaration);
         std::unordered_set<table::Entry> getInitialDomainProc(ast::Declaration* declaration);

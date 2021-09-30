@@ -83,6 +83,16 @@ namespace pql::ast
         return zpr::sprint("FollowsT(before:{}, after{})", this->before.toString(), this->after.toString());
     }
 
+    std::string Calls::toString() const
+    {
+        return zpr::sprint("Calls(caller:{}, proc:{})", this->caller.toString(), this->proc.toString());
+    }
+
+    std::string CallsT::toString() const
+    {
+        return zpr::sprint("CallsT(caller:{}, proc:{})", this->caller.toString(), this->proc.toString());
+    }
+
     std::string ExprSpec::toString() const
     {
         return zpr::sprint(

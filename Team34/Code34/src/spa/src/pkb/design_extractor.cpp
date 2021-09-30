@@ -246,7 +246,7 @@ namespace pkb
                 if(std::find(ts.proc_stack.begin(), ts.proc_stack.end(), &callee) != ts.proc_stack.end())
                     throw util::PkbException("pkb", "illegal cyclic/recursive call", call_stmt->proc_name);
 
-
+                m_pkb->m_calls_exists = true;
                 for(size_t i = 0; i < ts.proc_stack.size(); i++)
                 {
                     // only set the direct calls/called_by for the top of the stack

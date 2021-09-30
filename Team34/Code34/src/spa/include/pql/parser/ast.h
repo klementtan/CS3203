@@ -335,6 +335,24 @@ namespace pql::ast
         StmtRef after {};
     };
 
+    /** Represents `Calls(EntRef, EntRef)` */
+    struct Calls : RelCond
+    {
+        virtual std::string toString() const override;
+
+        EntRef caller {};
+        EntRef proc {};
+    };
+
+    /** Represents `Calls*(EntRef, EntRef)` */
+    struct CallsT : RelCond
+    {
+        virtual std::string toString() const override;
+
+        EntRef caller {};
+        EntRef proc {};
+    };
+
     /** Expression Specification: pattern segment  of an assignment pattern. */
     struct ExprSpec
     {
