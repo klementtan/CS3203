@@ -88,7 +88,7 @@ static auto kb_trivial = DesignExtractor(parseProgram(trivial_source)).run();
 
 static const Statement& get_stmt(const std::unique_ptr<pkb::ProgramKB>& pkb, simple::ast::StatementNum num)
 {
-    return *pkb->getStatementAt(num);
+    return pkb->getStatementAt(num);
 }
 
 static const Procedure& get_proc(const std::unique_ptr<pkb::ProgramKB>& pkb, const char* name)

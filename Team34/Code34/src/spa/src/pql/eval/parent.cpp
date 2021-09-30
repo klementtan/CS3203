@@ -30,7 +30,7 @@ namespace pql::eval
             auto parent_sid = parent_stmt.id();
             auto child_sid = child_stmt.id();
 
-            if(!m_pkb->getStatementAt(parent_sid)->isParentOf(child_sid))
+            if(!m_pkb->getStatementAt(parent_sid).isParentOf(child_sid))
                 throw PqlException("pql::eval", "{} is always false", rel->toString());
         }
         else if(parent_stmt.isStatementId() && child_stmt.isDeclaration())
@@ -41,7 +41,7 @@ namespace pql::eval
             auto child_decl = child_stmt.declaration();
 
             std::unordered_set<table::Entry> new_domain {};
-            for(const auto& child_id : m_pkb->getStatementAt(parent_sid)->getChildren())
+            for(const auto& child_id : m_pkb->getStatementAt(parent_sid).getChildren())
                 new_domain.emplace(child_decl, child_id);
 
             m_table.upsertDomains(child_decl, table::entry_set_intersect(new_domain, m_table.getDomain(child_decl)));
@@ -51,7 +51,7 @@ namespace pql::eval
             util::logfmt("pql::eval", "processing Parent(StmtId, _)");
 
             auto parent_sid = parent_stmt.id();
-            if(m_pkb->getStatementAt(parent_sid)->getChildren().empty())
+            if(m_pkb->getStatementAt(parent_sid).getChildren().empty())
                 throw PqlException(
                     "pql::eval", "{} is always false ('{}' has no children)", rel->toString(), parent_sid);
         }
@@ -63,7 +63,7 @@ namespace pql::eval
             auto parent_decl = parent_stmt.declaration();
             auto child_sid = child_stmt.id();
 
-            auto parent_id = m_pkb->getStatementAt(child_sid)->getParent();
+            auto parent_id = m_pkb->getStatementAt(child_sid).getParent();
             if(!parent_id.has_value())
                 throw PqlException("pql::eval", "{} is always false ('{}' has no parent)", rel->toString(), child_sid);
 
@@ -85,7 +85,7 @@ namespace pql::eval
 
             for(auto it = parent_domain.begin(); it != parent_domain.end();)
             {
-                auto children = m_pkb->getStatementAt(it->getStmtNum())->getChildren();
+                auto children = m_pkb->getStatementAt(it->getStmtNum()).getChildren();
                 if(children.empty())
                 {
                     it = parent_domain.erase(it);
@@ -116,7 +116,7 @@ namespace pql::eval
 
             for(const auto& entry : m_table.getDomain(parent_decl))
             {
-                if(m_pkb->getStatementAt(entry.getStmtNum())->getChildren().empty())
+                if(m_pkb->getStatementAt(entry.getStmtNum()).getChildren().empty())
                     continue;
 
                 new_domain.emplace(parent_decl, entry.getStmtNum());
@@ -130,7 +130,7 @@ namespace pql::eval
             util::logfmt("pql::eval", "processing Parent(_, StmtId)");
 
             auto child_sid = child_stmt.id();
-            if(!m_pkb->getStatementAt(child_sid)->getParent().has_value())
+            if(!m_pkb->getStatementAt(child_sid).getParent().has_value())
                 throw PqlException("pql::eval", "{} is always false ('{}' has no parent)", rel->toString(), child_sid);
         }
         else if(parent_stmt.isWildcard() && child_stmt.isDeclaration())
@@ -142,7 +142,7 @@ namespace pql::eval
 
             for(const auto& entry : m_table.getDomain(child_decl))
             {
-                if(!m_pkb->getStatementAt(entry.getStmtNum())->getParent().has_value())
+                if(!m_pkb->getStatementAt(entry.getStmtNum()).getParent().has_value())
                     continue;
 
                 new_domain.emplace(child_decl, entry.getStmtNum());
@@ -186,7 +186,7 @@ namespace pql::eval
             auto parent_sid = ancestor_stmt.id();
             auto child_sid = descendant_stmt.id();
 
-            if(!m_pkb->getStatementAt(parent_sid)->isAncestorOf(child_sid))
+            if(!m_pkb->getStatementAt(parent_sid).isAncestorOf(child_sid))
                 throw PqlException("pql::eval", "{} is always false", rel->toString());
         }
         else if(ancestor_stmt.isStatementId() && descendant_stmt.isDeclaration())
@@ -197,7 +197,7 @@ namespace pql::eval
             auto child_decl = descendant_stmt.declaration();
 
             std::unordered_set<table::Entry> new_domain {};
-            for(const auto& child_id : m_pkb->getStatementAt(parent_sid)->getDescendants())
+            for(const auto& child_id : m_pkb->getStatementAt(parent_sid).getDescendants())
                 new_domain.emplace(child_decl, child_id);
 
             m_table.upsertDomains(child_decl, table::entry_set_intersect(new_domain, m_table.getDomain(child_decl)));
@@ -207,7 +207,7 @@ namespace pql::eval
             util::logfmt("pql::eval", "processing Parent*(StmtId, _)");
 
             auto parent_sid = ancestor_stmt.id();
-            if(m_pkb->getStatementAt(parent_sid)->getDescendants().empty())
+            if(m_pkb->getStatementAt(parent_sid).getDescendants().empty())
                 throw PqlException(
                     "pql::eval", "{} is always false ('{}' has no children)", rel->toString(), parent_sid);
         }
@@ -220,7 +220,7 @@ namespace pql::eval
             auto child_sid = descendant_stmt.id();
 
             std::unordered_set<table::Entry> new_domain {};
-            for(const auto& parent_id : m_pkb->getStatementAt(child_sid)->getAncestors())
+            for(const auto& parent_id : m_pkb->getStatementAt(child_sid).getAncestors())
                 new_domain.emplace(parent_decl, parent_id);
 
             m_table.upsertDomains(parent_decl, table::entry_set_intersect(new_domain, m_table.getDomain(parent_decl)));
@@ -238,7 +238,7 @@ namespace pql::eval
 
             for(auto it = parent_domain.begin(); it != parent_domain.end();)
             {
-                auto children = m_pkb->getStatementAt(it->getStmtNum())->getDescendants();
+                auto children = m_pkb->getStatementAt(it->getStmtNum()).getDescendants();
                 if(children.empty())
                 {
                     it = parent_domain.erase(it);
@@ -269,7 +269,7 @@ namespace pql::eval
 
             for(const auto& entry : m_table.getDomain(parent_decl))
             {
-                if(m_pkb->getStatementAt(entry.getStmtNum())->getDescendants().empty())
+                if(m_pkb->getStatementAt(entry.getStmtNum()).getDescendants().empty())
                     continue;
 
                 new_domain.emplace(parent_decl, entry.getStmtNum());
@@ -283,7 +283,7 @@ namespace pql::eval
             util::logfmt("pql::eval", "processing Parent*(_, StmtId)");
 
             auto child_sid = descendant_stmt.id();
-            if(m_pkb->getStatementAt(child_sid)->getAncestors().empty())
+            if(m_pkb->getStatementAt(child_sid).getAncestors().empty())
                 throw PqlException("pql::eval", "{} is always false ('{}' has no parent)", rel->toString(), child_sid);
         }
         else if(ancestor_stmt.isWildcard() && descendant_stmt.isDeclaration())
@@ -295,7 +295,7 @@ namespace pql::eval
 
             for(const auto& entry : m_table.getDomain(child_decl))
             {
-                if(m_pkb->getStatementAt(entry.getStmtNum())->getAncestors().empty())
+                if(m_pkb->getStatementAt(entry.getStmtNum()).getAncestors().empty())
                     continue;
 
                 new_domain.emplace(child_decl, entry.getStmtNum());

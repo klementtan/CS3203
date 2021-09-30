@@ -167,8 +167,8 @@ namespace pkb
         ProgramKB(std::unique_ptr<simple::ast::Program> program);
         ~ProgramKB();
 
-        const Statement* getStatementAt(StatementNum id) const;
-        Statement* getStatementAt(StatementNum id);
+        const Statement& getStatementAt(StatementNum id) const;
+        Statement& getStatementAt(StatementNum id);
 
         const Procedure& getProcedureNamed(const std::string& name) const;
         Procedure& getProcedureNamed(const std::string& name);

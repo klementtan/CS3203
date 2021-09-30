@@ -53,4 +53,19 @@ namespace pql::eval
         Evaluator(const pkb::ProgramKB* pkb, std::unique_ptr<ast::Query> query);
         std::list<std::string> evaluate();
     };
+
+
+
+    // template <typename Entity, typename RelationParam>
+    // struct RelationAbstractor
+    // {
+    //     // Calls[*](A, B) <=> A.relationHolds(B) <=> B.inverseRelationHolds(A)
+    //     bool (Entity::*relationHolds)(const RelationParam&) const;
+    //     bool (Entity::*inverseRelationHolds)(const RelationParam&) const;
+
+    //     // Calls[*](A, _) <=> A.getAllRelated()
+    //     // Calls[*](_, B) <=> B.getAllInverselyRelated()
+    //     const std::unordered_set<RelationParam>& (Entity::*getAllRelated)() const;
+    //     const std::unordered_set<RelationParam>& (Entity::*getAllInverselyRelated)() const;
+    // };
 }
