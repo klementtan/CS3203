@@ -749,6 +749,29 @@ namespace pql::parser
         return such_that;
     }
 
+    static void validate_attr_name(const ast::AttrRef& attr_ref)
+    {
+        static const std::unordered_map<ast::AttrName, std::unordered_set<ast::DESIGN_ENT>>
+            permitted_design_entities = { { ast::AttrName::kProcName,
+                                              { ast::DESIGN_ENT::PROCEDURE, ast::DESIGN_ENT::CALL } },
+                { ast::AttrName::kVarName,
+                    { ast::DESIGN_ENT::VARIABLE, ast::DESIGN_ENT::READ, ast::DESIGN_ENT::PRINT } },
+                { ast::AttrName::kValue, { ast::DESIGN_ENT::CONSTANT } },
+                { ast::AttrName::kStmtNum,
+                    { ast::DESIGN_ENT::STMT, ast::DESIGN_ENT::READ, ast::DESIGN_ENT::PRINT, ast::DESIGN_ENT::CALL,
+                        ast::DESIGN_ENT::WHILE, ast::DESIGN_ENT::IF, ast::DESIGN_ENT::ASSIGN } } };
+        ast::AttrName attr_name = attr_ref.attr_name;
+        if(!attr_ref.decl)
+            throw PqlException("pql::parser", "Invalid AttrRef: All AttrRef should have a declaration");
+        ast::DESIGN_ENT design_ent = attr_ref.decl->design_ent;
+        if(permitted_design_entities.count(attr_name) == 0)
+            throw PqlException(
+                "pql::parser", "Invalid AttrName {} provided", ast::InvAttrNameMap.find(attr_name)->second);
+        if(permitted_design_entities.find(attr_name)->second.count(design_ent) == 0)
+            throw PqlException("pql::parser", "Invalid design_ent:{} does not contain AttrName{}",
+                ast::INV_DESIGN_ENT_MAP.find(design_ent)->second, ast::InvAttrNameMap.find(attr_name)->second);
+    }
+
     ast::Elem parse_elem(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         Token decl_tok = ps->next();
@@ -791,6 +814,7 @@ namespace pql::parser
                 throw PqlException("pql::parser", "Invalid attrName: {}", attr_name_string);
 
             ast::AttrRef attr_ref { decl, it->second };
+            validate_attr_name(attr_ref);
             return ast::Elem::ofAttrRef(attr_ref);
         }
         else
