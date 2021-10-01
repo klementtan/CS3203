@@ -768,7 +768,7 @@ namespace pql::parser
             throw PqlException(
                 "pql::parser", "Invalid AttrName {} provided", ast::InvAttrNameMap.find(attr_name)->second);
         if(permitted_design_entities.find(attr_name)->second.count(design_ent) == 0)
-            throw PqlException("pql::parser", "Invalid design_ent:{} does not contain AttrName{}",
+            throw PqlException("pql::parser", "Invalid design_ent:{} does not contain AttrName {}",
                 ast::INV_DESIGN_ENT_MAP.find(design_ent)->second, ast::InvAttrNameMap.find(attr_name)->second);
     }
 

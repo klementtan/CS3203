@@ -134,7 +134,8 @@ namespace pql::eval::table
         // Get mapping of declaration to the join that is involved in.
         [[nodiscard]] std::unordered_map<ast::Declaration*, std::vector<Join>> getDeclJoins() const;
         [[nodiscard]] bool hasValidDomain() const;
-        std::vector<Entry> extract_result(const Row& row, const std::vector<ast::Elem>& return_tuple, const pkb::ProgramKB* pkb) const;
+        std::vector<Entry> extract_result(
+            const Row& row, const std::vector<ast::Elem>& return_tuple, const pkb::ProgramKB* pkb) const;
 
     public:
         void upsertDomains(ast::Declaration* decl, const Domain& entries);
