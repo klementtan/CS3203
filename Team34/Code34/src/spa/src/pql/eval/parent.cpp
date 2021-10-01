@@ -5,6 +5,7 @@
 
 #include "exceptions.h"
 #include "pql/eval/table.h"
+#include "pql/eval/common.h"
 #include "pql/eval/evaluator.h"
 
 namespace pql::eval
@@ -42,7 +43,6 @@ namespace pql::eval
 
             abs.relationExists = &pkb::ProgramKB::parentRelationExists;
             abs.getEntity = &pkb::ProgramKB::getStatementAt;
-            abs.getEntryValue = &table::Entry::getStmtNum;
         }
         abs.evaluate(m_pkb, &m_table, rel, &rel->parent, &rel->child);
     }
@@ -79,7 +79,6 @@ namespace pql::eval
 
             abs.relationExists = &pkb::ProgramKB::parentRelationExists;
             abs.getEntity = &pkb::ProgramKB::getStatementAt;
-            abs.getEntryValue = &table::Entry::getStmtNum;
         }
         abs.evaluate(m_pkb, &m_table, rel, &rel->ancestor, &rel->descendant);
     }

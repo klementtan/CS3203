@@ -5,6 +5,7 @@
 
 #include "exceptions.h"
 #include "pql/eval/table.h"
+#include "pql/eval/common.h"
 #include "pql/eval/evaluator.h"
 
 namespace pql::eval
@@ -40,7 +41,6 @@ namespace pql::eval
 
             abs.relationExists = &pkb::ProgramKB::callsRelationExists;
             abs.getEntity = &pkb::ProgramKB::getProcedureNamed;
-            abs.getEntryValue = &table::Entry::getVal;
         }
 
         abs.evaluate(m_pkb, &m_table, rel, &rel->caller, &rel->proc);
@@ -76,7 +76,6 @@ namespace pql::eval
 
             abs.relationExists = &pkb::ProgramKB::callsRelationExists;
             abs.getEntity = &pkb::ProgramKB::getProcedureNamed;
-            abs.getEntryValue = &table::Entry::getVal;
         }
 
         abs.evaluate(m_pkb, &m_table, rel, &rel->caller, &rel->proc);

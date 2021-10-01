@@ -6,7 +6,6 @@
 
 #include <list>
 #include <memory>
-#include <functional>
 
 #include "pkb.h"
 #include "pql/parser/ast.h"
@@ -53,43 +52,5 @@ namespace pql::eval
     public:
         Evaluator(const pkb::ProgramKB* pkb, std::unique_ptr<ast::Query> query);
         std::list<std::string> evaluate();
-    };
-
-
-
-
-    template <typename Entity, typename RelationParam, typename RefType, bool SetsAreConstRef>
-    struct RelationAbstractor
-    {
-        const char* relationName = nullptr;
-
-        // what kind of entity must the declaration be, if the left/right refs are indeed decls.
-        // optional; if empty, then this is not enforced.
-        std::optional<ast::DESIGN_ENT> leftDeclEntity {};
-        std::optional<ast::DESIGN_ENT> rightDeclEntity {};
-
-        // Relation[*](A, B) <=> A.relationHolds(B) <=> B.inverseRelationHolds(A)
-        std::function<bool(const Entity&, const Entity&)> relationHolds {};
-        std::function<bool(const Entity&, const Entity&)> inverseRelationHolds {};
-
-        template <typename T>
-        using SetWrapper = std::conditional_t<SetsAreConstRef, const std::unordered_set<T>&, std::unordered_set<T>>;
-
-        // Relation[*](A, _) <=> A.getAllRelated()
-        // Relation[*](_, B) <=> B.getAllInverselyRelated()
-        std::function<SetWrapper<RelationParam>(const Entity&)> getAllRelated {};
-        std::function<SetWrapper<RelationParam>(const Entity&)> getAllInverselyRelated {};
-
-        // getStatementAt, getProcedureNamed, getVariableNamed
-        const Entity& (pkb::ProgramKB::*getEntity)(const RelationParam&) const;
-
-        // Entry::getVal(), getStmtNum()
-        RelationParam (table::Entry::*getEntryValue)() const;
-
-        // callsRelationExists, parentRelationExists, etc.
-        bool (pkb::ProgramKB::*relationExists)() const;
-
-        void evaluate(const pkb::ProgramKB* pkb, table::Table* table, const ast::RelCond* rel, const RefType* left,
-            const RefType* right) const;
     };
 }

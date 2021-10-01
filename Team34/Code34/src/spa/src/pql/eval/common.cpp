@@ -5,95 +5,32 @@
 
 #include "exceptions.h"
 #include "pql/eval/table.h"
+#include "pql/eval/common.h"
 #include "pql/eval/evaluator.h"
 
 namespace pql::eval
 {
     using PqlException = util::PqlException;
 
-    bool is_concrete(const ast::EntRef* ref)
+    static inline bool is_concrete(const ast::EntRef* ref)
     {
         return ref->isName();
     }
 
-    bool is_concrete(const ast::StmtRef* ref)
+    static inline bool is_concrete(const ast::StmtRef* ref)
     {
         return ref->isStatementId();
     }
 
-    std::string get_concrete_value(const ast::EntRef* ref)
+    static inline std::string get_concrete_value(const ast::EntRef* ref)
     {
         return ref->name();
     }
 
-    pkb::StatementNum get_concrete_value(const ast::StmtRef* ref)
+    static inline pkb::StatementNum get_concrete_value(const ast::StmtRef* ref)
     {
         return ref->id();
     }
-
-    template <typename E>
-    inline E get_entry_value(const table::Entry& entry);
-
-    template <>
-    inline pkb::StatementNum get_entry_value<pkb::StatementNum>(const table::Entry& entry)
-    {
-        return entry.getStmtNum();
-    }
-
-    template <>
-    inline std::string get_entry_value<std::string>(const table::Entry& entry)
-    {
-        return entry.getVal();
-    }
-
-
-
-
-#if 0
-    // used in uses_modifies.cpp
-    void evaluate_two_decl_relations(const pkb::ProgramKB* pkb, table::Table* table, ast::Declaration* left_decl,
-        ast::Declaration* right_decl, void (pkb::ProgramKB::* pkb_get_entity)())
-    {
-        auto left_domain = table->getDomain(left_decl);
-        auto new_right_domain = table::Domain {};
-        std::unordered_set<std::pair<table::Entry, table::Entry>> join_pairs;
-
-        for(auto it = left_domain.begin(); it != left_domain.end();)
-        {
-            auto& left_ = (pkb->*getEntity)(get_entry_value<RelationParam>(*it));
-            decltype(auto) all_related = get_all_related(left_);
-            if(all_related.empty())
-            {
-                it = left_domain.erase(it);
-                continue;
-            }
-
-            auto left_entry = table::Entry(left_decl, get_entry_value<RelationParam>(*it));
-            for(const auto& right_value : all_related)
-            {
-                auto right_entry = table::Entry(right_decl, right_value);
-                util::logfmt("pql::eval", "{} adds Join({}, {})", rel->toString(), left_entry.toString(),
-                    right_entry.toString());
-
-                join_pairs.insert({ left_entry, right_entry });
-                new_right_domain.insert(right_entry);
-            }
-            ++it;
-        }
-
-        table->upsertDomains(left_decl, left_domain);
-        table->upsertDomains(
-            right_decl, table::entry_set_intersect(new_right_domain, table->getDomain(right_decl)));
-
-        table->addJoin(table::Join(left_decl, right_decl, join_pairs));
-    }
-#endif
-
-
-
-
-
-
 
 
     template <typename Entity, typename RelationParam, typename RefType, bool SetsAreConstRef>
@@ -153,7 +90,7 @@ namespace pql::eval
             auto domain = table->getDomain(rightRef->declaration());
             for(auto it = domain.begin(); it != domain.end();)
             {
-                auto& right_ = (pkb->*getEntity)(get_entry_value<RelationParam>(*it));
+                auto& right_ = (pkb->*getEntity)(getEntryValue<RelationParam>(*it));
                 if(!relation_holds(left_, right_))
                     it = domain.erase(it);
                 else
@@ -168,7 +105,7 @@ namespace pql::eval
             auto domain = table->getDomain(leftRef->declaration());
             for(auto it = domain.begin(); it != domain.end();)
             {
-                auto& left = (pkb->*getEntity)(get_entry_value<RelationParam>(*it));
+                auto& left = (pkb->*getEntity)(getEntryValue<RelationParam>(*it));
                 if(get_all_related(left).empty())
                     it = domain.erase(it);
                 else
@@ -183,38 +120,10 @@ namespace pql::eval
             auto left_decl = leftRef->declaration();
             auto right_decl = rightRef->declaration();
 
-            auto left_domain = table->getDomain(left_decl);
-            auto new_right_domain = table::Domain {};
-            std::unordered_set<std::pair<table::Entry, table::Entry>> join_pairs;
-
-            for(auto it = left_domain.begin(); it != left_domain.end();)
-            {
-                auto& left_ = (pkb->*getEntity)(get_entry_value<RelationParam>(*it));
-                decltype(auto) all_related = get_all_related(left_);
-                if(all_related.empty())
-                {
-                    it = left_domain.erase(it);
-                    continue;
-                }
-
-                auto left_entry = table::Entry(left_decl, get_entry_value<RelationParam>(*it));
-                for(const auto& right_value : all_related)
-                {
-                    auto right_entry = table::Entry(right_decl, right_value);
-                    util::logfmt("pql::eval", "{} adds Join({}, {})", rel->toString(), left_entry.toString(),
-                        right_entry.toString());
-
-                    join_pairs.insert({ left_entry, right_entry });
-                    new_right_domain.insert(right_entry);
-                }
-                ++it;
-            }
-
-            table->upsertDomains(left_decl, left_domain);
-            table->upsertDomains(
-                right_decl, table::entry_set_intersect(new_right_domain, table->getDomain(right_decl)));
-
-            table->addJoin(table::Join(left_decl, right_decl, join_pairs));
+            evaluateTwoDeclRelations<RelationParam, RelationParam>(pkb, table, rel, left_decl, right_decl,
+                [&](const RelationParam& p) -> decltype(auto) {
+                    return get_all_related((pkb->*getEntity)(p));
+                });
         }
         else if(is_concrete(leftRef) && rightRef->isWildcard())
         {
