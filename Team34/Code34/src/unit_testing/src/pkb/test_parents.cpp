@@ -47,7 +47,7 @@ constexpr const auto sample_source = R"(
 static auto kb = DesignExtractor(parseProgram(sample_source)).run();
 static const Statement& get_stmt(const std::unique_ptr<pkb::ProgramKB>& pkb, simple::ast::StatementNum num)
 {
-    return *pkb->getStatementAt(num);
+    return pkb->getStatementAt(num);
 }
 
 TEST_CASE("Parent(a, b)")

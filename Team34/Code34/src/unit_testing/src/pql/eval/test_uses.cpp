@@ -146,5 +146,5 @@ TEST_CASE("UsesS(Decl, _)")
 
 TEST_CASE("Uses(_, *)")
 {
-    TEST_ERR(prog_1, R"(variable v; Select v such that Uses(_, v))", "first argument of Uses cannot be '_'");
+    TEST_ERR(prog_1, R"(variable v; Select v such that Uses(_, v))", "first argument of Uses/Modifies cannot be '_'");
 }

@@ -66,18 +66,18 @@ namespace pkb
         for(auto s : ts.local_stmt_stack)
         {
             var.m_used_by.insert(s);
-            m_pkb->getStatementAt(s->getStmtNum())->m_uses.insert(varname);
+            m_pkb->getStatementAt(s->getStmtNum()).m_uses.insert(varname);
         }
 
         for(auto s : ts.global_stmt_stack)
         {
             var.m_used_by.insert(s);
-            m_pkb->getStatementAt(s->getStmtNum())->m_uses.insert(varname);
+            m_pkb->getStatementAt(s->getStmtNum()).m_uses.insert(varname);
         }
 
         for(auto proc : ts.proc_stack)
         {
-            var.m_used_by_procs.insert(proc);
+            var.m_used_by_procs.insert(proc->getName());
             m_pkb->getProcedureNamed(proc->getName()).m_uses.insert(varname);
         }
 
@@ -104,18 +104,18 @@ namespace pkb
         for(auto s : ts.local_stmt_stack)
         {
             var.m_modified_by.insert(s);
-            m_pkb->getStatementAt(s->getStmtNum())->m_modifies.insert(varname);
+            m_pkb->getStatementAt(s->getStmtNum()).m_modifies.insert(varname);
         }
 
         for(auto s : ts.global_stmt_stack)
         {
             var.m_modified_by.insert(s);
-            m_pkb->getStatementAt(s->getStmtNum())->m_modifies.insert(varname);
+            m_pkb->getStatementAt(s->getStmtNum()).m_modifies.insert(varname);
         }
 
         for(auto proc : ts.proc_stack)
         {
-            var.m_modified_by_procs.insert(proc);
+            var.m_modified_by_procs.insert(proc->getName());
             m_pkb->getProcedureNamed(proc->getName()).m_modifies.insert(varname);
         }
 
@@ -135,12 +135,12 @@ namespace pkb
         for(size_t i = 0; i < list->statements.size(); i++)
         {
             auto this_id = list->statements[i]->id;
-            auto this_stmt = m_pkb->getStatementAt(this_id);
+            auto this_stmt = &m_pkb->getStatementAt(this_id);
 
             if(i > 0)
             {
                 auto prev_id = list->statements[i - 1]->id;
-                auto prev_stmt = m_pkb->getStatementAt(prev_id);
+                auto prev_stmt = &m_pkb->getStatementAt(prev_id);
 
                 this_stmt->m_directly_before = prev_id;
                 this_stmt->m_before.insert(prev_id);
@@ -153,12 +153,12 @@ namespace pkb
         for(size_t i = list->statements.size(); i-- > 0;)
         {
             auto this_id = list->statements[i]->id;
-            auto this_stmt = m_pkb->getStatementAt(this_id);
+            auto this_stmt = &m_pkb->getStatementAt(this_id);
 
             if(i > 0)
             {
                 auto prev_id = list->statements[i - 1]->id;
-                auto prev_stmt = m_pkb->getStatementAt(prev_id);
+                auto prev_stmt = &m_pkb->getStatementAt(prev_id);
 
                 prev_stmt->m_directly_after = this_id;
                 prev_stmt->m_after.insert(this_id);
@@ -176,7 +176,7 @@ namespace pkb
             const auto ast_stmt = it.get();
 
             // set the parent and children accordingly
-            auto stmt = m_pkb->getStatementAt(ast_stmt->id);
+            auto stmt = &m_pkb->getStatementAt(ast_stmt->id);
             auto sid = ast_stmt->id;
 
             // we really only need to look at the last thing in the stack.
@@ -184,7 +184,8 @@ namespace pkb
             {
                 auto list = ts.local_stmt_stack.back();
                 auto list_sid = list->getStmtNum();
-                stmt->m_parent = list_sid;
+                stmt->m_parent = { list_sid };
+
                 list->m_children.insert(sid);
 
                 // m_pkb->m_direct_parents[sid] = list_sid;

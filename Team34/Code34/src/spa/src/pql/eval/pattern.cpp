@@ -45,7 +45,7 @@ namespace pql::ast
         {
             bool should_erase = false;
             auto assign_stmt =
-                dynamic_cast<const s_ast::AssignStmt*>(pkb->getStatementAt(it->getStmtNum())->getAstStmt());
+                dynamic_cast<const s_ast::AssignStmt*>(pkb->getStatementAt(it->getStmtNum()).getAstStmt());
             assert(assign_stmt);
 
             // check the rhs first, since it requires less table operations
@@ -129,7 +129,7 @@ namespace pql::ast
         for(auto it = domain.begin(); it != domain.end();)
         {
             bool should_erase = false;
-            auto& condition_vars = pkb->getStatementAt(it->getStmtNum())->getVariablesUsedInCondition();
+            auto& condition_vars = pkb->getStatementAt(it->getStmtNum()).getVariablesUsedInCondition();
             if(condition_vars.empty())
                 should_erase |= true;
 
