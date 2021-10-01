@@ -11,6 +11,7 @@ namespace pql::eval
 {
     using PqlException = util::PqlException;
 
+#if 0
     void Evaluator::handleUsesP(const ast::UsesP* rel)
     {
         assert(rel);
@@ -149,6 +150,7 @@ namespace pql::eval
             throw PqlException("pql::eval", "unreachable");
         }
     }
+#endif
 
     void Evaluator::handleUsesS(const ast::UsesS* rel)
     {

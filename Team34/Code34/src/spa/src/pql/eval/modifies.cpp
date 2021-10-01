@@ -11,6 +11,7 @@ namespace pql::eval
 {
     using PqlException = util::PqlException;
 
+#if 0
     void Evaluator::handleModifiesP(const ast::ModifiesP* rel)
     {
         assert(rel);
@@ -173,7 +174,7 @@ namespace pql::eval
             throw PqlException("pql::eval", "unreachable: invalid combination of argument types");
         }
     }
-
+#endif
 
 
     void Evaluator::handleModifiesS(const ast::ModifiesS* rel)
