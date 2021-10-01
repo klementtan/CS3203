@@ -160,7 +160,7 @@ namespace pql::eval
 
         util::logfmt("pql::eval", "Table after processing of such that: {}", m_table.toString());
         // TODO(#138): Get result from all tuple instead of the first
-        return this->m_table.getResult(m_query->select.result.tuple().front().declaration());
+        return this->m_table.getResult(m_query->select.result, this->m_pkb);
     }
 
     void Evaluator::handleSuchThat(const ast::SuchThatCl& such_that)

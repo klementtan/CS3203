@@ -4,11 +4,13 @@
 
 #include <cassert>
 #include <unordered_set>
+#include <numeric>
 
 #include "zpr.h"
 
 #include "exceptions.h"
 #include "simple/ast.h"
+#include "pkb.h"
 #include "pql/parser/ast.h"
 #include "pql/eval/table.h"
 
@@ -44,6 +46,14 @@ namespace pql::eval::table
                     "pql::eval::table::Entry", "Entry for {} should be instantiated using stmt num instead of string");
         }
     }
+
+    Entry::Entry(pql::ast::Declaration* declaration, const std::string& val, EntryType type)
+    {
+        this->m_declaration = declaration;
+        this->m_val = val;
+        this->m_type = type;
+    }
+
     Entry::Entry(pql::ast::Declaration* declaration, const simple::ast::StatementNum& val)
     {
         if(declaration->design_ent == ast::DESIGN_ENT::VARIABLE ||
@@ -352,23 +362,156 @@ namespace pql::eval::table
     }
 
 
-    std::list<std::string> Table::getResult(ast::Declaration* ret_decl)
+    Entry Table::extractAttr(const Entry& entry, const ast::AttrRef& attr_ref, const pkb::ProgramKB* pkb)
     {
-        std::unordered_set<Entry> result_entry;
+        ast::Declaration* decl = attr_ref.decl;
+        Entry extracted_entry = entry;
+        static const std::unordered_set<ast::DESIGN_ENT> stmt_num_design_entities =  {
+          ast::DESIGN_ENT::STMT,
+          ast::DESIGN_ENT::READ,
+          ast::DESIGN_ENT::PRINT,
+          ast::DESIGN_ENT::CALL,
+          ast::DESIGN_ENT::WHILE,
+          ast::DESIGN_ENT::IF,
+          ast::DESIGN_ENT::ASSIGN
+        };
+
+        if(attr_ref.attr_name == ast::AttrName::kProcName)
+        {
+            if(decl->design_ent == ast::DESIGN_ENT::CALL)
+            {
+                const pkb::Statement* stmt = pkb->getStatementAt(entry.getStmtNum());
+                if(!stmt)
+                    throw util::PqlException("pql::eval::table", "Cannot get stmt at {}", entry.getStmtNum());
+                const simple::ast::Stmt* ast_smt = stmt->getAstStmt();
+                const simple::ast::ProcCall* call_ast_stmt = dynamic_cast<const simple::ast::ProcCall*>(ast_smt);
+                // The corresponding stmt should always be call stmt
+                assert(call_ast_stmt);
+                std::string proc_name = call_ast_stmt->proc_name;
+                if(proc_name.empty())
+                    throw util::PqlException("pql::eval::table",
+                        "Stmt at {} has empty call proc name. Make sure that the stmt is call stmt and the callee "
+                        "proc_name has been properly populated",
+                        entry.getStmtNum());
+                extracted_entry = Entry(decl, proc_name);
+            }
+            else if(decl->design_ent == ast::DESIGN_ENT::PROCEDURE)
+            {
+                // The proc declaration should have procName entries
+                assert(entry.getType() == EntryType::kProc);
+            }
+            else
+            {
+                // No other design entities are allowed to have 'procName' AttrName. This should be enforced on the
+                // parser layer
+                assert(false);
+            }
+        }
+        else if(attr_ref.attr_name == ast::AttrName::kVarName)
+        {
+            if(decl->design_ent == ast::DESIGN_ENT::READ || decl->design_ent == ast::DESIGN_ENT::PRINT)
+            {
+              const pkb::Statement* stmt = pkb->getStatementAt(entry.getStmtNum());
+              if(!stmt)
+                  throw util::PqlException("pql::eval::table", "Cannot get stmt at {}", entry.getStmtNum());
+              const simple::ast::Stmt* ast_stmt = stmt->getAstStmt();
+              const simple::ast::ReadStmt* ast_read_stmt = dynamic_cast<const simple::ast::ReadStmt*>(ast_stmt);
+              const simple::ast::PrintStmt* ast_print_stmt = dynamic_cast<const simple::ast::PrintStmt*>(ast_stmt);
+              if (ast_read_stmt) {
+                extracted_entry = Entry(decl, ast_read_stmt->var_name, EntryType::kVar);
+              } else if (ast_print_stmt) {
+                extracted_entry = Entry(decl, ast_print_stmt->var_name, EntryType::kVar);
+              } else {
+                // the corresponding ast Stmt should always be ReadStmt/PrintStmt
+                assert(false);
+              }
+            } else if (decl->design_ent == ast::DESIGN_ENT::VARIABLE) {
+              // For variable declaration the entry should already contain the varName
+              assert(extracted_entry.getType() == EntryType::kVar);
+            } else {
+                // No other design entities are allowed to have 'varName' AttrName. This should be enforced on the
+                // parser layer
+                assert(false);
+            }
+        } else if (attr_ref.attr_name == ast::AttrName::kValue) {
+            // Only const declaration is allowed to have 'value' AttrName (enforced on parser) and the entry should
+            // already be populated with the value
+            assert(decl->design_ent == ast::DESIGN_ENT::CONSTANT && extracted_entry.getType() == EntryType::kConst);
+        } else if (attr_ref.attr_name == ast::AttrName::kStmtNum) {
+            // Only stmt_num_design_entities declarations are allowed to have 'stmt#' AttrName (enforced on parser) and the entry should
+            // already be populated with the stmt 
+          assert(stmt_num_design_entities.count(decl->design_ent) && extracted_entry.getType() == EntryType::kStmt);
+        } else {
+          // ast::AttrName::kInvalid should never be present
+          assert(false);
+        }
+
+        return entry;
+    }
+
+    std::vector<Entry> Table::extract_result(
+        const Row& row, const std::vector<ast::Elem>& return_tuple, const pkb::ProgramKB* pkb) const
+    {
+        std::vector<Entry> tuple;
+        for(const ast::Elem& elem : return_tuple)
+        {
+            assert(elem.isAttrRef() || elem.isDeclaration());
+            ast::Declaration* decl = elem.isDeclaration() ? elem.declaration() : elem.attrRef().decl;
+            auto it = row.find(decl);
+            if(it == row.end())
+                throw util::PqlException(
+                    "pql::eval::table", "Cannot get {} from row {}", decl->toString(), rowToString(row));
+            Entry entry = it->second;
+
+            if(elem.isDeclaration())
+            {
+                tuple.push_back(entry);
+            }
+            else
+            {
+              tuple.push_back(Table::extractAttr(entry, elem.attrRef(), pkb));
+            }
+        }
+        return tuple;
+    }
+
+
+    std::list<std::string> Table::getResult(const ast::ResultCl& result_cl, const pkb::ProgramKB* pkb)
+    {
+        std::vector<std::vector<Entry>> result_entries;
         std::unordered_map<ast::Declaration*, std::vector<Join>> decl_joins = getDeclJoins();
 
         // We only need to permutate on decl involded in joins
-        std::vector<ast::Declaration*> join_decls;
+        std::vector<ast::Declaration*> columns;
         for(auto [decl, joins] : decl_joins)
         {
-            join_decls.push_back(decl);
+            columns.push_back(decl);
+        }
+
+        // We will need to get the cross product across all elements in the return tuple.
+        //
+        // TODO(#131): We do not need to cross product with join decl if none of the return element
+        // is in a Join
+        if(result_cl.isTuple())
+        {
+            for(const ast::Elem& elem : result_cl.tuple())
+            {
+                if(elem.isDeclaration())
+                {
+                    columns.push_back(elem.declaration());
+                }
+                else if(elem.isAttrRef())
+                {
+                    columns.push_back(elem.attrRef().decl);
+                }
+            }
         }
 
         // All domain involved in query should have non-empty domain
         if(!hasValidDomain())
             return {};
 
-        std::vector<Row> candidate_rows = getRows(join_decls, m_joins);
+        std::vector<Row> candidate_rows = getRows(columns, m_joins);
         std::vector<Row> valid_rows = getValidRows(candidate_rows);
 
         // There should exist a valid assignment that satisfies all joins even if ret declaration is not
@@ -376,27 +519,26 @@ namespace pql::eval::table
         if(valid_rows.empty())
             return {};
 
-        if(decl_joins.count(ret_decl))
+        if(result_cl.isBool())
+            return valid_rows.empty() ? std::list<std::string> { "FALSE" } : std::list<std::string> { "TRUE" };
+
+        for(const Row& row : valid_rows)
         {
-            for(const Row& row : valid_rows)
-            {
-                auto it = row.find(ret_decl);
-                // Return decl shold be a column in valid rows;
-                assert(it != row.end());
-                Entry ret_decl_entry = it->second;
-                result_entry.insert(ret_decl_entry);
-            }
-        }
-        else
-        {
-            result_entry = Table::getDomain(ret_decl);
+            result_entries.push_back(extract_result(row, result_cl.tuple(), pkb));
         }
 
         std::list<std::string> result;
 
-        for(const Entry& entry : result_entry)
+        for(const std::vector<Entry>& entries : result_entries)
         {
-            result.push_back(entry.getType() == EntryType::kStmt ? std::to_string(entry.getStmtNum()) : entry.getVal());
+          std::vector<std::string> curr_results;
+          for (const Entry& entry : entries) {
+            curr_results.push_back(entry.getType() == EntryType::kStmt ? std::to_string(entry.getStmtNum()) : entry.getVal());
+          }
+          std::string merged_result = std::accumulate(curr_results.begin(), curr_results.end(),std::string{} ,[](const std::string &a, const std::string&b){
+                  return a.empty()? b : a + " " + b;
+                });
+          result.push_back(merged_result);
         }
         return result;
     }
