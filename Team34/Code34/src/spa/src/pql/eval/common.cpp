@@ -71,8 +71,7 @@ namespace pql::eval
             std::swap(leftRef, rightRef);
         }
 
-        // TODO: see if there's a way to further abstract this to work on both StmtRef and EntRef.
-        // it's like 60% abstracted, but there's a bunch of hardcoded stuff for now.
+
         if(is_concrete(leftRef) && is_concrete(rightRef))
         {
             util::logfmt("pql::eval", "Processing {}(EntRef, EntRef)", this->relationName);

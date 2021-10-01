@@ -32,10 +32,10 @@ namespace pql::eval
         std::function<bool(const Procedure&, const std::string&)> procedureRelatesVariable {};
         std::function<bool(const Statement&, const std::string&)> statementRelatesVariable {};
 
-        void evaluate(const ProgramKB* pkb, table::Table* table, const ast::RelCond* rel, const ast::StmtRef& stmt,
+        void evaluateS(const ProgramKB* pkb, table::Table* table, const ast::RelCond* rel, const ast::StmtRef& stmt,
             const ast::EntRef& right) const;
 
-        void evaluate(const ProgramKB* pkb, table::Table* table, const ast::RelCond* rel, const ast::EntRef& proc,
+        void evaluateP(const ProgramKB* pkb, table::Table* table, const ast::RelCond* rel, const ast::EntRef& proc,
             const ast::EntRef& right) const;
     };
 
@@ -60,7 +60,7 @@ namespace pql::eval
             };
         }
 
-        abs.evaluate(m_pkb, &m_table, rel, rel->user, rel->ent);
+        abs.evaluateP(m_pkb, &m_table, rel, rel->user, rel->ent);
     }
 
     void Evaluator::handleUsesS(const ast::UsesS* rel)
@@ -83,7 +83,7 @@ namespace pql::eval
             };
         }
 
-        abs.evaluate(m_pkb, &m_table, rel, rel->user, rel->ent);
+        abs.evaluateS(m_pkb, &m_table, rel, rel->user, rel->ent);
     }
 
     void Evaluator::handleModifiesP(const ast::ModifiesP* rel)
@@ -106,7 +106,7 @@ namespace pql::eval
             };
         }
 
-        abs.evaluate(m_pkb, &m_table, rel, rel->modifier, rel->ent);
+        abs.evaluateP(m_pkb, &m_table, rel, rel->modifier, rel->ent);
     }
 
     void Evaluator::handleModifiesS(const ast::ModifiesS* rel)
@@ -129,7 +129,7 @@ namespace pql::eval
             };
         }
 
-        abs.evaluate(m_pkb, &m_table, rel, rel->modifier, rel->ent);
+        abs.evaluateS(m_pkb, &m_table, rel, rel->modifier, rel->ent);
     }
 
 
@@ -142,7 +142,7 @@ namespace pql::eval
 
 
     // Uses/ModifiesP
-    void UsesModifiesRelationAbstractor::evaluate(const ProgramKB* pkb, table::Table* table, const ast::RelCond* rel,
+    void UsesModifiesRelationAbstractor::evaluateP(const ProgramKB* pkb, table::Table* table, const ast::RelCond* rel,
         const ast::EntRef& proc_ent, const ast::EntRef& var_ent) const
     {
         assert(rel);
@@ -259,7 +259,7 @@ namespace pql::eval
 
 
     // Uses/ModifiesS
-    void UsesModifiesRelationAbstractor::evaluate(const ProgramKB* pkb, table::Table* table, const ast::RelCond* rel,
+    void UsesModifiesRelationAbstractor::evaluateS(const ProgramKB* pkb, table::Table* table, const ast::RelCond* rel,
         const ast::StmtRef& user_stmt, const ast::EntRef& var_ent) const
     {
         assert(rel);
