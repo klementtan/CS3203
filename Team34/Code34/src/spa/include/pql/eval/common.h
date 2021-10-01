@@ -96,8 +96,7 @@ namespace pql::eval
         }
 
         table->upsertDomains(left_decl, left_domain);
-        table->upsertDomains(
-            right_decl, table::entry_set_intersect(new_right_domain, table->getDomain(right_decl)));
+        table->upsertDomains(right_decl, table::entry_set_intersect(new_right_domain, table->getDomain(right_decl)));
 
         table->addJoin(table::Join(left_decl, right_decl, join_pairs));
     }

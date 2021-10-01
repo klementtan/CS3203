@@ -18,7 +18,7 @@ namespace pql::eval
     {
         const char* relationName = nullptr;
 
-        std::function<std::unordered_set<std::string>(const Statement&)> getStmtRelatedVariables {};
+        std::function<const std::unordered_set<std::string>&(const Statement&)> getStmtRelatedVariables {};
 
         // proc.getUsedVariables/getModifiedVariables
         std::function<const std::unordered_set<std::string>&(const Procedure&)> getProcRelatedVariables {};
@@ -26,18 +26,17 @@ namespace pql::eval
         // var.getUsingProcs/getModifyingProcs
         std::function<const std::unordered_set<std::string>&(const Variable&)> getVariableRelatedProcs {};
 
-        std::function<StatementSet(const Variable&, ast::DESIGN_ENT)>
-            getVariableRelatedStmts {};
+        std::function<StatementSet(const Variable&, ast::DESIGN_ENT)> getVariableRelatedStmts {};
 
 
         std::function<bool(const Procedure&, const std::string&)> procedureRelatesVariable {};
         std::function<bool(const Statement&, const std::string&)> statementRelatesVariable {};
 
-        void evaluate(const ProgramKB* pkb, table::Table* table, const ast::RelCond* rel,
-            const ast::StmtRef& stmt, const ast::EntRef& right) const;
+        void evaluate(const ProgramKB* pkb, table::Table* table, const ast::RelCond* rel, const ast::StmtRef& stmt,
+            const ast::EntRef& right) const;
 
-        void evaluate(const ProgramKB* pkb, table::Table* table, const ast::RelCond* rel,
-            const ast::EntRef& proc, const ast::EntRef& right) const;
+        void evaluate(const ProgramKB* pkb, table::Table* table, const ast::RelCond* rel, const ast::EntRef& proc,
+            const ast::EntRef& right) const;
     };
 
 
@@ -142,11 +141,9 @@ namespace pql::eval
 
 
 
-
-
     // Uses/ModifiesP
-    void UsesModifiesRelationAbstractor::evaluate(const ProgramKB* pkb, table::Table* table,
-        const ast::RelCond* rel, const ast::EntRef& proc_ent, const ast::EntRef& var_ent) const
+    void UsesModifiesRelationAbstractor::evaluate(const ProgramKB* pkb, table::Table* table, const ast::RelCond* rel,
+        const ast::EntRef& proc_ent, const ast::EntRef& var_ent) const
     {
         assert(rel);
 
@@ -229,8 +226,8 @@ namespace pql::eval
 
             util::logfmt("pql::eval", "Processing {}(DeclaredEnt, DeclaredStmt)", this->relationName);
 
-            evaluateTwoDeclRelations<std::string, std::string>(pkb, table, rel, proc_decl, var_decl,
-                [&](const std::string& p) -> decltype(auto) {
+            evaluateTwoDeclRelations<std::string, std::string>(
+                pkb, table, rel, proc_decl, var_decl, [&](const std::string& p) -> decltype(auto) {
                     return this->getProcRelatedVariables(pkb->getProcedureNamed(p));
                 });
         }
@@ -262,8 +259,8 @@ namespace pql::eval
 
 
     // Uses/ModifiesS
-    void UsesModifiesRelationAbstractor::evaluate(const ProgramKB* pkb, table::Table* table,
-        const ast::RelCond* rel, const ast::StmtRef& user_stmt, const ast::EntRef& var_ent) const
+    void UsesModifiesRelationAbstractor::evaluate(const ProgramKB* pkb, table::Table* table, const ast::RelCond* rel,
+        const ast::StmtRef& user_stmt, const ast::EntRef& var_ent) const
     {
         assert(rel);
 
@@ -288,7 +285,7 @@ namespace pql::eval
             auto user_sid = user_stmt.id();
             auto var_name = var_ent.name();
 
-            util::logfmt("pql::eval", "Processing UsesS(StmtId, EntName)");
+            util::logfmt("pql::eval", "Processing {}(StmtId, EntName)", this->relationName);
             if(!this->statementRelatesVariable(pkb->getStatementAt(user_sid), var_name))
                 throw PqlException("pql::eval", "{} is always false", rel->toString(), var_name);
         }
@@ -297,7 +294,7 @@ namespace pql::eval
             auto user_sid = user_stmt.id();
             auto var_decl = var_ent.declaration();
 
-            util::logfmt("pql::eval", "Processing UsesS(StmtId, DeclaredEnt)");
+            util::logfmt("pql::eval", "Processing {}(StmtId, DeclaredEnt)", this->relationName);
             std::unordered_set<table::Entry> new_domain {};
 
             for(const auto& var : this->getStmtRelatedVariables(pkb->getStatementAt(user_sid)))
@@ -309,7 +306,7 @@ namespace pql::eval
         {
             auto user_sid = user_stmt.id();
 
-            util::logfmt("pql::eval", "Processing UsesS(StmtId, _)");
+            util::logfmt("pql::eval", "Processing {}(StmtId, _)", this->relationName);
             if(this->getStmtRelatedVariables(pkb->getStatementAt(user_sid)).empty())
                 throw PqlException("pql::eval", "{} is always false", rel->toString());
         }
@@ -319,7 +316,7 @@ namespace pql::eval
             auto var_name = var_ent.name();
             auto& var = pkb->getVariableNamed(var_name);
 
-            util::logfmt("pql::eval", "Processing UsesS(DeclaredStmt, EntName)");
+            util::logfmt("pql::eval", "Processing {}(DeclaredStmt, EntName)", this->relationName);
             std::unordered_set<table::Entry> new_domain {};
 
             assert(user_decl->design_ent != ast::DESIGN_ENT::PROCEDURE);
@@ -334,42 +331,18 @@ namespace pql::eval
             auto user_decl = user_stmt.declaration();
             auto var_decl = var_ent.declaration();
 
-            util::logfmt("pql::eval", "Processing UsesS(DeclaredStmt, DeclaredEnt)");
+            util::logfmt("pql::eval", "Processing {}(DeclaredStmt, DeclaredEnt)", this->relationName);
 
-            auto user_domain = table->getDomain(user_decl);
-            auto new_var_domain = table::Domain {};
-            std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
-
-            for(auto it = user_domain.begin(); it != user_domain.end();)
-            {
-                decltype(auto) used_vars = this->getStmtRelatedVariables(pkb->getStatementAt(it->getStmtNum()));
-                if(used_vars.empty())
-                {
-                    it = user_domain.erase(it);
-                    continue;
-                }
-
-                auto user_entry = table::Entry(user_decl, it->getStmtNum());
-                for(const auto& var_name : used_vars)
-                {
-                    auto var_entry = table::Entry(var_decl, var_name);
-                    util::logfmt("pql::eval", "{} adds Join({}, {}),", rel->toString(), user_entry.toString(),
-                        var_entry.toString());
-                    allowed_entries.insert({ user_entry, var_entry });
-                    new_var_domain.insert(var_entry);
-                }
-                ++it;
-            }
-
-            table->upsertDomains(user_decl, user_domain);
-            table->upsertDomains(var_decl, table::entry_set_intersect(new_var_domain, table->getDomain(var_decl)));
-            table->addJoin(table::Join(user_decl, var_decl, allowed_entries));
+            evaluateTwoDeclRelations<StatementNum, std::string>(
+                pkb, table, rel, user_decl, var_decl, [&](const StatementNum& s) -> decltype(auto) {
+                    return this->getStmtRelatedVariables(pkb->getStatementAt(s));
+                });
         }
         else if(user_stmt.isDeclaration() && var_ent.isWildcard())
         {
             auto user_decl = user_stmt.declaration();
 
-            util::logfmt("pql::eval", "Processing UsesS(DeclaredStmt, _)");
+            util::logfmt("pql::eval", "Processing {}(DeclaredStmt, _)", this->relationName);
 
             std::unordered_set<table::Entry> new_domain {};
             for(const auto& entry : table->getDomain(user_decl))

@@ -121,9 +121,7 @@ namespace pql::eval
             auto right_decl = rightRef->declaration();
 
             evaluateTwoDeclRelations<RelationParam, RelationParam>(pkb, table, rel, left_decl, right_decl,
-                [&](const RelationParam& p) -> decltype(auto) {
-                    return get_all_related((pkb->*getEntity)(p));
-                });
+                [&](const RelationParam& p) -> decltype(auto) { return get_all_related((pkb->*getEntity)(p)); });
         }
         else if(is_concrete(leftRef) && rightRef->isWildcard())
         {
