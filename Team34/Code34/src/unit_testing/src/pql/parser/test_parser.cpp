@@ -281,7 +281,7 @@ TEST_CASE("invalid queries")
     {
         CHECK_THROWS_WITH(parsePQL("stmt s ; Select s   such    that   Parent(s, _)"),
             Catch::Contains(
-                "Expected 1 whitespace but got 4 instead. There should only be 1 whitespace between 'such"));
+                "unexpected token 'such' in Select"));
 
         CHECK_THROWS_WITH(parsePQL("stmt s; Select s such that Follows  *  (s, _)"),
             Catch::Contains(

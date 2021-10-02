@@ -294,7 +294,7 @@ namespace pql::parser
     }
 
     // the declaration has already been eaten.
-    std::unique_ptr<ast::AssignPatternCond> parse_assign_pattern(ParserState* ps, ast::Declaration* assign_decl)
+    static std::unique_ptr<ast::AssignPatternCond> parse_assign_pattern(ParserState* ps, ast::Declaration* assign_decl)
     {
         assert(assign_decl->design_ent == ast::DESIGN_ENT::ASSIGN);
         util::logfmt("pql::parser", "Parsing pattern clause with assignment condition {}", assign_decl->toString());
@@ -308,15 +308,16 @@ namespace pql::parser
         }
 
         pattern_cond->assignment_declaration = assign_decl;
-        pattern_cond->ent = parse_ent_ref(ps);
-        if(pattern_cond->ent.isDeclaration() &&
-            pattern_cond->ent.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
-            throw PqlException("pql::parser", "synonym in first argument of assign pattern must be a variable");
+
+        auto ent_ref = parse_ent_ref(ps);
+        pattern_cond->ent = ent_ref;
+
+        if(ent_ref.isDeclaration() && ent_ref.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
+            ps->setInvalid("synonym in first argument of assign pattern must be a variable");
 
         if(Token tok = ps->next(); tok != TT::Comma)
-        {
             throw PqlSyntaxException("pql::parser", "Expected ',' after ent ref declaration instead of {}", tok.text);
-        }
+
         pattern_cond->expr_spec = parse_expr_spec(ps);
         if(Token tok = ps->next(); tok != TT::RParen)
         {
@@ -327,78 +328,63 @@ namespace pql::parser
         return pattern_cond;
     }
 
-    std::unique_ptr<ast::IfPatternCond> parse_if_pattern(ParserState* ps, ast::Declaration* if_decl)
+    static std::unique_ptr<ast::PatternCond> parse_if_while_pattern(ParserState* ps, ast::Declaration* decl)
     {
-        assert(if_decl->design_ent == ast::DESIGN_ENT::IF);
-        util::logfmt("pql::parser", "Parsing pattern clause with if condition {}", if_decl->toString());
+        assert(decl->design_ent == ast::DESIGN_ENT::IF || decl->design_ent == ast::DESIGN_ENT::WHILE);
+        util::logfmt("pql::parser", "Parsing pattern clause with if/while condition {}", decl->toString());
 
-        auto pattern_cond = std::make_unique<ast::IfPatternCond>();
+        // auto pattern_cond = std::make_unique<ast::IfPatternCond>();
 
         if(Token tok = ps->next(); tok != TT::LParen)
             throw PqlSyntaxException(
                 "pql::parser", "Expected '(' after synonym in Pattern clause instead of '{}'", tok.text);
 
-        pattern_cond->if_declaration = if_decl;
-        pattern_cond->ent = parse_ent_ref(ps);
-        if(pattern_cond->ent.isDeclaration() &&
-            pattern_cond->ent.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
-            throw PqlException("pql::parser", "synonym in first argument of if pattern must be a variable");
+        auto ent_ref = parse_ent_ref(ps);
 
-        if(Token tok = ps->next(); tok != TT::Comma)
-            throw PqlSyntaxException("pql::parser", "Expected ',' after ent ref declaration instead of '{}'", tok.text);
+        // pattern_cond->if_declaration = if_decl;
+        if(ent_ref.isDeclaration() && ent_ref.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
+            ps->setInvalid("synonym in first argument of if/while pattern must be a variable");
 
-        if(auto tok = ps->next(); tok != TT::Underscore)
-            throw PqlSyntaxException("pql::parser", "second argument of if-pattern can only be '_'");
+        auto eat_comma_underscore = [&ps]() {
+            if(auto tok = ps->next(); tok != TT::Comma)
+                throw PqlSyntaxException("pql::parser", "Expected ',', found '{}' instead", tok.text);
 
-        if(auto tok = ps->next(); tok != TT::Comma)
-            throw PqlSyntaxException("pql::parser", "if-pattern requires 3 arguments, expected ','");
+            if(auto tok = ps->next(); tok != TT::Underscore)
+                throw PqlSyntaxException("pql::parser", "Expected '_', found '{}' instead", tok.text);
+        };
 
-        if(auto tok = ps->next(); tok != TT::Underscore)
-            throw PqlSyntaxException("pql::parser", "third argument of if-pattern can only be '_'");
+        auto eat_rparen = [&ps]() {
+            if(auto tok = ps->next(); tok != TT::RParen)
+                throw PqlSyntaxException("pql::parser", "Expected ')' after pattern clause instead of '{}'", tok.text);
+        };
 
-        if(Token tok = ps->next(); tok != TT::RParen)
-            throw PqlSyntaxException(
-                "pql::parser", "Expected ')' after expr spec in Pattern clause instead of '{}'", tok.text);
+        if(decl->design_ent == ast::DESIGN_ENT::IF)
+        {
+            // needs 2 of these
+            eat_comma_underscore();
+            eat_comma_underscore();
+            eat_rparen();
 
-        return pattern_cond;
+            auto ret = std::make_unique<ast::IfPatternCond>();
+            ret->if_declaration = decl;
+            ret->ent = ent_ref;
+            return ret;
+        }
+        else if(decl->design_ent == ast::DESIGN_ENT::WHILE)
+        {
+            eat_comma_underscore();
+            eat_rparen();
+
+            auto ret = std::make_unique<ast::WhilePatternCond>();
+            ret->while_declaration = decl;
+            ret->ent = ent_ref;
+            return ret;
+        }
+        else
+        {
+            assert(false && "unreachable");
+        }
     }
-
-
-    std::unique_ptr<ast::WhilePatternCond> parse_while_pattern(ParserState* ps, ast::Declaration* while_decl)
-    {
-        assert(while_decl->design_ent == ast::DESIGN_ENT::WHILE);
-        util::logfmt("pql::parser", "Parsing pattern clause with while condition {}", while_decl->toString());
-
-        auto pattern_cond = std::make_unique<ast::WhilePatternCond>();
-
-        if(Token tok = ps->next(); tok != TT::LParen)
-            throw PqlSyntaxException(
-                "pql::parser", "Expected '(' after synonym in Pattern clause instead of '{}'", tok.text);
-
-        pattern_cond->while_declaration = while_decl;
-        pattern_cond->ent = parse_ent_ref(ps);
-        if(pattern_cond->ent.isDeclaration() &&
-            pattern_cond->ent.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
-            throw PqlException("pql::parser", "synonym in first argument of while pattern must be a variable");
-
-        if(Token tok = ps->next(); tok != TT::Comma)
-            throw PqlSyntaxException("pql::parser", "Expected ',' after ent ref declaration instead of '{}'", tok.text);
-
-        if(auto tok = ps->next(); tok != TT::Underscore)
-            throw PqlSyntaxException("pql::parser", "second argument of while-pattern can only be '_'");
-
-        if(Token tok = ps->next(); tok != TT::RParen)
-            throw PqlSyntaxException(
-                "pql::parser", "Expected ')' after expr spec in Pattern clause instead of '{}'", tok.text);
-
-        return pattern_cond;
-    }
-
-
-
-
-
-
 
     static ast::PatternCl parse_pattern(ParserState* ps)
     {
@@ -409,23 +395,20 @@ namespace pql::parser
 
         Token declaration_tok = ps->next();
         auto pattern_decl = ps->getDeclaration(declaration_tok.text.str());
+        auto decl_ent = pattern_decl->design_ent;
 
-        if(pattern_decl->design_ent == ast::DESIGN_ENT::ASSIGN)
+        if(decl_ent == ast::DESIGN_ENT::ASSIGN)
         {
             pattern_conds.push_back(parse_assign_pattern(ps, pattern_decl));
         }
-        else if(pattern_decl->design_ent == ast::DESIGN_ENT::IF)
+        else if(decl_ent == ast::DESIGN_ENT::IF || decl_ent == ast::DESIGN_ENT::WHILE)
         {
-            pattern_conds.push_back(parse_if_pattern(ps, pattern_decl));
-        }
-        else if(pattern_decl->design_ent == ast::DESIGN_ENT::WHILE)
-        {
-            pattern_conds.push_back(parse_while_pattern(ps, pattern_decl));
+            pattern_conds.push_back(parse_if_while_pattern(ps, pattern_decl));
         }
         else
         {
             ps->setInvalid("invalid synonym type '{}' in pattern clause (can only have 'if', 'while', or 'assign'",
-                ast::INV_DESIGN_ENT_MAP.at(pattern_decl->design_ent));
+                ast::INV_DESIGN_ENT_MAP.at(decl_ent));
         }
 
         return ast::PatternCl { std::move(pattern_conds) };
