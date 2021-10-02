@@ -179,6 +179,21 @@ TEST_CASE("Result Clause")
         REQUIRE(elem.attrRef().decl == s_declaration);
         REQUIRE(elem.attrRef().attr_name == pql::ast::AttrName::kStmtNum);
     }
+    SECTION("Tuple with Single AttrRef Element no multi element syntax and weird spacing")
+    {
+        auto query = pql::parser::parsePQL("stmt s;\n"
+                                           "Select s     .      stmt# such that Follows(s,_)");
+        REQUIRE(query->declarations.getAllDeclarations().size() == 1);
+        pql::ast::Declaration* s_declaration = query->declarations.getDeclaration("s");
+        REQUIRE(s_declaration->design_ent == pql::ast::DESIGN_ENT::STMT);
+        REQUIRE(s_declaration->name == "s");
+        REQUIRE(query->select.result.isTuple());
+        REQUIRE(query->select.result.tuple().size() == 1);
+        pql::ast::Elem elem = query->select.result.tuple().front();
+        REQUIRE(elem.isAttrRef());
+        REQUIRE(elem.attrRef().decl == s_declaration);
+        REQUIRE(elem.attrRef().attr_name == pql::ast::AttrName::kStmtNum);
+    }
     SECTION("BOOLEAN result clause")
     {
         auto query = pql::parser::parsePQL("stmt s;\n"
@@ -248,16 +263,6 @@ TEST_CASE("Result Clause")
                                                 "Select s1.stmt #"),
             Catch::Contains(
                 "Expected 0 whitespace but got 1 instead. should not have any whitespace between the 'stmt' and '#"));
-        // Space between '.' and 'stmt'
-        CHECK_THROWS_WITH(pql::parser::parsePQL("stmt s1, s2, s3;\n"
-                                                "Select s1. stmt#"),
-            Catch::Contains(
-                "Expected 0 whitespace but got 1 instead. should not have any whitespace between dot and attrName"));
-        // Space between decl and '.'
-        CHECK_THROWS_WITH(pql::parser::parsePQL("stmt s1, s2, s3;\n"
-                                                "Select s1 .stmt#"),
-            Catch::Contains(
-                "Expected 0 whitespace but got 1 instead. should not have any whitespace between decl and dot"));
     }
 }
 
@@ -274,12 +279,15 @@ TEST_CASE("invalid queries")
     SECTION("such-that/parent*/follows* spacing")
     {
         CHECK_THROWS_WITH(parsePQL("stmt s ; Select s   such    that   Parent(s, _)"),
-            Catch::Contains("Such That clause should start with 'such that'"));
+            Catch::Contains(
+                "Expected 1 whitespace but got 4 instead. There should only be 1 whitespace between 'such"));
 
         CHECK_THROWS_WITH(parsePQL("stmt s; Select s such that Follows  *  (s, _)"),
-            Catch::Contains("FollowsT relationship condition should start with 'Follows*'"));
+            Catch::Contains(
+                "Expected 0 whitespace but got 2 instead. There should be not white space between 'Follows' and '*'"));
 
         CHECK_THROWS_WITH(parsePQL("stmt s; Select s such that Parent  *  (s, _)"),
-            Catch::Contains("ParentT relationship condition should start with 'Parent*'"));
+            Catch::Contains(
+                "Expected 0 whitespace but got 2 instead. There should be no whitespace between 'Parent' and '*'"));
     }
 }

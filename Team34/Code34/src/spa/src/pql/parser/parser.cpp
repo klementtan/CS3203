@@ -401,10 +401,10 @@ namespace pql::parser
     std::unique_ptr<ast::FollowsT> parse_follows_t(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         auto f = ps->next();
+        ps->assert_whitespace(0, "There should be not white space between 'Follows' and '*'");
         auto star = ps->next();
-        auto f_star = zst::str_view(f.text.data(), strlen("Follows*"));
 
-        if(f.text != "Follows" || star != TT::Asterisk || f_star != "Follows*")
+        if(f.text != "Follows" || star != TT::Asterisk)
         {
             throw PqlException("pql::parser", "FollowsT relationship condition should start with 'Follows*'");
         }
@@ -457,10 +457,10 @@ namespace pql::parser
     std::unique_ptr<ast::ParentT> parse_parent_t(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         auto p = ps->next();
+        ps->assert_whitespace(0, "There should be no whitespace between 'Parent' and '*'");
         auto star = ps->next();
-        auto p_star = zst::str_view(p.text.data(), strlen("Parent*"));
 
-        if(p.text != "Parent" || star != TT::Asterisk || p_star != "Parent*")
+        if(p.text != "Parent" || star != TT::Asterisk)
         {
             throw PqlException("pql::parser", "ParentT relationship condition should start with 'Parent*'");
         }
@@ -733,13 +733,10 @@ namespace pql::parser
     ast::SuchThatCl parse_such_that(ParserState* ps, const ast::DeclarationList* declaration_list)
     {
         auto such = ps->next();
+        ps->assert_whitespace(1, "There should only be 1 whitespace between 'such' and 'that'");
         auto that = ps->next();
 
-        // there must be exactly a space between 'such' and 'that'. check this by "extending" the
-        // length of the 'such' token, which we know is safe.
-        auto tmp_token = zst::str_view(such.text.data(), strlen("such that"));
-
-        if(such.text != "such" || that.text != "that" || tmp_token != "such that")
+        if(such.text != "such" || that.text != "that")
             throw PqlException("pql::parser", "Such That clause should start with 'such that'");
 
         util::logfmt("pql::parser", "Parsing such that clause. Remaining {}", ps->stream);
@@ -764,11 +761,8 @@ namespace pql::parser
             throw PqlException("pql::parser", "Undeclared entity {} provided.", decl_tok.text);
         if(ps->peek_one() == TT::Dot)
         {
-            ps->assert_whitespace(0, "should not have any whitespace between decl and dot");
             // Eat dot
             ps->next();
-            ps->assert_whitespace(0, "should not have any whitespace between dot and attrName");
-
 
             std::vector<Token> attr_toks = ps->peek_two();
             if(attr_toks[0].type != TT::Identifier)
