@@ -101,14 +101,9 @@ namespace pql::parser
     };
 
 
-
-
-
-
     // Clauses
     const Token KW_Boolean { "BOOLEAN", TT::Identifier };
     const std::vector<Token> KW_SuchThat = { { "such", TT::Identifier }, { "that", TT::Identifier } };
-    const Token KW_Pattern { "pattern", TT::Identifier };
 
     // Design entities
     const Token KW_Stmt { "stmt", TT::Identifier };
@@ -120,11 +115,10 @@ namespace pql::parser
     const Token KW_Print { "print", TT::Identifier };
     const Token KW_If { "if", TT::Identifier };
     const Token KW_Then { "then", TT::Identifier };
-    const Token KW_Else { "else", TT::Identifier };
     const Token KW_Call { "call", TT::Identifier };
     const Token KW_While { "while", TT::Identifier };
     const std::unordered_set<Token> KW_DesignEntities { { KW_Stmt, KW_Assign, KW_Variable, KW_Constant, KW_Procedure,
-        KW_Read, KW_Print, KW_If, KW_Then, KW_Else, KW_Call, KW_While } };
+        KW_Read, KW_Print, KW_If, KW_Then, KW_Call, KW_While } };
 
     // Relationships
     const Token KW_Follows { "Follows", TT::Identifier };
@@ -144,7 +138,7 @@ namespace pql::parser
     const Token KW_AttrName_StmtNum { "call", TT::Identifier };
 
     // Process the next token as a variable and insert it into declaration_list
-    void parse_one_declaration(ParserState* ps, ast::DESIGN_ENT ent)
+    static void parse_one_declaration(ParserState* ps, ast::DESIGN_ENT ent)
     {
         Token var = ps->next();
 
@@ -158,7 +152,7 @@ namespace pql::parser
     }
 
     // Process the next tokens as the start of an entity declaration and insert declarations into declaration_list
-    void parse_declarations(ParserState* ps)
+    static void parse_declarations(ParserState* ps)
     {
         auto check_semicolon = [](ParserState* ps) {
             if(ps->next() != TT::Semicolon)
@@ -195,8 +189,7 @@ namespace pql::parser
         check_semicolon(ps);
     }
 
-
-    ast::EntRef parse_ent_ref(ParserState* ps)
+    static ast::EntRef parse_ent_ref(ParserState* ps)
     {
         Token tok = ps->next();
         if(tok.type == TT::Underscore)
@@ -241,7 +234,7 @@ namespace pql::parser
         throw PqlSyntaxException("pql::parser", "Invalid entity ref starting with '{}'", tok.text);
     }
 
-    ast::StmtRef parse_stmt_ref(ParserState* ps)
+    static ast::StmtRef parse_stmt_ref(ParserState* ps)
     {
         Token tok = ps->next();
         if(tok.type == TT::Underscore)
@@ -265,7 +258,7 @@ namespace pql::parser
         throw PqlSyntaxException("pql::parser", "Invalid stmt ref starting with {}", tok.text);
     }
 
-    ast::ExprSpec parse_expr_spec(ParserState* ps)
+    static ast::ExprSpec parse_expr_spec(ParserState* ps)
     {
         ast::ExprSpec expr_spec {};
 
@@ -414,170 +407,41 @@ namespace pql::parser
         return ast::PatternCl { std::move(pattern_conds) };
     }
 
-    std::unique_ptr<ast::FollowsT> parse_follows_t(ParserState* ps)
+
+    // parses relations where that are not Uses/Modifies (ie. which are not overloaded based on the type)
+    template <typename RelAst, typename LeftRefType, typename RightRefType>
+    static std::unique_ptr<RelAst> parse_relation(ParserState* ps, TokenType kw_tok, const char* name,
+        LeftRefType RelAst::*left_ref, RightRefType RelAst::*right_ref)
     {
-        auto f = ps->next();
-        ps->assert_whitespace(0, "There should be not white space between 'Follows' and '*'");
-        auto star = ps->next();
+        static_assert(std::is_same_v<LeftRefType, ast::EntRef> || std::is_same_v<LeftRefType, ast::StmtRef>);
+        static_assert(std::is_same_v<RightRefType, ast::EntRef> || std::is_same_v<RightRefType, ast::StmtRef>);
 
-        if(f.text != "Follows" || star != TT::Asterisk)
-        {
-            throw PqlSyntaxException("pql::parser", "FollowsT relationship condition should start with 'Follows*'");
-        }
+        if(auto tok = ps->next_keyword(); tok != kw_tok)
+            throw PqlSyntaxException("pql::parser", "expected '{}', found '{}' instead", name, tok.text);
 
-        auto follows_t = std::make_unique<ast::FollowsT>();
-        if(Token tok = ps->next(); tok != TT::LParen)
-        {
-            throw PqlSyntaxException("pql::parser", "Expected '(' at the start of 'Follows*' instead of {}", tok.text);
-        }
-        follows_t->before = parse_stmt_ref(ps);
-        if(Token tok = ps->next(); tok != TT::Comma)
-        {
-            throw PqlSyntaxException("pql::parser", "Expected ',' after declaring ent ref in Follows*");
-        }
-        follows_t->after = parse_stmt_ref(ps);
-        if(Token tok = ps->next(); tok != TT::RParen)
-        {
-            throw PqlSyntaxException("pql::parser", "Expected ')' at the end of 'Follows*' instead of {}", tok.text);
-        }
+        if(auto tok = ps->next(); tok != TT::LParen)
+            throw PqlSyntaxException("pql::parser", "expected '(', found '{}' instead", tok.text);
 
-        return follows_t;
+        auto relation = std::make_unique<RelAst>();
+
+        if constexpr(std::is_same_v<LeftRefType, ast::EntRef>)
+            relation.get()->*left_ref = parse_ent_ref(ps);
+        else
+            relation.get()->*left_ref = parse_stmt_ref(ps);
+
+        if(auto tok = ps->next(); tok != TT::Comma)
+            throw PqlSyntaxException("pql::parser", "expected ',', found '{}' instead", tok.text);
+
+        if constexpr(std::is_same_v<RightRefType, ast::EntRef>)
+            relation.get()->*right_ref = parse_ent_ref(ps);
+        else
+            relation.get()->*right_ref = parse_stmt_ref(ps);
+
+        if(auto tok = ps->next(); tok != TT::RParen)
+            throw PqlSyntaxException("pql::parser", "expected ')', found '{}' instead", tok.text);
+
+        return relation;
     }
-
-    std::unique_ptr<ast::Follows> parse_follows(ParserState* ps)
-    {
-        if(ps->next().text != "Follows")
-        {
-            throw PqlSyntaxException("pql::parser", "FollowsT relationship condition should start with 'Follows*'");
-        }
-        auto follows = std::make_unique<ast::Follows>();
-        if(Token tok = ps->next(); tok != TT::LParen)
-        {
-            throw PqlSyntaxException("pql::parser", "Expected '(' at the start of 'Follows' instead of {}", tok.text);
-        }
-        follows->directly_before = parse_stmt_ref(ps);
-        if(Token tok = ps->next(); tok != TT::Comma)
-        {
-            throw PqlSyntaxException("pql::parser", "Expected ',' after declaring ent ref in Follows");
-        }
-        follows->directly_after = parse_stmt_ref(ps);
-        if(Token tok = ps->next(); tok != TT::RParen)
-        {
-            throw PqlSyntaxException("pql::parser", "Expected ')' at the end of 'Follows' instead of {}", tok.text);
-        }
-        util::logfmt("pql::parser", "Parsed: {}", follows->toString());
-
-        return follows;
-    }
-
-    std::unique_ptr<ast::ParentT> parse_parent_t(ParserState* ps)
-    {
-        auto p = ps->next();
-        ps->assert_whitespace(0, "There should be no whitespace between 'Parent' and '*'");
-        auto star = ps->next();
-
-        if(p.text != "Parent" || star != TT::Asterisk)
-        {
-            throw PqlSyntaxException("pql::parser", "ParentT relationship condition should start with 'Parent*'");
-        }
-        auto parent_t = std::make_unique<ast::ParentT>();
-        if(Token tok = ps->next(); tok != TT::LParen)
-        {
-            throw PqlSyntaxException("pql::parser", "Expected '(' at the start of 'Parent*' instead of {}", tok.text);
-        }
-        parent_t->ancestor = parse_stmt_ref(ps);
-        if(Token tok = ps->next(); tok != TT::Comma)
-        {
-            throw PqlSyntaxException("pql::parser", "Expected ',' after declaring ent ref in Parent*");
-        }
-        parent_t->descendant = parse_stmt_ref(ps);
-        if(Token tok = ps->next(); tok != TT::RParen)
-        {
-            throw PqlSyntaxException("pql::parser", "Expected ')' at the end of 'Parent*' instead of {}", tok.text);
-        }
-
-        return parent_t;
-    }
-
-    std::unique_ptr<ast::Parent> parse_parent(ParserState* ps)
-    {
-        if(ps->next().text != "Parent")
-        {
-            throw PqlSyntaxException("pql::parser", "Parent relationship condition should start with 'Parent'");
-        }
-        auto parent = std::make_unique<ast::Parent>();
-        if(Token tok = ps->next(); tok != TT::LParen)
-        {
-            throw PqlSyntaxException("pql::parser", "Expected '(' at the start of 'Parent' instead of {}", tok.text);
-        }
-        parent->parent = parse_stmt_ref(ps);
-        if(Token tok = ps->next(); tok != TT::Comma)
-        {
-            throw PqlSyntaxException("pql::parser", "Expected ',' after declaring ent ref in Parent");
-        }
-        parent->child = parse_stmt_ref(ps);
-        if(Token tok = ps->next(); tok != TT::RParen)
-        {
-            throw PqlSyntaxException("pql::parser", "Expected ')' at the end of 'Parent' instead of {}", tok.text);
-        }
-
-        return parent;
-    }
-
-    std::unique_ptr<ast::CallsT> parse_calls_t(ParserState* ps)
-    {
-        auto c = ps->next();
-        ps->assert_whitespace(0, "There should be no whitespace between 'Calls' and '*'");
-        auto star = ps->next();
-
-        if(c.text != "Calls" || star != TT::Asterisk)
-        {
-            throw PqlSyntaxException("pql::parser", "CallsT relationship condition should start with 'Calls*'");
-        }
-        auto calls_t = std::make_unique<ast::CallsT>();
-        if(Token tok = ps->next(); tok != TT::LParen)
-        {
-            throw PqlSyntaxException("pql::parser", "Expected '(' at the start of 'Calls*' instead of {}", tok.text);
-        }
-        calls_t->caller = parse_ent_ref(ps);
-        if(Token tok = ps->next(); tok != TT::Comma)
-        {
-            throw PqlSyntaxException("pql::parser", "Expected ',' after declaring ent ref in Calls*");
-        }
-        calls_t->proc = parse_ent_ref(ps);
-        if(Token tok = ps->next(); tok != TT::RParen)
-        {
-            throw PqlSyntaxException("pql::parser", "Expected ')' at the end of 'Calls*' instead of {}", tok.text);
-        }
-
-        return calls_t;
-    }
-
-    std::unique_ptr<ast::Calls> parse_calls(ParserState* ps)
-    {
-        if(ps->next().text != "Calls")
-        {
-            throw PqlSyntaxException("pql::parser", "Calls relationship condition should start with 'Calls'");
-        }
-        auto calls = std::make_unique<ast::Calls>();
-        if(Token tok = ps->next(); tok != TT::LParen)
-        {
-            throw PqlSyntaxException("pql::parser", "Expected '(' at the start of 'Calls' instead of {}", tok.text);
-        }
-        calls->caller = parse_ent_ref(ps);
-        if(Token tok = ps->next(); tok != TT::Comma)
-        {
-            throw PqlSyntaxException("pql::parser", "Expected ',' after declaring ent ref in Calls");
-        }
-        calls->proc = parse_ent_ref(ps);
-        if(Token tok = ps->next(); tok != TT::RParen)
-        {
-            throw PqlSyntaxException("pql::parser", "Expected ')' at the end of 'Calls' instead of {}", tok.text);
-        }
-
-        return calls;
-    }
-
 
     bool is_next_stmt_ref(ParserState* ps)
     {
@@ -707,35 +571,33 @@ namespace pql::parser
 
     std::unique_ptr<ast::RelCond> parse_rel_cond(ParserState* ps)
     {
-        std::vector<Token> rel_cond_toks = ps->peek_two();
+        using namespace ast;
+        auto rel_tok = ps->peek_keyword();
+        if(rel_tok == TT::KW_Follows)
+            return parse_relation(ps, rel_tok, "Follows", &Follows::directly_before, &Follows::directly_after);
 
-        // Check relationship with 2 tokens first
-        if(rel_cond_toks == KW_FollowsT)
-            return parse_follows_t(ps);
+        else if(rel_tok == TT::KW_FollowsStar)
+            return parse_relation(ps, rel_tok, "Follows*", &FollowsT::before, &FollowsT::after);
 
-        else if(rel_cond_toks == KW_ParentT)
-            return parse_parent_t(ps);
+        else if(rel_tok == TT::KW_Parent)
+            return parse_relation(ps, rel_tok, "Parent", &Parent::parent, &Parent::child);
 
-        else if(rel_cond_toks == KW_CallsT)
-            return parse_calls_t(ps);
+        else if(rel_tok == TT::KW_ParentStar)
+            return parse_relation(ps, rel_tok, "Parent*", &ParentT::ancestor, &ParentT::descendant);
 
-        else if(rel_cond_toks[0] == KW_Follows)
-            return parse_follows(ps);
+        else if(rel_tok == TT::KW_Calls)
+            return parse_relation(ps, rel_tok, "Calls", &Calls::caller, &Calls::proc);
 
-        else if(rel_cond_toks[0] == KW_Parent)
-            return parse_parent(ps);
+        else if(rel_tok == TT::KW_CallsStar)
+            return parse_relation(ps, rel_tok, "Calls*", &CallsT::caller, &CallsT::proc);
 
-        else if(rel_cond_toks[0] == KW_Uses)
+        else if(rel_tok == TT::KW_Uses)
             return parse_uses(ps);
 
-        else if(rel_cond_toks[0] == KW_Modifies)
+        else if(rel_tok == TT::KW_Modifies)
             return parse_modifies(ps);
 
-        else if(rel_cond_toks[0] == KW_Calls)
-            return parse_calls(ps);
-
-        throw PqlSyntaxException("pql::parser", "Invalid relationship condition tokens: {}, {}", rel_cond_toks[0].text,
-            rel_cond_toks[1].text);
+        throw PqlSyntaxException("pql::parser", "Invalid relationship condition '{}'", rel_tok.text);
     }
 
     ast::SuchThatCl parse_such_that(ParserState* ps)

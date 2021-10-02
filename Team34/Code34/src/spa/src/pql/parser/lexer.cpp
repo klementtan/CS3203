@@ -52,24 +52,25 @@ namespace pql::parser
             auto ret = Token { sv.take_prefix(strlen(kw)), tt };
 
             if(!sv.empty() && is_letter(sv[0]))
-                throw util::PqlSyntaxException("pql::parser", "unexpected '{}' after keyword", sv[0]);
+                throw util::PqlSyntaxException("pql::parser", "unexpected '{}' after keyword '{}'", sv[0], kw);
 
             return ret;
         };
 
         // clang-format off
-        if(auto kw = "Next"; sv.find(kw) == 0)          return do_keyword(sv, kw, TT::KW_Next);
+        // obviously, check the ones with '*' before the ones without
+        if(auto kw = "Next*"; sv.find(kw) == 0)         return do_keyword(sv, kw, TT::KW_NextStar);
+        else if(auto kw = "Calls*"; sv.find(kw) == 0)   return do_keyword(sv, kw, TT::KW_CallsStar);
+        else if(auto kw = "Parent*"; sv.find(kw) == 0)  return do_keyword(sv, kw, TT::KW_ParentStar);
+        else if(auto kw = "Follows*"; sv.find(kw) == 0) return do_keyword(sv, kw, TT::KW_FollowsStar);
+        else if(auto kw = "Affects*"; sv.find(kw) == 0) return do_keyword(sv, kw, TT::KW_AffectsStar);
+        else if(auto kw = "Next"; sv.find(kw) == 0)     return do_keyword(sv, kw, TT::KW_Next);
         else if(auto kw = "Uses"; sv.find(kw) == 0)     return do_keyword(sv, kw, TT::KW_Uses);
         else if(auto kw = "Calls"; sv.find(kw) == 0)    return do_keyword(sv, kw, TT::KW_Calls);
         else if(auto kw = "Parent"; sv.find(kw) == 0)   return do_keyword(sv, kw, TT::KW_Parent);
         else if(auto kw = "Follows"; sv.find(kw) == 0)  return do_keyword(sv, kw, TT::KW_Follows);
         else if(auto kw = "Affects"; sv.find(kw) == 0)  return do_keyword(sv, kw, TT::KW_Affects);
         else if(auto kw = "Modifies"; sv.find(kw) == 0) return do_keyword(sv, kw, TT::KW_Modifies);
-        else if(auto kw = "Next*"; sv.find(kw) == 0)    return do_keyword(sv, kw, TT::KW_NextStar);
-        else if(auto kw = "Calls*"; sv.find(kw) == 0)   return do_keyword(sv, kw, TT::KW_CallsStar);
-        else if(auto kw = "Parent*"; sv.find(kw) == 0)  return do_keyword(sv, kw, TT::KW_ParentStar);
-        else if(auto kw = "Follows*"; sv.find(kw) == 0) return do_keyword(sv, kw, TT::KW_FollowsStar);
-        else if(auto kw = "Affects*"; sv.find(kw) == 0) return do_keyword(sv, kw, TT::KW_AffectsStar);
         else if(auto kw = "and"; sv.find(kw) == 0)      return do_keyword(sv, kw, TT::KW_And);
         else if(auto kw = "with"; sv.find(kw) == 0)     return do_keyword(sv, kw, TT::KW_With);
         else if(auto kw = "Select"; sv.find(kw) == 0)   return do_keyword(sv, kw, TT::KW_Select);

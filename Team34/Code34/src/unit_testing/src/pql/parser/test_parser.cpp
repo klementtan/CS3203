@@ -146,7 +146,7 @@ TEST_CASE("Parent Query")
     SECTION("Invalid query")
     {
         REQUIRE_THROWS_WITH(pql::parser::parsePQL("stmt s;\nSelect s such that Parentt(6, s)"),
-            Catch::Contains("Invalid relationship condition tokens"));
+            Catch::Contains("unexpected 't' after keyword 'Parent'"));
     }
 }
 
@@ -285,10 +285,10 @@ TEST_CASE("invalid queries")
 
         CHECK_THROWS_WITH(parsePQL("stmt s; Select s such that Follows  *  (s, _)"),
             Catch::Contains(
-                "Expected 0 whitespace but got 2 instead. There should be not white space between 'Follows' and '*'"));
+                "expected '(', found '*' instead"));
 
         CHECK_THROWS_WITH(parsePQL("stmt s; Select s such that Parent  *  (s, _)"),
             Catch::Contains(
-                "Expected 0 whitespace but got 2 instead. There should be no whitespace between 'Parent' and '*'"));
+                "expected '(', found '*' instead"));
     }
 }
