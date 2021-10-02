@@ -67,6 +67,8 @@ namespace pql::parser
 
     using TT = TokenType;
 
+    const char* tokenTypeString(TokenType tt);
+
     Token peekNextKeywordToken(zst::str_view sv);
     Token getNextKeywordToken(zst::str_view& sv);
 

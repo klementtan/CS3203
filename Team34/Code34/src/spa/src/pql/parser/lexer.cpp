@@ -147,4 +147,46 @@ namespace pql::parser
             return Token { sv.take_prefix(1), tt };
         }
     }
+
+    const char* tokenTypeString(TokenType tt)
+    {
+        // clang-format off
+        switch(tt)
+        {
+            case TT::LParen:        return "(";
+            case TT::RParen:        return ")";
+            case TT::LAngle:        return "<";
+            case TT::RAngle:        return ">";
+            case TT::Asterisk:      return "*";
+            case TT::Underscore:    return "_";
+            case TT::Semicolon:     return ";";
+            case TT::Comma:         return ",";
+            case TT::Dot:           return ".";
+            case TT::HashTag:       return "#";
+            case TT::String:        return "String";
+            case TT::Identifier:    return "identifier";
+            case TT::Number:        return "number";
+            case TT::KW_Next:       return "Next";
+            case TT::KW_Uses:       return "Uses";
+            case TT::KW_Calls:      return "Calls";
+            case TT::KW_Parent:     return "Parent";
+            case TT::KW_Follows:    return "Follows";
+            case TT::KW_Affects:    return "Affects";
+            case TT::KW_Modifies:   return "Modifies";
+            case TT::KW_NextStar:   return "Next*";
+            case TT::KW_CallsStar:  return "Calls*";
+            case TT::KW_ParentStar: return "Parent*";
+            case TT::KW_FollowsStar:return "Follows*";
+            case TT::KW_AffectsStar:return "Affects*";
+            case TT::KW_And:        return "and";
+            case TT::KW_With:       return "with";
+            case TT::KW_Select:     return "Select";
+            case TT::KW_Pattern:    return "pattern";
+            case TT::KW_SuchThat:   return "such that";
+            default:
+                return "unknown";
+        }
+
+        // clang-format on
+    }
 }
