@@ -159,7 +159,6 @@ namespace pql::eval
             this->handlePattern(*m_query->select.pattern);
 
         util::logfmt("pql::eval", "Table after processing of such that: {}", m_table.toString());
-        // TODO(#138): Get result from all tuple instead of the first
         return this->m_table.getResult(m_query->select.result, this->m_pkb);
     }
 

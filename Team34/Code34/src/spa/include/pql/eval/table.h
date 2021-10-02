@@ -146,6 +146,7 @@ namespace pql::eval::table
         Table();
         ~Table();
         std::list<std::string> getResult(const ast::ResultCl& result, const pkb::ProgramKB* pkb);
+        static std::list<std::string> getFailedResult(const ast::ResultCl& result);
         [[nodiscard]] std::string toString() const;
     };
 }

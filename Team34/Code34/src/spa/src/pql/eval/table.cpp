@@ -451,14 +451,14 @@ namespace pql::eval::table
     }
 
 
-    std::list<std::string> Table::getResult(const ast::ResultCl& result_cl, const pkb::ProgramKB* pkb)
+    std::list<std::string> Table::getFailedResult(const ast::ResultCl& result)
     {
         static const std::list<std::string> FalseResult = std::list<std::string> { "FALSE" };
-        static const std::list<std::string> TrueResult = std::list<std::string> { "FALSE" };
-        auto empty_result = [&result_cl]() {
-            return result_cl.isBool() ? FalseResult : std::list<std::string> {};
-        };
+        return result.isBool() ? FalseResult : std::list<std::string> {};
+    }
 
+    std::list<std::string> Table::getResult(const ast::ResultCl& result_cl, const pkb::ProgramKB* pkb)
+    {
         util::logfmt("pql::eval::table", "Starting to get {} for table {}.", result_cl.toString(), toString());
         std::vector<std::vector<Entry>> result_entries;
         std::unordered_map<ast::Declaration*, std::vector<Join>> decl_joins = getDeclJoins();
@@ -492,7 +492,7 @@ namespace pql::eval::table
 
         // All domain involved in query should have non-empty domain
         if(!hasValidDomain())
-            return empty_result();
+            return Table::getFailedResult(result_cl);
 
         std::vector<Row> candidate_rows = getRows(columns, m_joins);
         std::vector<Row> valid_rows = getValidRows(candidate_rows);
@@ -501,7 +501,7 @@ namespace pql::eval::table
         // involved in any clause
         if(valid_rows.empty())
         {
-            return empty_result();
+            return Table::getFailedResult(result_cl);
         }
         else
         {
