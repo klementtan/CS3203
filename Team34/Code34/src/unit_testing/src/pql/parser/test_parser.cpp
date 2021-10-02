@@ -262,7 +262,7 @@ TEST_CASE("Result Clause")
         CHECK_THROWS_WITH(pql::parser::parsePQL("stmt s1, s2, s3;\n"
                                                 "Select s1.stmt #"),
             Catch::Contains(
-                "Expected 0 whitespace but got 1 instead. should not have any whitespace between the 'stmt' and '#"));
+                "Invalid attribute 'stmt'"));
     }
 }
 
@@ -280,15 +280,12 @@ TEST_CASE("invalid queries")
     SECTION("such-that/parent*/follows* spacing")
     {
         CHECK_THROWS_WITH(parsePQL("stmt s ; Select s   such    that   Parent(s, _)"),
-            Catch::Contains(
-                "unexpected token 'such' in Select"));
+            Catch::Contains("unexpected token 'such' in Select"));
 
         CHECK_THROWS_WITH(parsePQL("stmt s; Select s such that Follows  *  (s, _)"),
-            Catch::Contains(
-                "expected '(', found '*' instead"));
+            Catch::Contains("invalid token '*'"));
 
         CHECK_THROWS_WITH(parsePQL("stmt s; Select s such that Parent  *  (s, _)"),
-            Catch::Contains(
-                "expected '(', found '*' instead"));
+            Catch::Contains("invalid token '*'"));
     }
 }

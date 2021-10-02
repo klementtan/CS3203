@@ -17,12 +17,10 @@ namespace pql::parser
         LAngle,
         RAngle,
 
-        Asterisk,
         Underscore,
         Semicolon,
         Comma,
         Dot,
-        HashTag,
         String,
 
         Identifier,
@@ -47,6 +45,11 @@ namespace pql::parser
         KW_Select,
         KW_Pattern,
         KW_SuchThat,
+
+        KW_Value,
+        KW_StmtNum,
+        KW_VarName,
+        KW_ProcName,
     };
 
     struct Token

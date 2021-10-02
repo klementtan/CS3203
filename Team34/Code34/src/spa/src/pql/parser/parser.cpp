@@ -47,8 +47,8 @@ namespace pql::parser
         {
             if(auto tok = this->next(); tok != tt)
             {
-                throw PqlSyntaxException("pql::parser", "expected '{}', found '{}' instead", tokenTypeString(tt),
-                    tok.text);
+                throw PqlSyntaxException(
+                    "pql::parser", "expected '{}', found '{}' instead", tokenTypeString(tt), tok.text);
             }
             else
             {
@@ -60,8 +60,8 @@ namespace pql::parser
         {
             if(auto tok = this->next_keyword(); tok != tt)
             {
-                throw PqlSyntaxException("pql::parser", "expected '{}', found '{}' instead", tokenTypeString(tt),
-                    tok.text);
+                throw PqlSyntaxException(
+                    "pql::parser", "expected '{}', found '{}' instead", tokenTypeString(tt), tok.text);
             }
             else
             {
@@ -148,12 +148,6 @@ namespace pql::parser
     // Relationships
     const Token KW_Uses { "Uses", TT::Identifier };
     const Token KW_Modifies { "Modifies", TT::Identifier };
-
-    // Attribute Names
-    const Token KW_AttrName_ProcName { "procName", TT::Identifier };
-    const Token KW_AttrName_VarName { "varName", TT::Identifier };
-    const Token KW_AttrName_Value { "value", TT::Identifier };
-    const Token KW_AttrName_StmtNum { "call", TT::Identifier };
 
     // Process the next token as a variable and insert it into declaration_list
     static void parse_one_declaration(ParserState* ps, ast::DESIGN_ENT ent)
@@ -519,53 +513,58 @@ namespace pql::parser
 
     ast::SuchThatCl parse_such_that(ParserState* ps)
     {
-        auto such = ps->next();
-        ps->assert_whitespace(1, "There should only be 1 whitespace between 'such' and 'that'");
-        auto that = ps->next();
-
-        if(such.text != "such" || that.text != "that")
-            throw PqlSyntaxException("pql::parser", "Such That clause should start with 'such that'");
+        ps->expect_keyword(TT::KW_SuchThat);
 
         util::logfmt("pql::parser", "Parsing such that clause.");
         ast::SuchThatCl such_that {};
 
-        // TODO(iteration 2): Handle AND condition here
+        // TODO(#100): Handle AND condition here
         such_that.rel_conds.push_back(parse_rel_cond(ps));
 
         util::logfmt("pql::parser", "Complete parsing such that clause: {}", such_that.toString());
         return such_that;
     }
 
-    static void validate_attr_name(const ast::AttrRef& attr_ref)
+    static ast::Elem validate_attr_name(ParserState* ps, ast::AttrRef attr_ref)
     {
-        static const std::unordered_map<ast::AttrName, std::unordered_set<ast::DESIGN_ENT>>
-            permitted_design_entities = { { ast::AttrName::kProcName,
-                                              { ast::DESIGN_ENT::PROCEDURE, ast::DESIGN_ENT::CALL } },
-                { ast::AttrName::kVarName,
-                    { ast::DESIGN_ENT::VARIABLE, ast::DESIGN_ENT::READ, ast::DESIGN_ENT::PRINT } },
-                { ast::AttrName::kValue, { ast::DESIGN_ENT::CONSTANT } },
-                { ast::AttrName::kStmtNum,
-                    { ast::DESIGN_ENT::STMT, ast::DESIGN_ENT::READ, ast::DESIGN_ENT::PRINT, ast::DESIGN_ENT::CALL,
-                        ast::DESIGN_ENT::WHILE, ast::DESIGN_ENT::IF, ast::DESIGN_ENT::ASSIGN } } };
+        using namespace ast;
+
+        // clang-format off
+        static const std::unordered_map<AttrName, std::unordered_set<DESIGN_ENT>> permitted_design_entities = {
+                { AttrName::kProcName, { DESIGN_ENT::PROCEDURE, DESIGN_ENT::CALL } },
+                { AttrName::kVarName, { DESIGN_ENT::VARIABLE, DESIGN_ENT::READ, DESIGN_ENT::PRINT } },
+                { AttrName::kValue, { DESIGN_ENT::CONSTANT } },
+                { AttrName::kStmtNum, {
+                    DESIGN_ENT::STMT, DESIGN_ENT::READ,
+                    DESIGN_ENT::PRINT, DESIGN_ENT::CALL,
+                    DESIGN_ENT::WHILE, DESIGN_ENT::IF, DESIGN_ENT::ASSIGN }
+                }
+            };
+        // clang-format on
+
+        // note: if the declaration did not exist, the dummy declaration will be used
+        // this ensures we are not dealing in nullptrs unnecessarily.
         ast::AttrName attr_name = attr_ref.attr_name;
-        if(!attr_ref.decl)
-            throw PqlException("pql::parser", "Invalid AttrRef: All AttrRef should have a declaration");
-        ast::DESIGN_ENT design_ent = attr_ref.decl->design_ent;
-        if(permitted_design_entities.count(attr_name) == 0)
-            throw PqlSyntaxException(
-                "pql::parser", "Invalid AttrName {} provided", ast::InvAttrNameMap.find(attr_name)->second);
-        if(permitted_design_entities.find(attr_name)->second.count(design_ent) == 0)
-            throw PqlException("pql::parser", "Invalid design_ent:{} does not contain AttrName {}",
-                ast::INV_DESIGN_ENT_MAP.find(design_ent)->second, ast::InvAttrNameMap.find(attr_name)->second);
+        assert(attr_ref.decl);
+
+        auto design_ent = attr_ref.decl->design_ent;
+
+        // -- parsing should have already thrown a syntax error if the attribute is bogus
+        auto it = permitted_design_entities.find(attr_name);
+        assert(it != permitted_design_entities.end());
+
+        if(it->second.count(design_ent) == 0)
+        {
+            ps->setInvalid("entity '{}' does not contain attribute '{}'", ast::INV_DESIGN_ENT_MAP.at(design_ent),
+                ast::InvAttrNameMap.at(attr_name));
+        }
+
+        return ast::Elem::ofAttrRef(attr_ref);
     }
 
     ast::Elem parse_elem(ParserState* ps)
     {
-        Token decl_tok = ps->next();
-        if(decl_tok.type != TT::Identifier)
-            throw PqlSyntaxException(
-                "pql::parser", "Expected identifier as the first token of an Element, got '{}'", decl_tok.text);
-
+        auto decl_tok = ps->expect(TT::Identifier);
         auto decl = ps->getDeclaration(decl_tok.text.str());
 
         if(ps->peek_one() == TT::Dot)
@@ -573,35 +572,21 @@ namespace pql::parser
             // Eat dot
             ps->next();
 
-            std::vector<Token> attr_toks = ps->peek_two();
-            if(attr_toks[0].type != TT::Identifier)
-                throw PqlSyntaxException(
-                    "pql::parser", "Mutli Element tuple: Expected first token after '.' to be a identifier.");
+            auto attr = ps->next_keyword();
+            if(attr == TT::KW_StmtNum)
+                return validate_attr_name(ps, ast::AttrRef { decl, ast::AttrName::kStmtNum });
 
-            std::string attr_name_string;
+            else if(attr == TT::KW_Value)
+                return validate_attr_name(ps, ast::AttrRef { decl, ast::AttrName::kValue });
 
-            if(attr_toks[1].type == TT::HashTag)
-            {
-                auto stmt = ps->next();
-                // should not have any whitespace between
-                ps->assert_whitespace(0, "should not have any whitespace between the 'stmt' and '#'");
-                auto hash_tag = ps->next();
-                if(stmt.text != "stmt" || hash_tag.type != TT::HashTag)
-                    throw PqlSyntaxException("pql::parser", "Invalid \"{}{}\" attribute name expected 'stmt#' instead.",
-                        stmt.text.str(), hash_tag.text.str());
-                attr_name_string = "stmt#";
-            }
+            else if(attr == TT::KW_VarName)
+                return validate_attr_name(ps, ast::AttrRef { decl, ast::AttrName::kVarName });
+
+            else if(attr == TT::KW_ProcName)
+                return validate_attr_name(ps, ast::AttrRef { decl, ast::AttrName::kProcName });
+
             else
-            {
-                attr_name_string = ps->next().text.str();
-            }
-            auto it = pql::ast::AttrNameMap.find(attr_name_string);
-            if(it == pql::ast::AttrNameMap.end())
-                throw PqlSyntaxException("pql::parser", "Invalid attrName: {}", attr_name_string);
-
-            ast::AttrRef attr_ref { decl, it->second };
-            validate_attr_name(attr_ref);
-            return ast::Elem::ofAttrRef(attr_ref);
+                throw PqlSyntaxException("pql::parser", "Invalid attribute '{}'", attr.text);
         }
         else
         {
@@ -667,12 +652,7 @@ namespace pql::parser
 
     static ast::Select parse_select(ParserState* ps)
     {
-        Token select_tok = ps->next_keyword();
-        if(select_tok != TT::KW_Select)
-        {
-            throw PqlSyntaxException(
-                "pql::parser", "Select clauses should start with `Select` instead of {}", select_tok.text);
-        }
+        ps->expect_keyword(TT::KW_Select);
 
         ast::ResultCl result = parse_result(ps);
 

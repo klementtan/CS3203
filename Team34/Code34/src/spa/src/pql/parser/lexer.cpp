@@ -76,6 +76,10 @@ namespace pql::parser
         else if(auto kw = "Select"; sv.find(kw) == 0)   return do_keyword(sv, kw, TT::KW_Select);
         else if(auto kw = "pattern"; sv.find(kw) == 0)  return do_keyword(sv, kw, TT::KW_Pattern);
         else if(auto kw = "such that"; sv.find(kw) == 0)return do_keyword(sv, kw, TT::KW_SuchThat);
+        else if(auto kw = "stmt#"; sv.find(kw) == 0)    return do_keyword(sv, kw, TT::KW_StmtNum);
+        else if(auto kw = "value"; sv.find(kw) == 0)    return do_keyword(sv, kw, TT::KW_Value);
+        else if(auto kw = "varName"; sv.find(kw) == 0)  return do_keyword(sv, kw, TT::KW_VarName);
+        else if(auto kw = "procName"; sv.find(kw) == 0) return do_keyword(sv, kw, TT::KW_ProcName);
         // clang-format on
 
         return getNextToken(sv);
@@ -136,10 +140,8 @@ namespace pql::parser
                 case '>':   tt = TT::RAngle; break;
                 case '_':   tt = TT::Underscore; break;
                 case ';':   tt = TT::Semicolon; break;
-                case '*':   tt = TT::Asterisk; break;
                 case ',':   tt = TT::Comma; break;
                 case '.':   tt = TT::Dot; break;
-                case '#':   tt = TT::HashTag; break;
                 default:
                     throw util::PqlSyntaxException("pql::parser","invalid token '{}'", sv[0]);
             }
@@ -157,12 +159,10 @@ namespace pql::parser
             case TT::RParen:        return ")";
             case TT::LAngle:        return "<";
             case TT::RAngle:        return ">";
-            case TT::Asterisk:      return "*";
             case TT::Underscore:    return "_";
             case TT::Semicolon:     return ";";
             case TT::Comma:         return ",";
             case TT::Dot:           return ".";
-            case TT::HashTag:       return "#";
             case TT::String:        return "String";
             case TT::Identifier:    return "identifier";
             case TT::Number:        return "number";
@@ -183,6 +183,10 @@ namespace pql::parser
             case TT::KW_Select:     return "Select";
             case TT::KW_Pattern:    return "pattern";
             case TT::KW_SuchThat:   return "such that";
+            case TT::KW_Value:      return "value";
+            case TT::KW_StmtNum:    return "stmt#";
+            case TT::KW_VarName:    return "varName";
+            case TT::KW_ProcName:   return "procName";
             default:
                 return "unknown";
         }
