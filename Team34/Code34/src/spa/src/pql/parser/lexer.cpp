@@ -40,73 +40,44 @@ namespace pql::parser
         return { fst, snd };
     }
 
+    Token peekNextKeywordToken(zst::str_view sv)
+    {
+        return getNextKeywordToken(sv);
+    }
+
     Token getNextKeywordToken(zst::str_view& sv)
     {
         eatWhitespace(sv);
+        auto do_keyword = [](zst::str_view& sv, const char* kw, TokenType tt) -> Token {
+            auto ret = Token { sv.take_prefix(strlen(kw)), tt };
 
-        Token ret {};
+            if(!sv.empty() && is_letter(sv[0]))
+                throw util::PqlSyntaxException("pql::parser", "unexpected '{}' after keyword", sv[0]);
 
-        if(auto kw = "Next"; sv.find(kw) == 0)
-            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_Next };
+            return ret;
+        };
 
-        else if(auto kw = "Uses"; sv.find(kw) == 0)
-            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_Uses };
+        // clang-format off
+        if(auto kw = "Next"; sv.find(kw) == 0)          return do_keyword(sv, kw, TT::KW_Next);
+        else if(auto kw = "Uses"; sv.find(kw) == 0)     return do_keyword(sv, kw, TT::KW_Uses);
+        else if(auto kw = "Calls"; sv.find(kw) == 0)    return do_keyword(sv, kw, TT::KW_Calls);
+        else if(auto kw = "Parent"; sv.find(kw) == 0)   return do_keyword(sv, kw, TT::KW_Parent);
+        else if(auto kw = "Follows"; sv.find(kw) == 0)  return do_keyword(sv, kw, TT::KW_Follows);
+        else if(auto kw = "Affects"; sv.find(kw) == 0)  return do_keyword(sv, kw, TT::KW_Affects);
+        else if(auto kw = "Modifies"; sv.find(kw) == 0) return do_keyword(sv, kw, TT::KW_Modifies);
+        else if(auto kw = "Next*"; sv.find(kw) == 0)    return do_keyword(sv, kw, TT::KW_NextStar);
+        else if(auto kw = "Calls*"; sv.find(kw) == 0)   return do_keyword(sv, kw, TT::KW_CallsStar);
+        else if(auto kw = "Parent*"; sv.find(kw) == 0)  return do_keyword(sv, kw, TT::KW_ParentStar);
+        else if(auto kw = "Follows*"; sv.find(kw) == 0) return do_keyword(sv, kw, TT::KW_FollowsStar);
+        else if(auto kw = "Affects*"; sv.find(kw) == 0) return do_keyword(sv, kw, TT::KW_AffectsStar);
+        else if(auto kw = "and"; sv.find(kw) == 0)      return do_keyword(sv, kw, TT::KW_And);
+        else if(auto kw = "with"; sv.find(kw) == 0)     return do_keyword(sv, kw, TT::KW_With);
+        else if(auto kw = "Select"; sv.find(kw) == 0)   return do_keyword(sv, kw, TT::KW_Select);
+        else if(auto kw = "pattern"; sv.find(kw) == 0)  return do_keyword(sv, kw, TT::KW_Pattern);
+        else if(auto kw = "such that"; sv.find(kw) == 0)return do_keyword(sv, kw, TT::KW_SuchThat);
+        // clang-format on
 
-        else if(auto kw = "Calls"; sv.find(kw) == 0)
-            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_Calls };
-
-        else if(auto kw = "Parent"; sv.find(kw) == 0)
-            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_Parent };
-
-        else if(auto kw = "Follows"; sv.find(kw) == 0)
-            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_Follows };
-
-        else if(auto kw = "Affects"; sv.find(kw) == 0)
-            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_Affects };
-
-        else if(auto kw = "Modifies"; sv.find(kw) == 0)
-            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_Modifies };
-
-        else if(auto kw = "Next*"; sv.find(kw) == 0)
-            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_NextStar };
-
-        else if(auto kw = "Calls*"; sv.find(kw) == 0)
-            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_CallsStar };
-
-        else if(auto kw = "Parent*"; sv.find(kw) == 0)
-            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_ParentStar };
-
-        else if(auto kw = "Follows*"; sv.find(kw) == 0)
-            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_FollowsStar };
-
-        else if(auto kw = "Affects*"; sv.find(kw) == 0)
-            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_AffectsStar };
-
-        else if(auto kw = "and"; sv.find(kw) == 0)
-            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_And };
-
-        else if(auto kw = "with"; sv.find(kw) == 0)
-            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_With };
-
-        else if(auto kw = "Select"; sv.find(kw) == 0)
-            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_Select };
-
-        else if(auto kw = "pattern"; sv.find(kw) == 0)
-            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_Pattern };
-
-        else if(auto kw = "such that"; sv.find(kw) == 0)
-            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_SuchThat };
-
-        else
-        {
-            throw util::PqlSyntaxException(
-                "pql::parser", "expected a keyword (relation, 'such that', etc.), found '{}' instead", sv.take(10));
-        }
-
-        if(!sv.empty() && is_letter(sv[0]))
-            throw util::PqlSyntaxException("pql::parser", "unexpected '{}' after keyword", sv[0]);
-
-        return ret;
+        return getNextToken(sv);
     }
 
     Token getNextToken(zst::str_view& sv)

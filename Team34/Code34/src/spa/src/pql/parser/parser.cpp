@@ -23,6 +23,16 @@ namespace pql::parser
             return getNextToken(m_stream);
         }
 
+        Token next_keyword()
+        {
+            return getNextKeywordToken(m_stream);
+        }
+
+        Token peek_keyword() const
+        {
+            return peekNextKeywordToken(m_stream);
+        }
+
         Token peek_one() const
         {
             return peekNextOneToken(m_stream);
@@ -71,6 +81,13 @@ namespace pql::parser
             return m_query->declarations.getDeclaration(name.str());
         }
 
+        template <typename... Args>
+        void setInvalid(const char* fmt, Args&&... args)
+        {
+            m_query->setInvalid();
+            util::logfmt("pql::parser", "semantic error: {}", zpr::fwd(fmt, static_cast<Args&&>(args)...));
+        }
+
         ParserState(zst::str_view input, ast::Query* query) : m_stream(input), m_query(query)
         {
             m_dummy_decl.name = "$uwu";
@@ -89,7 +106,6 @@ namespace pql::parser
 
 
     // Clauses
-    const Token KW_Select { "Select", TT::Identifier };
     const Token KW_Boolean { "BOOLEAN", TT::Identifier };
     const std::vector<Token> KW_SuchThat = { { "such", TT::Identifier }, { "that", TT::Identifier } };
     const Token KW_Pattern { "pattern", TT::Identifier };
@@ -384,18 +400,14 @@ namespace pql::parser
 
 
 
-    ast::PatternCl parse_pattern(ParserState* ps)
+    static ast::PatternCl parse_pattern(ParserState* ps)
     {
         std::vector<std::unique_ptr<ast::PatternCond>> pattern_conds;
 
-        if(Token tok = ps->next(); tok != KW_Pattern)
-        {
-            throw PqlSyntaxException(
-                "pql::parser", "Pattern clauses needs to start with 'pattern' keyword instead of {}", tok.text);
-        }
+        if(Token tok = ps->next_keyword(); tok != TT::KW_Pattern)
+            throw PqlSyntaxException("pql::parser", "Expected 'pattern' instead of '{}'", tok.text);
 
         Token declaration_tok = ps->next();
-
         auto pattern_decl = ps->getDeclaration(declaration_tok.text.str());
 
         if(pattern_decl->design_ent == ast::DESIGN_ENT::ASSIGN)
@@ -412,9 +424,7 @@ namespace pql::parser
         }
         else
         {
-            throw PqlException("pql::parser",
-                "pattern clause can only have 'assign', 'if', or 'while'"
-                " synonyms; found '{}'",
+            ps->setInvalid("invalid synonym type '{}' in pattern clause (can only have 'if', 'while', or 'assign'",
                 ast::INV_DESIGN_ENT_MAP.at(pattern_decl->design_ent));
         }
 
@@ -893,10 +903,10 @@ namespace pql::parser
         }
     }
 
-    ast::Select parse_select(ParserState* ps)
+    static ast::Select parse_select(ParserState* ps)
     {
-        Token select_tok = ps->next();
-        if(select_tok != KW_Select)
+        Token select_tok = ps->next_keyword();
+        if(select_tok != TT::KW_Select)
         {
             throw PqlSyntaxException(
                 "pql::parser", "Select clauses should start with `Select` instead of {}", select_tok.text);
@@ -909,31 +919,34 @@ namespace pql::parser
         ast::Select select {};
         select.result = result;
 
-        std::vector<Token> clause_tok = ps->peek_two();
-        bool allow_pattern = true;
-        bool allow_such_that = true;
-
-        // TOOD(#100): Remove single pattern or single such that clause after iteration 1.
-        while(((clause_tok[0] == KW_Pattern) && allow_pattern) || ((clause_tok == KW_SuchThat) && allow_such_that))
+        // std::vector<Token> clause_tok = ps->peek_keyword();
+        for(Token t; (t = ps->peek_keyword()) != TT::EndOfFile;)
         {
-            if(clause_tok[0] == KW_Pattern)
+            if(t == TT::KW_Pattern)
             {
                 util::logfmt("pql::parser", "Parsing pattern clause");
                 select.pattern = parse_pattern(ps);
-                allow_pattern = false;
             }
-            else if(clause_tok == KW_SuchThat)
+            else if(t == TT::KW_SuchThat)
             {
                 util::logfmt("pql::parser", "Parsing such that clause");
                 select.such_that = parse_such_that(ps);
-                allow_such_that = false;
             }
-            clause_tok = ps->peek_two();
+            else if(t == TT::KW_With)
+            {
+                // TODO: parse 'with'
+            }
+            else
+            {
+                throw PqlSyntaxException("pql::parser", "unexpected token '{}' in Select", t.text);
+            }
         }
-        util::logfmt("pql::parser", "Completed parsing Select clause :{}", select.toString());
 
+        util::logfmt("pql::parser", "Completed parsing Select clause :{}", select.toString());
         return select;
     }
+
+
 
     std::unique_ptr<ast::Query> parsePQL(zst::str_view input)
     {
@@ -942,9 +955,9 @@ namespace pql::parser
         auto ps = ParserState(input, query.get());
 
         bool found_select = false;
-        for(Token t; (t = ps.peek_one()) != TT::EndOfFile;)
+        for(Token t; (t = ps.peek_keyword()) != TT::EndOfFile;)
         {
-            if(t == KW_Select)
+            if(t == TT::KW_Select)
             {
                 util::logfmt("pql::parser", "parsing Select");
                 query->select = parse_select(&ps);

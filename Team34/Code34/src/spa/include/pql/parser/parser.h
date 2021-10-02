@@ -67,6 +67,7 @@ namespace pql::parser
 
     using TT = TokenType;
 
+    Token peekNextKeywordToken(zst::str_view sv);
     Token getNextKeywordToken(zst::str_view& sv);
 
     Token getNextToken(zst::str_view& sv);
