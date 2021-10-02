@@ -38,6 +38,8 @@ namespace pql::ast
         { DESIGN_ENT::VARIABLE, "variable" },
         { DESIGN_ENT::CONSTANT, "constant" },
         { DESIGN_ENT::PROCEDURE, "procedure" },
+
+        { DESIGN_ENT::INVALID, "invalid" },
     };
 
     const std::unordered_map<std::string, AttrName> AttrNameMap = {
