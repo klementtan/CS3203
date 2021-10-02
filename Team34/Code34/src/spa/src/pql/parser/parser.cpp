@@ -13,7 +13,7 @@
 namespace pql::parser
 {
     using PqlException = util::PqlException;
-
+    using PqlSyntaxException = util::PqlSyntaxException;
 
     struct ParserState
     {
@@ -41,7 +41,7 @@ namespace pql::parser
         {
             int count = eatWhitespace(this->stream);
             if(count != expected_whitespace)
-                throw PqlException(
+                throw PqlSyntaxException(
                     "pql::parser", "Expected {} whitespace but got {} instead. {}", expected_whitespace, count, msg);
         }
 
@@ -101,7 +101,7 @@ namespace pql::parser
 
         if(var.type != TT::Identifier)
         {
-            throw PqlException(
+            throw PqlSyntaxException(
                 "pql::parser", "expected variable name to be an identifier but received {} instead.", var.text);
         }
         if(ps->declaration_list->hasDeclaration(var.text.str()))
@@ -116,16 +116,16 @@ namespace pql::parser
     {
         auto check_semicolon = [](ParserState* ps) {
             if(ps->next() != TT::Semicolon)
-                throw PqlException("pql::parser", "expected semicolon after statement");
+                throw PqlSyntaxException("pql::parser", "expected semicolon after statement");
         };
         auto check_comma = [](ParserState* ps) {
             if(ps->next() != TT::Comma)
-                throw PqlException("parser", "expected semicolon after statement");
+                throw PqlSyntaxException("parser", "expected semicolon after statement");
         };
 
         if(KW_DesignEntities.count(ps->peek_one()) == 0)
         {
-            throw PqlException("pql::parser", "Expected declarations to start with design-entity keyword instead of {}",
+            throw PqlSyntaxException("pql::parser", "Expected declarations to start with design-entity keyword instead of {}",
                 ps->peek_one().text);
         }
 
@@ -161,12 +161,12 @@ namespace pql::parser
             Token name_declaration_tok = ps->next();
             if(name_declaration_tok.type != TT::Identifier)
             {
-                throw PqlException("pql::parser", "Expected named declaration to be an identifier instead of {}",
+                throw PqlSyntaxException("pql::parser", "Expected named declaration to be an identifier instead of {}",
                     name_declaration_tok.text);
             }
             if(ps->next() != TT::DoubleQuotes)
             {
-                throw PqlException("pql::parser", "Expected named declaration to end with double quotes(\")");
+                throw PqlSyntaxException("pql::parser", "Expected literal entity name to end with double quotes(\")");
             }
 
             return ast::EntRef::ofName(name_declaration_tok.text.str());
@@ -181,7 +181,7 @@ namespace pql::parser
 
             return ast::EntRef::ofDeclaration(declaration);
         }
-        throw PqlException("pql::parser", "Invalid ent ref starting with {}", tok.text);
+        throw PqlSyntaxException("pql::parser", "Invalid ent ref starting with {}", tok.text);
     }
 
     ast::StmtRef parse_stmt_ref(ParserState* ps)
@@ -208,9 +208,8 @@ namespace pql::parser
                 throw PqlException("pql::parser", "Undeclared entity {} provided when parsing stmt ref", var_name);
 
             return ast::StmtRef::ofDeclaration(declaration);
-            ;
         }
-        throw PqlException("pql::parser", "Invalid stmt ref starting with {}", tok.text);
+        throw PqlSyntaxException("pql::parser", "Invalid stmt ref starting with {}", tok.text);
     }
 
     // Extract out the expression between the double quotes in expression specification.
@@ -218,14 +217,14 @@ namespace pql::parser
     {
         if(ps->next().type != TT::DoubleQuotes)
         {
-            throw PqlException("pql::parser", "Expect expression to start with double quotes(\")");
+            throw PqlSyntaxException("pql::parser", "Expected expression to start with double quotes(\")");
         }
 
         zst::str_view expr_str = extractTillQuotes(ps->stream);
 
         if(ps->next().type != TT::DoubleQuotes)
         {
-            throw PqlException("pql::parser", "Expect expression to  with double quotes(\")");
+            throw PqlSyntaxException("pql::parser", "Expected expression to end with double quotes(\")");
         }
 
         return simple::parser::parseExpression(expr_str);
@@ -249,7 +248,7 @@ namespace pql::parser
         if(is_subexpr && expr_spec.expr != nullptr)
         {
             if(ps->next() != TT::Underscore)
-                throw PqlException("pql::parser", "expected '_' in subexpression pattern");
+                throw PqlSyntaxException("pql::parser", "expected '_' in subexpression pattern");
         }
 
         expr_spec.is_subexpr = is_subexpr;
@@ -266,7 +265,7 @@ namespace pql::parser
 
         if(Token tok = ps->next(); tok != TT::LParen)
         {
-            throw PqlException("pql::parser", "Expected '(' after synonym in Pattern clause instead of {}", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected '(' after synonym in Pattern clause instead of {}", tok.text);
         }
 
         pattern_cond->assignment_declaration = assign_decl;
@@ -277,12 +276,12 @@ namespace pql::parser
 
         if(Token tok = ps->next(); tok != TT::Comma)
         {
-            throw PqlException("pql::parser", "Expected ',' after ent ref declaration instead of {}", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected ',' after ent ref declaration instead of {}", tok.text);
         }
         pattern_cond->expr_spec = parse_expr_spec(ps);
         if(Token tok = ps->next(); tok != TT::RParen)
         {
-            throw PqlException("pql::parser", "Expected ')' after expr spec in Pattern clause instead of {}", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected ')' after expr spec in Pattern clause instead of {}", tok.text);
         }
 
         return pattern_cond;
@@ -296,7 +295,7 @@ namespace pql::parser
         auto pattern_cond = std::make_unique<ast::IfPatternCond>();
 
         if(Token tok = ps->next(); tok != TT::LParen)
-            throw PqlException("pql::parser", "Expected '(' after synonym in Pattern clause instead of '{}'", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected '(' after synonym in Pattern clause instead of '{}'", tok.text);
 
         pattern_cond->if_declaration = if_decl;
         pattern_cond->ent = parse_ent_ref(ps);
@@ -305,19 +304,19 @@ namespace pql::parser
             throw PqlException("pql::parser", "synonym in first argument of if pattern must be a variable");
 
         if(Token tok = ps->next(); tok != TT::Comma)
-            throw PqlException("pql::parser", "Expected ',' after ent ref declaration instead of '{}'", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected ',' after ent ref declaration instead of '{}'", tok.text);
 
         if(auto tok = ps->next(); tok != TT::Underscore)
-            throw PqlException("pql::parser", "second argument of if-pattern can only be '_'");
+            throw PqlSyntaxException("pql::parser", "second argument of if-pattern can only be '_'");
 
         if(auto tok = ps->next(); tok != TT::Comma)
-            throw PqlException("pql::parser", "if-pattern requires 3 arguments, expected ','");
+            throw PqlSyntaxException("pql::parser", "if-pattern requires 3 arguments, expected ','");
 
         if(auto tok = ps->next(); tok != TT::Underscore)
-            throw PqlException("pql::parser", "third argument of if-pattern can only be '_'");
+            throw PqlSyntaxException("pql::parser", "third argument of if-pattern can only be '_'");
 
         if(Token tok = ps->next(); tok != TT::RParen)
-            throw PqlException(
+            throw PqlSyntaxException(
                 "pql::parser", "Expected ')' after expr spec in Pattern clause instead of '{}'", tok.text);
 
         return pattern_cond;
@@ -332,7 +331,7 @@ namespace pql::parser
         auto pattern_cond = std::make_unique<ast::WhilePatternCond>();
 
         if(Token tok = ps->next(); tok != TT::LParen)
-            throw PqlException("pql::parser", "Expected '(' after synonym in Pattern clause instead of '{}'", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected '(' after synonym in Pattern clause instead of '{}'", tok.text);
 
         pattern_cond->while_declaration = while_decl;
         pattern_cond->ent = parse_ent_ref(ps);
@@ -341,13 +340,13 @@ namespace pql::parser
             throw PqlException("pql::parser", "synonym in first argument of while pattern must be a variable");
 
         if(Token tok = ps->next(); tok != TT::Comma)
-            throw PqlException("pql::parser", "Expected ',' after ent ref declaration instead of '{}'", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected ',' after ent ref declaration instead of '{}'", tok.text);
 
         if(auto tok = ps->next(); tok != TT::Underscore)
-            throw PqlException("pql::parser", "second argument of while-pattern can only be '_'");
+            throw PqlSyntaxException("pql::parser", "second argument of while-pattern can only be '_'");
 
         if(Token tok = ps->next(); tok != TT::RParen)
-            throw PqlException(
+            throw PqlSyntaxException(
                 "pql::parser", "Expected ')' after expr spec in Pattern clause instead of '{}'", tok.text);
 
         return pattern_cond;
@@ -365,7 +364,7 @@ namespace pql::parser
 
         if(Token tok = ps->next(); tok != KW_Pattern)
         {
-            throw PqlException(
+            throw PqlSyntaxException(
                 "pql::parser", "Pattern clauses needs to start with 'pattern' keyword instead of {}", tok.text);
         }
 
@@ -410,23 +409,23 @@ namespace pql::parser
 
         if(f.text != "Follows" || star != TT::Asterisk)
         {
-            throw PqlException("pql::parser", "FollowsT relationship condition should start with 'Follows*'");
+            throw PqlSyntaxException("pql::parser", "FollowsT relationship condition should start with 'Follows*'");
         }
 
         auto follows_t = std::make_unique<ast::FollowsT>();
         if(Token tok = ps->next(); tok != TT::LParen)
         {
-            throw PqlException("pql::parser", "Expected '(' at the start of 'Follows*' instead of {}", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected '(' at the start of 'Follows*' instead of {}", tok.text);
         }
         follows_t->before = parse_stmt_ref(ps);
         if(Token tok = ps->next(); tok != TT::Comma)
         {
-            throw PqlException("pql::parser", "Expected ',' after declaring ent ref in Follows*");
+            throw PqlSyntaxException("pql::parser", "Expected ',' after declaring ent ref in Follows*");
         }
         follows_t->after = parse_stmt_ref(ps);
         if(Token tok = ps->next(); tok != TT::RParen)
         {
-            throw PqlException("pql::parser", "Expected ')' at the end of 'Follows*' instead of {}", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected ')' at the end of 'Follows*' instead of {}", tok.text);
         }
 
         return follows_t;
@@ -436,22 +435,22 @@ namespace pql::parser
     {
         if(ps->next().text != "Follows")
         {
-            throw PqlException("pql::parser", "FollowsT relationship condition should start with 'Follows*'");
+            throw PqlSyntaxException("pql::parser", "FollowsT relationship condition should start with 'Follows*'");
         }
         auto follows = std::make_unique<ast::Follows>();
         if(Token tok = ps->next(); tok != TT::LParen)
         {
-            throw PqlException("pql::parser", "Expected '(' at the start of 'Follows' instead of {}", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected '(' at the start of 'Follows' instead of {}", tok.text);
         }
         follows->directly_before = parse_stmt_ref(ps);
         if(Token tok = ps->next(); tok != TT::Comma)
         {
-            throw PqlException("pql::parser", "Expected ',' after declaring ent ref in Follows");
+            throw PqlSyntaxException("pql::parser", "Expected ',' after declaring ent ref in Follows");
         }
         follows->directly_after = parse_stmt_ref(ps);
         if(Token tok = ps->next(); tok != TT::RParen)
         {
-            throw PqlException("pql::parser", "Expected ')' at the end of 'Follows' instead of {}", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected ')' at the end of 'Follows' instead of {}", tok.text);
         }
         util::logfmt("pql::parser", "Parsed: {}", follows->toString());
 
@@ -466,22 +465,22 @@ namespace pql::parser
 
         if(p.text != "Parent" || star != TT::Asterisk)
         {
-            throw PqlException("pql::parser", "ParentT relationship condition should start with 'Parent*'");
+            throw PqlSyntaxException("pql::parser", "ParentT relationship condition should start with 'Parent*'");
         }
         auto parent_t = std::make_unique<ast::ParentT>();
         if(Token tok = ps->next(); tok != TT::LParen)
         {
-            throw PqlException("pql::parser", "Expected '(' at the start of 'Parent*' instead of {}", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected '(' at the start of 'Parent*' instead of {}", tok.text);
         }
         parent_t->ancestor = parse_stmt_ref(ps);
         if(Token tok = ps->next(); tok != TT::Comma)
         {
-            throw PqlException("pql::parser", "Expected ',' after declaring ent ref in Parent*");
+            throw PqlSyntaxException("pql::parser", "Expected ',' after declaring ent ref in Parent*");
         }
         parent_t->descendant = parse_stmt_ref(ps);
         if(Token tok = ps->next(); tok != TT::RParen)
         {
-            throw PqlException("pql::parser", "Expected ')' at the end of 'Parent*' instead of {}", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected ')' at the end of 'Parent*' instead of {}", tok.text);
         }
 
         return parent_t;
@@ -491,22 +490,22 @@ namespace pql::parser
     {
         if(ps->next().text != "Parent")
         {
-            throw PqlException("pql::parser", "Parent relationship condition should start with 'Parent'");
+            throw PqlSyntaxException("pql::parser", "Parent relationship condition should start with 'Parent'");
         }
         auto parent = std::make_unique<ast::Parent>();
         if(Token tok = ps->next(); tok != TT::LParen)
         {
-            throw PqlException("pql::parser", "Expected '(' at the start of 'Parent' instead of {}", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected '(' at the start of 'Parent' instead of {}", tok.text);
         }
         parent->parent = parse_stmt_ref(ps);
         if(Token tok = ps->next(); tok != TT::Comma)
         {
-            throw PqlException("pql::parser", "Expected ',' after declaring ent ref in Parent");
+            throw PqlSyntaxException("pql::parser", "Expected ',' after declaring ent ref in Parent");
         }
         parent->child = parse_stmt_ref(ps);
         if(Token tok = ps->next(); tok != TT::RParen)
         {
-            throw PqlException("pql::parser", "Expected ')' at the end of 'Parent' instead of {}", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected ')' at the end of 'Parent' instead of {}", tok.text);
         }
 
         return parent;
@@ -515,27 +514,27 @@ namespace pql::parser
     std::unique_ptr<ast::CallsT> parse_calls_t(ParserState* ps)
     {
         auto c = ps->next();
+        ps->assert_whitespace(0, "There should be no whitespace between 'Calls' and '*'");
         auto star = ps->next();
-        auto c_star = zst::str_view(c.text.data(), strlen("Calls*"));
 
-        if(c.text != "Calls" || star != TT::Asterisk || c_star != "Calls*")
+        if(c.text != "Calls" || star != TT::Asterisk)
         {
-            throw PqlException("pql::parser", "CallsT relationship condition should start with 'Calls*'");
+            throw PqlSyntaxException("pql::parser", "CallsT relationship condition should start with 'Calls*'");
         }
         auto calls_t = std::make_unique<ast::CallsT>();
         if(Token tok = ps->next(); tok != TT::LParen)
         {
-            throw PqlException("pql::parser", "Expected '(' at the start of 'Calls*' instead of {}", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected '(' at the start of 'Calls*' instead of {}", tok.text);
         }
         calls_t->caller = parse_ent_ref(ps);
         if(Token tok = ps->next(); tok != TT::Comma)
         {
-            throw PqlException("pql::parser", "Expected ',' after declaring ent ref in Calls*");
+            throw PqlSyntaxException("pql::parser", "Expected ',' after declaring ent ref in Calls*");
         }
         calls_t->proc = parse_ent_ref(ps);
         if(Token tok = ps->next(); tok != TT::RParen)
         {
-            throw PqlException("pql::parser", "Expected ')' at the end of 'Calls*' instead of {}", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected ')' at the end of 'Calls*' instead of {}", tok.text);
         }
 
         return calls_t;
@@ -545,22 +544,22 @@ namespace pql::parser
     {
         if(ps->next().text != "Calls")
         {
-            throw PqlException("pql::parser", "Calls relationship condition should start with 'Calls'");
+            throw PqlSyntaxException("pql::parser", "Calls relationship condition should start with 'Calls'");
         }
         auto calls = std::make_unique<ast::Calls>();
         if(Token tok = ps->next(); tok != TT::LParen)
         {
-            throw PqlException("pql::parser", "Expected '(' at the start of 'Calls' instead of {}", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected '(' at the start of 'Calls' instead of {}", tok.text);
         }
         calls->caller = parse_ent_ref(ps);
         if(Token tok = ps->next(); tok != TT::Comma)
         {
-            throw PqlException("pql::parser", "Expected ',' after declaring ent ref in Calls");
+            throw PqlSyntaxException("pql::parser", "Expected ',' after declaring ent ref in Calls");
         }
         calls->proc = parse_ent_ref(ps);
         if(Token tok = ps->next(); tok != TT::RParen)
         {
-            throw PqlException("pql::parser", "Expected ')' at the end of 'Calls' instead of {}", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected ')' at the end of 'Calls' instead of {}", tok.text);
         }
 
         return calls;
@@ -590,7 +589,7 @@ namespace pql::parser
         // Only ref to previously declared entity allowed
         if(tok.type != TT::Identifier)
         {
-            throw PqlException("pql::parser",
+            throw PqlSyntaxException("pql::parser",
                 "StmtRef,EntRef should start with number, underscore, '\"' or identifier instead of {}", tok.text);
         }
 
@@ -606,12 +605,12 @@ namespace pql::parser
     {
         if(ps->next().text != "Uses")
         {
-            throw PqlException("pql::parser", "Uses relationship condition should start with 'Uses'");
+            throw PqlSyntaxException("pql::parser", "Uses relationship condition should start with 'Uses'");
         }
 
         if(Token tok = ps->next(); tok.type != TT::LParen)
         {
-            throw PqlException("pql::parser", "Expected '(' at the start of 'Uses' instead of {}", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected '(' at the start of 'Uses' instead of {}", tok.text);
         }
         bool is_user_stmt_ref = is_next_stmt_ref(ps);
 
@@ -620,12 +619,12 @@ namespace pql::parser
             auto user = parse_stmt_ref(ps);
             if(Token tok = ps->next(); tok != TT::Comma)
             {
-                throw PqlException("pql::parser", "Expected ',' after declaring stmt ref in Uses");
+                throw PqlSyntaxException("pql::parser", "Expected ',' after declaring stmt ref in Uses");
             }
             auto ent = parse_ent_ref(ps);
             if(Token tok = ps->next(); tok.type != TT::RParen)
             {
-                throw PqlException("pql::parser", "Expected ')' at the end of 'Uses' instead of {}", tok.text);
+                throw PqlSyntaxException("pql::parser", "Expected ')' at the end of 'Uses' instead of {}", tok.text);
             }
             auto user_s = std::make_unique<ast::UsesS>();
             user_s->user = user;
@@ -637,12 +636,12 @@ namespace pql::parser
             auto user = parse_ent_ref(ps);
             if(Token tok = ps->next(); tok != TT::Comma)
             {
-                throw PqlException("pql::parser", "Expected ',' after declaring ent ref in Uses");
+                throw PqlSyntaxException("pql::parser", "Expected ',' after declaring ent ref in Uses");
             }
             auto ent = parse_ent_ref(ps);
             if(Token tok = ps->next(); tok.type != TT::RParen)
             {
-                throw PqlException("pql::parser", "Expected ')' at the end of 'Uses' instead of {}", tok.text);
+                throw PqlSyntaxException("pql::parser", "Expected ')' at the end of 'Uses' instead of {}", tok.text);
             }
             auto user_p = std::make_unique<ast::UsesP>();
             user_p->user = user;
@@ -655,12 +654,12 @@ namespace pql::parser
     {
         if(ps->next().text != "Modifies")
         {
-            throw PqlException("pql::parser", "Modifies relationship condition should start with 'Modifies'");
+            throw PqlSyntaxException("pql::parser", "Modifies relationship condition should start with 'Modifies'");
         }
 
         if(Token tok = ps->next(); tok.type != TT::LParen)
         {
-            throw PqlException("pql::parser", "Expected '(' at the start of 'Modifies' instead of {}", tok.text);
+            throw PqlSyntaxException("pql::parser", "Expected '(' at the start of 'Modifies' instead of {}", tok.text);
         }
         bool is_modifier_stmt_ref = is_next_stmt_ref(ps);
 
@@ -669,12 +668,12 @@ namespace pql::parser
             auto modifier = parse_stmt_ref(ps);
             if(Token tok = ps->next(); tok != TT::Comma)
             {
-                throw PqlException("pql::parser", "Expected ',' after declaring stmt ref in Modifies");
+                throw PqlSyntaxException("pql::parser", "Expected ',' after declaring stmt ref in Modifies");
             }
             auto ent = parse_ent_ref(ps);
             if(Token tok = ps->next(); tok.type != TT::RParen)
             {
-                throw PqlException("pql::parser", "Expected ')' at the end of 'Modifies' instead of {}", tok.text);
+                throw PqlSyntaxException("pql::parser", "Expected ')' at the end of 'Modifies' instead of {}", tok.text);
             }
             auto modifies_s = std::make_unique<ast::ModifiesS>();
             modifies_s->modifier = modifier;
@@ -686,12 +685,12 @@ namespace pql::parser
             auto modifier = parse_ent_ref(ps);
             if(Token tok = ps->next(); tok != TT::Comma)
             {
-                throw PqlException("pql::parser", "Expected ',' after declaring stmt ref in Modifies");
+                throw PqlSyntaxException("pql::parser", "Expected ',' after declaring stmt ref in Modifies");
             }
             auto ent = parse_ent_ref(ps);
             if(Token tok = ps->next(); tok.type != TT::RParen)
             {
-                throw PqlException("pql::parser", "Expected ')' at the end of 'Modifies' instead of {}", tok.text);
+                throw PqlSyntaxException("pql::parser", "Expected ')' at the end of 'Modifies' instead of {}", tok.text);
             }
             auto modifies_s = std::make_unique<ast::ModifiesP>();
             modifies_s->modifier = modifier;
@@ -730,7 +729,7 @@ namespace pql::parser
         else if(rel_cond_toks[0] == KW_Calls)
             return parse_calls(ps);
 
-        throw PqlException("pql::parser", "Invalid relationship condition tokens: {}, {}", rel_cond_toks[0].text,
+        throw PqlSyntaxException("pql::parser", "Invalid relationship condition tokens: {}, {}", rel_cond_toks[0].text,
             rel_cond_toks[1].text);
     }
 
@@ -741,7 +740,7 @@ namespace pql::parser
         auto that = ps->next();
 
         if(such.text != "such" || that.text != "that")
-            throw PqlException("pql::parser", "Such That clause should start with 'such that'");
+            throw PqlSyntaxException("pql::parser", "Such That clause should start with 'such that'");
 
         util::logfmt("pql::parser", "Parsing such that clause. Remaining {}", ps->stream);
         ast::SuchThatCl such_that {};
@@ -769,7 +768,7 @@ namespace pql::parser
             throw PqlException("pql::parser", "Invalid AttrRef: All AttrRef should have a declaration");
         ast::DESIGN_ENT design_ent = attr_ref.decl->design_ent;
         if(permitted_design_entities.count(attr_name) == 0)
-            throw PqlException(
+            throw PqlSyntaxException(
                 "pql::parser", "Invalid AttrName {} provided", ast::InvAttrNameMap.find(attr_name)->second);
         if(permitted_design_entities.find(attr_name)->second.count(design_ent) == 0)
             throw PqlException("pql::parser", "Invalid design_ent:{} does not contain AttrName {}",
@@ -780,7 +779,7 @@ namespace pql::parser
     {
         Token decl_tok = ps->next();
         if(decl_tok.type != TT::Identifier)
-            throw PqlException(
+            throw PqlSyntaxException(
                 "pql::parser", "Expected identifier as the first token of an Element, got '{}'", decl_tok.text);
 
         ast::Declaration* decl = ps->declaration_list->getDeclaration(decl_tok.text.str());
@@ -793,7 +792,7 @@ namespace pql::parser
 
             std::vector<Token> attr_toks = ps->peek_two();
             if(attr_toks[0].type != TT::Identifier)
-                throw PqlException(
+                throw PqlSyntaxException(
                     "pql::parser", "Mutli Element tuple: Expected first token after '.' to be a identifier.");
 
             std::string attr_name_string;
@@ -805,7 +804,7 @@ namespace pql::parser
                 ps->assert_whitespace(0, "should not have any whitespace between the 'stmt' and '#'");
                 auto hash_tag = ps->next();
                 if(stmt.text != "stmt" || hash_tag.type != TT::HashTag)
-                    throw PqlException("pql::parser", "Invalid \"{}{}\" attribute name expected 'stmt#' instead.",
+                    throw PqlSyntaxException("pql::parser", "Invalid \"{}{}\" attribute name expected 'stmt#' instead.",
                         stmt.text.str(), hash_tag.text.str());
                 attr_name_string = "stmt#";
             }
@@ -815,7 +814,7 @@ namespace pql::parser
             }
             auto it = pql::ast::AttrNameMap.find(attr_name_string);
             if(it == pql::ast::AttrNameMap.end())
-                throw PqlException("pql::parser", "Invalid attrName: {}", attr_name_string);
+                throw PqlSyntaxException("pql::parser", "Invalid attrName: {}", attr_name_string);
 
             ast::AttrRef attr_ref { decl, it->second };
             validate_attr_name(attr_ref);
@@ -838,7 +837,7 @@ namespace pql::parser
 
         // Handle: '<' elem (',' elem)*'>'
         if(Token tok = ps->next(); tok != TT::LAngle)
-            throw PqlException("pql::parser", "Multiple elem tuple should start with `<` instead of {}", tok.text);
+            throw PqlSyntaxException("pql::parser", "Multiple elem tuple should start with `<` instead of {}", tok.text);
         std::vector<ast::Elem> ret;
         while(ps->peek_one() != TT::RAngle &&
               // prevent infinite loop
@@ -846,12 +845,12 @@ namespace pql::parser
         {
             if(!ret.empty() && ps->peek_one() != TT::Comma)
             {
-                throw PqlException("pql::parser", "Multiple element tuple should be comma separated instead of {}.",
+                throw PqlSyntaxException("pql::parser", "Multiple element tuple should be comma separated instead of {}.",
                     ps->peek_one().text);
             }
             if(ret.empty() && ps->peek_one() == TT::Comma)
             {
-                throw PqlException("pql::parser", "Multiple element tuple should not start with `,`");
+                throw PqlSyntaxException("pql::parser", "Multiple element tuple should not start with `,`");
             }
             // Should be safe to eat comma if it is present
             if(ps->peek_one() == TT::Comma)
@@ -862,10 +861,10 @@ namespace pql::parser
         }
         if(Token tok = ps->next(); tok != TT::RAngle)
         {
-            throw PqlException("pql::parser", "Multiple elem tuple should end with `>` instead of {}", tok.text);
+            throw PqlSyntaxException("pql::parser", "Multiple elem tuple should end with `>` instead of {}", tok.text);
         }
         if(ret.empty())
-            throw PqlException("pql::parser", "Tuple in result clause cannot be empty");
+            throw PqlSyntaxException("pql::parser", "Tuple in result clause cannot be empty");
         return ret;
     }
 
@@ -887,7 +886,7 @@ namespace pql::parser
         Token select_tok = ps->next();
         if(select_tok != KW_Select)
         {
-            throw PqlException(
+            throw PqlSyntaxException(
                 "pql::parser", "Select clauses should start with `Select` instead of {}", select_tok.text);
         }
 
@@ -942,7 +941,7 @@ namespace pql::parser
                 found_select = true;
                 if(ps.peek_one() != TT::EndOfFile)
                 {
-                    throw util::PqlException(
+                    throw PqlSyntaxException(
                         "pql::parser", "Query should end after a single select clause instead of {}", ps.stream);
                 }
             }
@@ -954,7 +953,7 @@ namespace pql::parser
         }
 
         if(!found_select)
-            throw util::PqlException("pql::parser", "All queries should contain a select clause");
+            throw PqlSyntaxException("pql::parser", "All queries should contain a select clause");
 
         util::logfmt("pql::parser", "Completed parsing AST: {}", query->toString());
         return query;
