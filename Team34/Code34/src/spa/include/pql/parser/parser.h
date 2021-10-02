@@ -76,9 +76,7 @@ namespace pql::parser
     Token getNextKeywordToken(zst::str_view& sv);
 
     Token getNextToken(zst::str_view& sv);
-    Token peekNextOneToken(zst::str_view sv);
-    std::vector<Token> peekNextTwoTokens(zst::str_view sv);
-    int eatWhitespace(zst::str_view& sv);
+    Token peekNextToken(zst::str_view sv);
 }
 
 template <>

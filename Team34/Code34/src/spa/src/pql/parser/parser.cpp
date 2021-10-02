@@ -33,14 +33,9 @@ namespace pql::parser
             return peekNextKeywordToken(m_stream);
         }
 
-        Token peek_one() const
+        Token peek() const
         {
-            return peekNextOneToken(m_stream);
-        }
-
-        std::vector<Token> peek_two() const
-        {
-            return peekNextTwoTokens(m_stream);
+            return peekNextToken(m_stream);
         }
 
         Token expect(TokenType tt)
@@ -48,7 +43,7 @@ namespace pql::parser
             if(auto tok = this->next(); tok != tt)
             {
                 throw PqlSyntaxException(
-                    "pql::parser", "expected '{}', found '{}' instead", tokenTypeString(tt), tok.text);
+                    "pql::parser", "expected {}, found {} instead", tokenTypeString(tt), tokenTypeString(tok));
             }
             else
             {
@@ -61,20 +56,12 @@ namespace pql::parser
             if(auto tok = this->next_keyword(); tok != tt)
             {
                 throw PqlSyntaxException(
-                    "pql::parser", "expected '{}', found '{}' instead", tokenTypeString(tt), tok.text);
+                    "pql::parser", "expected {}, found {} instead", tokenTypeString(tt), tokenTypeString(tok));
             }
             else
             {
                 return tok;
             }
-        }
-
-        void assert_whitespace(int expected_whitespace, std::string msg)
-        {
-            int count = eatWhitespace(m_stream);
-            if(count != expected_whitespace)
-                throw PqlSyntaxException(
-                    "pql::parser", "Expected {} whitespace but got {} instead. {}", expected_whitespace, count, msg);
         }
 
         bool hasDeclaration(zst::str_view name)
@@ -159,10 +146,10 @@ namespace pql::parser
     // Process the next tokens as the start of an entity declaration and insert declarations into declaration_list
     static void parse_declarations(ParserState* ps)
     {
-        if(KW_DesignEntities.count(ps->peek_one()) == 0)
+        if(KW_DesignEntities.count(ps->peek()) == 0)
         {
             throw PqlSyntaxException("pql::parser",
-                "Expected declarations to start with design-entity keyword instead of {}", ps->peek_one().text);
+                "Expected declarations to start with design-entity keyword instead of {}", ps->peek().text);
         }
 
         std::string ent_string { ps->next().text.str() };
@@ -175,7 +162,7 @@ namespace pql::parser
         parse_one_declaration(ps, ent);
 
         // Handle trailing additional var using `,`
-        while(ps->peek_one().type == TT::Comma)
+        while(ps->peek().type == TT::Comma)
         {
             ps->expect(TT::Comma);
             parse_one_declaration(ps, ent);
@@ -258,13 +245,13 @@ namespace pql::parser
         ast::ExprSpec expr_spec {};
 
         bool is_subexpr = false;
-        if(ps->peek_one() == TT::Underscore)
+        if(ps->peek() == TT::Underscore)
         {
             ps->next();
             is_subexpr = true;
         }
 
-        if(auto estr = ps->peek_one(); estr == TT::String)
+        if(auto estr = ps->peek(); estr == TT::String)
         {
             ps->next();
             expr_spec.expr = simple::parser::parseExpression(estr.text);
@@ -404,7 +391,7 @@ namespace pql::parser
 
     static bool is_next_stmt_ref(ParserState* ps)
     {
-        Token tok = ps->peek_one();
+        Token tok = ps->peek();
 
         // all numbers are statement refs, and assume underscores are as well.
         if(tok.type == TT::Number || tok.type == TT::Underscore)
@@ -562,12 +549,12 @@ namespace pql::parser
         return ast::Elem::ofAttrRef(attr_ref);
     }
 
-    ast::Elem parse_elem(ParserState* ps)
+    static ast::Elem parse_elem(ParserState* ps)
     {
         auto decl_tok = ps->expect(TT::Identifier);
         auto decl = ps->getDeclaration(decl_tok.text.str());
 
-        if(ps->peek_one() == TT::Dot)
+        if(ps->peek() == TT::Dot)
         {
             // Eat dot
             ps->next();
@@ -594,52 +581,51 @@ namespace pql::parser
         }
     }
 
-    std::vector<ast::Elem> parse_tuple(ParserState* ps)
+    static std::vector<ast::Elem> parse_tuple(ParserState* ps)
     {
         // Handle: elem
-        if(ps->peek_one() != TT::LAngle)
+        if(ps->peek() != TT::LAngle)
         {
             util::logfmt("pql::parser", "Parsing tuple as a single element without '<>'");
             return { parse_elem(ps) };
         }
 
         // Handle: '<' elem (',' elem)*'>'
-        if(Token tok = ps->next(); tok != TT::LAngle)
-            throw PqlSyntaxException(
-                "pql::parser", "Multiple elem tuple should start with `<` instead of {}", tok.text);
-        std::vector<ast::Elem> ret;
-        while(ps->peek_one() != TT::RAngle &&
-              // prevent infinite loop
-              ps->peek_one() != TT::EndOfFile)
+        ps->expect(TT::LAngle);
+
+        std::vector<ast::Elem> ret {};
+        while(true)
         {
-            if(!ret.empty() && ps->peek_one() != TT::Comma)
-            {
-                throw PqlSyntaxException("pql::parser",
-                    "Multiple element tuple should be comma separated instead of {}.", ps->peek_one().text);
-            }
-            if(ret.empty() && ps->peek_one() == TT::Comma)
-            {
-                throw PqlSyntaxException("pql::parser", "Multiple element tuple should not start with `,`");
-            }
-            // Should be safe to eat comma if it is present
-            if(ps->peek_one() == TT::Comma)
-                ps->next();
             ast::Elem elem = parse_elem(ps);
             util::logfmt("pql::ast", "Parsed new Elem {}", elem.toString());
+
             ret.push_back(elem);
+
+            if(ps->peek() == TT::Comma)
+            {
+                ps->next();
+            }
+            else if(ps->peek() == TT::RAngle)
+            {
+                break;
+            }
+            else
+            {
+                throw PqlSyntaxException(
+                    "pql::parser", "expected either ',' or '>' in tuple, found '{}' instead", ps->peek().text);
+            }
         }
-        if(Token tok = ps->next(); tok != TT::RAngle)
-        {
-            throw PqlSyntaxException("pql::parser", "Multiple elem tuple should end with `>` instead of {}", tok.text);
-        }
+
+        ps->expect(TT::RAngle);
         if(ret.empty())
             throw PqlSyntaxException("pql::parser", "Tuple in result clause cannot be empty");
+
         return ret;
     }
 
-    ast::ResultCl parse_result(ParserState* ps)
+    static ast::ResultCl parse_result(ParserState* ps)
     {
-        if(ps->peek_one() == KW_Boolean)
+        if(ps->peek() == KW_Boolean)
         {
             ps->next();
             return ast::ResultCl::ofBool();
@@ -705,10 +691,10 @@ namespace pql::parser
                 query->select = parse_select(&ps);
 
                 found_select = true;
-                if(ps.peek_one() != TT::EndOfFile)
+                if(ps.peek() != TT::EndOfFile)
                 {
-                    throw PqlSyntaxException("pql::parser",
-                        "Query should end after a single select clause instead of '{}'", ps.peek_one().text);
+                    throw PqlSyntaxException(
+                        "pql::parser", "Query should end after a single select clause instead of '{}'", ps.peek().text);
                 }
             }
             else

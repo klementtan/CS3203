@@ -244,25 +244,24 @@ TEST_CASE("Result Clause")
         // comma before first element in tuple
         CHECK_THROWS_WITH(pql::parser::parsePQL("stmt s1, s2, s3;\n"
                                                 "Select <,s1,s2,s3> such that Follows(s1,_)"),
-            "Multiple element tuple should not start with `,`");
+            "expected identifier, found ',' instead");
         // No comma between elements
         CHECK_THROWS_WITH(pql::parser::parsePQL("stmt s1, s2, s3;\n"
                                                 "Select <s1 s2,s3> such that Follows(s1,_)"),
-            Catch::Contains("Multiple element tuple should be comma separated"));
+            Catch::Contains("expected either ',' or '>' in tuple, found 's2' instead"));
         // No ending '>'
         CHECK_THROWS_WITH(pql::parser::parsePQL("stmt s1, s2, s3;\n"
                                                 "Select <s1,s2,s3"),
-            Catch::Contains("Multiple elem tuple should end with `>`"));
+            Catch::Contains("expected either ',' or '>' in tuple, found '$end of input' instead"));
         // No empty tuple
         CHECK_THROWS_WITH(pql::parser::parsePQL("stmt s1, s2, s3;\n"
                                                 "Select <>"),
-            Catch::Contains("Tuple in result clause cannot be empty"));
+            Catch::Contains("expected identifier, found '>' instead"));
 
         // Space between 'stmt' and '#'
         CHECK_THROWS_WITH(pql::parser::parsePQL("stmt s1, s2, s3;\n"
                                                 "Select s1.stmt #"),
-            Catch::Contains(
-                "Invalid attribute 'stmt'"));
+            Catch::Contains("Invalid attribute 'stmt'"));
     }
 }
 
@@ -282,10 +281,10 @@ TEST_CASE("invalid queries")
         CHECK_THROWS_WITH(parsePQL("stmt s ; Select s   such    that   Parent(s, _)"),
             Catch::Contains("unexpected token 'such' in Select"));
 
-        CHECK_THROWS_WITH(parsePQL("stmt s; Select s such that Follows  *  (s, _)"),
-            Catch::Contains("invalid token '*'"));
+        CHECK_THROWS_WITH(
+            parsePQL("stmt s; Select s such that Follows  *  (s, _)"), Catch::Contains("invalid token '*'"));
 
-        CHECK_THROWS_WITH(parsePQL("stmt s; Select s such that Parent  *  (s, _)"),
-            Catch::Contains("invalid token '*'"));
+        CHECK_THROWS_WITH(
+            parsePQL("stmt s; Select s such that Parent  *  (s, _)"), Catch::Contains("invalid token '*'"));
     }
 }
