@@ -371,4 +371,136 @@ namespace pql::ast
         }
         return _tuple;
     }
+
+
+
+
+
+    WithCondRef::WithCondRef() : m_type(Type::Invalid)
+    {
+    }
+
+    WithCondRef::~WithCondRef()
+    {
+        switch(m_type)
+        {
+            using namespace std;
+            case Type::String:
+                this->_string.~string();
+                break;
+
+            case Type::AttrRef:
+                this->_attr_ref.~AttrRef();
+                break;
+
+            default:
+                // integer and pointer don't need destructing
+                break;
+        }
+    }
+
+    WithCondRef::WithCondRef(const WithCondRef& other)
+    {
+        this->m_type = other.m_type;
+        switch(this->m_type)
+        {
+            case Type::String:
+                this->_string = other._string;
+                break;
+
+            case Type::AttrRef:
+                this->_attr_ref = other._attr_ref;
+                break;
+
+            case Type::Integer:
+                this->_int = other._int;
+                break;
+
+            case Type::Declaration:
+                this->_decl = other._decl;
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    WithCondRef& WithCondRef::operator=(const WithCondRef& other)
+    {
+        if(&other != this)
+        {
+            auto copy = WithCondRef(other);
+            std::swap(*this, copy);
+        }
+        return *this;
+    }
+
+    WithCondRef::WithCondRef(WithCondRef&& other)
+    {
+        this->m_type = other.m_type;
+        other.m_type = Type::Invalid;
+        switch(this->m_type)
+        {
+            case Type::String:
+                this->_string = std::move(other._string);
+                break;
+
+            case Type::AttrRef:
+                this->_attr_ref = std::move(other._attr_ref);
+                break;
+
+            case Type::Integer:
+                this->_int = std::move(other._int);
+                break;
+
+            case Type::Declaration:
+                this->_decl = std::move(other._decl);
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    WithCondRef& WithCondRef::operator=(WithCondRef&& other)
+    {
+        if(&other != this)
+        {
+            auto copy = WithCondRef(std::move(other));
+            std::swap(*this, copy);
+        }
+        return *this;
+    }
+
+    std::string WithCondRef::str() const
+    {
+        if(m_type != Type::String)
+            throw util::PqlException("pql", "WithCondRef is not a string");
+
+        return this->_string;
+    }
+
+    uint64_t WithCondRef::integer() const
+    {
+        if(m_type != Type::Integer)
+            throw util::PqlException("pql", "WithCondRef is not an integer");
+
+        return this->_int;
+    }
+
+    AttrRef WithCondRef::attrRef() const
+    {
+        if(m_type != Type::AttrRef)
+            throw util::PqlException("pql", "WithCondRef is not an AttrRef");
+
+        return this->_attr_ref;
+    }
+
+    Declaration* WithCondRef::declaration() const
+    {
+        if(m_type != Type::Declaration)
+            throw util::PqlException("pql", "WithCondRef is not a declaration");
+
+        return this->_decl;
+    }
 }

@@ -409,8 +409,6 @@ namespace pql::ast
     /** Pattern Clause. */
     struct PatternCl
     {
-        // Support multiple PatternCond for forward compatibility. Future iteration
-        // requires ANDing multiple PatternCond
         std::vector<std::unique_ptr<PatternCond>> pattern_conds;
         std::string toString() const;
     };
@@ -418,9 +416,56 @@ namespace pql::ast
     /** SuchThat Clause. */
     struct SuchThatCl
     {
-        // Support multiple RelCond for forward compatibility. Future iteration
-        // requires ANDing multiple RelCond
         std::vector<std::unique_ptr<RelCond>> rel_conds;
+        std::string toString() const;
+    };
+
+    // one side of a with condition
+    struct WithCondRef
+    {
+        enum class Type
+        {
+            Invalid,
+            Declaration,
+            AttrRef,
+            Integer,
+            String,
+        };
+
+        union
+        {
+            std::string _string;
+            uint64_t _int;
+            AttrRef _attr_ref;
+            Declaration* _decl;
+        };
+
+        Type m_type {};
+
+        WithCondRef();
+        ~WithCondRef();
+
+        WithCondRef(const WithCondRef& other);
+        WithCondRef& operator=(const WithCondRef& other);
+
+        WithCondRef(WithCondRef&& other);
+        WithCondRef& operator=(WithCondRef&& other);
+
+        inline bool isString() const { return m_type == Type::String; }
+        inline bool isInteger() const { return m_type == Type::Integer; }
+        inline bool isAttrRef() const { return m_type == Type::AttrRef; }
+        inline bool isDeclaration() const { return m_type == Type::Declaration; }
+
+        std::string str() const;
+        uint64_t integer() const;
+        AttrRef attrRef() const;
+        Declaration* declaration() const;
+    };
+
+    struct WithCl
+    {
+        // since everybody is just a = b, we just store it as pairs.
+        std::vector<std::pair<WithCondRef, WithCondRef>> with_conds {};
         std::string toString() const;
     };
 
@@ -460,6 +505,7 @@ namespace pql::ast
     {
         std::optional<SuchThatCl> such_that {};
         std::optional<PatternCl> pattern {};
+        std::optional<WithCl> with {};
         ResultCl result {};
 
         std::string toString() const;

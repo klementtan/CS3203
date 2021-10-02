@@ -295,7 +295,7 @@ TEST_CASE("Select")
     pattern_cl.pattern_conds.push_back(std::move(assign_pattern_cond));
     auto resutl_cl = pql::ast::ResultCl::ofTuple({ pql::ast::Elem::ofDeclaration(&declaration1) });
 
-    pql::ast::Select select { std::move(such_that_cl), std::move(pattern_cl), resutl_cl };
+    pql::ast::Select select { std::move(such_that_cl), std::move(pattern_cl), {}, resutl_cl };
     INFO(select.toString());
     REQUIRE(select.toString() == "Select(such_that:SuchThatCl[\n"
                                  "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:"
@@ -347,7 +347,7 @@ TEST_CASE("Query")
     pattern_cl.pattern_conds.push_back(std::move(assign_pattern_cond));
 
     auto resutl_cl = pql::ast::ResultCl::ofTuple({ pql::ast::Elem::ofDeclaration(declaration1) });
-    pql::ast::Select select { std::move(such_that_cl), std::move(pattern_cl), resutl_cl };
+    pql::ast::Select select { std::move(such_that_cl), std::move(pattern_cl), {}, resutl_cl };
 
     pql::ast::Query query {};
     query.select = std::move(select);
