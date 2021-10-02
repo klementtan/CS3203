@@ -334,26 +334,30 @@ namespace pql::parser
         ps->expect_keyword(TT::KW_Pattern);
 
         std::vector<std::unique_ptr<ast::PatternCond>> pattern_conds;
-        Token declaration_tok = ps->next();
 
-        auto pattern_decl = ps->getDeclaration(declaration_tok.text);
-        auto decl_ent = pattern_decl->design_ent;
+        do {
+            Token declaration_tok = ps->next();
 
-        if(decl_ent == ast::DESIGN_ENT::ASSIGN)
-        {
-            pattern_conds.push_back(parse_assign_pattern(ps, pattern_decl));
-        }
-        else if(decl_ent == ast::DESIGN_ENT::IF || decl_ent == ast::DESIGN_ENT::WHILE)
-        {
-            pattern_conds.push_back(parse_if_while_pattern(ps, pattern_decl));
-        }
-        else
-        {
-            // TODO: we won't be able to parse the rest of the pattern without knowing the correct
-            // type of the declaration. should this be a syntactic error?
-            ps->setInvalid("invalid synonym type '{}' in pattern clause (can only have 'if', 'while', or 'assign'",
-                ast::INV_DESIGN_ENT_MAP.at(decl_ent));
-        }
+            auto pattern_decl = ps->getDeclaration(declaration_tok.text);
+            auto decl_ent = pattern_decl->design_ent;
+
+            if(decl_ent == ast::DESIGN_ENT::ASSIGN)
+            {
+                pattern_conds.push_back(parse_assign_pattern(ps, pattern_decl));
+            }
+            else if(decl_ent == ast::DESIGN_ENT::IF || decl_ent == ast::DESIGN_ENT::WHILE)
+            {
+                pattern_conds.push_back(parse_if_while_pattern(ps, pattern_decl));
+            }
+            else
+            {
+                // TODO: we won't be able to parse the rest of the pattern without knowing the correct
+                // type of the declaration. should this be a syntactic error?
+                ps->setInvalid("invalid synonym type '{}' in pattern clause (can only have 'if', 'while', or 'assign'",
+                    ast::INV_DESIGN_ENT_MAP.at(decl_ent));
+            }
+
+        } while(ps->peek_keyword() == TT::KW_And ? (ps->next_keyword(), true) : false);
 
         return ast::PatternCl { std::move(pattern_conds) };
     }
@@ -468,7 +472,7 @@ namespace pql::parser
         }
     }
 
-    std::unique_ptr<ast::RelCond> parse_rel_cond(ParserState* ps)
+    static std::unique_ptr<ast::RelCond> parse_rel_cond(ParserState* ps)
     {
         using namespace ast;
         auto rel_tok = ps->peek_keyword();
@@ -503,8 +507,12 @@ namespace pql::parser
         util::logfmt("pql::parser", "Parsing such that clause.");
         ast::SuchThatCl such_that {};
 
-        // TODO(#100): Handle AND condition here
         such_that.rel_conds.push_back(parse_rel_cond(ps));
+        while(ps->peek_keyword() == TT::KW_And)
+        {
+            ps->next_keyword();
+            such_that.rel_conds.push_back(parse_rel_cond(ps));
+        }
 
         util::logfmt("pql::parser", "Complete parsing such that clause: {}", such_that.toString());
         return such_that;
