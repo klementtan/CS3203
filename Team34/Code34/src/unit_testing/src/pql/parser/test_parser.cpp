@@ -273,7 +273,8 @@ TEST_CASE("invalid queries")
     SECTION("duplicate queries")
     {
         auto query = "stmt s; assign s; Select s";
-        REQUIRE_THROWS_WITH(parsePQL(query), Catch::Contains("duplicate declaration 's'"));
+        auto q = parsePQL(query);
+        REQUIRE(q->isInvalid());
     }
 
     SECTION("such-that/parent*/follows* spacing")

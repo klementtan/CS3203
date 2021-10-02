@@ -29,6 +29,8 @@ namespace pql::ast
 
     enum class DESIGN_ENT
     {
+        INVALID,
+
         STMT,
         READ,
         PRINT,
@@ -468,7 +470,12 @@ namespace pql::ast
         Select select {};
         DeclarationList declarations {};
 
+        bool is_semantically_invalid = false;
+
         std::string toString() const;
+
+        inline void setInvalid() { is_semantically_invalid = true; }
+        inline bool isInvalid() const { return is_semantically_invalid; }
     };
 
 } // pql::ast

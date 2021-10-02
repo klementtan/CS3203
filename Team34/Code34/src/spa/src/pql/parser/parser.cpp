@@ -19,41 +19,84 @@ namespace pql::parser
     {
         zst::str_view raw_stream() const
         {
-            return this->stream;
+            return m_stream;
         }
+
+        zst::str_view& raw_stream()
+        {
+            return m_stream;
+        }
+
 
         Token next()
         {
-            return getNextToken(this->stream);
+            return getNextToken(m_stream);
         }
 
         Token peek_one() const
         {
-            return peekNextOneToken(this->stream);
+            return peekNextOneToken(m_stream);
         }
 
         std::vector<Token> peek_two() const
         {
-            return peekNextTwoTokens(this->stream);
+            return peekNextTwoTokens(m_stream);
         }
 
         void assert_whitespace(int expected_whitespace, std::string msg)
         {
-            int count = eatWhitespace(this->stream);
+            int count = eatWhitespace(m_stream);
             if(count != expected_whitespace)
                 throw PqlSyntaxException(
                     "pql::parser", "Expected {} whitespace but got {} instead. {}", expected_whitespace, count, msg);
         }
 
-        // void addDeclaration(const std::string& name, ast::DESIGN_ENT ent)
-        // {
+        bool hasDeclaration(zst::str_view name)
+        {
+            return m_query->declarations.hasDeclaration(name.str());
+        }
 
-        // }
+        // note: the dummy declaration is here so that we don't propagate nullptrs all over the place.
+        ast::Declaration* addDeclaration(zst::str_view name, ast::DESIGN_ENT type)
+        {
+            if(this->hasDeclaration(name))
+            {
+                m_query->setInvalid();
+                util::logfmt("pql::parser", "duplicate declaration of '{}'", name);
+                return &m_dummy_decl;
+            }
 
-    // private:
-        zst::str_view stream {};
-        ast::DeclarationList* declaration_list {};
+            util::logfmt("pql::parser", "added declaration '{}' (type '{}')", name, ast::INV_DESIGN_ENT_MAP.at(type));
+            return m_query->declarations.addDeclaration(name.str(), type);
+        }
+
+        ast::Declaration* getDeclaration(zst::str_view name)
+        {
+            if(!this->hasDeclaration(name))
+            {
+                m_query->setInvalid();
+                util::logfmt("pql::parser", "use of undeclared synonym '{}'", name);
+                return &m_dummy_decl;
+            }
+            return m_query->declarations.getDeclaration(name.str());
+        }
+
+        ParserState(zst::str_view input, ast::Query* query) : m_stream(input), m_query(query)
+        {
+            m_dummy_decl.name = "$uwu";
+            m_dummy_decl.design_ent = ast::DESIGN_ENT::INVALID;
+        }
+
+    private:
+        zst::str_view m_stream {};
+        ast::Query* m_query {};
+        ast::Declaration m_dummy_decl {};
     };
+
+
+
+
+
 
     // Clauses
     const Token KW_Select { "Select", TT::Identifier };
@@ -95,29 +138,27 @@ namespace pql::parser
     const Token KW_AttrName_StmtNum { "call", TT::Identifier };
 
     // Process the next token as a variable and insert it into declaration_list
-    void insert_var_to_declarations(ParserState* ps, ast::DESIGN_ENT ent)
+    void parse_one_declaration(ParserState* ps, ast::DESIGN_ENT ent)
     {
         Token var = ps->next();
 
         if(var.type != TT::Identifier)
         {
             throw PqlSyntaxException(
-                "pql::parser", "expected variable name to be an identifier but received {} instead.", var.text);
+                "pql::parser", "expected variable name to be an identifier but received '{}' instead.", var.text);
         }
-        if(ps->declaration_list->hasDeclaration(var.text.str()))
-            throw util::PqlException("pql::parser", "duplicate declaration '{}'", var.text);
 
-        util::logfmt("pql::parser", "Adding declaration {} to declaration list", var.text);
-        ps->declaration_list->addDeclaration(var.text.str(), ent);
+        ps->addDeclaration(var.text, ent);
     }
 
     // Process the next tokens as the start of an entity declaration and insert declarations into declaration_list
-    void insert_declaration(ParserState* ps)
+    void parse_declarations(ParserState* ps)
     {
         auto check_semicolon = [](ParserState* ps) {
             if(ps->next() != TT::Semicolon)
                 throw PqlSyntaxException("pql::parser", "expected semicolon after statement");
         };
+
         auto check_comma = [](ParserState* ps) {
             if(ps->next() != TT::Comma)
                 throw PqlSyntaxException("parser", "expected semicolon after statement");
@@ -133,18 +174,18 @@ namespace pql::parser
         util::logfmt("pql::parser", "Parsing declaration with design_ent:{}", ent_string);
 
         if(ast::DESIGN_ENT_MAP.count(ent_string) == 0)
-        {
             util::logfmt("pql::parser", "Invalid entity provided in declaration {}", ent_string);
-        }
+
         ast::DESIGN_ENT ent = ast::DESIGN_ENT_MAP.find(ent_string)->second;
-        insert_var_to_declarations(ps, ent);
+        parse_one_declaration(ps, ent);
 
         // Handle trailing additional var using `,`
         while(ps->peek_one().type == TT::Comma)
         {
             check_comma(ps);
-            insert_var_to_declarations(ps, ent);
+            parse_one_declaration(ps, ent);
         }
+
         check_semicolon(ps);
     }
 
@@ -156,32 +197,28 @@ namespace pql::parser
         {
             return ast::EntRef::ofWildcard();
         }
-        if(tok.type == TT::DoubleQuotes)
+        else if(tok.type == TT::DoubleQuotes)
         {
             Token name_declaration_tok = ps->next();
+
             if(name_declaration_tok.type != TT::Identifier)
-            {
-                throw PqlSyntaxException("pql::parser", "Expected named declaration to be an identifier instead of {}",
+                throw PqlSyntaxException("pql::parser", "Expected literal entity name to be an identifier instead of {}",
                     name_declaration_tok.text);
-            }
+
             if(ps->next() != TT::DoubleQuotes)
-            {
-                throw PqlSyntaxException("pql::parser", "Expected literal entity name to end with double quotes(\")");
-            }
+                throw PqlSyntaxException("pql::parser", "Expected '\"' after literal entity name");
 
             return ast::EntRef::ofName(name_declaration_tok.text.str());
         }
-        if(tok.type == TokenType::Identifier)
+        else if(tok.type == TokenType::Identifier)
         {
             std::string var_name = tok.text.str();
 
-            auto declaration = ps->declaration_list->getDeclaration(var_name);
-            if(declaration == nullptr)
-                throw PqlException("pql::parser", "Undeclared entity {} provided when parsing ent ref", var_name);
-
+            auto declaration = ps->getDeclaration(var_name);
             return ast::EntRef::ofDeclaration(declaration);
         }
-        throw PqlSyntaxException("pql::parser", "Invalid ent ref starting with {}", tok.text);
+
+        throw PqlSyntaxException("pql::parser", "Invalid entity ref starting with '{}'", tok.text);
     }
 
     ast::StmtRef parse_stmt_ref(ParserState* ps)
@@ -191,7 +228,7 @@ namespace pql::parser
         {
             return ast::StmtRef::ofWildcard();
         }
-        if(tok.type == TT::Number)
+        else if(tok.type == TT::Number)
         {
             size_t id = 0;
             for(char c : tok.text)
@@ -199,16 +236,12 @@ namespace pql::parser
 
             return ast::StmtRef::ofStatementId(id);
         }
-        if(tok.type == TokenType::Identifier)
+        else if(tok.type == TokenType::Identifier)
         {
-            std::string var_name = tok.text.str();
-
-            auto declaration = ps->declaration_list->getDeclaration(var_name);
-            if(declaration == nullptr)
-                throw PqlException("pql::parser", "Undeclared entity {} provided when parsing stmt ref", var_name);
-
+            auto declaration = ps->getDeclaration(tok.text);
             return ast::StmtRef::ofDeclaration(declaration);
         }
+
         throw PqlSyntaxException("pql::parser", "Invalid stmt ref starting with {}", tok.text);
     }
 
@@ -216,16 +249,12 @@ namespace pql::parser
     std::unique_ptr<simple::ast::Expr> parse_expr(ParserState* ps)
     {
         if(ps->next().type != TT::DoubleQuotes)
-        {
             throw PqlSyntaxException("pql::parser", "Expected expression to start with double quotes(\")");
-        }
 
-        zst::str_view expr_str = extractTillQuotes(ps->stream);
+        zst::str_view expr_str = extractTillQuotes(ps->raw_stream());
 
         if(ps->next().type != TT::DoubleQuotes)
-        {
             throw PqlSyntaxException("pql::parser", "Expected expression to end with double quotes(\")");
-        }
 
         return simple::parser::parseExpression(expr_str);
     }
@@ -370,13 +399,7 @@ namespace pql::parser
 
         Token declaration_tok = ps->next();
 
-        auto pattern_decl = ps->declaration_list->getDeclaration(declaration_tok.text.str());
-        if(pattern_decl == nullptr)
-        {
-            throw PqlException("pql::parser",
-                "Pattern condition should start with the synonym of a previous declaration instead of {}",
-                declaration_tok.text);
-        }
+        auto pattern_decl = ps->getDeclaration(declaration_tok.text.str());
 
         if(pattern_decl->design_ent == ast::DESIGN_ENT::ASSIGN)
         {
@@ -593,9 +616,7 @@ namespace pql::parser
                 "StmtRef,EntRef should start with number, underscore, '\"' or identifier instead of {}", tok.text);
         }
 
-        auto decl = ps->declaration_list->getDeclaration(tok.text.str());
-        if(decl == nullptr)
-            throw PqlException("pql::parser", "{} was not previously declared", tok.text);
+        auto decl = ps->getDeclaration(tok.text.str());
 
         // Check if the reference to previously declared entity is a stmt.
         return ast::kStmtDesignEntities.count(decl->design_ent) > 0;
@@ -742,7 +763,7 @@ namespace pql::parser
         if(such.text != "such" || that.text != "that")
             throw PqlSyntaxException("pql::parser", "Such That clause should start with 'such that'");
 
-        util::logfmt("pql::parser", "Parsing such that clause. Remaining {}", ps->stream);
+        util::logfmt("pql::parser", "Parsing such that clause.");
         ast::SuchThatCl such_that {};
 
         // TODO(iteration 2): Handle AND condition here
@@ -782,9 +803,8 @@ namespace pql::parser
             throw PqlSyntaxException(
                 "pql::parser", "Expected identifier as the first token of an Element, got '{}'", decl_tok.text);
 
-        ast::Declaration* decl = ps->declaration_list->getDeclaration(decl_tok.text.str());
-        if(decl == nullptr)
-            throw PqlException("pql::parser", "Undeclared entity {} provided.", decl_tok.text);
+        auto decl = ps->getDeclaration(decl_tok.text.str());
+
         if(ps->peek_one() == TT::Dot)
         {
             // Eat dot
@@ -927,8 +947,7 @@ namespace pql::parser
     {
         util::logfmt("pql::parer", "Parsing input {}", input);
         auto query = std::make_unique<ast::Query>();
-
-        auto ps = ParserState { input, &query->declarations };
+        auto ps = ParserState(input, query.get());
 
         bool found_select = false;
         for(Token t; (t = ps.peek_one()) != TT::EndOfFile;)
@@ -942,13 +961,13 @@ namespace pql::parser
                 if(ps.peek_one() != TT::EndOfFile)
                 {
                     throw PqlSyntaxException(
-                        "pql::parser", "Query should end after a single select clause instead of {}", ps.stream);
+                        "pql::parser", "Query should end after a single select clause instead of '{}'", ps.peek_one().text);
                 }
             }
             else
             {
                 util::logfmt("pql::parser", "parsing declaration");
-                insert_declaration(&ps);
+                parse_declarations(&ps);
             }
         }
 
