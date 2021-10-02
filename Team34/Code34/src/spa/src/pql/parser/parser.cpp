@@ -132,7 +132,7 @@ namespace pql::parser
         util::logfmt("pql::parser", "Parsing declaration with design_ent:{}", ent_string);
 
         if(ast::DESIGN_ENT_MAP.count(ent_string) == 0)
-            util::logfmt("pql::parser", "Invalid entity provided in declaration {}", ent_string);
+            throw SyntaxError("Invalid entity '{}' provided in declaration", ent_string);
 
         ast::DESIGN_ENT ent = ast::DESIGN_ENT_MAP.find(ent_string)->second;
         parse_one_declaration(ps, ent);
@@ -308,12 +308,11 @@ namespace pql::parser
         }
     }
 
-    static ast::PatternCl parse_pattern(ParserState* ps)
+    static std::vector<std::unique_ptr<ast::PatternCond>> parse_pattern(ParserState* ps)
     {
         ps->expect_keyword(TT::KW_Pattern);
 
         std::vector<std::unique_ptr<ast::PatternCond>> pattern_conds;
-
         do
         {
             Token declaration_tok = ps->next();
@@ -339,7 +338,7 @@ namespace pql::parser
 
         } while(ps->peek_keyword() == TT::KW_And ? (ps->next_keyword(), true) : false);
 
-        return ast::PatternCl { std::move(pattern_conds) };
+        return pattern_conds;
     }
 
     // parses relations where that are not Uses/Modifies (ie. which are not overloaded based on the type)
@@ -480,22 +479,21 @@ namespace pql::parser
         throw SyntaxError("Invalid relationship condition '{}'", rel_tok.text);
     }
 
-    static ast::SuchThatCl parse_such_that(ParserState* ps)
+    static std::vector<std::unique_ptr<ast::RelCond>> parse_such_that(ParserState* ps)
     {
         ps->expect_keyword(TT::KW_SuchThat);
 
         util::logfmt("pql::parser", "Parsing such that clause.");
-        ast::SuchThatCl such_that {};
+        std::vector<std::unique_ptr<ast::RelCond>> rels {};
 
-        such_that.rel_conds.push_back(parse_rel_cond(ps));
+        rels.push_back(parse_rel_cond(ps));
         while(ps->peek_keyword() == TT::KW_And)
         {
             ps->next_keyword();
-            such_that.rel_conds.push_back(parse_rel_cond(ps));
+            rels.push_back(parse_rel_cond(ps));
         }
 
-        util::logfmt("pql::parser", "Complete parsing such that clause: {}", such_that.toString());
-        return such_that;
+        return rels;
     }
 
 
@@ -655,12 +653,16 @@ namespace pql::parser
             if(t == TT::KW_Pattern)
             {
                 util::logfmt("pql::parser", "Parsing pattern clause");
-                select.pattern = parse_pattern(ps);
+                auto pats = parse_pattern(ps);
+                for(auto& p : pats)
+                    select.patterns.push_back(std::move(p));
             }
             else if(t == TT::KW_SuchThat)
             {
                 util::logfmt("pql::parser", "Parsing such that clause");
-                select.such_that = parse_such_that(ps);
+                auto sts = parse_such_that(ps);
+                for(auto& s : sts)
+                    select.relations.push_back(std::move(s));
             }
             else if(t == TT::KW_With)
             {

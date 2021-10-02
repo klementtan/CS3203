@@ -406,20 +406,6 @@ namespace pql::ast
         EntRef ent {};
     };
 
-    /** Pattern Clause. */
-    struct PatternCl
-    {
-        std::vector<std::unique_ptr<PatternCond>> pattern_conds;
-        std::string toString() const;
-    };
-
-    /** SuchThat Clause. */
-    struct SuchThatCl
-    {
-        std::vector<std::unique_ptr<RelCond>> rel_conds;
-        std::string toString() const;
-    };
-
     // one side of a with condition
     struct WithCondRef
     {
@@ -460,12 +446,14 @@ namespace pql::ast
         uint64_t integer() const;
         AttrRef attrRef() const;
         Declaration* declaration() const;
+
+        std::string toString() const;
     };
 
-    struct WithCl
+    struct WithCond
     {
-        // since everybody is just a = b, we just store it as pairs.
-        std::vector<std::pair<WithCondRef, WithCondRef>> with_conds {};
+        WithCondRef lhs {};
+        WithCondRef rhs {};
         std::string toString() const;
     };
 
@@ -503,9 +491,10 @@ namespace pql::ast
     /** Select query. */
     struct Select
     {
-        std::optional<SuchThatCl> such_that {};
-        std::optional<PatternCl> pattern {};
-        std::optional<WithCl> with {};
+        std::vector<std::unique_ptr<PatternCond>> patterns {};
+        std::vector<std::unique_ptr<RelCond>> relations {};
+        std::vector<std::unique_ptr<WithCond>> withs {};
+
         ResultCl result {};
 
         std::string toString() const;
