@@ -114,10 +114,6 @@ namespace pql::parser
     };
 
 
-    // Clauses
-    const Token KW_Boolean { "BOOLEAN", TT::Identifier };
-    const std::vector<Token> KW_SuchThat = { { "such", TT::Identifier }, { "that", TT::Identifier } };
-
     // Design entities
     const Token KW_Stmt { "stmt", TT::Identifier };
     const Token KW_Assign { "assign", TT::Identifier };
@@ -340,7 +336,7 @@ namespace pql::parser
         std::vector<std::unique_ptr<ast::PatternCond>> pattern_conds;
         Token declaration_tok = ps->next();
 
-        auto pattern_decl = ps->getDeclaration(declaration_tok.text.str());
+        auto pattern_decl = ps->getDeclaration(declaration_tok.text);
         auto decl_ent = pattern_decl->design_ent;
 
         if(decl_ent == ast::DESIGN_ENT::ASSIGN)
@@ -353,6 +349,8 @@ namespace pql::parser
         }
         else
         {
+            // TODO: we won't be able to parse the rest of the pattern without knowing the correct
+            // type of the declaration. should this be a syntactic error?
             ps->setInvalid("invalid synonym type '{}' in pattern clause (can only have 'if', 'while', or 'assign'",
                 ast::INV_DESIGN_ENT_MAP.at(decl_ent));
         }
@@ -623,31 +621,28 @@ namespace pql::parser
         return ret;
     }
 
-    static ast::ResultCl parse_result(ParserState* ps)
-    {
-        if(ps->peek() == KW_Boolean)
-        {
-            ps->next();
-            return ast::ResultCl::ofBool();
-        }
-        else
-        {
-            return ast::ResultCl::ofTuple(parse_tuple(ps));
-        }
-    }
-
     static ast::Select parse_select(ParserState* ps)
     {
         ps->expect_keyword(TT::KW_Select);
 
-        ast::ResultCl result = parse_result(ps);
+        ast::ResultCl result = [ps]() -> auto {
+            if(auto tok = ps->peek(); tok == TT::Identifier && tok.text == "BOOLEAN")
+            {
+                ps->next();
+                return ast::ResultCl::ofBool();
+            }
+            else
+            {
+                return ast::ResultCl::ofTuple(parse_tuple(ps));
+            }
+        }();
+
 
         util::logfmt("pql::parser", "Result for Select clause: {}", result.toString());
 
         ast::Select select {};
         select.result = result;
 
-        // std::vector<Token> clause_tok = ps->peek_keyword();
         for(Token t; (t = ps->peek_keyword()) != TT::EndOfFile;)
         {
             if(t == TT::KW_Pattern)

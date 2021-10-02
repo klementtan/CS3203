@@ -239,6 +239,18 @@ TEST_CASE("Result Clause")
         REQUIRE(query->select.result.tuple()[1].declaration() == s2_declaration);
         REQUIRE(query->select.result.tuple()[2].declaration() == s3_declaration);
     }
+
+    SECTION("valid keyword synonyms")
+    {
+        using namespace pql::parser;
+
+        CHECK_FALSE(parsePQL("assign assign; Select assign pattern assign(_, _)")->isInvalid());
+        CHECK_FALSE(parsePQL("assign pattern; Select pattern pattern pattern(_, _)")->isInvalid());
+        CHECK_FALSE(parsePQL("stmt Select; Select Select such that Follows(Select, Select)")->isInvalid());
+        CHECK_FALSE(parsePQL("stmt such, that, with, stmt; Select <such, that, with, stmt>"
+            " such that Follows(_,_)")->isInvalid());
+    }
+
     SECTION("Invalid ResultCl")
     {
         // comma before first element in tuple
