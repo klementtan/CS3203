@@ -13,8 +13,7 @@
 
 namespace pql::parser
 {
-    using PqlException = util::PqlException;
-    using PqlSyntaxException = util::PqlSyntaxException;
+    using SyntaxError = util::PqlSyntaxException;
 
     struct ParserState
     {
@@ -42,8 +41,7 @@ namespace pql::parser
         {
             if(auto tok = this->next(); tok != tt)
             {
-                throw PqlSyntaxException(
-                    "pql::parser", "expected {}, found {} instead", tokenTypeString(tt), tokenTypeString(tok));
+                throw SyntaxError("expected {}, found {} instead", tokenTypeString(tt), tokenTypeString(tok));
             }
             else
             {
@@ -55,8 +53,7 @@ namespace pql::parser
         {
             if(auto tok = this->next_keyword(); tok != tt)
             {
-                throw PqlSyntaxException(
-                    "pql::parser", "expected {}, found {} instead", tokenTypeString(tt), tokenTypeString(tok));
+                throw SyntaxError("expected {}, found {} instead", tokenTypeString(tt), tokenTypeString(tok));
             }
             else
             {
@@ -115,22 +112,9 @@ namespace pql::parser
 
 
     // Design entities
-    const Token KW_Stmt { "stmt", TT::Identifier };
-    const Token KW_Assign { "assign", TT::Identifier };
-    const Token KW_Variable { "variable", TT::Identifier };
-    const Token KW_Constant { "constant", TT::Identifier };
-    const Token KW_Procedure { "procedure", TT::Identifier };
-    const Token KW_Read { "read", TT::Identifier };
-    const Token KW_Print { "print", TT::Identifier };
-    const Token KW_If { "if", TT::Identifier };
-    const Token KW_Call { "call", TT::Identifier };
-    const Token KW_While { "while", TT::Identifier };
-    const std::unordered_set<Token> KW_DesignEntities { { KW_Stmt, KW_Assign, KW_Variable, KW_Constant, KW_Procedure,
-        KW_Read, KW_Print, KW_If, KW_Call, KW_While } };
+    const std::unordered_set<std::string> KW_DesignEntities { "stmt", "assign", "variable", "constant", "procedure",
+        "read", "print", "if", "call", "while" };
 
-    // Relationships
-    const Token KW_Uses { "Uses", TT::Identifier };
-    const Token KW_Modifies { "Modifies", TT::Identifier };
 
     // Process the next token as a variable and insert it into declaration_list
     static void parse_one_declaration(ParserState* ps, ast::DESIGN_ENT ent)
@@ -142,13 +126,9 @@ namespace pql::parser
     // Process the next tokens as the start of an entity declaration and insert declarations into declaration_list
     static void parse_declarations(ParserState* ps)
     {
-        if(KW_DesignEntities.count(ps->peek()) == 0)
-        {
-            throw PqlSyntaxException("pql::parser",
-                "Expected declarations to start with design-entity keyword instead of {}", ps->peek().text);
-        }
+        auto tok = ps->expect(TT::Identifier);
 
-        std::string ent_string { ps->next().text.str() };
+        std::string ent_string = tok.text.str();
         util::logfmt("pql::parser", "Parsing declaration with design_ent:{}", ent_string);
 
         if(ast::DESIGN_ENT_MAP.count(ent_string) == 0)
@@ -194,8 +174,7 @@ namespace pql::parser
 
                 if(fail)
                 {
-                    throw PqlSyntaxException(
-                        "pql::parser", "Expected literal entity name to be an identifier instead of '{}'", name);
+                    throw SyntaxError("Expected literal entity name to be an identifier instead of '{}'", name);
                 }
             }
 
@@ -209,7 +188,7 @@ namespace pql::parser
             return ast::EntRef::ofDeclaration(declaration);
         }
 
-        throw PqlSyntaxException("pql::parser", "Invalid entity ref starting with '{}'", tok.text);
+        throw SyntaxError("Invalid entity ref starting with '{}'", tok.text);
     }
 
     static ast::StmtRef parse_stmt_ref(ParserState* ps)
@@ -233,7 +212,7 @@ namespace pql::parser
             return ast::StmtRef::ofDeclaration(declaration);
         }
 
-        throw PqlSyntaxException("pql::parser", "Invalid stmt ref starting with {}", tok.text);
+        throw SyntaxError("Invalid stmt ref starting with {}", tok.text);
     }
 
     static ast::ExprSpec parse_expr_spec(ParserState* ps)
@@ -335,7 +314,8 @@ namespace pql::parser
 
         std::vector<std::unique_ptr<ast::PatternCond>> pattern_conds;
 
-        do {
+        do
+        {
             Token declaration_tok = ps->next();
 
             auto pattern_decl = ps->getDeclaration(declaration_tok.text);
@@ -406,7 +386,7 @@ namespace pql::parser
         // Only ref to previously declared entity allowed
         if(tok.type != TT::Identifier)
         {
-            throw PqlSyntaxException("pql::parser",
+            throw SyntaxError(
                 "StmtRef,EntRef should start with number, underscore, '\"' or identifier instead of {}", tok.text);
         }
 
@@ -420,7 +400,7 @@ namespace pql::parser
     {
         bool is_uses = ps->peek_keyword() == TT::KW_Uses;
         if(auto t = ps->next_keyword(); t != TT::KW_Uses && t != TT::KW_Modifies)
-            throw PqlSyntaxException("pql::parser", "expected 'Uses' or 'Modifies', found '{}' instead", t.text);
+            throw SyntaxError("expected 'Uses' or 'Modifies', found '{}' instead", t.text);
 
         ps->expect(TT::LParen);
 
@@ -497,10 +477,10 @@ namespace pql::parser
         else if(rel_tok == TT::KW_Uses || rel_tok == TT::KW_Modifies)
             return parse_uses_modifies(ps);
 
-        throw PqlSyntaxException("pql::parser", "Invalid relationship condition '{}'", rel_tok.text);
+        throw SyntaxError("Invalid relationship condition '{}'", rel_tok.text);
     }
 
-    ast::SuchThatCl parse_such_that(ParserState* ps)
+    static ast::SuchThatCl parse_such_that(ParserState* ps)
     {
         ps->expect_keyword(TT::KW_SuchThat);
 
@@ -579,7 +559,7 @@ namespace pql::parser
                 return validate_attr_name(ps, ast::AttrRef { decl, ast::AttrName::kProcName });
 
             else
-                throw PqlSyntaxException("pql::parser", "Invalid attribute '{}'", attr.text);
+                throw SyntaxError("Invalid attribute '{}'", attr.text);
         }
         else
         {
@@ -617,14 +597,13 @@ namespace pql::parser
             }
             else
             {
-                throw PqlSyntaxException(
-                    "pql::parser", "expected either ',' or '>' in tuple, found '{}' instead", ps->peek().text);
+                throw SyntaxError("expected either ',' or '>' in tuple, found '{}' instead", ps->peek().text);
             }
         }
 
         ps->expect(TT::RAngle);
         if(ret.empty())
-            throw PqlSyntaxException("pql::parser", "Tuple in result clause cannot be empty");
+            throw SyntaxError("Tuple in result clause cannot be empty");
 
         return ret;
     }
@@ -633,7 +612,8 @@ namespace pql::parser
     {
         ps->expect_keyword(TT::KW_Select);
 
-        ast::ResultCl result = [ps]() -> auto {
+        ast::ResultCl result = [ps]() -> auto
+        {
             if(auto tok = ps->peek(); tok == TT::Identifier && tok.text == "BOOLEAN")
             {
                 ps->next();
@@ -643,7 +623,8 @@ namespace pql::parser
             {
                 return ast::ResultCl::ofTuple(parse_tuple(ps));
             }
-        }();
+        }
+        ();
 
 
         util::logfmt("pql::parser", "Result for Select clause: {}", result.toString());
@@ -669,7 +650,7 @@ namespace pql::parser
             }
             else
             {
-                throw PqlSyntaxException("pql::parser", "unexpected token '{}' in Select", t.text);
+                throw SyntaxError("unexpected token '{}' in Select", t.text);
             }
         }
 
@@ -696,8 +677,7 @@ namespace pql::parser
                 found_select = true;
                 if(ps.peek() != TT::EndOfFile)
                 {
-                    throw PqlSyntaxException(
-                        "pql::parser", "Query should end after a single select clause instead of '{}'", ps.peek().text);
+                    throw SyntaxError("Query should end after a single select clause instead of '{}'", ps.peek().text);
                 }
             }
             else
@@ -708,7 +688,7 @@ namespace pql::parser
         }
 
         if(!found_select)
-            throw PqlSyntaxException("pql::parser", "All queries should contain a select clause");
+            throw SyntaxError("All queries should contain a select clause");
 
         util::logfmt("pql::parser", "Completed parsing AST: {}", query->toString());
         return query;

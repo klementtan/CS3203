@@ -45,7 +45,7 @@ namespace pql::parser
             auto ret = Token { sv.take_prefix(strlen(kw)), tt };
 
             if(!sv.empty() && is_letter(sv[0]))
-                throw util::PqlSyntaxException("pql::parser", "unexpected '{}' after keyword '{}'", sv[0], kw);
+                throw util::PqlSyntaxException("unexpected '{}' after keyword '{}'", sv[0], kw);
 
             return ret;
         };
@@ -111,7 +111,7 @@ namespace pql::parser
                 num_chars += 1;
 
             if(sv.empty())
-                throw util::PqlSyntaxException("pql::parser", "unterminated expression string (expected '\"')");
+                throw util::PqlSyntaxException("unterminated expression string (expected '\"')");
 
             auto str = sv.take_prefix(num_chars);
             assert(sv[0] == '"');
@@ -136,7 +136,7 @@ namespace pql::parser
                 case ',':   tt = TT::Comma; break;
                 case '.':   tt = TT::Dot; break;
                 default:
-                    throw util::PqlSyntaxException("pql::parser","invalid token '{}'", sv[0]);
+                    throw util::PqlSyntaxException("invalid token '{}'", sv[0]);
             }
 
             return Token { sv.take_prefix(1), tt };

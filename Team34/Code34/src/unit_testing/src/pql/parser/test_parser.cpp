@@ -248,7 +248,8 @@ TEST_CASE("Result Clause")
         CHECK_FALSE(parsePQL("assign pattern; Select pattern pattern pattern(_, _)")->isInvalid());
         CHECK_FALSE(parsePQL("stmt Select; Select Select such that Follows(Select, Select)")->isInvalid());
         CHECK_FALSE(parsePQL("stmt such, that, with, stmt; Select <such, that, with, stmt>"
-            " such that Follows(_,_)")->isInvalid());
+                             " such that Follows(_,_)")
+                        ->isInvalid());
     }
 
     SECTION("Invalid ResultCl")
