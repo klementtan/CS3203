@@ -1,5 +1,6 @@
 // pql/parser.cpp
 
+#include <cctype>
 #include <cassert>
 #include <unordered_set>
 
@@ -17,17 +18,6 @@ namespace pql::parser
 
     struct ParserState
     {
-        zst::str_view raw_stream() const
-        {
-            return m_stream;
-        }
-
-        zst::str_view& raw_stream()
-        {
-            return m_stream;
-        }
-
-
         Token next()
         {
             return getNextToken(m_stream);
@@ -166,8 +156,8 @@ namespace pql::parser
 
         if(KW_DesignEntities.count(ps->peek_one()) == 0)
         {
-            throw PqlSyntaxException("pql::parser", "Expected declarations to start with design-entity keyword instead of {}",
-                ps->peek_one().text);
+            throw PqlSyntaxException("pql::parser",
+                "Expected declarations to start with design-entity keyword instead of {}", ps->peek_one().text);
         }
 
         std::string ent_string { ps->next().text.str() };
@@ -197,18 +187,32 @@ namespace pql::parser
         {
             return ast::EntRef::ofWildcard();
         }
-        else if(tok.type == TT::DoubleQuotes)
+        else if(tok.type == TT::String)
         {
-            Token name_declaration_tok = ps->next();
+            // make sure it's a valid identifier
+            auto name = tok.text.str();
+            {
+                bool fail = false;
+                if(!std::isalpha(name[0]))
+                    fail = true;
 
-            if(name_declaration_tok.type != TT::Identifier)
-                throw PqlSyntaxException("pql::parser", "Expected literal entity name to be an identifier instead of {}",
-                    name_declaration_tok.text);
+                for(char c : name)
+                {
+                    if(!std::isdigit(c) && !std::isalpha(c))
+                    {
+                        fail = true;
+                        break;
+                    }
+                }
 
-            if(ps->next() != TT::DoubleQuotes)
-                throw PqlSyntaxException("pql::parser", "Expected '\"' after literal entity name");
+                if(fail)
+                {
+                    throw PqlSyntaxException(
+                        "pql::parser", "Expected literal entity name to be an identifier instead of '{}'", name);
+                }
+            }
 
-            return ast::EntRef::ofName(name_declaration_tok.text.str());
+            return ast::EntRef::ofName(name);
         }
         else if(tok.type == TokenType::Identifier)
         {
@@ -245,20 +249,6 @@ namespace pql::parser
         throw PqlSyntaxException("pql::parser", "Invalid stmt ref starting with {}", tok.text);
     }
 
-    // Extract out the expression between the double quotes in expression specification.
-    std::unique_ptr<simple::ast::Expr> parse_expr(ParserState* ps)
-    {
-        if(ps->next().type != TT::DoubleQuotes)
-            throw PqlSyntaxException("pql::parser", "Expected expression to start with double quotes(\")");
-
-        zst::str_view expr_str = extractTillQuotes(ps->raw_stream());
-
-        if(ps->next().type != TT::DoubleQuotes)
-            throw PqlSyntaxException("pql::parser", "Expected expression to end with double quotes(\")");
-
-        return simple::parser::parseExpression(expr_str);
-    }
-
     ast::ExprSpec parse_expr_spec(ParserState* ps)
     {
         ast::ExprSpec expr_spec {};
@@ -270,8 +260,11 @@ namespace pql::parser
             is_subexpr = true;
         }
 
-        if(ps->peek_one() == TT::DoubleQuotes)
-            expr_spec.expr = parse_expr(ps);
+        if(auto estr = ps->peek_one(); estr == TT::String)
+        {
+            ps->next();
+            expr_spec.expr = simple::parser::parseExpression(estr.text);
+        }
 
         // '_' itself is valid as well, so don't expect '__'
         if(is_subexpr && expr_spec.expr != nullptr)
@@ -294,7 +287,8 @@ namespace pql::parser
 
         if(Token tok = ps->next(); tok != TT::LParen)
         {
-            throw PqlSyntaxException("pql::parser", "Expected '(' after synonym in Pattern clause instead of {}", tok.text);
+            throw PqlSyntaxException(
+                "pql::parser", "Expected '(' after synonym in Pattern clause instead of {}", tok.text);
         }
 
         pattern_cond->assignment_declaration = assign_decl;
@@ -310,7 +304,8 @@ namespace pql::parser
         pattern_cond->expr_spec = parse_expr_spec(ps);
         if(Token tok = ps->next(); tok != TT::RParen)
         {
-            throw PqlSyntaxException("pql::parser", "Expected ')' after expr spec in Pattern clause instead of {}", tok.text);
+            throw PqlSyntaxException(
+                "pql::parser", "Expected ')' after expr spec in Pattern clause instead of {}", tok.text);
         }
 
         return pattern_cond;
@@ -324,7 +319,8 @@ namespace pql::parser
         auto pattern_cond = std::make_unique<ast::IfPatternCond>();
 
         if(Token tok = ps->next(); tok != TT::LParen)
-            throw PqlSyntaxException("pql::parser", "Expected '(' after synonym in Pattern clause instead of '{}'", tok.text);
+            throw PqlSyntaxException(
+                "pql::parser", "Expected '(' after synonym in Pattern clause instead of '{}'", tok.text);
 
         pattern_cond->if_declaration = if_decl;
         pattern_cond->ent = parse_ent_ref(ps);
@@ -360,7 +356,8 @@ namespace pql::parser
         auto pattern_cond = std::make_unique<ast::WhilePatternCond>();
 
         if(Token tok = ps->next(); tok != TT::LParen)
-            throw PqlSyntaxException("pql::parser", "Expected '(' after synonym in Pattern clause instead of '{}'", tok.text);
+            throw PqlSyntaxException(
+                "pql::parser", "Expected '(' after synonym in Pattern clause instead of '{}'", tok.text);
 
         pattern_cond->while_declaration = while_decl;
         pattern_cond->ent = parse_ent_ref(ps);
@@ -592,22 +589,14 @@ namespace pql::parser
     bool is_next_stmt_ref(ParserState* ps)
     {
         Token tok = ps->peek_one();
-        if(tok.type == TT::Number)
-        {
-            // Only statement ref can be number
-            return true;
-        }
 
-        if(tok.type == TT::Underscore)
-        {
-            // All entity refs are statements
+        // all numbers are statement refs, and assume underscores are as well.
+        if(tok.type == TT::Number || tok.type == TT::Underscore)
             return true;
-        }
-        if(tok.type == TT::DoubleQuotes)
-        {
-            // Only entity refs are surrounded by double quotes.
+
+        // only entityrefs can be strings
+        if(tok.type == TT::String)
             return false;
-        }
 
         // Only ref to previously declared entity allowed
         if(tok.type != TT::Identifier)
@@ -694,7 +683,8 @@ namespace pql::parser
             auto ent = parse_ent_ref(ps);
             if(Token tok = ps->next(); tok.type != TT::RParen)
             {
-                throw PqlSyntaxException("pql::parser", "Expected ')' at the end of 'Modifies' instead of {}", tok.text);
+                throw PqlSyntaxException(
+                    "pql::parser", "Expected ')' at the end of 'Modifies' instead of {}", tok.text);
             }
             auto modifies_s = std::make_unique<ast::ModifiesS>();
             modifies_s->modifier = modifier;
@@ -711,7 +701,8 @@ namespace pql::parser
             auto ent = parse_ent_ref(ps);
             if(Token tok = ps->next(); tok.type != TT::RParen)
             {
-                throw PqlSyntaxException("pql::parser", "Expected ')' at the end of 'Modifies' instead of {}", tok.text);
+                throw PqlSyntaxException(
+                    "pql::parser", "Expected ')' at the end of 'Modifies' instead of {}", tok.text);
             }
             auto modifies_s = std::make_unique<ast::ModifiesP>();
             modifies_s->modifier = modifier;
@@ -857,7 +848,8 @@ namespace pql::parser
 
         // Handle: '<' elem (',' elem)*'>'
         if(Token tok = ps->next(); tok != TT::LAngle)
-            throw PqlSyntaxException("pql::parser", "Multiple elem tuple should start with `<` instead of {}", tok.text);
+            throw PqlSyntaxException(
+                "pql::parser", "Multiple elem tuple should start with `<` instead of {}", tok.text);
         std::vector<ast::Elem> ret;
         while(ps->peek_one() != TT::RAngle &&
               // prevent infinite loop
@@ -865,8 +857,8 @@ namespace pql::parser
         {
             if(!ret.empty() && ps->peek_one() != TT::Comma)
             {
-                throw PqlSyntaxException("pql::parser", "Multiple element tuple should be comma separated instead of {}.",
-                    ps->peek_one().text);
+                throw PqlSyntaxException("pql::parser",
+                    "Multiple element tuple should be comma separated instead of {}.", ps->peek_one().text);
             }
             if(ret.empty() && ps->peek_one() == TT::Comma)
             {
@@ -960,8 +952,8 @@ namespace pql::parser
                 found_select = true;
                 if(ps.peek_one() != TT::EndOfFile)
                 {
-                    throw PqlSyntaxException(
-                        "pql::parser", "Query should end after a single select clause instead of '{}'", ps.peek_one().text);
+                    throw PqlSyntaxException("pql::parser",
+                        "Query should end after a single select clause instead of '{}'", ps.peek_one().text);
                 }
             }
             else

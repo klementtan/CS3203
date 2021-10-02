@@ -474,8 +474,14 @@ namespace pql::ast
 
         std::string toString() const;
 
-        inline void setInvalid() { is_semantically_invalid = true; }
-        inline bool isInvalid() const { return is_semantically_invalid; }
+        inline void setInvalid()
+        {
+            is_semantically_invalid = true;
+        }
+        inline bool isInvalid() const
+        {
+            return is_semantically_invalid;
+        }
     };
 
 } // pql::ast

@@ -40,15 +40,72 @@ namespace pql::parser
         return { fst, snd };
     }
 
-    // Extract characters till reaches '"'
-    zst::str_view extractTillQuotes(zst::str_view& sv)
+    Token getNextKeywordToken(zst::str_view& sv)
     {
-        size_t num_chars = 0;
-        while(!sv.empty() && sv[num_chars] != '"')
+        eatWhitespace(sv);
+
+        Token ret {};
+
+        if(auto kw = "Next"; sv.find(kw) == 0)
+            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_Next };
+
+        else if(auto kw = "Uses"; sv.find(kw) == 0)
+            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_Uses };
+
+        else if(auto kw = "Calls"; sv.find(kw) == 0)
+            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_Calls };
+
+        else if(auto kw = "Parent"; sv.find(kw) == 0)
+            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_Parent };
+
+        else if(auto kw = "Follows"; sv.find(kw) == 0)
+            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_Follows };
+
+        else if(auto kw = "Affects"; sv.find(kw) == 0)
+            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_Affects };
+
+        else if(auto kw = "Modifies"; sv.find(kw) == 0)
+            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_Modifies };
+
+        else if(auto kw = "Next*"; sv.find(kw) == 0)
+            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_NextStar };
+
+        else if(auto kw = "Calls*"; sv.find(kw) == 0)
+            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_CallsStar };
+
+        else if(auto kw = "Parent*"; sv.find(kw) == 0)
+            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_ParentStar };
+
+        else if(auto kw = "Follows*"; sv.find(kw) == 0)
+            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_FollowsStar };
+
+        else if(auto kw = "Affects*"; sv.find(kw) == 0)
+            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_AffectsStar };
+
+        else if(auto kw = "and"; sv.find(kw) == 0)
+            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_And };
+
+        else if(auto kw = "with"; sv.find(kw) == 0)
+            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_With };
+
+        else if(auto kw = "Select"; sv.find(kw) == 0)
+            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_Select };
+
+        else if(auto kw = "pattern"; sv.find(kw) == 0)
+            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_Pattern };
+
+        else if(auto kw = "such that"; sv.find(kw) == 0)
+            ret = Token { sv.take_prefix(strlen(kw)), TT::KW_SuchThat };
+
+        else
         {
-            num_chars += 1;
+            throw util::PqlSyntaxException(
+                "pql::parser", "expected a keyword (relation, 'such that', etc.), found '{}' instead", sv.take(10));
         }
-        zst::str_view ret = sv.take_prefix(num_chars);
+
+        if(!sv.empty() && is_letter(sv[0]))
+            throw util::PqlSyntaxException("pql::parser", "unexpected '{}' after keyword", sv[0]);
+
         return ret;
     }
 
@@ -76,6 +133,23 @@ namespace pql::parser
 
             return Token { sv.take_prefix(num_chars), TT::Number };
         }
+        else if(sv[0] == '"')
+        {
+            sv.remove_prefix(1);
+
+            size_t num_chars = 0;
+            while(!sv.empty() && sv[num_chars] != '"')
+                num_chars += 1;
+
+            if(sv.empty())
+                throw util::PqlSyntaxException("pql::parser", "unterminated expression string (expected '\"')");
+
+            auto str = sv.take_prefix(num_chars);
+            assert(sv[0] == '"');
+            sv.remove_prefix(1);
+
+            return { str, TT::String };
+        }
         else
         {
             TokenType tt {};
@@ -89,14 +163,13 @@ namespace pql::parser
                 case '<':   tt = TT::LAngle; break;
                 case '>':   tt = TT::RAngle; break;
                 case '_':   tt = TT::Underscore; break;
-                case '"':   tt = TT::DoubleQuotes; break;
                 case ';':   tt = TT::Semicolon; break;
                 case '*':   tt = TT::Asterisk; break;
                 case ',':   tt = TT::Comma; break;
                 case '.':   tt = TT::Dot; break;
                 case '#':   tt = TT::HashTag; break;
                 default:
-                    throw util::PqlException("pql::parser","invalid token '{}'", sv[0]);
+                    throw util::PqlSyntaxException("pql::parser","invalid token '{}'", sv[0]);
             }
 
             return Token { sv.take_prefix(1), tt };

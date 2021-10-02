@@ -20,13 +20,33 @@ namespace pql::parser
         Asterisk,
         Underscore,
         Semicolon,
-        DoubleQuotes,
         Comma,
         Dot,
         HashTag,
+        String,
 
         Identifier,
         Number,
+
+        KW_Next,
+        KW_Uses,
+        KW_Calls,
+        KW_Parent,
+        KW_Follows,
+        KW_Affects,
+        KW_Modifies,
+
+        KW_NextStar,
+        KW_CallsStar,
+        KW_ParentStar,
+        KW_FollowsStar,
+        KW_AffectsStar,
+
+        KW_And,
+        KW_With,
+        KW_Select,
+        KW_Pattern,
+        KW_SuchThat,
     };
 
     struct Token
@@ -47,7 +67,8 @@ namespace pql::parser
 
     using TT = TokenType;
 
-    zst::str_view extractTillQuotes(zst::str_view& sv);
+    Token getNextKeywordToken(zst::str_view& sv);
+
     Token getNextToken(zst::str_view& sv);
     Token peekNextOneToken(zst::str_view sv);
     std::vector<Token> peekNextTwoTokens(zst::str_view sv);
