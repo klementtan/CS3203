@@ -43,6 +43,11 @@ namespace util
         using BaseException<PqlException>::BaseException;
     };
 
+    struct PqlSyntaxException : BaseException<PqlSyntaxException>
+    {
+        using BaseException<PqlSyntaxException>::BaseException;
+    };
+
     struct ParseException : BaseException<ParseException>
     {
         using BaseException<ParseException>::BaseException;
