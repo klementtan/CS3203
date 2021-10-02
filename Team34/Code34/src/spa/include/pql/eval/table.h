@@ -6,6 +6,7 @@
 
 #include "pql/parser/ast.h"
 #include "simple/ast.h"
+#include "pkb.h"
 #include <unordered_set>
 #include <list>
 
@@ -32,6 +33,8 @@ namespace pql::eval::table
         Entry();
         Entry(pql::ast::Declaration* declaration, const std::string& val);
         Entry(pql::ast::Declaration* declaration, const simple::ast::StatementNum& val);
+        // Only use this for AttrRef as we cannot determine the entry type from the declaration
+        Entry(pql::ast::Declaration* declaration, const std::string& val, EntryType type);
         [[nodiscard]] std::string getVal() const;
         [[nodiscard]] simple::ast::StatementNum getStmtNum() const;
         [[nodiscard]] EntryType getType() const;
@@ -131,15 +134,19 @@ namespace pql::eval::table
         // Get mapping of declaration to the join that is involved in.
         [[nodiscard]] std::unordered_map<ast::Declaration*, std::vector<Join>> getDeclJoins() const;
         [[nodiscard]] bool hasValidDomain() const;
+        std::vector<Entry> extract_result(
+            const Row& row, const std::vector<ast::Elem>& return_tuple, const pkb::ProgramKB* pkb) const;
 
     public:
         void upsertDomains(ast::Declaration* decl, const Domain& entries);
         void addSelectDecl(ast::Declaration* decl);
+        static Entry extractAttr(const Entry& entry, const ast::AttrRef& attr_ref, const pkb::ProgramKB* pkb);
         Domain getDomain(ast::Declaration* decl) const;
         void addJoin(const Join& join);
         Table();
         ~Table();
-        std::list<std::string> getResult(ast::Declaration* ret_decls);
+        std::list<std::string> getResult(const ast::ResultCl& result, const pkb::ProgramKB* pkb);
+        static std::list<std::string> getFailedResult(const ast::ResultCl& result);
         [[nodiscard]] std::string toString() const;
     };
 }

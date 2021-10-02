@@ -57,6 +57,7 @@ void TestWrapper::evaluate(std::string query, std::list<std::string>& results)
     {
         // Errors in query should be silently ignored.
         util::logfmt("pql", "exception caught during evaluating query: {}", e.what());
+        // TODO: Return {"FALSE"} if it is select boolean
     }
 }
 

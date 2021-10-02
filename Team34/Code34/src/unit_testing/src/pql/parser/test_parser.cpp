@@ -215,7 +215,7 @@ TEST_CASE("Result Clause")
     SECTION("Tuple with Multiple Element")
     {
         auto query = pql::parser::parsePQL("stmt s1, s2, s3;\n"
-                                           "Select <s1,s2,s3.procName> such that Follows(s1,_)");
+                                           "Select <s1,s2,s3.stmt#> such that Follows(s1,_)");
         pql::ast::Declaration* s1_declaration = query->declarations.getDeclaration("s1");
         pql::ast::Declaration* s2_declaration = query->declarations.getDeclaration("s2");
         pql::ast::Declaration* s3_declaration = query->declarations.getDeclaration("s3");
@@ -224,7 +224,7 @@ TEST_CASE("Result Clause")
         REQUIRE(query->select.result.tuple()[0].declaration() == s1_declaration);
         REQUIRE(query->select.result.tuple()[1].declaration() == s2_declaration);
         REQUIRE(query->select.result.tuple()[2].attrRef().decl == s3_declaration);
-        REQUIRE(query->select.result.tuple()[2].attrRef().attr_name == pql::ast::AttrName::kProcName);
+        REQUIRE(query->select.result.tuple()[2].attrRef().attr_name == pql::ast::AttrName::kStmtNum);
     }
     SECTION("Valid weird white spaces")
     {
