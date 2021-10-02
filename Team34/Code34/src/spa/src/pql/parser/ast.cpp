@@ -376,9 +376,7 @@ namespace pql::ast
 
 
 
-    WithCondRef::WithCondRef() : m_type(Type::Invalid)
-    {
-    }
+    WithCondRef::WithCondRef() : m_type(Type::Invalid) { }
 
     WithCondRef::~WithCondRef()
     {

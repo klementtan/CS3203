@@ -149,9 +149,8 @@ namespace pql::ast
 
     std::string Select::toString() const
     {
-        return zpr::sprint("Select(relations:{}, patterns:{}, withs:{}, result:{})",
-            list_to_string(this->relations), list_to_string(this->patterns), list_to_string(this->withs),
-            this->result.toString());
+        return zpr::sprint("Select(relations:{}, patterns:{}, withs:{}, result:{})", list_to_string(this->relations),
+            list_to_string(this->patterns), list_to_string(this->withs), this->result.toString());
     }
 
     std::string Query::toString() const

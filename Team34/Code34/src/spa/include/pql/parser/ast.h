@@ -437,10 +437,22 @@ namespace pql::ast
         WithCondRef(WithCondRef&& other);
         WithCondRef& operator=(WithCondRef&& other);
 
-        inline bool isString() const { return m_type == Type::String; }
-        inline bool isInteger() const { return m_type == Type::Integer; }
-        inline bool isAttrRef() const { return m_type == Type::AttrRef; }
-        inline bool isDeclaration() const { return m_type == Type::Declaration; }
+        inline bool isString() const
+        {
+            return m_type == Type::String;
+        }
+        inline bool isInteger() const
+        {
+            return m_type == Type::Integer;
+        }
+        inline bool isAttrRef() const
+        {
+            return m_type == Type::AttrRef;
+        }
+        inline bool isDeclaration() const
+        {
+            return m_type == Type::Declaration;
+        }
 
         std::string str() const;
         uint64_t integer() const;

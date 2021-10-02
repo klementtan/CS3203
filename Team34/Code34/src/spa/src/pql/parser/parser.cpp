@@ -505,15 +505,6 @@ namespace pql::parser
 
 
 
-
-
-
-
-
-
-
-
-
     static ast::Elem validate_attr_name(ParserState* ps, ast::AttrRef attr_ref)
     {
         using namespace ast;
