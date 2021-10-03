@@ -340,8 +340,8 @@ namespace pql::parser
 
     // parses relations where that are not Uses/Modifies (ie. which are not overloaded based on the type)
     template <typename RelAst, typename LeftRefType, typename RightRefType>
-    static std::unique_ptr<RelAst> parse_relation(ParserState* ps, TokenType kw_tok, const char* name,
-        LeftRefType RelAst::*left_ref, RightRefType RelAst::*right_ref)
+    static std::unique_ptr<RelAst> parse_relation(
+        ParserState* ps, TokenType kw_tok, LeftRefType RelAst::*left_ref, RightRefType RelAst::*right_ref)
     {
         static_assert(std::is_same_v<LeftRefType, ast::EntRef> || std::is_same_v<LeftRefType, ast::StmtRef>);
         static_assert(std::is_same_v<RightRefType, ast::EntRef> || std::is_same_v<RightRefType, ast::StmtRef>);
@@ -453,22 +453,22 @@ namespace pql::parser
         using namespace ast;
         auto rel_tok = ps->peek_keyword();
         if(rel_tok == TT::KW_Follows)
-            return parse_relation(ps, rel_tok, "Follows", &Follows::directly_before, &Follows::directly_after);
+            return parse_relation(ps, rel_tok, &Follows::directly_before, &Follows::directly_after);
 
         else if(rel_tok == TT::KW_FollowsStar)
-            return parse_relation(ps, rel_tok, "Follows*", &FollowsT::before, &FollowsT::after);
+            return parse_relation(ps, rel_tok, &FollowsT::before, &FollowsT::after);
 
         else if(rel_tok == TT::KW_Parent)
-            return parse_relation(ps, rel_tok, "Parent", &Parent::parent, &Parent::child);
+            return parse_relation(ps, rel_tok, &Parent::parent, &Parent::child);
 
         else if(rel_tok == TT::KW_ParentStar)
-            return parse_relation(ps, rel_tok, "Parent*", &ParentT::ancestor, &ParentT::descendant);
+            return parse_relation(ps, rel_tok, &ParentT::ancestor, &ParentT::descendant);
 
         else if(rel_tok == TT::KW_Calls)
-            return parse_relation(ps, rel_tok, "Calls", &Calls::caller, &Calls::proc);
+            return parse_relation(ps, rel_tok, &Calls::caller, &Calls::proc);
 
         else if(rel_tok == TT::KW_CallsStar)
-            return parse_relation(ps, rel_tok, "Calls*", &CallsT::caller, &CallsT::proc);
+            return parse_relation(ps, rel_tok, &CallsT::caller, &CallsT::proc);
 
         else if(rel_tok == TT::KW_Uses || rel_tok == TT::KW_Modifies)
             return parse_uses_modifies(ps);
