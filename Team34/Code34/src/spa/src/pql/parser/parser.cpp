@@ -308,11 +308,10 @@ namespace pql::parser
         }
     }
 
-    static std::vector<std::unique_ptr<ast::PatternCond>> parse_pattern(ParserState* ps)
+    static void parse_pattern(ParserState* ps, ast::Select* select)
     {
         ps->expect_keyword(TT::KW_Pattern);
 
-        std::vector<std::unique_ptr<ast::PatternCond>> pattern_conds;
         do
         {
             Token declaration_tok = ps->next();
@@ -322,11 +321,11 @@ namespace pql::parser
 
             if(decl_ent == ast::DESIGN_ENT::ASSIGN)
             {
-                pattern_conds.push_back(parse_assign_pattern(ps, pattern_decl));
+                select->patterns.push_back(parse_assign_pattern(ps, pattern_decl));
             }
             else if(decl_ent == ast::DESIGN_ENT::IF || decl_ent == ast::DESIGN_ENT::WHILE)
             {
-                pattern_conds.push_back(parse_if_while_pattern(ps, pattern_decl));
+                select->patterns.push_back(parse_if_while_pattern(ps, pattern_decl));
             }
             else
             {
@@ -337,8 +336,6 @@ namespace pql::parser
             }
 
         } while(ps->peek_keyword() == TT::KW_And ? (ps->next_keyword(), true) : false);
-
-        return pattern_conds;
     }
 
     // parses relations where that are not Uses/Modifies (ie. which are not overloaded based on the type)
@@ -479,25 +476,25 @@ namespace pql::parser
         throw SyntaxError("Invalid relationship condition '{}'", rel_tok.text);
     }
 
-    static std::vector<std::unique_ptr<ast::RelCond>> parse_such_that(ParserState* ps)
+    static void parse_such_that(ParserState* ps, ast::Select* select)
     {
         ps->expect_keyword(TT::KW_SuchThat);
 
         util::logfmt("pql::parser", "Parsing such that clause.");
-        std::vector<std::unique_ptr<ast::RelCond>> rels {};
 
-        rels.push_back(parse_rel_cond(ps));
+        select->relations.push_back(parse_rel_cond(ps));
         while(ps->peek_keyword() == TT::KW_And)
         {
             ps->next_keyword();
-            rels.push_back(parse_rel_cond(ps));
+            select->relations.push_back(parse_rel_cond(ps));
         }
-
-        return rels;
     }
 
 
 
+    static void parse_with(ParserState* ps, ast::Select* select)
+    {
+    }
 
 
 
@@ -644,16 +641,12 @@ namespace pql::parser
             if(t == TT::KW_Pattern)
             {
                 util::logfmt("pql::parser", "Parsing pattern clause");
-                auto pats = parse_pattern(ps);
-                for(auto& p : pats)
-                    select.patterns.push_back(std::move(p));
+                parse_pattern(ps, &select);
             }
             else if(t == TT::KW_SuchThat)
             {
                 util::logfmt("pql::parser", "Parsing such that clause");
-                auto sts = parse_such_that(ps);
-                for(auto& s : sts)
-                    select.relations.push_back(std::move(s));
+                parse_such_that(ps, &select);
             }
             else if(t == TT::KW_With)
             {
