@@ -112,13 +112,6 @@ namespace pql::ast
 
         std::string toString() const;
 
-        Type ref_type {};
-        union
-        {
-            Declaration* _declaration;
-            simple::ast::StatementNum _id;
-        };
-
         Declaration* declaration() const;
         simple::ast::StatementNum id() const;
 
@@ -138,6 +131,11 @@ namespace pql::ast
         static StmtRef ofWildcard();
         static StmtRef ofDeclaration(Declaration* decl);
         static StmtRef ofStatementId(simple::ast::StatementNum id);
+
+    private:
+        Type ref_type = Type::Invalid;
+        Declaration* _declaration {};
+        simple::ast::StatementNum _id {};
     };
 
     struct EntRef
@@ -150,25 +148,7 @@ namespace pql::ast
             Wildcard
         };
 
-        // needs the rule of 5 or whatever cos of std::string in the union
-        EntRef() = default;
-        ~EntRef();
-
-        EntRef(const EntRef&);
-        EntRef& operator=(const EntRef&);
-
-        EntRef(EntRef&&);
-        EntRef& operator=(EntRef&&);
-
         std::string toString() const;
-
-        Type ref_type {};
-        union
-        {
-            Declaration* _declaration;
-            std::string _name {};
-        };
-
         Declaration* declaration() const;
         std::string name() const;
 
@@ -188,6 +168,11 @@ namespace pql::ast
         static EntRef ofWildcard();
         static EntRef ofName(std::string name);
         static EntRef ofDeclaration(Declaration* decl);
+
+    private:
+        Type ref_type = Type::Invalid;
+        Declaration* _declaration {};
+        std::string _name {};
     };
 
 
@@ -213,22 +198,6 @@ namespace pql::ast
 
         std::string toString() const;
 
-        Type ref_type {};
-        union
-        {
-            Declaration* _declaration;
-            AttrRef _attr_ref;
-        };
-
-        Elem();
-        ~Elem();
-
-        Elem(const Elem& other);
-        Elem& operator=(const Elem& other);
-
-        Elem(Elem&& other);
-        Elem& operator=(Elem&& other);
-
 
         Declaration* declaration() const;
         AttrRef attrRef() const;
@@ -244,6 +213,11 @@ namespace pql::ast
 
         static Elem ofDeclaration(Declaration* decl);
         static Elem ofAttrRef(AttrRef AttrRef);
+
+    private:
+        Type ref_type = Type::Invalid;
+        Declaration* _declaration {};
+        AttrRef _attr_ref {};
     };
 
     /** Abstract class for Relationship Conditions between Statements and Entities. */
@@ -418,24 +392,6 @@ namespace pql::ast
             String,
         };
 
-        union
-        {
-            std::string _string;
-            uint64_t _int;
-            AttrRef _attr_ref;
-            Declaration* _decl;
-        };
-
-        Type m_type {};
-
-        WithCondRef();
-        ~WithCondRef();
-
-        WithCondRef(const WithCondRef& other);
-        WithCondRef& operator=(const WithCondRef& other);
-
-        WithCondRef(WithCondRef&& other);
-        WithCondRef& operator=(WithCondRef&& other);
 
         inline bool isString() const
         {
@@ -465,6 +421,13 @@ namespace pql::ast
         Declaration* declaration() const;
 
         std::string toString() const;
+
+    private:
+        Type m_type = Type::Invalid;
+        std::string _string {};
+        uint64_t _int {};
+        AttrRef _attr_ref {};
+        Declaration* _decl {};
     };
 
     struct WithCond

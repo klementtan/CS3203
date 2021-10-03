@@ -128,16 +128,6 @@ namespace pql::ast
         return ret;
     }
 
-
-
-
-    EntRef::~EntRef()
-    {
-        using std::string;
-        if(this->ref_type == Type::Name)
-            this->_name.~string();
-    }
-
     Declaration* EntRef::declaration() const
     {
         if(this->ref_type != Type::Declaration)
@@ -174,146 +164,9 @@ namespace pql::ast
     {
         EntRef ret {};
         ret.ref_type = Type::Name;
-        new(&ret._name) std::string(std::move(name));
+        ret._name = std::move(name);
         return ret;
     }
-
-    EntRef::EntRef(const EntRef& other)
-    {
-        this->ref_type = other.ref_type;
-        if(this->ref_type == Type::Name)
-            new(&this->_name) std::string(other._name);
-        else
-            this->_declaration = other._declaration;
-    }
-
-    EntRef& EntRef::operator=(const EntRef& other)
-    {
-        if(this != &other)
-        {
-            this->ref_type = other.ref_type;
-            if(this->ref_type == Type::Name)
-                new(&this->_name) std::string(other._name);
-            else
-                this->_declaration = other._declaration;
-        }
-        return *this;
-    }
-
-
-    EntRef::EntRef(EntRef&& other)
-    {
-        this->ref_type = other.ref_type;
-        other.ref_type = Type::Invalid;
-
-        if(this->ref_type == Type::Name)
-            new(&this->_name) std::string(std::move(other._name));
-        else
-            this->_declaration = std::move(other._declaration);
-    }
-
-    EntRef& EntRef::operator=(EntRef&& other)
-    {
-        if(this != &other)
-        {
-            this->ref_type = other.ref_type;
-            other.ref_type = Type::Invalid;
-
-            if(this->ref_type == Type::Name)
-                new(&this->_name) std::string(std::move(other._name));
-            else
-                this->_declaration = std::move(other._declaration);
-        }
-        return *this;
-    }
-
-    Elem::Elem()
-    {
-        this->ref_type = Type::Invalid;
-    }
-    Elem::~Elem()
-    {
-        if(ref_type == Type::AttrRef)
-            _attr_ref.~AttrRef();
-    }
-
-    Elem::Elem(const Elem& other)
-    {
-        if(other.isAttrRef())
-        {
-            this->ref_type = Type::AttrRef;
-            new(&this->_attr_ref) AttrRef(other._attr_ref);
-        }
-        else if(other.isDeclaration())
-        {
-            this->ref_type = Type::Declaration;
-            this->_declaration = other._declaration;
-        }
-        else
-        {
-            this->ref_type = Type::Invalid;
-        }
-    };
-    Elem& Elem::operator=(const Elem& other)
-    {
-        if(this != &other)
-        {
-            if(other.isAttrRef())
-            {
-                this->ref_type = Type::AttrRef;
-                new(&this->_attr_ref) AttrRef(other._attr_ref);
-            }
-            else if(other.isDeclaration())
-            {
-                this->ref_type = Type::Declaration;
-                this->_declaration = other._declaration;
-            }
-            else
-            {
-                this->ref_type = Type::Invalid;
-            }
-        }
-        return *this;
-    };
-
-    Elem::Elem(Elem&& other)
-    {
-        if(other.isAttrRef())
-        {
-            this->ref_type = Type::AttrRef;
-            new(&this->_attr_ref) AttrRef(std::move(other._attr_ref));
-        }
-        else if(other.isDeclaration())
-        {
-            this->ref_type = Type::Declaration;
-            this->_declaration = std::move(other._declaration);
-        }
-        else
-        {
-            this->ref_type = Type::Invalid;
-        }
-    };
-    Elem& Elem::operator=(Elem&& other)
-    {
-        if(this != &other)
-        {
-            if(other.isAttrRef())
-            {
-                this->ref_type = Type::AttrRef;
-                new(&this->_attr_ref) AttrRef(std::move(other._attr_ref));
-            }
-            else if(other.isDeclaration())
-            {
-                this->ref_type = Type::Declaration;
-                this->_declaration = std::move(other._declaration);
-            }
-            else
-            {
-                this->ref_type = Type::Invalid;
-            }
-        }
-        return *this;
-    };
 
     Declaration* Elem::declaration() const
     {
@@ -372,125 +225,6 @@ namespace pql::ast
         return _tuple;
     }
 
-
-
-
-
-    WithCondRef::WithCondRef() : m_type(Type::Invalid) { }
-
-    WithCondRef::~WithCondRef()
-    {
-        switch(m_type)
-        {
-            using namespace std;
-            case Type::String:
-                this->_string.~string();
-                break;
-
-            case Type::AttrRef:
-                this->_attr_ref.~AttrRef();
-                break;
-
-            default:
-                // integer and pointer don't need destructing
-                break;
-        }
-    }
-
-    WithCondRef::WithCondRef(const WithCondRef& other)
-    {
-        this->m_type = other.m_type;
-        switch(this->m_type)
-        {
-            case Type::String:
-                new(&this->_string) std::string(other._string);
-                break;
-
-            case Type::AttrRef:
-                new(&this->_attr_ref) AttrRef(other._attr_ref);
-                break;
-
-            case Type::Integer:
-                this->_int = other._int;
-                break;
-
-            case Type::Declaration:
-                this->_decl = other._decl;
-                break;
-
-            default:
-                break;
-        }
-    }
-
-    WithCondRef& WithCondRef::operator=(const WithCondRef& other)
-    {
-        if(&other != this)
-        {
-            auto copy = WithCondRef(other);
-            std::swap(*this, copy);
-        }
-        return *this;
-    }
-
-    WithCondRef::WithCondRef(WithCondRef&& other)
-    {
-        this->m_type = other.m_type;
-        other.m_type = Type::Invalid;
-        switch(this->m_type)
-        {
-            case Type::String:
-                new(&this->_string) std::string(std::move(other._string));
-                break;
-
-            case Type::AttrRef:
-                new(&this->_attr_ref) AttrRef(std::move(other._attr_ref));
-                break;
-
-            case Type::Integer:
-                this->_int = std::move(other._int);
-                break;
-
-            case Type::Declaration:
-                this->_decl = std::move(other._decl);
-                break;
-
-            default:
-                break;
-        }
-    }
-
-    WithCondRef& WithCondRef::operator=(WithCondRef&& other)
-    {
-        if(&other != this)
-        {
-            this->m_type = other.m_type;
-            other.m_type = Type::Invalid;
-            switch(this->m_type)
-            {
-                case Type::String:
-                    new(&this->_string) std::string(std::move(other._string));
-                    break;
-
-                case Type::AttrRef:
-                    new(&this->_attr_ref) AttrRef(std::move(other._attr_ref));
-                    break;
-
-                case Type::Integer:
-                    this->_int = std::move(other._int);
-                    break;
-
-                case Type::Declaration:
-                    this->_decl = std::move(other._decl);
-                    break;
-
-                default:
-                    break;
-            }
-        }
-        return *this;
-    }
-
     std::string WithCondRef::str() const
     {
         if(m_type != Type::String)
@@ -527,7 +261,7 @@ namespace pql::ast
     {
         WithCondRef wcr {};
         wcr.m_type = Type::String;
-        new(&wcr._string) std::string(std::move(s));
+        wcr._string = std::move(s);
         return wcr;
     }
 
@@ -543,7 +277,7 @@ namespace pql::ast
     {
         WithCondRef wcr {};
         wcr.m_type = Type::AttrRef;
-        new(&wcr._attr_ref) AttrRef(std::move(a));
+        wcr._attr_ref = std::move(a);
         return wcr;
     }
 
@@ -554,5 +288,4 @@ namespace pql::ast
         wcr._decl = d;
         return wcr;
     }
-
 }
