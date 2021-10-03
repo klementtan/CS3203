@@ -454,6 +454,11 @@ namespace pql::ast
             return m_type == Type::Declaration;
         }
 
+        static WithCondRef ofString(std::string s);
+        static WithCondRef ofInteger(uint64_t i);
+        static WithCondRef ofAttrRef(AttrRef a);
+        static WithCondRef ofDeclaration(Declaration* d);
+
         std::string str() const;
         uint64_t integer() const;
         AttrRef attrRef() const;

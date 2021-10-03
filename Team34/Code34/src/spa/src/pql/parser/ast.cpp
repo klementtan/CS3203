@@ -501,4 +501,37 @@ namespace pql::ast
 
         return this->_decl;
     }
+
+    WithCondRef WithCondRef::ofString(std::string s)
+    {
+        WithCondRef wcr {};
+        wcr.m_type = Type::String;
+        wcr._string = std::move(s);
+        return wcr;
+    }
+
+    WithCondRef WithCondRef::ofInteger(uint64_t i)
+    {
+        WithCondRef wcr {};
+        wcr.m_type = Type::Integer;
+        wcr._int = i;
+        return wcr;
+    }
+
+    WithCondRef WithCondRef::ofAttrRef(AttrRef a)
+    {
+        WithCondRef wcr {};
+        wcr.m_type = Type::AttrRef;
+        wcr._attr_ref = std::move(a);
+        return wcr;
+    }
+
+    WithCondRef WithCondRef::ofDeclaration(Declaration* d)
+    {
+        WithCondRef wcr {};
+        wcr.m_type = Type::Declaration;
+        wcr._decl = d;
+        return wcr;
+    }
+
 }

@@ -134,6 +134,7 @@ namespace pql::parser
                 case '>':   tt = TT::RAngle; break;
                 case '_':   tt = TT::Underscore; break;
                 case ';':   tt = TT::Semicolon; break;
+                case '=':   tt = TT::Equal; break;
                 case ',':   tt = TT::Comma; break;
                 case '.':   tt = TT::Dot; break;
                 default:
@@ -156,6 +157,7 @@ namespace pql::parser
             case TT::RAngle:        return "'>'";
             case TT::Underscore:    return "'_'";
             case TT::Semicolon:     return "';'";
+            case TT::Equal:         return "'='";
             case TT::Comma:         return "','";
             case TT::Dot:           return "'.'";
             case TT::String:        return "quoted string";

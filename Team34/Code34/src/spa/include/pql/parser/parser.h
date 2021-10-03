@@ -21,6 +21,7 @@ namespace pql::parser
         Semicolon,
         Comma,
         Dot,
+        Equal,
         String,
 
         Identifier,

@@ -491,17 +491,6 @@ namespace pql::parser
     }
 
 
-
-    static void parse_with(ParserState* ps, ast::Select* select)
-    {
-    }
-
-
-
-
-
-
-
     static ast::Elem validate_attr_name(ParserState* ps, ast::AttrRef attr_ref)
     {
         using namespace ast;
@@ -570,6 +559,63 @@ namespace pql::parser
             return ast::Elem::ofDeclaration(decl);
         }
     }
+
+
+
+
+    static ast::WithCondRef parse_with_cond_ref(ParserState* ps)
+    {
+        // each 'ref' can either be a string, an integer, a declaration (synonym), or a dotop
+        if(ps->peek() == TT::String)
+        {
+            return ast::WithCondRef::ofString(ps->next().text.str());
+        }
+        else if(ps->peek() == TT::Number)
+        {
+            auto num = std::stoull(ps->next().text.str());
+            return ast::WithCondRef::ofInteger(num);
+        }
+        else
+        {
+            // reuse 'Elem' parsing.
+            auto tmp_elem = parse_elem(ps);
+            if(tmp_elem.isDeclaration())
+                return ast::WithCondRef::ofDeclaration(tmp_elem.declaration());
+            else
+                return ast::WithCondRef::ofAttrRef(tmp_elem.attrRef());
+        }
+    }
+
+    static std::unique_ptr<ast::WithCond> parse_with_cond(ParserState* ps)
+    {
+        auto with = std::make_unique<ast::WithCond>();
+        with->lhs = parse_with_cond_ref(ps);
+
+        ps->expect(TT::Equal);
+
+        with->rhs = parse_with_cond_ref(ps);
+        return with;
+    }
+
+
+
+
+    static void parse_with(ParserState* ps, ast::Select* select)
+    {
+        ps->expect_keyword(TT::KW_With);
+
+        select->withs.push_back(parse_with_cond(ps));
+        while(ps->peek_keyword() == TT::KW_And)
+        {
+            ps->next_keyword();
+            select->withs.push_back(parse_with_cond(ps));
+        }
+    }
+
+
+
+
+
 
     static std::vector<ast::Elem> parse_tuple(ParserState* ps)
     {
@@ -650,7 +696,8 @@ namespace pql::parser
             }
             else if(t == TT::KW_With)
             {
-                // TODO: parse 'with'
+                util::logfmt("pql::parser", "Parsing with clause");
+                parse_with(ps, &select);
             }
             else
             {
