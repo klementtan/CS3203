@@ -139,9 +139,8 @@ namespace pql::eval
         util::logfmt("pql::eval", "Evaluating query: {}", m_query->toString());
         if(m_query->isInvalid())
         {
-            // TODO: return "FALSE" if this was a boolean.
             util::logfmt("pql::eval", "refusing to evaluate; query was semantically invalid");
-            return {};
+            return table::Table::getFailedResult(m_query->select.result);
         }
 
 
