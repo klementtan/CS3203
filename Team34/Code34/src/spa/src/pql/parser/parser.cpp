@@ -100,9 +100,7 @@ namespace pql::parser
             util::logfmt("pql::parser", "semantic error: {}", zpr::fwd(fmt, static_cast<Args&&>(args)...));
         }
 
-        ParserState(zst::str_view input, ast::Query* query) : m_stream(input), m_query(query)
-        {
-        }
+        ParserState(zst::str_view input, ast::Query* query) : m_stream(input), m_query(query) { }
 
     private:
         zst::str_view m_stream {};
