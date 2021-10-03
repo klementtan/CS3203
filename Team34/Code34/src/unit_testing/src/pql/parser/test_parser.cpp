@@ -239,12 +239,12 @@ TEST_CASE("Result Clause")
     {
         using namespace pql::parser;
 
-        CHECK_FALSE(parsePQL("assign assign; Select assign pattern assign(_, _)")->isInvalid());
-        CHECK_FALSE(parsePQL("assign pattern; Select pattern pattern pattern(_, _)")->isInvalid());
-        CHECK_FALSE(parsePQL("stmt Select; Select Select such that Follows(Select, Select)")->isInvalid());
-        CHECK_FALSE(parsePQL("stmt such, that, with, stmt; Select <such, that, with, stmt>"
-                             " such that Follows(_,_)")
-                        ->isInvalid());
+        CHECK(parsePQL("assign assign; Select assign pattern assign(_, _)")->isValid());
+        CHECK(parsePQL("assign pattern; Select pattern pattern pattern(_, _)")->isValid());
+        CHECK(parsePQL("stmt Select; Select Select such that Follows(Select, Select)")->isValid());
+        CHECK(parsePQL("stmt such, that, with, stmt; Select <such, that, with, stmt>"
+                       " such that Follows(_,_)")
+                  ->isValid());
     }
 
     SECTION("Invalid ResultCl")
@@ -295,4 +295,23 @@ TEST_CASE("invalid queries")
         CHECK_THROWS_WITH(
             parsePQL("stmt s; Select s such that Parent  *  (s, _)"), Catch::Contains("invalid token '*'"));
     }
+}
+
+#define TEST_VALID(query) CHECK(pql::parser::parsePQL(query)->isValid())
+
+TEST_CASE("valid multi-queries")
+{
+    TEST_VALID("stmt s; Select s such that Follows(s, s) and Parent*(s, s) and Follows*(s, s)");
+    TEST_VALID("stmt s; Select s such that Follows(s, s) such that Parent*(s, s) such that Follows*(s, s)");
+
+    TEST_VALID("stmt s; assign a; Select <a,s> pattern a(_, _) and a(_, _) and a(_, _)");
+    TEST_VALID("stmt s; assign a; Select <a,s> pattern a(_, _) pattern a(_, _) pattern a(_, _)");
+
+    TEST_VALID("stmt s; assign a; Select <a,s> pattern a(_, _) such that Follows(s, _) pattern a(_, _)");
+    TEST_VALID("stmt s; assign a; Select <a,s> pattern a(_, _) such that Follows(s, _) with s.stmt# = a.stmt#");
+
+    TEST_VALID("call c1; call c2; Select <c1,c2> with c1.stmt# = c2.stmt# and c1.procName = c2.procName");
+    TEST_VALID("call c1; call c2; Select <c1,c2> with c1.stmt# = c2.stmt# with c1.procName = c2.procName");
+    TEST_VALID("call c1; call c2; Select <c1,c2> with c1.stmt# = 69 and c1.procName = \"kekw\"");
+    TEST_VALID("call c1; call c2; Select <c1,c2> with c1.stmt# = 69 and c1 = c2");
 }

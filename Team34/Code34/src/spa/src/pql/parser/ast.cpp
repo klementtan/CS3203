@@ -174,7 +174,7 @@ namespace pql::ast
     {
         EntRef ret {};
         ret.ref_type = Type::Name;
-        ret._name = std::move(name);
+        new (&ret._name) std::string(std::move(name));
         return ret;
     }
 
@@ -182,7 +182,7 @@ namespace pql::ast
     {
         this->ref_type = other.ref_type;
         if(this->ref_type == Type::Name)
-            this->_name = other._name;
+            new (&this->_name) std::string(other._name);
         else
             this->_declaration = other._declaration;
     }
@@ -193,7 +193,7 @@ namespace pql::ast
         {
             this->ref_type = other.ref_type;
             if(this->ref_type == Type::Name)
-                this->_name = other._name;
+                new (&this->_name) std::string(other._name);
             else
                 this->_declaration = other._declaration;
         }
@@ -207,7 +207,7 @@ namespace pql::ast
         other.ref_type = Type::Invalid;
 
         if(this->ref_type == Type::Name)
-            this->_name = std::move(other._name);
+            new (&this->_name) std::string(std::move(other._name));
         else
             this->_declaration = std::move(other._declaration);
     }
@@ -220,7 +220,7 @@ namespace pql::ast
             other.ref_type = Type::Invalid;
 
             if(this->ref_type == Type::Name)
-                this->_name = std::move(other._name);
+                new (&this->_name) std::string(std::move(other._name));
             else
                 this->_declaration = std::move(other._declaration);
         }
@@ -242,7 +242,7 @@ namespace pql::ast
         if(other.isAttrRef())
         {
             this->ref_type = Type::AttrRef;
-            this->_attr_ref = other._attr_ref;
+            new (&this->_attr_ref) AttrRef(other._attr_ref);
         }
         else if(other.isDeclaration())
         {
@@ -261,7 +261,7 @@ namespace pql::ast
             if(other.isAttrRef())
             {
                 this->ref_type = Type::AttrRef;
-                this->_attr_ref = other._attr_ref;
+                new (&this->_attr_ref) AttrRef(other._attr_ref);
             }
             else if(other.isDeclaration())
             {
@@ -281,7 +281,7 @@ namespace pql::ast
         if(other.isAttrRef())
         {
             this->ref_type = Type::AttrRef;
-            this->_attr_ref = std::move(other._attr_ref);
+            new (&this->_attr_ref) AttrRef(std::move(other._attr_ref));
         }
         else if(other.isDeclaration())
         {
@@ -300,7 +300,7 @@ namespace pql::ast
             if(other.isAttrRef())
             {
                 this->ref_type = Type::AttrRef;
-                this->_attr_ref = std::move(other._attr_ref);
+                new (&this->_attr_ref) AttrRef(std::move(other._attr_ref));
             }
             else if(other.isDeclaration())
             {
@@ -403,11 +403,11 @@ namespace pql::ast
         switch(this->m_type)
         {
             case Type::String:
-                this->_string = other._string;
+                new (&this->_string) std::string(other._string);
                 break;
 
             case Type::AttrRef:
-                this->_attr_ref = other._attr_ref;
+                new (&this->_attr_ref) AttrRef(other._attr_ref);
                 break;
 
             case Type::Integer:
@@ -440,11 +440,11 @@ namespace pql::ast
         switch(this->m_type)
         {
             case Type::String:
-                this->_string = std::move(other._string);
+                new (&this->_string) std::string(std::move(other._string));
                 break;
 
             case Type::AttrRef:
-                this->_attr_ref = std::move(other._attr_ref);
+                new (&this->_attr_ref) AttrRef(std::move(other._attr_ref));
                 break;
 
             case Type::Integer:
@@ -464,8 +464,29 @@ namespace pql::ast
     {
         if(&other != this)
         {
-            auto copy = WithCondRef(std::move(other));
-            std::swap(*this, copy);
+            this->m_type = other.m_type;
+            other.m_type = Type::Invalid;
+            switch(this->m_type)
+            {
+                case Type::String:
+                    new (&this->_string) std::string(std::move(other._string));
+                    break;
+
+                case Type::AttrRef:
+                    new (&this->_attr_ref) AttrRef(std::move(other._attr_ref));
+                    break;
+
+                case Type::Integer:
+                    this->_int = std::move(other._int);
+                    break;
+
+                case Type::Declaration:
+                    this->_decl = std::move(other._decl);
+                    break;
+
+                default:
+                    break;
+            }
         }
         return *this;
     }
@@ -506,7 +527,7 @@ namespace pql::ast
     {
         WithCondRef wcr {};
         wcr.m_type = Type::String;
-        wcr._string = std::move(s);
+        new(&wcr._string) std::string(std::move(s));
         return wcr;
     }
 
@@ -522,7 +543,7 @@ namespace pql::ast
     {
         WithCondRef wcr {};
         wcr.m_type = Type::AttrRef;
-        wcr._attr_ref = std::move(a);
+        new (&wcr._attr_ref) AttrRef(std::move(a));
         return wcr;
     }
 

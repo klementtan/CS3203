@@ -15,6 +15,8 @@ namespace pql::parser
 {
     using SyntaxError = util::PqlSyntaxException;
 
+    static ast::Declaration _dummy_decl { "$uwu", ast::DESIGN_ENT::INVALID };
+
     struct ParserState
     {
         Token next()
@@ -73,7 +75,7 @@ namespace pql::parser
             {
                 m_query->setInvalid();
                 util::logfmt("pql::parser", "duplicate declaration of '{}'", name);
-                return &m_dummy_decl;
+                return &_dummy_decl;
             }
 
             util::logfmt("pql::parser", "added declaration '{}' (type '{}')", name, ast::INV_DESIGN_ENT_MAP.at(type));
@@ -86,7 +88,7 @@ namespace pql::parser
             {
                 m_query->setInvalid();
                 util::logfmt("pql::parser", "use of undeclared synonym '{}'", name);
-                return &m_dummy_decl;
+                return &_dummy_decl;
             }
             return m_query->declarations.getDeclaration(name.str());
         }
@@ -100,14 +102,11 @@ namespace pql::parser
 
         ParserState(zst::str_view input, ast::Query* query) : m_stream(input), m_query(query)
         {
-            m_dummy_decl.name = "$uwu";
-            m_dummy_decl.design_ent = ast::DESIGN_ENT::INVALID;
         }
 
     private:
         zst::str_view m_stream {};
         ast::Query* m_query {};
-        ast::Declaration m_dummy_decl {};
     };
 
 

@@ -530,9 +530,15 @@ namespace pql::ast
         {
             is_semantically_invalid = true;
         }
+
         inline bool isInvalid() const
         {
             return is_semantically_invalid;
+        }
+
+        inline bool isValid() const
+        {
+            return !is_semantically_invalid;
         }
     };
 
