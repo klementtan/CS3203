@@ -230,15 +230,15 @@ namespace pql::ast
         if(m_type != Type::String)
             throw util::PqlException("pql", "WithCondRef is not a string");
 
-        return this->_string;
+        return this->_string_or_number;
     }
 
-    uint64_t WithCondRef::integer() const
+    std::string WithCondRef::number() const
     {
-        if(m_type != Type::Integer)
+        if(m_type != Type::Number)
             throw util::PqlException("pql", "WithCondRef is not an integer");
 
-        return this->_int;
+        return this->_string_or_number;
     }
 
     AttrRef WithCondRef::attrRef() const
@@ -261,15 +261,15 @@ namespace pql::ast
     {
         WithCondRef wcr {};
         wcr.m_type = Type::String;
-        wcr._string = std::move(s);
+        wcr._string_or_number = std::move(s);
         return wcr;
     }
 
-    WithCondRef WithCondRef::ofInteger(uint64_t i)
+    WithCondRef WithCondRef::ofNumber(std::string i)
     {
         WithCondRef wcr {};
-        wcr.m_type = Type::Integer;
-        wcr._int = i;
+        wcr.m_type = Type::Number;
+        wcr._string_or_number = std::move(i);
         return wcr;
     }
 

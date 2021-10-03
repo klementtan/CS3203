@@ -388,7 +388,7 @@ namespace pql::ast
             Invalid,
             Declaration,
             AttrRef,
-            Integer,
+            Number,
             String,
         };
 
@@ -397,9 +397,9 @@ namespace pql::ast
         {
             return m_type == Type::String;
         }
-        inline bool isInteger() const
+        inline bool isNumber() const
         {
-            return m_type == Type::Integer;
+            return m_type == Type::Number;
         }
         inline bool isAttrRef() const
         {
@@ -411,12 +411,12 @@ namespace pql::ast
         }
 
         static WithCondRef ofString(std::string s);
-        static WithCondRef ofInteger(uint64_t i);
+        static WithCondRef ofNumber(std::string i);
         static WithCondRef ofAttrRef(AttrRef a);
         static WithCondRef ofDeclaration(Declaration* d);
 
         std::string str() const;
-        uint64_t integer() const;
+        std::string number() const;
         AttrRef attrRef() const;
         Declaration* declaration() const;
 
@@ -424,8 +424,7 @@ namespace pql::ast
 
     private:
         Type m_type = Type::Invalid;
-        std::string _string {};
-        uint64_t _int {};
+        std::string _string_or_number {};
         AttrRef _attr_ref {};
         Declaration* _decl {};
     };

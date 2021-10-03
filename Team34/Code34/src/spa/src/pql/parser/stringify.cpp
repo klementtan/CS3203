@@ -122,8 +122,8 @@ namespace pql::ast
     {
         if(this->isString())
             return zpr::sprint("WithCondRef(string: '{}')", this->str());
-        else if(this->isInteger())
-            return zpr::sprint("WithCondRef(int: '{}')", this->integer());
+        else if(this->isNumber())
+            return zpr::sprint("WithCondRef(num: '{}')", this->number());
         else if(this->isDeclaration())
             return zpr::sprint("WithCondRef(decl: {})", this->declaration()->toString());
         else if(this->isAttrRef())

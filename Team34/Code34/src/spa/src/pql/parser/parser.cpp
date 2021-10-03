@@ -569,8 +569,8 @@ namespace pql::parser
         }
         else if(ps->peek() == TT::Number)
         {
-            auto num = std::stoull(ps->next().text.str());
-            return ast::WithCondRef::ofInteger(num);
+            auto num = ps->next().text.str();
+            return ast::WithCondRef::ofNumber(std::move(num));
         }
         else
         {
