@@ -38,6 +38,8 @@ namespace pql::ast
         { DESIGN_ENT::VARIABLE, "variable" },
         { DESIGN_ENT::CONSTANT, "constant" },
         { DESIGN_ENT::PROCEDURE, "procedure" },
+
+        { DESIGN_ENT::INVALID, "invalid" },
     };
 
     const std::unordered_map<std::string, AttrName> AttrNameMap = {
@@ -126,16 +128,6 @@ namespace pql::ast
         return ret;
     }
 
-
-
-
-    EntRef::~EntRef()
-    {
-        using std::string;
-        if(this->ref_type == Type::Name)
-            this->_name.~string();
-    }
-
     Declaration* EntRef::declaration() const
     {
         if(this->ref_type != Type::Declaration)
@@ -175,143 +167,6 @@ namespace pql::ast
         ret._name = std::move(name);
         return ret;
     }
-
-    EntRef::EntRef(const EntRef& other)
-    {
-        this->ref_type = other.ref_type;
-        if(this->ref_type == Type::Name)
-            this->_name = other._name;
-        else
-            this->_declaration = other._declaration;
-    }
-
-    EntRef& EntRef::operator=(const EntRef& other)
-    {
-        if(this != &other)
-        {
-            this->ref_type = other.ref_type;
-            if(this->ref_type == Type::Name)
-                this->_name = other._name;
-            else
-                this->_declaration = other._declaration;
-        }
-        return *this;
-    }
-
-
-    EntRef::EntRef(EntRef&& other)
-    {
-        this->ref_type = other.ref_type;
-        other.ref_type = Type::Invalid;
-
-        if(this->ref_type == Type::Name)
-            this->_name = std::move(other._name);
-        else
-            this->_declaration = std::move(other._declaration);
-    }
-
-    EntRef& EntRef::operator=(EntRef&& other)
-    {
-        if(this != &other)
-        {
-            this->ref_type = other.ref_type;
-            other.ref_type = Type::Invalid;
-
-            if(this->ref_type == Type::Name)
-                this->_name = std::move(other._name);
-            else
-                this->_declaration = std::move(other._declaration);
-        }
-        return *this;
-    }
-
-    Elem::Elem()
-    {
-        this->ref_type = Type::Invalid;
-    }
-    Elem::~Elem()
-    {
-        if(ref_type == Type::AttrRef)
-            _attr_ref.~AttrRef();
-    }
-
-    Elem::Elem(const Elem& other)
-    {
-        if(other.isAttrRef())
-        {
-            this->ref_type = Type::AttrRef;
-            this->_attr_ref = other._attr_ref;
-        }
-        else if(other.isDeclaration())
-        {
-            this->ref_type = Type::Declaration;
-            this->_declaration = other._declaration;
-        }
-        else
-        {
-            this->ref_type = Type::Invalid;
-        }
-    };
-    Elem& Elem::operator=(const Elem& other)
-    {
-        if(this != &other)
-        {
-            if(other.isAttrRef())
-            {
-                this->ref_type = Type::AttrRef;
-                this->_attr_ref = other._attr_ref;
-            }
-            else if(other.isDeclaration())
-            {
-                this->ref_type = Type::Declaration;
-                this->_declaration = other._declaration;
-            }
-            else
-            {
-                this->ref_type = Type::Invalid;
-            }
-        }
-        return *this;
-    };
-
-    Elem::Elem(Elem&& other)
-    {
-        if(other.isAttrRef())
-        {
-            this->ref_type = Type::AttrRef;
-            this->_attr_ref = std::move(other._attr_ref);
-        }
-        else if(other.isDeclaration())
-        {
-            this->ref_type = Type::Declaration;
-            this->_declaration = std::move(other._declaration);
-        }
-        else
-        {
-            this->ref_type = Type::Invalid;
-        }
-    };
-    Elem& Elem::operator=(Elem&& other)
-    {
-        if(this != &other)
-        {
-            if(other.isAttrRef())
-            {
-                this->ref_type = Type::AttrRef;
-                this->_attr_ref = std::move(other._attr_ref);
-            }
-            else if(other.isDeclaration())
-            {
-                this->ref_type = Type::Declaration;
-                this->_declaration = std::move(other._declaration);
-            }
-            else
-            {
-                this->ref_type = Type::Invalid;
-            }
-        }
-        return *this;
-    };
 
     Declaration* Elem::declaration() const
     {
@@ -368,5 +223,69 @@ namespace pql::ast
             throw util::PqlException("pql::ast", "Cannot get tuple from non-tuple type ResultCl.");
         }
         return _tuple;
+    }
+
+    std::string WithCondRef::str() const
+    {
+        if(m_type != Type::String)
+            throw util::PqlException("pql", "WithCondRef is not a string");
+
+        return this->_string_or_number;
+    }
+
+    std::string WithCondRef::number() const
+    {
+        if(m_type != Type::Number)
+            throw util::PqlException("pql", "WithCondRef is not an integer");
+
+        return this->_string_or_number;
+    }
+
+    AttrRef WithCondRef::attrRef() const
+    {
+        if(m_type != Type::AttrRef)
+            throw util::PqlException("pql", "WithCondRef is not an AttrRef");
+
+        return this->_attr_ref;
+    }
+
+    Declaration* WithCondRef::declaration() const
+    {
+        if(m_type != Type::Declaration)
+            throw util::PqlException("pql", "WithCondRef is not a declaration");
+
+        return this->_decl;
+    }
+
+    WithCondRef WithCondRef::ofString(std::string s)
+    {
+        WithCondRef wcr {};
+        wcr.m_type = Type::String;
+        wcr._string_or_number = std::move(s);
+        return wcr;
+    }
+
+    WithCondRef WithCondRef::ofNumber(std::string i)
+    {
+        WithCondRef wcr {};
+        wcr.m_type = Type::Number;
+        wcr._string_or_number = std::move(i);
+        return wcr;
+    }
+
+    WithCondRef WithCondRef::ofAttrRef(AttrRef a)
+    {
+        WithCondRef wcr {};
+        wcr.m_type = Type::AttrRef;
+        wcr._attr_ref = std::move(a);
+        return wcr;
+    }
+
+    WithCondRef WithCondRef::ofDeclaration(Declaration* d)
+    {
+        WithCondRef wcr {};
+        wcr.m_type = Type::Declaration;
+        wcr._decl = d;
+        return wcr;
     }
 }

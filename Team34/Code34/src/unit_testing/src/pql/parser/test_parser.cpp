@@ -17,8 +17,9 @@ TEST_CASE("Basic Query")
     REQUIRE(v_declaration->design_ent == pql::ast::DESIGN_ENT::VARIABLE);
     REQUIRE(v_declaration->name == "v");
     REQUIRE(query->select.result.tuple().front().declaration() == v_declaration);
-    REQUIRE(!query->select.such_that.has_value());
-    REQUIRE(!query->select.pattern.has_value());
+    REQUIRE(query->select.relations.empty());
+    REQUIRE(query->select.patterns.empty());
+    REQUIRE(query->select.withs.empty());
 }
 
 TEST_CASE("Follows* Query")
@@ -30,9 +31,9 @@ TEST_CASE("Follows* Query")
     REQUIRE(s_declaration->design_ent == pql::ast::DESIGN_ENT::STMT);
     REQUIRE(s_declaration->name == "s");
     REQUIRE(query->select.result.tuple().front().declaration() == s_declaration);
-    pql::ast::SuchThatCl& such_that_cl = *query->select.such_that;
-    REQUIRE(such_that_cl.rel_conds.size() == 1);
-    auto follows_t = dynamic_cast<pql::ast::FollowsT*>(such_that_cl.rel_conds.begin()->get());
+    REQUIRE(query->select.relations.size() == 1);
+
+    auto follows_t = dynamic_cast<pql::ast::FollowsT*>(query->select.relations[0].get());
     REQUIRE(follows_t != nullptr);
 
     CHECK(follows_t->before.id() == 6);
@@ -48,9 +49,8 @@ TEST_CASE("ModifiesS Query")
     REQUIRE(v_declaration->design_ent == pql::ast::DESIGN_ENT::VARIABLE);
     REQUIRE(v_declaration->name == "v");
     REQUIRE(query->select.result.tuple().front().declaration() == v_declaration);
-    pql::ast::SuchThatCl& such_that_cl = *query->select.such_that;
-    REQUIRE(such_that_cl.rel_conds.size() == 1);
-    auto modifies_s = dynamic_cast<pql::ast::ModifiesS*>(such_that_cl.rel_conds.begin()->get());
+    REQUIRE(query->select.relations.size() == 1);
+    auto modifies_s = dynamic_cast<pql::ast::ModifiesS*>(query->select.relations[0].get());
     REQUIRE(modifies_s != nullptr);
 
     CHECK(modifies_s->modifier.id() == 6);
@@ -66,9 +66,8 @@ TEST_CASE("ModifiesP Query")
     REQUIRE(p_declaration->design_ent == pql::ast::DESIGN_ENT::PROCEDURE);
     REQUIRE(p_declaration->name == "p");
     REQUIRE(query->select.result.tuple().front().declaration() == p_declaration);
-    pql::ast::SuchThatCl& such_that_cl = *query->select.such_that;
-    REQUIRE(such_that_cl.rel_conds.size() == 1);
-    auto modifies_p = dynamic_cast<pql::ast::ModifiesP*>(such_that_cl.rel_conds.begin()->get());
+    REQUIRE(query->select.relations.size() == 1);
+    auto modifies_p = dynamic_cast<pql::ast::ModifiesP*>(query->select.relations[0].get());
     REQUIRE(modifies_p != nullptr);
 
     CHECK(modifies_p->modifier.declaration() == p_declaration);
@@ -84,9 +83,8 @@ TEST_CASE("UsesS Query")
     REQUIRE(v_declaration->design_ent == pql::ast::DESIGN_ENT::VARIABLE);
     REQUIRE(v_declaration->name == "v");
     REQUIRE(query->select.result.tuple().front().declaration() == v_declaration);
-    pql::ast::SuchThatCl& such_that_cl = *query->select.such_that;
-    REQUIRE(such_that_cl.rel_conds.size() == 1);
-    auto uses_s = dynamic_cast<pql::ast::UsesS*>(such_that_cl.rel_conds.begin()->get());
+    REQUIRE(query->select.relations.size() == 1);
+    auto uses_s = dynamic_cast<pql::ast::UsesS*>(query->select.relations[0].get());
     REQUIRE(uses_s != nullptr);
 
     CHECK(uses_s->user.id() == 14);
@@ -102,10 +100,8 @@ TEST_CASE("Pattern Query")
     REQUIRE(a_declaration->design_ent == pql::ast::DESIGN_ENT::ASSIGN);
     REQUIRE(a_declaration->name == "a");
     REQUIRE(query->select.result.tuple().front().declaration() == a_declaration);
-    pql::ast::PatternCl& pattern_cl = *query->select.pattern;
-    REQUIRE(pattern_cl.pattern_conds.size() == 1);
-    pql::ast::AssignPatternCond* assign_pattern_cond =
-        dynamic_cast<pql::ast::AssignPatternCond*>(pattern_cl.pattern_conds.front().get());
+    REQUIRE(query->select.patterns.size() == 1);
+    auto assign_pattern_cond = dynamic_cast<pql::ast::AssignPatternCond*>(query->select.patterns[0].get());
     REQUIRE(assign_pattern_cond != nullptr);
     REQUIRE(assign_pattern_cond->assignment_declaration == a_declaration);
 
@@ -135,9 +131,8 @@ TEST_CASE("Parent Query")
         REQUIRE(s_declaration->design_ent == pql::ast::DESIGN_ENT::STMT);
         REQUIRE(s_declaration->name == "s");
         REQUIRE(query->select.result.tuple().front().declaration() == s_declaration);
-        pql::ast::SuchThatCl& such_that_cl = *query->select.such_that;
-        REQUIRE(such_that_cl.rel_conds.size() == 1);
-        auto parent = dynamic_cast<pql::ast::Parent*>(such_that_cl.rel_conds.begin()->get());
+        REQUIRE(query->select.relations.size() == 1);
+        auto parent = dynamic_cast<pql::ast::Parent*>(query->select.relations[0].get());
         REQUIRE(parent != nullptr);
 
         CHECK(parent->parent.id() == 6);
@@ -146,7 +141,7 @@ TEST_CASE("Parent Query")
     SECTION("Invalid query")
     {
         REQUIRE_THROWS_WITH(pql::parser::parsePQL("stmt s;\nSelect s such that Parentt(6, s)"),
-            Catch::Contains("Invalid relationship condition tokens"));
+            Catch::Contains("unexpected 't' after keyword 'Parent'"));
     }
 }
 
@@ -239,30 +234,42 @@ TEST_CASE("Result Clause")
         REQUIRE(query->select.result.tuple()[1].declaration() == s2_declaration);
         REQUIRE(query->select.result.tuple()[2].declaration() == s3_declaration);
     }
+
+    SECTION("valid keyword synonyms")
+    {
+        using namespace pql::parser;
+
+        CHECK(parsePQL("assign assign; Select assign pattern assign(_, _)")->isValid());
+        CHECK(parsePQL("assign pattern; Select pattern pattern pattern(_, _)")->isValid());
+        CHECK(parsePQL("stmt Select; Select Select such that Follows(Select, Select)")->isValid());
+        CHECK(parsePQL("stmt such, that, with, stmt; Select <such, that, with, stmt>"
+                       " such that Follows(_,_)")
+                  ->isValid());
+    }
+
     SECTION("Invalid ResultCl")
     {
         // comma before first element in tuple
         CHECK_THROWS_WITH(pql::parser::parsePQL("stmt s1, s2, s3;\n"
                                                 "Select <,s1,s2,s3> such that Follows(s1,_)"),
-            "Multiple element tuple should not start with `,`");
+            "expected identifier, found ',' instead");
         // No comma between elements
         CHECK_THROWS_WITH(pql::parser::parsePQL("stmt s1, s2, s3;\n"
                                                 "Select <s1 s2,s3> such that Follows(s1,_)"),
-            Catch::Contains("Multiple element tuple should be comma separated"));
+            Catch::Contains("expected either ',' or '>' in tuple, found 's2' instead"));
         // No ending '>'
         CHECK_THROWS_WITH(pql::parser::parsePQL("stmt s1, s2, s3;\n"
                                                 "Select <s1,s2,s3"),
-            Catch::Contains("Multiple elem tuple should end with `>`"));
+            Catch::Contains("expected either ',' or '>' in tuple, found '$end of input' instead"));
         // No empty tuple
         CHECK_THROWS_WITH(pql::parser::parsePQL("stmt s1, s2, s3;\n"
                                                 "Select <>"),
-            Catch::Contains("Tuple in result clause cannot be empty"));
+            Catch::Contains("expected identifier, found '>' instead"));
 
         // Space between 'stmt' and '#'
         CHECK_THROWS_WITH(pql::parser::parsePQL("stmt s1, s2, s3;\n"
                                                 "Select s1.stmt #"),
-            Catch::Contains(
-                "Expected 0 whitespace but got 1 instead. should not have any whitespace between the 'stmt' and '#"));
+            Catch::Contains("Invalid attribute 'stmt'"));
     }
 }
 
@@ -273,21 +280,38 @@ TEST_CASE("invalid queries")
     SECTION("duplicate queries")
     {
         auto query = "stmt s; assign s; Select s";
-        REQUIRE_THROWS_WITH(parsePQL(query), Catch::Contains("duplicate declaration 's'"));
+        auto q = parsePQL(query);
+        REQUIRE(q->isInvalid());
     }
 
     SECTION("such-that/parent*/follows* spacing")
     {
         CHECK_THROWS_WITH(parsePQL("stmt s ; Select s   such    that   Parent(s, _)"),
-            Catch::Contains(
-                "Expected 1 whitespace but got 4 instead. There should only be 1 whitespace between 'such"));
+            Catch::Contains("unexpected token 'such' in Select"));
 
-        CHECK_THROWS_WITH(parsePQL("stmt s; Select s such that Follows  *  (s, _)"),
-            Catch::Contains(
-                "Expected 0 whitespace but got 2 instead. There should be not white space between 'Follows' and '*'"));
+        CHECK_THROWS_WITH(
+            parsePQL("stmt s; Select s such that Follows  *  (s, _)"), Catch::Contains("invalid token '*'"));
 
-        CHECK_THROWS_WITH(parsePQL("stmt s; Select s such that Parent  *  (s, _)"),
-            Catch::Contains(
-                "Expected 0 whitespace but got 2 instead. There should be no whitespace between 'Parent' and '*'"));
+        CHECK_THROWS_WITH(
+            parsePQL("stmt s; Select s such that Parent  *  (s, _)"), Catch::Contains("invalid token '*'"));
     }
+}
+
+#define TEST_VALID(query) CHECK(pql::parser::parsePQL(query)->isValid())
+
+TEST_CASE("valid multi-queries")
+{
+    TEST_VALID("stmt s; Select s such that Follows(s, s) and Parent*(s, s) and Follows*(s, s)");
+    TEST_VALID("stmt s; Select s such that Follows(s, s) such that Parent*(s, s) such that Follows*(s, s)");
+
+    TEST_VALID("stmt s; assign a; Select <a,s> pattern a(_, _) and a(_, _) and a(_, _)");
+    TEST_VALID("stmt s; assign a; Select <a,s> pattern a(_, _) pattern a(_, _) pattern a(_, _)");
+
+    TEST_VALID("stmt s; assign a; Select <a,s> pattern a(_, _) such that Follows(s, _) pattern a(_, _)");
+    TEST_VALID("stmt s; assign a; Select <a,s> pattern a(_, _) such that Follows(s, _) with s.stmt# = a.stmt#");
+
+    TEST_VALID("call c1; call c2; Select <c1,c2> with c1.stmt# = c2.stmt# and c1.procName = c2.procName");
+    TEST_VALID("call c1; call c2; Select <c1,c2> with c1.stmt# = c2.stmt# with c1.procName = c2.procName");
+    TEST_VALID("call c1; call c2; Select <c1,c2> with c1.stmt# = 69 and c1.procName = \"kekw\"");
+    TEST_VALID("call c1; call c2; Select <c1,c2> with c1.stmt# = 69 and c1 = c2");
 }

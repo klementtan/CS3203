@@ -43,6 +43,14 @@ namespace util
         using BaseException<PqlException>::BaseException;
     };
 
+    struct PqlSyntaxException : BaseException<PqlSyntaxException>
+    {
+        template <typename... Args>
+        PqlSyntaxException(const char* fmt, const Args&... args) : BaseException("pql::parser", fmt, args...)
+        {
+        }
+    };
+
     struct ParseException : BaseException<ParseException>
     {
         using BaseException<ParseException>::BaseException;

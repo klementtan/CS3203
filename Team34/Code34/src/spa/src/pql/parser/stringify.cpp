@@ -118,32 +118,39 @@ namespace pql::ast
             this->while_declaration ? this->while_declaration->toString() : "nullptr");
     }
 
-
-    std::string PatternCl::toString() const
+    std::string WithCondRef::toString() const
     {
-        std::string ret { "PatternCl[\n" };
-        for(const auto& pattern_cond : this->pattern_conds)
-            ret += zpr::sprint("\t{}\n", pattern_cond ? pattern_cond->toString() : "nullptr");
-
-        ret += "]";
-        return ret;
+        if(this->isString())
+            return zpr::sprint("WithCondRef(string: '{}')", this->str());
+        else if(this->isNumber())
+            return zpr::sprint("WithCondRef(num: '{}')", this->number());
+        else if(this->isDeclaration())
+            return zpr::sprint("WithCondRef(decl: {})", this->declaration()->toString());
+        else if(this->isAttrRef())
+            return zpr::sprint("WithCondRef(attrRef: {})", this->attrRef().toString());
+        else
+            return zpr::sprint("WithCondRef(???)");
     }
 
-    std::string SuchThatCl::toString() const
+    std::string WithCond::toString() const
     {
-        std::string ret { "SuchThatCl[\n" };
-        for(const auto& rel_cond : this->rel_conds)
-            ret += zpr::sprint("\t{}\n", rel_cond ? rel_cond->toString() : "nullptr");
+        return zpr::sprint("WithCond(lhs:{}, rhs:{})", this->lhs.toString(), this->rhs.toString());
+    }
 
-        ret += "]";
-        return ret;
+
+    template <typename T>
+    static std::string list_to_string(const std::vector<std::unique_ptr<T>>& list)
+    {
+        std::string ret = "[\n";
+        for(const auto& x : list)
+            ret += zpr::sprint("\t{}\n", x.get()->toString());
+        return ret + "]";
     }
 
     std::string Select::toString() const
     {
-        return zpr::sprint("Select(such_that:{}, pattern:{}, result:{})",
-            this->such_that ? this->such_that->toString() : "nullptr",
-            this->pattern ? this->pattern->toString() : "nullptr", this->result.toString());
+        return zpr::sprint("Select(relations:{}, patterns:{}, withs:{}, result:{})", list_to_string(this->relations),
+            list_to_string(this->patterns), list_to_string(this->withs), this->result.toString());
     }
 
     std::string Query::toString() const

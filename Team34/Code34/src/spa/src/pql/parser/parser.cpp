@@ -1,5 +1,6 @@
 // pql/parser.cpp
 
+#include <cctype>
 #include <cassert>
 #include <unordered_set>
 
@@ -12,179 +13,189 @@
 
 namespace pql::parser
 {
-    using PqlException = util::PqlException;
+    using SyntaxError = util::PqlSyntaxException;
 
+    static ast::Declaration _dummy_decl { "$uwu", ast::DESIGN_ENT::INVALID };
 
     struct ParserState
     {
-        zst::str_view stream;
-
-        zst::str_view raw_stream() const
-        {
-            return this->stream;
-        }
-
         Token next()
         {
-            return getNextToken(this->stream);
+            return getNextToken(m_stream);
         }
 
-        Token peek_one() const
+        Token next_keyword()
         {
-            return peekNextOneToken(this->stream);
+            return getNextKeywordToken(m_stream);
         }
 
-        std::vector<Token> peek_two() const
+        Token peek_keyword() const
         {
-            return peekNextTwoTokens(this->stream);
+            return peekNextKeywordToken(m_stream);
         }
 
-        void assert_whitespace(int expected_whitespace, std::string msg)
+        Token peek() const
         {
-            int count = eatWhitespace(this->stream);
-            if(count != expected_whitespace)
-                throw PqlException(
-                    "pql::parser", "Expected {} whitespace but got {} instead. {}", expected_whitespace, count, msg);
+            return peekNextToken(m_stream);
         }
+
+        Token expect(TokenType tt)
+        {
+            if(auto tok = this->next(); tok != tt)
+            {
+                throw SyntaxError("expected {}, found {} instead", tokenTypeString(tt), tokenTypeString(tok));
+            }
+            else
+            {
+                return tok;
+            }
+        }
+
+        Token expect_keyword(TokenType tt)
+        {
+            if(auto tok = this->next_keyword(); tok != tt)
+            {
+                throw SyntaxError("expected {}, found {} instead", tokenTypeString(tt), tokenTypeString(tok));
+            }
+            else
+            {
+                return tok;
+            }
+        }
+
+        bool hasDeclaration(zst::str_view name)
+        {
+            return m_query->declarations.hasDeclaration(name.str());
+        }
+
+        // note: the dummy declaration is here so that we don't propagate nullptrs all over the place.
+        ast::Declaration* addDeclaration(zst::str_view name, ast::DESIGN_ENT type)
+        {
+            if(this->hasDeclaration(name))
+            {
+                m_query->setInvalid();
+                util::logfmt("pql::parser", "duplicate declaration of '{}'", name);
+                return &_dummy_decl;
+            }
+
+            util::logfmt("pql::parser", "added declaration '{}' (type '{}')", name, ast::INV_DESIGN_ENT_MAP.at(type));
+            return m_query->declarations.addDeclaration(name.str(), type);
+        }
+
+        ast::Declaration* getDeclaration(zst::str_view name)
+        {
+            if(!this->hasDeclaration(name))
+            {
+                m_query->setInvalid();
+                util::logfmt("pql::parser", "use of undeclared synonym '{}'", name);
+                return &_dummy_decl;
+            }
+            return m_query->declarations.getDeclaration(name.str());
+        }
+
+        template <typename... Args>
+        void setInvalid(const char* fmt, Args&&... args)
+        {
+            m_query->setInvalid();
+            util::logfmt("pql::parser", "semantic error: {}", zpr::fwd(fmt, static_cast<Args&&>(args)...));
+        }
+
+        ParserState(zst::str_view input, ast::Query* query) : m_stream(input), m_query(query) { }
+
+    private:
+        zst::str_view m_stream {};
+        ast::Query* m_query {};
     };
 
-    // Clauses
-    const Token KW_Select { "Select", TT::Identifier };
-    const Token KW_Boolean { "BOOLEAN", TT::Identifier };
-    const std::vector<Token> KW_SuchThat = { { "such", TT::Identifier }, { "that", TT::Identifier } };
-    const Token KW_Pattern { "pattern", TT::Identifier };
 
     // Design entities
-    const Token KW_Stmt { "stmt", TT::Identifier };
-    const Token KW_Assign { "assign", TT::Identifier };
-    const Token KW_Variable { "variable", TT::Identifier };
-    const Token KW_Constant { "constant", TT::Identifier };
-    const Token KW_Procedure { "procedure", TT::Identifier };
-    const Token KW_Read { "read", TT::Identifier };
-    const Token KW_Print { "print", TT::Identifier };
-    const Token KW_If { "if", TT::Identifier };
-    const Token KW_Then { "then", TT::Identifier };
-    const Token KW_Else { "else", TT::Identifier };
-    const Token KW_Call { "call", TT::Identifier };
-    const Token KW_While { "while", TT::Identifier };
-    const std::unordered_set<Token> KW_DesignEntities { { KW_Stmt, KW_Assign, KW_Variable, KW_Constant, KW_Procedure,
-        KW_Read, KW_Print, KW_If, KW_Then, KW_Else, KW_Call, KW_While } };
+    const std::unordered_set<std::string> KW_DesignEntities { "stmt", "assign", "variable", "constant", "procedure",
+        "read", "print", "if", "call", "while" };
 
-    // Relationships
-    const Token KW_Follows { "Follows", TT::Identifier };
-    const std::vector<Token> KW_FollowsT = { { "Follows", TT::Identifier }, { "*", TT::Asterisk } };
-    const Token KW_Parent { "Parent", TT::Identifier };
-    const std::vector<Token> KW_ParentT = { { "Parent", TT::Identifier }, { "*", TT::Asterisk } };
-    const Token KW_Uses { "Uses", TT::Identifier };
-    const Token KW_Modifies { "Modifies", TT::Identifier };
-    const Token KW_Calls { "Calls", TT::Identifier };
-    const std::vector<Token> KW_CallsT = { { "Calls", TT::Identifier }, { "*", TT::Asterisk } };
-
-
-    // Attribute Names
-    const Token KW_AttrName_ProcName { "procName", TT::Identifier };
-    const Token KW_AttrName_VarName { "varName", TT::Identifier };
-    const Token KW_AttrName_Value { "value", TT::Identifier };
-    const Token KW_AttrName_StmtNum { "call", TT::Identifier };
 
     // Process the next token as a variable and insert it into declaration_list
-    void insert_var_to_declarations(ParserState* ps, ast::DeclarationList* declaration_list, ast::DESIGN_ENT ent)
+    static void parse_one_declaration(ParserState* ps, ast::DESIGN_ENT ent)
     {
-        Token var = ps->next();
-
-        if(var.type != TT::Identifier)
-        {
-            throw PqlException(
-                "pql::parser", "expected variable name to be an identifier but received {} instead.", var.text);
-        }
-        if(declaration_list->hasDeclaration(var.text.str()))
-            throw util::PqlException("pql::parser", "duplicate declaration '{}'", var.text);
-
-        util::logfmt("pql::parser", "Adding declaration {} to declaration list", var.text);
-        declaration_list->addDeclaration(var.text.str(), ent);
+        auto var = ps->expect(TT::Identifier);
+        ps->addDeclaration(var.text, ent);
     }
 
     // Process the next tokens as the start of an entity declaration and insert declarations into declaration_list
-    void insert_declaration(ParserState* ps, ast::DeclarationList* declaration_list)
+    static void parse_declarations(ParserState* ps)
     {
-        auto check_semicolon = [](ParserState* ps) {
-            if(ps->next() != TT::Semicolon)
-                throw PqlException("pql::parser", "expected semicolon after statement");
-        };
-        auto check_comma = [](ParserState* ps) {
-            if(ps->next() != TT::Comma)
-                throw PqlException("parser", "expected semicolon after statement");
-        };
+        auto tok = ps->expect(TT::Identifier);
 
-        if(KW_DesignEntities.count(ps->peek_one()) == 0)
-        {
-            throw PqlException("pql::parser", "Expected declarations to start with design-entity keyword instead of {}",
-                ps->peek_one().text);
-        }
-
-        std::string ent_string { ps->next().text.str() };
+        std::string ent_string = tok.text.str();
         util::logfmt("pql::parser", "Parsing declaration with design_ent:{}", ent_string);
 
         if(ast::DESIGN_ENT_MAP.count(ent_string) == 0)
-        {
-            util::logfmt("pql::parser", "Invalid entity provided in declaration {}", ent_string);
-        }
+            throw SyntaxError("Invalid entity '{}' provided in declaration", ent_string);
+
         ast::DESIGN_ENT ent = ast::DESIGN_ENT_MAP.find(ent_string)->second;
-        insert_var_to_declarations(ps, declaration_list, ent);
+        parse_one_declaration(ps, ent);
 
         // Handle trailing additional var using `,`
-        while(ps->peek_one().type == TT::Comma)
+        while(ps->peek().type == TT::Comma)
         {
-            check_comma(ps);
-            insert_var_to_declarations(ps, declaration_list, ent);
+            ps->expect(TT::Comma);
+            parse_one_declaration(ps, ent);
         }
-        check_semicolon(ps);
+
+        ps->expect(TT::Semicolon);
     }
 
-
-    ast::EntRef parse_ent_ref(ParserState* ps, const ast::DeclarationList* declaration_list)
+    static ast::EntRef parse_ent_ref(ParserState* ps)
     {
         Token tok = ps->next();
         if(tok.type == TT::Underscore)
         {
             return ast::EntRef::ofWildcard();
         }
-        if(tok.type == TT::DoubleQuotes)
+        else if(tok.type == TT::String)
         {
-            Token name_declaration_tok = ps->next();
-            if(name_declaration_tok.type != TT::Identifier)
+            // make sure it's a valid identifier
+            auto name = tok.text.str();
             {
-                throw PqlException("pql::parser", "Expected named declaration to be an identifier instead of {}",
-                    name_declaration_tok.text);
-            }
-            if(ps->next() != TT::DoubleQuotes)
-            {
-                throw PqlException("pql::parser", "Expected named declaration to end with double quotes(\")");
+                bool fail = false;
+                if(!std::isalpha(name[0]))
+                    fail = true;
+
+                for(char c : name)
+                {
+                    if(!std::isdigit(c) && !std::isalpha(c))
+                    {
+                        fail = true;
+                        break;
+                    }
+                }
+
+                if(fail)
+                {
+                    throw SyntaxError("Expected literal entity name to be an identifier instead of '{}'", name);
+                }
             }
 
-            return ast::EntRef::ofName(name_declaration_tok.text.str());
+            return ast::EntRef::ofName(name);
         }
-        if(tok.type == TokenType::Identifier)
+        else if(tok.type == TokenType::Identifier)
         {
             std::string var_name = tok.text.str();
 
-            auto declaration = declaration_list->getDeclaration(var_name);
-            if(declaration == nullptr)
-                throw PqlException("pql::parser", "Undeclared entity {} provided when parsing ent ref", var_name);
-
+            auto declaration = ps->getDeclaration(var_name);
             return ast::EntRef::ofDeclaration(declaration);
         }
-        throw PqlException("pql::parser", "Invalid ent ref starting with {}", tok.text);
+
+        throw SyntaxError("Invalid entity ref starting with '{}'", tok.text);
     }
 
-    ast::StmtRef parse_stmt_ref(ParserState* ps, const ast::DeclarationList* declaration_list)
+    static ast::StmtRef parse_stmt_ref(ParserState* ps)
     {
         Token tok = ps->next();
         if(tok.type == TT::Underscore)
         {
             return ast::StmtRef::ofWildcard();
         }
-        if(tok.type == TT::Number)
+        else if(tok.type == TT::Number)
         {
             size_t id = 0;
             for(char c : tok.text)
@@ -192,630 +203,353 @@ namespace pql::parser
 
             return ast::StmtRef::ofStatementId(id);
         }
-        if(tok.type == TokenType::Identifier)
+        else if(tok.type == TokenType::Identifier)
         {
-            std::string var_name = tok.text.str();
-
-            auto declaration = declaration_list->getDeclaration(var_name);
-            if(declaration == nullptr)
-                throw PqlException("pql::parser", "Undeclared entity {} provided when parsing stmt ref", var_name);
-
+            auto declaration = ps->getDeclaration(tok.text);
             return ast::StmtRef::ofDeclaration(declaration);
-            ;
         }
-        throw PqlException("pql::parser", "Invalid stmt ref starting with {}", tok.text);
+
+        throw SyntaxError("Invalid stmt ref starting with {}", tok.text);
     }
 
-    // Extract out the expression between the double quotes in expression specification.
-    std::unique_ptr<simple::ast::Expr> parse_expr(ParserState* ps)
-    {
-        if(ps->next().type != TT::DoubleQuotes)
-        {
-            throw PqlException("pql::parser", "Expect expression to start with double quotes(\")");
-        }
-
-        zst::str_view expr_str = extractTillQuotes(ps->stream);
-
-        if(ps->next().type != TT::DoubleQuotes)
-        {
-            throw PqlException("pql::parser", "Expect expression to  with double quotes(\")");
-        }
-
-        return simple::parser::parseExpression(expr_str);
-    }
-
-    ast::ExprSpec parse_expr_spec(ParserState* ps)
+    static ast::ExprSpec parse_expr_spec(ParserState* ps)
     {
         ast::ExprSpec expr_spec {};
 
         bool is_subexpr = false;
-        if(ps->peek_one() == TT::Underscore)
+        if(ps->peek() == TT::Underscore)
         {
             ps->next();
             is_subexpr = true;
         }
 
-        if(ps->peek_one() == TT::DoubleQuotes)
-            expr_spec.expr = parse_expr(ps);
+        if(auto estr = ps->peek(); estr == TT::String)
+        {
+            ps->next();
+            expr_spec.expr = simple::parser::parseExpression(estr.text);
+        }
 
         // '_' itself is valid as well, so don't expect '__'
         if(is_subexpr && expr_spec.expr != nullptr)
-        {
-            if(ps->next() != TT::Underscore)
-                throw PqlException("pql::parser", "expected '_' in subexpression pattern");
-        }
+            ps->expect(TT::Underscore);
 
         expr_spec.is_subexpr = is_subexpr;
         return expr_spec;
     }
 
     // the declaration has already been eaten.
-    std::unique_ptr<ast::AssignPatternCond> parse_assign_pattern(
-        ParserState* ps, ast::Declaration* assign_decl, const ast::DeclarationList* declaration_list)
+    static std::unique_ptr<ast::AssignPatternCond> parse_assign_pattern(ParserState* ps, ast::Declaration* assign_decl)
     {
         assert(assign_decl->design_ent == ast::DESIGN_ENT::ASSIGN);
         util::logfmt("pql::parser", "Parsing pattern clause with assignment condition {}", assign_decl->toString());
 
+        ps->expect(TT::LParen);
+
         auto pattern_cond = std::make_unique<ast::AssignPatternCond>();
-
-        if(Token tok = ps->next(); tok != TT::LParen)
-        {
-            throw PqlException("pql::parser", "Expected '(' after synonym in Pattern clause instead of {}", tok.text);
-        }
-
         pattern_cond->assignment_declaration = assign_decl;
-        pattern_cond->ent = parse_ent_ref(ps, declaration_list);
-        if(pattern_cond->ent.isDeclaration() &&
-            pattern_cond->ent.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
-            throw PqlException("pql::parser", "synonym in first argument of assign pattern must be a variable");
 
-        if(Token tok = ps->next(); tok != TT::Comma)
-        {
-            throw PqlException("pql::parser", "Expected ',' after ent ref declaration instead of {}", tok.text);
-        }
+        auto ent_ref = parse_ent_ref(ps);
+        pattern_cond->ent = ent_ref;
+
+        if(ent_ref.isDeclaration() && ent_ref.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
+            ps->setInvalid("synonym in first argument of assign pattern must be a variable");
+
+        ps->expect(TT::Comma);
+
         pattern_cond->expr_spec = parse_expr_spec(ps);
-        if(Token tok = ps->next(); tok != TT::RParen)
-        {
-            throw PqlException("pql::parser", "Expected ')' after expr spec in Pattern clause instead of {}", tok.text);
-        }
 
+        ps->expect(TT::RParen);
         return pattern_cond;
     }
 
-    std::unique_ptr<ast::IfPatternCond> parse_if_pattern(
-        ParserState* ps, ast::Declaration* if_decl, const ast::DeclarationList* declaration_list)
+    static std::unique_ptr<ast::PatternCond> parse_if_while_pattern(ParserState* ps, ast::Declaration* decl)
     {
-        assert(if_decl->design_ent == ast::DESIGN_ENT::IF);
-        util::logfmt("pql::parser", "Parsing pattern clause with if condition {}", if_decl->toString());
+        assert(decl->design_ent == ast::DESIGN_ENT::IF || decl->design_ent == ast::DESIGN_ENT::WHILE);
+        util::logfmt("pql::parser", "Parsing pattern clause with if/while condition {}", decl->toString());
 
-        auto pattern_cond = std::make_unique<ast::IfPatternCond>();
+        ps->expect(TT::LParen);
 
-        if(Token tok = ps->next(); tok != TT::LParen)
-            throw PqlException("pql::parser", "Expected '(' after synonym in Pattern clause instead of '{}'", tok.text);
+        auto ent_ref = parse_ent_ref(ps);
 
-        pattern_cond->if_declaration = if_decl;
-        pattern_cond->ent = parse_ent_ref(ps, declaration_list);
-        if(pattern_cond->ent.isDeclaration() &&
-            pattern_cond->ent.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
-            throw PqlException("pql::parser", "synonym in first argument of if pattern must be a variable");
+        if(ent_ref.isDeclaration() && ent_ref.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
+            ps->setInvalid("synonym in first argument of if/while pattern must be a variable");
 
-        if(Token tok = ps->next(); tok != TT::Comma)
-            throw PqlException("pql::parser", "Expected ',' after ent ref declaration instead of '{}'", tok.text);
-
-        if(auto tok = ps->next(); tok != TT::Underscore)
-            throw PqlException("pql::parser", "second argument of if-pattern can only be '_'");
-
-        if(auto tok = ps->next(); tok != TT::Comma)
-            throw PqlException("pql::parser", "if-pattern requires 3 arguments, expected ','");
-
-        if(auto tok = ps->next(); tok != TT::Underscore)
-            throw PqlException("pql::parser", "third argument of if-pattern can only be '_'");
-
-        if(Token tok = ps->next(); tok != TT::RParen)
-            throw PqlException(
-                "pql::parser", "Expected ')' after expr spec in Pattern clause instead of '{}'", tok.text);
-
-        return pattern_cond;
-    }
-
-
-    std::unique_ptr<ast::WhilePatternCond> parse_while_pattern(
-        ParserState* ps, ast::Declaration* while_decl, const ast::DeclarationList* declaration_list)
-    {
-        assert(while_decl->design_ent == ast::DESIGN_ENT::WHILE);
-        util::logfmt("pql::parser", "Parsing pattern clause with while condition {}", while_decl->toString());
-
-        auto pattern_cond = std::make_unique<ast::WhilePatternCond>();
-
-        if(Token tok = ps->next(); tok != TT::LParen)
-            throw PqlException("pql::parser", "Expected '(' after synonym in Pattern clause instead of '{}'", tok.text);
-
-        pattern_cond->while_declaration = while_decl;
-        pattern_cond->ent = parse_ent_ref(ps, declaration_list);
-        if(pattern_cond->ent.isDeclaration() &&
-            pattern_cond->ent.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
-            throw PqlException("pql::parser", "synonym in first argument of while pattern must be a variable");
-
-        if(Token tok = ps->next(); tok != TT::Comma)
-            throw PqlException("pql::parser", "Expected ',' after ent ref declaration instead of '{}'", tok.text);
-
-        if(auto tok = ps->next(); tok != TT::Underscore)
-            throw PqlException("pql::parser", "second argument of while-pattern can only be '_'");
-
-        if(Token tok = ps->next(); tok != TT::RParen)
-            throw PqlException(
-                "pql::parser", "Expected ')' after expr spec in Pattern clause instead of '{}'", tok.text);
-
-        return pattern_cond;
-    }
-
-
-
-
-
-
-
-    ast::PatternCl parse_pattern(ParserState* ps, const ast::DeclarationList* declaration_list)
-    {
-        std::vector<std::unique_ptr<ast::PatternCond>> pattern_conds;
-
-        if(Token tok = ps->next(); tok != KW_Pattern)
+        if(decl->design_ent == ast::DESIGN_ENT::IF)
         {
-            throw PqlException(
-                "pql::parser", "Pattern clauses needs to start with 'pattern' keyword instead of {}", tok.text);
+            // needs 2 of these
+            ps->expect(TT::Comma);
+            ps->expect(TT::Underscore);
+            ps->expect(TT::Comma);
+            ps->expect(TT::Underscore);
+            ps->expect(TT::RParen);
+
+            auto ret = std::make_unique<ast::IfPatternCond>();
+            ret->if_declaration = decl;
+            ret->ent = ent_ref;
+            return ret;
         }
+        else if(decl->design_ent == ast::DESIGN_ENT::WHILE)
+        {
+            ps->expect(TT::Comma);
+            ps->expect(TT::Underscore);
+            ps->expect(TT::RParen);
 
-        Token declaration_tok = ps->next();
-
-        auto pattern_decl = declaration_list->getDeclaration(declaration_tok.text.str());
-        if(pattern_decl == nullptr)
-        {
-            throw PqlException("pql::parser",
-                "Pattern condition should start with the synonym of a previous declaration instead of {}",
-                declaration_tok.text);
-        }
-
-        if(pattern_decl->design_ent == ast::DESIGN_ENT::ASSIGN)
-        {
-            pattern_conds.push_back(parse_assign_pattern(ps, pattern_decl, declaration_list));
-        }
-        else if(pattern_decl->design_ent == ast::DESIGN_ENT::IF)
-        {
-            pattern_conds.push_back(parse_if_pattern(ps, pattern_decl, declaration_list));
-        }
-        else if(pattern_decl->design_ent == ast::DESIGN_ENT::WHILE)
-        {
-            pattern_conds.push_back(parse_while_pattern(ps, pattern_decl, declaration_list));
+            auto ret = std::make_unique<ast::WhilePatternCond>();
+            ret->while_declaration = decl;
+            ret->ent = ent_ref;
+            return ret;
         }
         else
         {
-            throw PqlException("pql::parser",
-                "pattern clause can only have 'assign', 'if', or 'while'"
-                " synonyms; found '{}'",
-                ast::INV_DESIGN_ENT_MAP.at(pattern_decl->design_ent));
+            assert(false && "unreachable");
         }
-
-        return ast::PatternCl { std::move(pattern_conds) };
     }
 
-    std::unique_ptr<ast::FollowsT> parse_follows_t(ParserState* ps, const ast::DeclarationList* declaration_list)
+    static void parse_pattern(ParserState* ps, ast::Select* select)
     {
-        auto f = ps->next();
-        ps->assert_whitespace(0, "There should be not white space between 'Follows' and '*'");
-        auto star = ps->next();
+        ps->expect_keyword(TT::KW_Pattern);
 
-        if(f.text != "Follows" || star != TT::Asterisk)
+        do
         {
-            throw PqlException("pql::parser", "FollowsT relationship condition should start with 'Follows*'");
-        }
+            Token declaration_tok = ps->next();
 
-        auto follows_t = std::make_unique<ast::FollowsT>();
-        if(Token tok = ps->next(); tok != TT::LParen)
-        {
-            throw PqlException("pql::parser", "Expected '(' at the start of 'Follows*' instead of {}", tok.text);
-        }
-        follows_t->before = parse_stmt_ref(ps, declaration_list);
-        if(Token tok = ps->next(); tok != TT::Comma)
-        {
-            throw PqlException("pql::parser", "Expected ',' after declaring ent ref in Follows*");
-        }
-        follows_t->after = parse_stmt_ref(ps, declaration_list);
-        if(Token tok = ps->next(); tok != TT::RParen)
-        {
-            throw PqlException("pql::parser", "Expected ')' at the end of 'Follows*' instead of {}", tok.text);
-        }
+            auto pattern_decl = ps->getDeclaration(declaration_tok.text);
+            auto decl_ent = pattern_decl->design_ent;
 
-        return follows_t;
+            if(decl_ent == ast::DESIGN_ENT::ASSIGN)
+            {
+                select->patterns.push_back(parse_assign_pattern(ps, pattern_decl));
+            }
+            else if(decl_ent == ast::DESIGN_ENT::IF || decl_ent == ast::DESIGN_ENT::WHILE)
+            {
+                select->patterns.push_back(parse_if_while_pattern(ps, pattern_decl));
+            }
+            else
+            {
+                // TODO: we won't be able to parse the rest of the pattern without knowing the correct
+                // type of the declaration. should this be a syntactic error?
+                ps->setInvalid("invalid synonym type '{}' in pattern clause (can only have 'if', 'while', or 'assign'",
+                    ast::INV_DESIGN_ENT_MAP.at(decl_ent));
+            }
+
+        } while(ps->peek_keyword() == TT::KW_And ? (ps->next_keyword(), true) : false);
     }
 
-    std::unique_ptr<ast::Follows> parse_follows(ParserState* ps, const ast::DeclarationList* declaration_list)
+    // parses relations where that are not Uses/Modifies (ie. which are not overloaded based on the type)
+    template <typename RelAst, typename LeftRefType, typename RightRefType>
+    static std::unique_ptr<RelAst> parse_relation(
+        ParserState* ps, TokenType kw_tok, LeftRefType RelAst::*left_ref, RightRefType RelAst::*right_ref)
     {
-        if(ps->next().text != "Follows")
-        {
-            throw PqlException("pql::parser", "FollowsT relationship condition should start with 'Follows*'");
-        }
-        auto follows = std::make_unique<ast::Follows>();
-        if(Token tok = ps->next(); tok != TT::LParen)
-        {
-            throw PqlException("pql::parser", "Expected '(' at the start of 'Follows' instead of {}", tok.text);
-        }
-        follows->directly_before = parse_stmt_ref(ps, declaration_list);
-        if(Token tok = ps->next(); tok != TT::Comma)
-        {
-            throw PqlException("pql::parser", "Expected ',' after declaring ent ref in Follows");
-        }
-        follows->directly_after = parse_stmt_ref(ps, declaration_list);
-        if(Token tok = ps->next(); tok != TT::RParen)
-        {
-            throw PqlException("pql::parser", "Expected ')' at the end of 'Follows' instead of {}", tok.text);
-        }
-        util::logfmt("pql::parser", "Parsed: {}", follows->toString());
+        static_assert(std::is_same_v<LeftRefType, ast::EntRef> || std::is_same_v<LeftRefType, ast::StmtRef>);
+        static_assert(std::is_same_v<RightRefType, ast::EntRef> || std::is_same_v<RightRefType, ast::StmtRef>);
 
-        return follows;
+        ps->expect_keyword(kw_tok);
+        ps->expect(TT::LParen);
+
+        auto relation = std::make_unique<RelAst>();
+
+        if constexpr(std::is_same_v<LeftRefType, ast::EntRef>)
+            relation.get()->*left_ref = parse_ent_ref(ps);
+        else
+            relation.get()->*left_ref = parse_stmt_ref(ps);
+
+        ps->expect(TT::Comma);
+
+        if constexpr(std::is_same_v<RightRefType, ast::EntRef>)
+            relation.get()->*right_ref = parse_ent_ref(ps);
+        else
+            relation.get()->*right_ref = parse_stmt_ref(ps);
+
+        ps->expect(TT::RParen);
+        return relation;
     }
 
-    std::unique_ptr<ast::ParentT> parse_parent_t(ParserState* ps, const ast::DeclarationList* declaration_list)
+    static bool is_next_stmt_ref(ParserState* ps)
     {
-        auto p = ps->next();
-        ps->assert_whitespace(0, "There should be no whitespace between 'Parent' and '*'");
-        auto star = ps->next();
+        Token tok = ps->peek();
 
-        if(p.text != "Parent" || star != TT::Asterisk)
-        {
-            throw PqlException("pql::parser", "ParentT relationship condition should start with 'Parent*'");
-        }
-        auto parent_t = std::make_unique<ast::ParentT>();
-        if(Token tok = ps->next(); tok != TT::LParen)
-        {
-            throw PqlException("pql::parser", "Expected '(' at the start of 'Parent*' instead of {}", tok.text);
-        }
-        parent_t->ancestor = parse_stmt_ref(ps, declaration_list);
-        if(Token tok = ps->next(); tok != TT::Comma)
-        {
-            throw PqlException("pql::parser", "Expected ',' after declaring ent ref in Parent*");
-        }
-        parent_t->descendant = parse_stmt_ref(ps, declaration_list);
-        if(Token tok = ps->next(); tok != TT::RParen)
-        {
-            throw PqlException("pql::parser", "Expected ')' at the end of 'Parent*' instead of {}", tok.text);
-        }
-
-        return parent_t;
-    }
-
-    std::unique_ptr<ast::Parent> parse_parent(ParserState* ps, const ast::DeclarationList* declaration_list)
-    {
-        if(ps->next().text != "Parent")
-        {
-            throw PqlException("pql::parser", "Parent relationship condition should start with 'Parent'");
-        }
-        auto parent = std::make_unique<ast::Parent>();
-        if(Token tok = ps->next(); tok != TT::LParen)
-        {
-            throw PqlException("pql::parser", "Expected '(' at the start of 'Parent' instead of {}", tok.text);
-        }
-        parent->parent = parse_stmt_ref(ps, declaration_list);
-        if(Token tok = ps->next(); tok != TT::Comma)
-        {
-            throw PqlException("pql::parser", "Expected ',' after declaring ent ref in Parent");
-        }
-        parent->child = parse_stmt_ref(ps, declaration_list);
-        if(Token tok = ps->next(); tok != TT::RParen)
-        {
-            throw PqlException("pql::parser", "Expected ')' at the end of 'Parent' instead of {}", tok.text);
-        }
-
-        return parent;
-    }
-
-    std::unique_ptr<ast::CallsT> parse_calls_t(ParserState* ps, const ast::DeclarationList* declaration_list)
-    {
-        auto c = ps->next();
-        auto star = ps->next();
-        auto c_star = zst::str_view(c.text.data(), strlen("Calls*"));
-
-        if(c.text != "Calls" || star != TT::Asterisk || c_star != "Calls*")
-        {
-            throw PqlException("pql::parser", "CallsT relationship condition should start with 'Calls*'");
-        }
-        auto calls_t = std::make_unique<ast::CallsT>();
-        if(Token tok = ps->next(); tok != TT::LParen)
-        {
-            throw PqlException("pql::parser", "Expected '(' at the start of 'Calls*' instead of {}", tok.text);
-        }
-        calls_t->caller = parse_ent_ref(ps, declaration_list);
-        if(Token tok = ps->next(); tok != TT::Comma)
-        {
-            throw PqlException("pql::parser", "Expected ',' after declaring ent ref in Calls*");
-        }
-        calls_t->proc = parse_ent_ref(ps, declaration_list);
-        if(Token tok = ps->next(); tok != TT::RParen)
-        {
-            throw PqlException("pql::parser", "Expected ')' at the end of 'Calls*' instead of {}", tok.text);
-        }
-
-        return calls_t;
-    }
-
-    std::unique_ptr<ast::Calls> parse_calls(ParserState* ps, const ast::DeclarationList* declaration_list)
-    {
-        if(ps->next().text != "Calls")
-        {
-            throw PqlException("pql::parser", "Calls relationship condition should start with 'Calls'");
-        }
-        auto calls = std::make_unique<ast::Calls>();
-        if(Token tok = ps->next(); tok != TT::LParen)
-        {
-            throw PqlException("pql::parser", "Expected '(' at the start of 'Calls' instead of {}", tok.text);
-        }
-        calls->caller = parse_ent_ref(ps, declaration_list);
-        if(Token tok = ps->next(); tok != TT::Comma)
-        {
-            throw PqlException("pql::parser", "Expected ',' after declaring ent ref in Calls");
-        }
-        calls->proc = parse_ent_ref(ps, declaration_list);
-        if(Token tok = ps->next(); tok != TT::RParen)
-        {
-            throw PqlException("pql::parser", "Expected ')' at the end of 'Calls' instead of {}", tok.text);
-        }
-
-        return calls;
-    }
-
-
-    bool is_next_stmt_ref(ParserState* ps, const ast::DeclarationList* declaration_list)
-    {
-        Token tok = ps->peek_one();
-        if(tok.type == TT::Number)
-        {
-            // Only statement ref can be number
+        // all numbers are statement refs, and assume underscores are as well.
+        if(tok.type == TT::Number || tok.type == TT::Underscore)
             return true;
-        }
 
-        if(tok.type == TT::Underscore)
-        {
-            // All entity refs are statements
-            return true;
-        }
-        if(tok.type == TT::DoubleQuotes)
-        {
-            // Only entity refs are surrounded by double quotes.
+        // only entityrefs can be strings
+        if(tok.type == TT::String)
             return false;
-        }
 
         // Only ref to previously declared entity allowed
         if(tok.type != TT::Identifier)
         {
-            throw PqlException("pql::parser",
+            throw SyntaxError(
                 "StmtRef,EntRef should start with number, underscore, '\"' or identifier instead of {}", tok.text);
         }
 
-        auto decl = declaration_list->getDeclaration(tok.text.str());
-        if(decl == nullptr)
-            throw PqlException("pql::parser", "{} was not previously declared", tok.text);
+        auto decl = ps->getDeclaration(tok.text.str());
 
         // Check if the reference to previously declared entity is a stmt.
         return ast::kStmtDesignEntities.count(decl->design_ent) > 0;
     }
 
-    std::unique_ptr<ast::Uses> parse_uses(ParserState* ps, const ast::DeclarationList* declaration_list)
+    static std::unique_ptr<ast::RelCond> parse_uses_modifies(ParserState* ps)
     {
-        if(ps->next().text != "Uses")
-        {
-            throw PqlException("pql::parser", "Uses relationship condition should start with 'Uses'");
-        }
+        bool is_uses = ps->peek_keyword() == TT::KW_Uses;
+        if(auto t = ps->next_keyword(); t != TT::KW_Uses && t != TT::KW_Modifies)
+            throw SyntaxError("expected 'Uses' or 'Modifies', found '{}' instead", t.text);
 
-        if(Token tok = ps->next(); tok.type != TT::LParen)
-        {
-            throw PqlException("pql::parser", "Expected '(' at the start of 'Uses' instead of {}", tok.text);
-        }
-        bool is_user_stmt_ref = is_next_stmt_ref(ps, declaration_list);
+        ps->expect(TT::LParen);
 
-        if(is_user_stmt_ref)
+        if(is_next_stmt_ref(ps))
         {
-            auto user = parse_stmt_ref(ps, declaration_list);
-            if(Token tok = ps->next(); tok != TT::Comma)
+            auto stmt = parse_stmt_ref(ps);
+            ps->expect(TT::Comma);
+
+            auto ent = parse_ent_ref(ps);
+            ps->expect(TT::RParen);
+
+            if(is_uses)
             {
-                throw PqlException("pql::parser", "Expected ',' after declaring stmt ref in Uses");
+                auto uses = std::make_unique<ast::UsesS>();
+                uses->user = stmt;
+                uses->ent = ent;
+                return uses;
             }
-            auto ent = parse_ent_ref(ps, declaration_list);
-            if(Token tok = ps->next(); tok.type != TT::RParen)
+            else
             {
-                throw PqlException("pql::parser", "Expected ')' at the end of 'Uses' instead of {}", tok.text);
+                auto modifies = std::make_unique<ast::ModifiesS>();
+                modifies->modifier = stmt;
+                modifies->ent = ent;
+                return modifies;
             }
-            auto user_s = std::make_unique<ast::UsesS>();
-            user_s->user = user;
-            user_s->ent = ent;
-            return user_s;
         }
         else
         {
-            auto user = parse_ent_ref(ps, declaration_list);
-            if(Token tok = ps->next(); tok != TT::Comma)
+            auto ent1 = parse_ent_ref(ps);
+            ps->expect(TT::Comma);
+
+            auto ent2 = parse_ent_ref(ps);
+            ps->expect(TT::RParen);
+
+            if(is_uses)
             {
-                throw PqlException("pql::parser", "Expected ',' after declaring ent ref in Uses");
+                auto uses = std::make_unique<ast::UsesP>();
+                uses->user = ent1;
+                uses->ent = ent2;
+                return uses;
             }
-            auto ent = parse_ent_ref(ps, declaration_list);
-            if(Token tok = ps->next(); tok.type != TT::RParen)
+            else
             {
-                throw PqlException("pql::parser", "Expected ')' at the end of 'Uses' instead of {}", tok.text);
+                auto modifies = std::make_unique<ast::ModifiesP>();
+                modifies->modifier = ent1;
+                modifies->ent = ent2;
+                return modifies;
             }
-            auto user_p = std::make_unique<ast::UsesP>();
-            user_p->user = user;
-            user_p->ent = ent;
-            return user_p;
         }
     }
 
-    std::unique_ptr<ast::Modifies> parse_modifies(ParserState* ps, const ast::DeclarationList* declaration_list)
+    static std::unique_ptr<ast::RelCond> parse_rel_cond(ParserState* ps)
     {
-        if(ps->next().text != "Modifies")
-        {
-            throw PqlException("pql::parser", "Modifies relationship condition should start with 'Modifies'");
-        }
+        using namespace ast;
+        auto rel_tok = ps->peek_keyword();
+        if(rel_tok == TT::KW_Follows)
+            return parse_relation(ps, rel_tok, &Follows::directly_before, &Follows::directly_after);
 
-        if(Token tok = ps->next(); tok.type != TT::LParen)
-        {
-            throw PqlException("pql::parser", "Expected '(' at the start of 'Modifies' instead of {}", tok.text);
-        }
-        bool is_modifier_stmt_ref = is_next_stmt_ref(ps, declaration_list);
+        else if(rel_tok == TT::KW_FollowsStar)
+            return parse_relation(ps, rel_tok, &FollowsT::before, &FollowsT::after);
 
-        if(is_modifier_stmt_ref)
+        else if(rel_tok == TT::KW_Parent)
+            return parse_relation(ps, rel_tok, &Parent::parent, &Parent::child);
+
+        else if(rel_tok == TT::KW_ParentStar)
+            return parse_relation(ps, rel_tok, &ParentT::ancestor, &ParentT::descendant);
+
+        else if(rel_tok == TT::KW_Calls)
+            return parse_relation(ps, rel_tok, &Calls::caller, &Calls::proc);
+
+        else if(rel_tok == TT::KW_CallsStar)
+            return parse_relation(ps, rel_tok, &CallsT::caller, &CallsT::proc);
+
+        else if(rel_tok == TT::KW_Uses || rel_tok == TT::KW_Modifies)
+            return parse_uses_modifies(ps);
+
+        throw SyntaxError("Invalid relationship condition '{}'", rel_tok.text);
+    }
+
+    static void parse_such_that(ParserState* ps, ast::Select* select)
+    {
+        ps->expect_keyword(TT::KW_SuchThat);
+
+        util::logfmt("pql::parser", "Parsing such that clause.");
+
+        select->relations.push_back(parse_rel_cond(ps));
+        while(ps->peek_keyword() == TT::KW_And)
         {
-            auto modifier = parse_stmt_ref(ps, declaration_list);
-            if(Token tok = ps->next(); tok != TT::Comma)
-            {
-                throw PqlException("pql::parser", "Expected ',' after declaring stmt ref in Modifies");
-            }
-            auto ent = parse_ent_ref(ps, declaration_list);
-            if(Token tok = ps->next(); tok.type != TT::RParen)
-            {
-                throw PqlException("pql::parser", "Expected ')' at the end of 'Modifies' instead of {}", tok.text);
-            }
-            auto modifies_s = std::make_unique<ast::ModifiesS>();
-            modifies_s->modifier = modifier;
-            modifies_s->ent = ent;
-            return modifies_s;
-        }
-        else
-        {
-            auto modifier = parse_ent_ref(ps, declaration_list);
-            if(Token tok = ps->next(); tok != TT::Comma)
-            {
-                throw PqlException("pql::parser", "Expected ',' after declaring stmt ref in Modifies");
-            }
-            auto ent = parse_ent_ref(ps, declaration_list);
-            if(Token tok = ps->next(); tok.type != TT::RParen)
-            {
-                throw PqlException("pql::parser", "Expected ')' at the end of 'Modifies' instead of {}", tok.text);
-            }
-            auto modifies_s = std::make_unique<ast::ModifiesP>();
-            modifies_s->modifier = modifier;
-            modifies_s->ent = ent;
-            return modifies_s;
+            ps->next_keyword();
+            select->relations.push_back(parse_rel_cond(ps));
         }
     }
 
 
-    std::unique_ptr<ast::RelCond> parse_rel_cond(ParserState* ps, const ast::DeclarationList* declaration_list)
+    static ast::Elem validate_attr_name(ParserState* ps, ast::AttrRef attr_ref)
     {
-        std::vector<Token> rel_cond_toks = ps->peek_two();
+        using namespace ast;
 
-        // Check relationship with 2 tokens first
-        if(rel_cond_toks == KW_FollowsT)
-            return parse_follows_t(ps, declaration_list);
+        // clang-format off
+        static const std::unordered_map<AttrName, std::unordered_set<DESIGN_ENT>> permitted_design_entities = {
+                { AttrName::kProcName, { DESIGN_ENT::PROCEDURE, DESIGN_ENT::CALL } },
+                { AttrName::kVarName, { DESIGN_ENT::VARIABLE, DESIGN_ENT::READ, DESIGN_ENT::PRINT } },
+                { AttrName::kValue, { DESIGN_ENT::CONSTANT } },
+                { AttrName::kStmtNum, {
+                    DESIGN_ENT::STMT, DESIGN_ENT::READ,
+                    DESIGN_ENT::PRINT, DESIGN_ENT::CALL,
+                    DESIGN_ENT::WHILE, DESIGN_ENT::IF, DESIGN_ENT::ASSIGN }
+                }
+            };
+        // clang-format on
 
-        else if(rel_cond_toks == KW_ParentT)
-            return parse_parent_t(ps, declaration_list);
-
-        else if(rel_cond_toks == KW_CallsT)
-            return parse_calls_t(ps, declaration_list);
-
-        else if(rel_cond_toks[0] == KW_Follows)
-            return parse_follows(ps, declaration_list);
-
-        else if(rel_cond_toks[0] == KW_Parent)
-            return parse_parent(ps, declaration_list);
-
-        else if(rel_cond_toks[0] == KW_Uses)
-            return parse_uses(ps, declaration_list);
-
-        else if(rel_cond_toks[0] == KW_Modifies)
-            return parse_modifies(ps, declaration_list);
-
-        else if(rel_cond_toks[0] == KW_Calls)
-            return parse_calls(ps, declaration_list);
-
-        throw PqlException("pql::parser", "Invalid relationship condition tokens: {}, {}", rel_cond_toks[0].text,
-            rel_cond_toks[1].text);
-    }
-
-    ast::SuchThatCl parse_such_that(ParserState* ps, const ast::DeclarationList* declaration_list)
-    {
-        auto such = ps->next();
-        ps->assert_whitespace(1, "There should only be 1 whitespace between 'such' and 'that'");
-        auto that = ps->next();
-
-        if(such.text != "such" || that.text != "that")
-            throw PqlException("pql::parser", "Such That clause should start with 'such that'");
-
-        util::logfmt("pql::parser", "Parsing such that clause. Remaining {}", ps->stream);
-        ast::SuchThatCl such_that {};
-
-        // TODO(iteration 2): Handle AND condition here
-        such_that.rel_conds.push_back(parse_rel_cond(ps, declaration_list));
-
-        util::logfmt("pql::parser", "Complete parsing such that clause: {}", such_that.toString());
-        return such_that;
-    }
-
-    static void validate_attr_name(const ast::AttrRef& attr_ref)
-    {
-        static const std::unordered_map<ast::AttrName, std::unordered_set<ast::DESIGN_ENT>>
-            permitted_design_entities = { { ast::AttrName::kProcName,
-                                              { ast::DESIGN_ENT::PROCEDURE, ast::DESIGN_ENT::CALL } },
-                { ast::AttrName::kVarName,
-                    { ast::DESIGN_ENT::VARIABLE, ast::DESIGN_ENT::READ, ast::DESIGN_ENT::PRINT } },
-                { ast::AttrName::kValue, { ast::DESIGN_ENT::CONSTANT } },
-                { ast::AttrName::kStmtNum,
-                    { ast::DESIGN_ENT::STMT, ast::DESIGN_ENT::READ, ast::DESIGN_ENT::PRINT, ast::DESIGN_ENT::CALL,
-                        ast::DESIGN_ENT::WHILE, ast::DESIGN_ENT::IF, ast::DESIGN_ENT::ASSIGN } } };
+        // note: if the declaration did not exist, the dummy declaration will be used
+        // this ensures we are not dealing in nullptrs unnecessarily.
         ast::AttrName attr_name = attr_ref.attr_name;
-        if(!attr_ref.decl)
-            throw PqlException("pql::parser", "Invalid AttrRef: All AttrRef should have a declaration");
-        ast::DESIGN_ENT design_ent = attr_ref.decl->design_ent;
-        if(permitted_design_entities.count(attr_name) == 0)
-            throw PqlException(
-                "pql::parser", "Invalid AttrName {} provided", ast::InvAttrNameMap.find(attr_name)->second);
-        if(permitted_design_entities.find(attr_name)->second.count(design_ent) == 0)
-            throw PqlException("pql::parser", "Invalid design_ent:{} does not contain AttrName {}",
-                ast::INV_DESIGN_ENT_MAP.find(design_ent)->second, ast::InvAttrNameMap.find(attr_name)->second);
+        assert(attr_ref.decl);
+
+        auto design_ent = attr_ref.decl->design_ent;
+
+        // -- parsing should have already thrown a syntax error if the attribute is bogus
+        auto it = permitted_design_entities.find(attr_name);
+        assert(it != permitted_design_entities.end());
+
+        if(it->second.count(design_ent) == 0)
+        {
+            ps->setInvalid("entity '{}' does not contain attribute '{}'", ast::INV_DESIGN_ENT_MAP.at(design_ent),
+                ast::InvAttrNameMap.at(attr_name));
+        }
+
+        return ast::Elem::ofAttrRef(attr_ref);
     }
 
-    ast::Elem parse_elem(ParserState* ps, const ast::DeclarationList* declaration_list)
+    static ast::Elem parse_elem(ParserState* ps)
     {
-        Token decl_tok = ps->next();
-        if(decl_tok.type != TT::Identifier)
-            throw PqlException(
-                "pql::parser", "Expected identifier as the first token of an Element, got '{}'", decl_tok.text);
+        auto decl_tok = ps->expect(TT::Identifier);
+        auto decl = ps->getDeclaration(decl_tok.text.str());
 
-        ast::Declaration* decl = declaration_list->getDeclaration(decl_tok.text.str());
-        if(decl == nullptr)
-            throw PqlException("pql::parser", "Undeclared entity {} provided.", decl_tok.text);
-        if(ps->peek_one() == TT::Dot)
+        if(ps->peek() == TT::Dot)
         {
             // Eat dot
             ps->next();
 
-            std::vector<Token> attr_toks = ps->peek_two();
-            if(attr_toks[0].type != TT::Identifier)
-                throw PqlException(
-                    "pql::parser", "Mutli Element tuple: Expected first token after '.' to be a identifier.");
+            auto attr = ps->next_keyword();
+            if(attr == TT::KW_StmtNum)
+                return validate_attr_name(ps, ast::AttrRef { decl, ast::AttrName::kStmtNum });
 
-            std::string attr_name_string;
+            else if(attr == TT::KW_Value)
+                return validate_attr_name(ps, ast::AttrRef { decl, ast::AttrName::kValue });
 
-            if(attr_toks[1].type == TT::HashTag)
-            {
-                auto stmt = ps->next();
-                // should not have any whitespace between
-                ps->assert_whitespace(0, "should not have any whitespace between the 'stmt' and '#'");
-                auto hash_tag = ps->next();
-                if(stmt.text != "stmt" || hash_tag.type != TT::HashTag)
-                    throw PqlException("pql::parser", "Invalid \"{}{}\" attribute name expected 'stmt#' instead.",
-                        stmt.text.str(), hash_tag.text.str());
-                attr_name_string = "stmt#";
-            }
+            else if(attr == TT::KW_VarName)
+                return validate_attr_name(ps, ast::AttrRef { decl, ast::AttrName::kVarName });
+
+            else if(attr == TT::KW_ProcName)
+                return validate_attr_name(ps, ast::AttrRef { decl, ast::AttrName::kProcName });
+
             else
-            {
-                attr_name_string = ps->next().text.str();
-            }
-            auto it = pql::ast::AttrNameMap.find(attr_name_string);
-            if(it == pql::ast::AttrNameMap.end())
-                throw PqlException("pql::parser", "Invalid attrName: {}", attr_name_string);
-
-            ast::AttrRef attr_ref { decl, it->second };
-            validate_attr_name(attr_ref);
-            return ast::Elem::ofAttrRef(attr_ref);
+                throw SyntaxError("Invalid attribute '{}'", attr.text);
         }
         else
         {
@@ -823,133 +557,186 @@ namespace pql::parser
         }
     }
 
-    std::vector<ast::Elem> parse_tuple(ParserState* ps, const ast::DeclarationList* declaration_list)
-    {
-        // Handle: elem
-        if(ps->peek_one() != TT::LAngle)
-        {
-            util::logfmt("pql::parser", "Parsing tuple as a single element without '<>'");
-            return { parse_elem(ps, declaration_list) };
-        }
 
-        // Handle: '<' elem (',' elem)*'>'
-        if(Token tok = ps->next(); tok != TT::LAngle)
-            throw PqlException("pql::parser", "Multiple elem tuple should start with `<` instead of {}", tok.text);
-        std::vector<ast::Elem> ret;
-        while(ps->peek_one() != TT::RAngle &&
-              // prevent infinite loop
-              ps->peek_one() != TT::EndOfFile)
-        {
-            if(!ret.empty() && ps->peek_one() != TT::Comma)
-            {
-                throw PqlException("pql::parser", "Multiple element tuple should be comma separated instead of {}.",
-                    ps->peek_one().text);
-            }
-            if(ret.empty() && ps->peek_one() == TT::Comma)
-            {
-                throw PqlException("pql::parser", "Multiple element tuple should not start with `,`");
-            }
-            // Should be safe to eat comma if it is present
-            if(ps->peek_one() == TT::Comma)
-                ps->next();
-            ast::Elem elem = parse_elem(ps, declaration_list);
-            util::logfmt("pql::ast", "Parsed new Elem {}", elem.toString());
-            ret.push_back(elem);
-        }
-        if(Token tok = ps->next(); tok != TT::RAngle)
-        {
-            throw PqlException("pql::parser", "Multiple elem tuple should end with `>` instead of {}", tok.text);
-        }
-        if(ret.empty())
-            throw PqlException("pql::parser", "Tuple in result clause cannot be empty");
-        return ret;
-    }
 
-    ast::ResultCl parse_result(ParserState* ps, const ast::DeclarationList* declaration_list)
+
+    static ast::WithCondRef parse_with_cond_ref(ParserState* ps)
     {
-        if(ps->peek_one() == KW_Boolean)
+        // each 'ref' can either be a string, an integer, a declaration (synonym), or a dotop
+        if(ps->peek() == TT::String)
         {
-            ps->next();
-            return ast::ResultCl::ofBool();
+            return ast::WithCondRef::ofString(ps->next().text.str());
+        }
+        else if(ps->peek() == TT::Number)
+        {
+            auto num = ps->next().text.str();
+            return ast::WithCondRef::ofNumber(std::move(num));
         }
         else
         {
-            return ast::ResultCl::ofTuple(parse_tuple(ps, declaration_list));
+            // reuse 'Elem' parsing.
+            auto tmp_elem = parse_elem(ps);
+            if(tmp_elem.isDeclaration())
+                return ast::WithCondRef::ofDeclaration(tmp_elem.declaration());
+            else
+                return ast::WithCondRef::ofAttrRef(tmp_elem.attrRef());
         }
     }
 
-    ast::Select parse_select(ParserState* ps, const ast::DeclarationList* declaration_list)
+    static std::unique_ptr<ast::WithCond> parse_with_cond(ParserState* ps)
     {
-        Token select_tok = ps->next();
-        if(select_tok != KW_Select)
+        auto with = std::make_unique<ast::WithCond>();
+        with->lhs = parse_with_cond_ref(ps);
+
+        ps->expect(TT::Equal);
+
+        with->rhs = parse_with_cond_ref(ps);
+        return with;
+    }
+
+
+
+
+    static void parse_with(ParserState* ps, ast::Select* select)
+    {
+        ps->expect_keyword(TT::KW_With);
+
+        select->withs.push_back(parse_with_cond(ps));
+        while(ps->peek_keyword() == TT::KW_And)
         {
-            throw PqlException(
-                "pql::parser", "Select clauses should start with `Select` instead of {}", select_tok.text);
+            ps->next_keyword();
+            select->withs.push_back(parse_with_cond(ps));
+        }
+    }
+
+
+
+
+
+
+    static std::vector<ast::Elem> parse_tuple(ParserState* ps)
+    {
+        // Handle: elem
+        if(ps->peek() != TT::LAngle)
+        {
+            util::logfmt("pql::parser", "Parsing tuple as a single element without '<>'");
+            return { parse_elem(ps) };
         }
 
-        ast::ResultCl result = parse_result(ps, declaration_list);
+        // Handle: '<' elem (',' elem)*'>'
+        ps->expect(TT::LAngle);
+
+        std::vector<ast::Elem> ret {};
+        while(true)
+        {
+            ast::Elem elem = parse_elem(ps);
+            util::logfmt("pql::ast", "Parsed new Elem {}", elem.toString());
+
+            ret.push_back(elem);
+
+            if(ps->peek() == TT::Comma)
+            {
+                ps->next();
+            }
+            else if(ps->peek() == TT::RAngle)
+            {
+                break;
+            }
+            else
+            {
+                throw SyntaxError("expected either ',' or '>' in tuple, found '{}' instead", ps->peek().text);
+            }
+        }
+
+        ps->expect(TT::RAngle);
+        if(ret.empty())
+            throw SyntaxError("Tuple in result clause cannot be empty");
+
+        return ret;
+    }
+
+    static ast::Select parse_select(ParserState* ps)
+    {
+        ps->expect_keyword(TT::KW_Select);
+
+        ast::ResultCl result = [ps]() -> auto
+        {
+            if(auto tok = ps->peek(); tok == TT::Identifier && tok.text == "BOOLEAN")
+            {
+                ps->next();
+                return ast::ResultCl::ofBool();
+            }
+            else
+            {
+                return ast::ResultCl::ofTuple(parse_tuple(ps));
+            }
+        }
+        ();
+
 
         util::logfmt("pql::parser", "Result for Select clause: {}", result.toString());
 
         ast::Select select {};
         select.result = result;
 
-        std::vector<Token> clause_tok = ps->peek_two();
-        bool allow_pattern = true;
-        bool allow_such_that = true;
-
-        // TOOD(#100): Remove single pattern or single such that clause after iteration 1.
-        while(((clause_tok[0] == KW_Pattern) && allow_pattern) || ((clause_tok == KW_SuchThat) && allow_such_that))
+        for(Token t; (t = ps->peek_keyword()) != TT::EndOfFile;)
         {
-            if(clause_tok[0] == KW_Pattern)
+            if(t == TT::KW_Pattern)
             {
                 util::logfmt("pql::parser", "Parsing pattern clause");
-                select.pattern = parse_pattern(ps, declaration_list);
-                allow_pattern = false;
+                parse_pattern(ps, &select);
             }
-            else if(clause_tok == KW_SuchThat)
+            else if(t == TT::KW_SuchThat)
             {
                 util::logfmt("pql::parser", "Parsing such that clause");
-                select.such_that = parse_such_that(ps, declaration_list);
-                allow_such_that = false;
+                parse_such_that(ps, &select);
             }
-            clause_tok = ps->peek_two();
+            else if(t == TT::KW_With)
+            {
+                util::logfmt("pql::parser", "Parsing with clause");
+                parse_with(ps, &select);
+            }
+            else
+            {
+                throw SyntaxError("unexpected token '{}' in Select", t.text);
+            }
         }
-        util::logfmt("pql::parser", "Completed parsing Select clause :{}", select.toString());
 
+        util::logfmt("pql::parser", "Completed parsing Select clause :{}", select.toString());
         return select;
     }
+
+
 
     std::unique_ptr<ast::Query> parsePQL(zst::str_view input)
     {
         util::logfmt("pql::parer", "Parsing input {}", input);
-        auto ps = ParserState { input };
         auto query = std::make_unique<ast::Query>();
+        auto ps = ParserState(input, query.get());
 
         bool found_select = false;
-        for(Token t; (t = ps.peek_one()) != TT::EndOfFile;)
+        for(Token t; (t = ps.peek_keyword()) != TT::EndOfFile;)
         {
-            if(t == KW_Select)
+            if(t == TT::KW_Select)
             {
                 util::logfmt("pql::parser", "parsing Select");
-                query->select = parse_select(&ps, &query->declarations);
+                query->select = parse_select(&ps);
 
                 found_select = true;
-                if(ps.peek_one() != TT::EndOfFile)
+                if(ps.peek() != TT::EndOfFile)
                 {
-                    throw util::PqlException(
-                        "pql::parser", "Query should end after a single select clause instead of {}", ps.stream);
+                    throw SyntaxError("Query should end after a single select clause instead of '{}'", ps.peek().text);
                 }
             }
             else
             {
                 util::logfmt("pql::parser", "parsing declaration");
-                insert_declaration(&ps, &query->declarations);
+                parse_declarations(&ps);
             }
         }
 
         if(!found_select)
-            throw util::PqlException("pql::parser", "All queries should contain a select clause");
+            throw SyntaxError("All queries should contain a select clause");
 
         util::logfmt("pql::parser", "Completed parsing AST: {}", query->toString());
         return query;

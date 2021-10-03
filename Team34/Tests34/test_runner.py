@@ -95,13 +95,13 @@ def log_string(f, s):
 	print(s)
 
 def main():
+	if len(sys.argv) > 0 and sys.argv[1] == "clean":
+		clean_outputs()
+		return
+
 	if len(sys.argv) < 3:
 		print("usage: ./test_runner.py [clean] <autotester_path> <folders>...")
 		sys.exit(1)
-
-	if sys.argv[1] == "clean":
-		clean_outputs()
-		return
 
 	autotester_exe = sys.argv[1]
 	if (not os.path.exists(autotester_exe)) or (not os.path.isfile(autotester_exe)):

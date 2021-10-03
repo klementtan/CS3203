@@ -8,15 +8,6 @@
 #include "pql/eval/evaluator.h"
 
 
-namespace pql::eval
-{
-    void Evaluator::handlePattern(const ast::PatternCl& pattern)
-    {
-        for(const auto& p : pattern.pattern_conds)
-            p->evaluate(this->m_pkb, &this->m_table);
-    }
-}
-
 namespace pql::ast
 {
     namespace s_ast = simple::ast;

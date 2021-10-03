@@ -29,8 +29,7 @@ namespace pql::eval
 
         void preprocessPkb();
         void processDeclarations(const ast::DeclarationList& declaration_list);
-        void handleSuchThat(const ast::SuchThatCl& such_that);
-        void handlePattern(const ast::PatternCl& pattern);
+        void handleRelation(const ast::RelCond* rel_cond);
 
         void handleFollows(const ast::Follows* follows);
         void handleFollowsT(const ast::FollowsT* follows_t);

@@ -29,6 +29,8 @@ namespace pql::ast
 
     enum class DESIGN_ENT
     {
+        INVALID,
+
         STMT,
         READ,
         PRINT,
@@ -110,13 +112,6 @@ namespace pql::ast
 
         std::string toString() const;
 
-        Type ref_type {};
-        union
-        {
-            Declaration* _declaration;
-            simple::ast::StatementNum _id;
-        };
-
         Declaration* declaration() const;
         simple::ast::StatementNum id() const;
 
@@ -136,6 +131,11 @@ namespace pql::ast
         static StmtRef ofWildcard();
         static StmtRef ofDeclaration(Declaration* decl);
         static StmtRef ofStatementId(simple::ast::StatementNum id);
+
+    private:
+        Type ref_type = Type::Invalid;
+        Declaration* _declaration {};
+        simple::ast::StatementNum _id {};
     };
 
     struct EntRef
@@ -148,25 +148,7 @@ namespace pql::ast
             Wildcard
         };
 
-        // needs the rule of 5 or whatever cos of std::string in the union
-        EntRef() = default;
-        ~EntRef();
-
-        EntRef(const EntRef&);
-        EntRef& operator=(const EntRef&);
-
-        EntRef(EntRef&&);
-        EntRef& operator=(EntRef&&);
-
         std::string toString() const;
-
-        Type ref_type {};
-        union
-        {
-            Declaration* _declaration;
-            std::string _name {};
-        };
-
         Declaration* declaration() const;
         std::string name() const;
 
@@ -186,6 +168,11 @@ namespace pql::ast
         static EntRef ofWildcard();
         static EntRef ofName(std::string name);
         static EntRef ofDeclaration(Declaration* decl);
+
+    private:
+        Type ref_type = Type::Invalid;
+        Declaration* _declaration {};
+        std::string _name {};
     };
 
 
@@ -211,22 +198,6 @@ namespace pql::ast
 
         std::string toString() const;
 
-        Type ref_type {};
-        union
-        {
-            Declaration* _declaration;
-            AttrRef _attr_ref;
-        };
-
-        Elem();
-        ~Elem();
-
-        Elem(const Elem& other);
-        Elem& operator=(const Elem& other);
-
-        Elem(Elem&& other);
-        Elem& operator=(Elem&& other);
-
 
         Declaration* declaration() const;
         AttrRef attrRef() const;
@@ -242,6 +213,11 @@ namespace pql::ast
 
         static Elem ofDeclaration(Declaration* decl);
         static Elem ofAttrRef(AttrRef AttrRef);
+
+    private:
+        Type ref_type = Type::Invalid;
+        Declaration* _declaration {};
+        AttrRef _attr_ref {};
     };
 
     /** Abstract class for Relationship Conditions between Statements and Entities. */
@@ -404,21 +380,59 @@ namespace pql::ast
         EntRef ent {};
     };
 
-    /** Pattern Clause. */
-    struct PatternCl
+    // one side of a with condition
+    struct WithCondRef
     {
-        // Support multiple PatternCond for forward compatibility. Future iteration
-        // requires ANDing multiple PatternCond
-        std::vector<std::unique_ptr<PatternCond>> pattern_conds;
+        enum class Type
+        {
+            Invalid,
+            Declaration,
+            AttrRef,
+            Number,
+            String,
+        };
+
+
+        inline bool isString() const
+        {
+            return m_type == Type::String;
+        }
+        inline bool isNumber() const
+        {
+            return m_type == Type::Number;
+        }
+        inline bool isAttrRef() const
+        {
+            return m_type == Type::AttrRef;
+        }
+        inline bool isDeclaration() const
+        {
+            return m_type == Type::Declaration;
+        }
+
+        static WithCondRef ofString(std::string s);
+        static WithCondRef ofNumber(std::string i);
+        static WithCondRef ofAttrRef(AttrRef a);
+        static WithCondRef ofDeclaration(Declaration* d);
+
+        std::string str() const;
+        std::string number() const;
+        AttrRef attrRef() const;
+        Declaration* declaration() const;
+
         std::string toString() const;
+
+    private:
+        Type m_type = Type::Invalid;
+        std::string _string_or_number {};
+        AttrRef _attr_ref {};
+        Declaration* _decl {};
     };
 
-    /** SuchThat Clause. */
-    struct SuchThatCl
+    struct WithCond
     {
-        // Support multiple RelCond for forward compatibility. Future iteration
-        // requires ANDing multiple RelCond
-        std::vector<std::unique_ptr<RelCond>> rel_conds;
+        WithCondRef lhs {};
+        WithCondRef rhs {};
         std::string toString() const;
     };
 
@@ -456,8 +470,10 @@ namespace pql::ast
     /** Select query. */
     struct Select
     {
-        std::optional<SuchThatCl> such_that {};
-        std::optional<PatternCl> pattern {};
+        std::vector<std::unique_ptr<PatternCond>> patterns {};
+        std::vector<std::unique_ptr<RelCond>> relations {};
+        std::vector<std::unique_ptr<WithCond>> withs {};
+
         ResultCl result {};
 
         std::string toString() const;
@@ -468,7 +484,24 @@ namespace pql::ast
         Select select {};
         DeclarationList declarations {};
 
+        bool is_semantically_invalid = false;
+
         std::string toString() const;
+
+        inline void setInvalid()
+        {
+            is_semantically_invalid = true;
+        }
+
+        inline bool isInvalid() const
+        {
+            return is_semantically_invalid;
+        }
+
+        inline bool isValid() const
+        {
+            return !is_semantically_invalid;
+        }
     };
 
 } // pql::ast

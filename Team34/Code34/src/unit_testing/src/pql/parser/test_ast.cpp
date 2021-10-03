@@ -220,16 +220,12 @@ TEST_CASE("PatternCl")
     assign_pattern_cond->assignment_declaration = &declaration;
     assign_pattern_cond->ent = ent;
     assign_pattern_cond->expr_spec = std::move(expr_spec);
-    auto pattern_cl = pql::ast::PatternCl {};
-    pattern_cl.pattern_conds.push_back(std::move(assign_pattern_cond));
 
-    INFO(pattern_cl.toString());
-    REQUIRE(pattern_cl.toString() ==
-            "PatternCl[\n"
-            "\tAssignPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)), "
+    INFO(assign_pattern_cond->toString());
+    REQUIRE(assign_pattern_cond->toString() ==
+            "AssignPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)), "
             "assignment_declaration:Declaration(ent:assign, name:foo), expr_spec:ExprSpec"
-            "(is_subexpr:true, expr:(x + y)))\n"
-            "]");
+            "(is_subexpr:true, expr:(x + y)))");
 }
 
 TEST_CASE("SuchThat")
@@ -247,13 +243,9 @@ TEST_CASE("SuchThat")
     relationship->ent = ent;
     relationship->modifier = stmt;
 
-    pql::ast::SuchThatCl such_that_cl {};
-    such_that_cl.rel_conds.push_back(std::move(relationship));
-    INFO(such_that_cl.toString());
-    REQUIRE(such_that_cl.toString() == "SuchThatCl[\n"
-                                       "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:"
-                                       "bar)), ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))\n"
-                                       "]");
+    INFO(relationship->toString());
+    REQUIRE(relationship->toString() == "ModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:"
+                                        "bar)), ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))");
 }
 
 TEST_CASE("Select")
@@ -268,9 +260,6 @@ TEST_CASE("Select")
     auto relationship = std::make_unique<pql::ast::ModifiesS>();
     relationship->ent = ent1;
     relationship->modifier = stmt;
-
-    pql::ast::SuchThatCl such_that_cl {};
-    such_that_cl.rel_conds.push_back(std::move(relationship));
 
     /** Initialize pattern*/
     auto expr = std::make_unique<simple::ast::BinaryOp>();
@@ -291,19 +280,22 @@ TEST_CASE("Select")
     assign_pattern_cond->ent = ent2;
     assign_pattern_cond->expr_spec = std::move(expr_spec);
 
-    pql::ast::PatternCl pattern_cl {};
-    pattern_cl.pattern_conds.push_back(std::move(assign_pattern_cond));
-    auto resutl_cl = pql::ast::ResultCl::ofTuple({ pql::ast::Elem::ofDeclaration(&declaration1) });
+    auto result_cl = pql::ast::ResultCl::ofTuple({ pql::ast::Elem::ofDeclaration(&declaration1) });
 
-    pql::ast::Select select { std::move(such_that_cl), std::move(pattern_cl), resutl_cl };
+    pql::ast::Select select {};
+    select.relations.push_back(std::move(relationship));
+    select.patterns.push_back(std::move(assign_pattern_cond));
+    select.result = std::move(result_cl);
+
     INFO(select.toString());
-    REQUIRE(select.toString() == "Select(such_that:SuchThatCl[\n"
+    REQUIRE(select.toString() == "Select(relations:[\n"
                                  "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:"
                                  "bar)), ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))\n"
-                                 "], pattern:PatternCl[\n"
+                                 "], patterns:[\n"
                                  "\tAssignPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)), "
                                  "assignment_declaration:Declaration(ent:assign, name:foo), expr_spec:ExprSpec"
                                  "(is_subexpr:true, expr:(x + y)))\n"
+                                 "], withs:[\n"
                                  "], result:ResultCl(type: Tuple, tuple :[Elem(ref_type: Declaration, decl: "
                                  "Declaration(ent:assign, name:foo))])");
 }
@@ -325,9 +317,6 @@ TEST_CASE("Query")
     relationship->ent = ent1;
     relationship->modifier = stmt;
 
-    pql::ast::SuchThatCl such_that_cl {};
-    such_that_cl.rel_conds.push_back(std::move(relationship));
-
     /** Initialize pattern*/
     auto expr = std::make_unique<simple::ast::BinaryOp>();
     auto lhs = std::make_unique<simple::ast::VarRef>();
@@ -343,11 +332,12 @@ TEST_CASE("Query")
     assign_pattern_cond->assignment_declaration = declaration3;
     assign_pattern_cond->ent = ent2;
     assign_pattern_cond->expr_spec = std::move(expr_spec);
-    pql::ast::PatternCl pattern_cl {};
-    pattern_cl.pattern_conds.push_back(std::move(assign_pattern_cond));
 
-    auto resutl_cl = pql::ast::ResultCl::ofTuple({ pql::ast::Elem::ofDeclaration(declaration1) });
-    pql::ast::Select select { std::move(such_that_cl), std::move(pattern_cl), resutl_cl };
+    auto result_cl = pql::ast::ResultCl::ofTuple({ pql::ast::Elem::ofDeclaration(declaration1) });
+    pql::ast::Select select {};
+    select.relations.push_back(std::move(relationship));
+    select.patterns.push_back(std::move(assign_pattern_cond));
+    select.result = std::move(result_cl);
 
     pql::ast::Query query {};
     query.select = std::move(select);
@@ -355,13 +345,14 @@ TEST_CASE("Query")
 
     INFO(query.toString());
 
-    constexpr auto expected = "Query(select:Select(such_that:SuchThatCl[\n"
+    constexpr auto expected = "Query(select:Select(relations:[\n"
                               "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:"
                               "bar)), ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))\n"
-                              "], pattern:PatternCl[\n"
+                              "], patterns:[\n"
                               "\tAssignPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:buzz)), "
                               "assignment_declaration:Declaration(ent:assign, name:buzz), expr_spec:ExprSpec"
                               "(is_subexpr:true, expr:(x + y)))\n"
+                              "], withs:[\n"
                               "], result:ResultCl(type: Tuple, tuple :[Elem(ref_type: Declaration, decl: "
                               "Declaration(ent:assign, name:foo))]), declarations:DeclarationList[\n"
                               "\tname:bar, declaration:Declaration(ent:assign, name:bar)\n"

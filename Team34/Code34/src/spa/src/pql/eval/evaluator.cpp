@@ -137,6 +137,13 @@ namespace pql::eval
     std::list<std::string> Evaluator::evaluate()
     {
         util::logfmt("pql::eval", "Evaluating query: {}", m_query->toString());
+        if(m_query->isInvalid())
+        {
+            util::logfmt("pql::eval", "refusing to evaluate; query was semantically invalid");
+            return table::Table::getFailedResult(m_query->select.result);
+        }
+
+
         processDeclarations(m_query->declarations);
         util::logfmt("pql::eval", "Table after initial processing of declaration: {}", m_table.toString());
 
@@ -152,43 +159,39 @@ namespace pql::eval
             }
         }
 
-        if(m_query->select.such_that)
-            handleSuchThat(*m_query->select.such_that);
+        for(const auto& rel : m_query->select.relations)
+            handleRelation(rel.get());
 
-        if(m_query->select.pattern)
-            this->handlePattern(*m_query->select.pattern);
+        for(const auto& pattern : m_query->select.patterns)
+            pattern->evaluate(m_pkb, &m_table);
 
         util::logfmt("pql::eval", "Table after processing of such that: {}", m_table.toString());
         return this->m_table.getResult(m_query->select.result, this->m_pkb);
     }
 
-    void Evaluator::handleSuchThat(const ast::SuchThatCl& such_that)
+    void Evaluator::handleRelation(const ast::RelCond* rel_cond)
     {
-        util::logfmt("pql::eval", "Handling such that:{}", such_that.toString());
-        for(const auto& rel_cond : such_that.rel_conds)
-        {
-            if(auto follows = dynamic_cast<ast::Follows*>(rel_cond.get()); follows)
-                handleFollows(follows);
-            else if(auto follows_t = dynamic_cast<ast::FollowsT*>(rel_cond.get()); follows_t)
-                handleFollowsT(follows_t);
-            else if(auto uses_p = dynamic_cast<ast::UsesP*>(rel_cond.get()); uses_p)
-                handleUsesP(uses_p);
-            else if(auto uses_s = dynamic_cast<ast::UsesS*>(rel_cond.get()); uses_s)
-                handleUsesS(uses_s);
-            else if(auto modifies_p = dynamic_cast<ast::ModifiesP*>(rel_cond.get()); modifies_p)
-                handleModifiesP(modifies_p);
-            else if(auto modifies_s = dynamic_cast<ast::ModifiesS*>(rel_cond.get()); modifies_s)
-                handleModifiesS(modifies_s);
-            else if(auto parent = dynamic_cast<ast::Parent*>(rel_cond.get()); parent)
-                handleParent(parent);
-            else if(auto parent_t = dynamic_cast<ast::ParentT*>(rel_cond.get()); parent_t)
-                handleParentT(parent_t);
-            else if(auto calls = dynamic_cast<ast::Calls*>(rel_cond.get()); calls)
-                handleCalls(calls);
-            else if(auto calls_t = dynamic_cast<ast::CallsT*>(rel_cond.get()); calls_t)
-                handleCallsT(calls_t);
-            else
-                throw util::PqlException("pql::eval", "unknown relation type");
-        }
+        if(auto follows = dynamic_cast<const ast::Follows*>(rel_cond); follows)
+            handleFollows(follows);
+        else if(auto follows_t = dynamic_cast<const ast::FollowsT*>(rel_cond); follows_t)
+            handleFollowsT(follows_t);
+        else if(auto uses_p = dynamic_cast<const ast::UsesP*>(rel_cond); uses_p)
+            handleUsesP(uses_p);
+        else if(auto uses_s = dynamic_cast<const ast::UsesS*>(rel_cond); uses_s)
+            handleUsesS(uses_s);
+        else if(auto modifies_p = dynamic_cast<const ast::ModifiesP*>(rel_cond); modifies_p)
+            handleModifiesP(modifies_p);
+        else if(auto modifies_s = dynamic_cast<const ast::ModifiesS*>(rel_cond); modifies_s)
+            handleModifiesS(modifies_s);
+        else if(auto parent = dynamic_cast<const ast::Parent*>(rel_cond); parent)
+            handleParent(parent);
+        else if(auto parent_t = dynamic_cast<const ast::ParentT*>(rel_cond); parent_t)
+            handleParentT(parent_t);
+        else if(auto calls = dynamic_cast<const ast::Calls*>(rel_cond); calls)
+            handleCalls(calls);
+        else if(auto calls_t = dynamic_cast<const ast::CallsT*>(rel_cond); calls_t)
+            handleCallsT(calls_t);
+        else
+            throw util::PqlException("pql::eval", "unknown relation type");
     }
 }
