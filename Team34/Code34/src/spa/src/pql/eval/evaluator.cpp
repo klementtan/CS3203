@@ -40,7 +40,9 @@ namespace pql::eval
         for(const auto& pkb_stmt : m_pkb->getAllStatements())
         {
             m_all_ent_stmt_map[getDesignEnt(pkb_stmt.getAstStmt())].push_back(pkb_stmt.getAstStmt());
+
             m_all_ent_stmt_map[ast::DESIGN_ENT::STMT].push_back(pkb_stmt.getAstStmt());
+            m_all_ent_stmt_map[ast::DESIGN_ENT::PROG_LINE].push_back(pkb_stmt.getAstStmt());
         }
     }
 
@@ -119,13 +121,18 @@ namespace pql::eval
     std::unordered_set<table::Entry> Evaluator::getInitialDomain(ast::Declaration* declaration)
     {
         util::logfmt("pql::eval", "Getting initial domain for {}", declaration->toString());
+
         if(declaration->design_ent == ast::DESIGN_ENT::VARIABLE)
             return getInitialDomainVar(declaration);
-        if(declaration->design_ent == ast::DESIGN_ENT::PROCEDURE)
+
+        else if(declaration->design_ent == ast::DESIGN_ENT::PROCEDURE)
             return getInitialDomainProc(declaration);
-        if(declaration->design_ent == ast::DESIGN_ENT::CONSTANT)
+
+        else if(declaration->design_ent == ast::DESIGN_ENT::CONSTANT)
             return getInitialDomainConst(declaration);
-        return getInitialDomainStmt(declaration);
+
+        else
+            return getInitialDomainStmt(declaration);
     }
 
     void Evaluator::processDeclarations(const ast::DeclarationList& declaration_list)
