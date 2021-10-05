@@ -579,7 +579,12 @@ namespace pql::parser
                 if(tmp_elem.declaration()->design_ent != ast::DESIGN_ENT::PROG_LINE)
                     ps->setInvalid("only 'prog_line' synonyms can be used in a 'with' without an attr_ref");
 
-                return ast::WithCondRef::ofDeclaration(tmp_elem.declaration());
+                // desugar prog_line references here to just be .stmt#, so we don't have
+                // to deal with two different things (stmt.stmt# and prog_line) that serve
+                // the same purpose. after all, prog_line and stmt are interchangeable.
+
+                return ast::WithCondRef::ofAttrRef(ast::AttrRef { tmp_elem.declaration(), ast::AttrName::kStmtNum });
+                // return ast::WithCondRef::ofDeclaration(tmp_elem.declaration());
             }
             else
             {

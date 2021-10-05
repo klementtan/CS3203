@@ -331,9 +331,6 @@ namespace pql::eval::table
     {
         ast::Declaration* decl = attr_ref.decl;
         Entry extracted_entry = entry;
-        static const std::unordered_set<ast::DESIGN_ENT> stmt_num_design_entities = { ast::DESIGN_ENT::STMT,
-            ast::DESIGN_ENT::READ, ast::DESIGN_ENT::PRINT, ast::DESIGN_ENT::CALL, ast::DESIGN_ENT::WHILE,
-            ast::DESIGN_ENT::IF, ast::DESIGN_ENT::ASSIGN };
 
         if(attr_ref.attr_name == ast::AttrName::kProcName)
         {
@@ -406,9 +403,9 @@ namespace pql::eval::table
         }
         else if(attr_ref.attr_name == ast::AttrName::kStmtNum)
         {
-            // Only stmt_num_design_entities declarations are allowed to have 'stmt#' AttrName (enforced on parser) and
+            // Only statement-like entites declarations are allowed to have 'stmt#' AttrName (enforced on parser) and
             // the entry should already be populated with the stmt
-            assert(stmt_num_design_entities.count(decl->design_ent) && extracted_entry.getType() == EntryType::kStmt);
+            assert(ast::kStmtDesignEntities.count(decl->design_ent) && extracted_entry.getType() == EntryType::kStmt);
         }
         else
         {
