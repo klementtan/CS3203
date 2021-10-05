@@ -25,6 +25,7 @@ namespace pql::ast
         { "variable", DESIGN_ENT::VARIABLE },
         { "constant", DESIGN_ENT::CONSTANT },
         { "procedure", DESIGN_ENT::PROCEDURE },
+        { "prog_line", DESIGN_ENT::PROG_LINE },
     };
 
     const std::unordered_map<DESIGN_ENT, std::string> INV_DESIGN_ENT_MAP = {
@@ -38,6 +39,7 @@ namespace pql::ast
         { DESIGN_ENT::VARIABLE, "variable" },
         { DESIGN_ENT::CONSTANT, "constant" },
         { DESIGN_ENT::PROCEDURE, "procedure" },
+        { DESIGN_ENT::PROG_LINE, "prog_line" },
 
         { DESIGN_ENT::INVALID, "invalid" },
     };

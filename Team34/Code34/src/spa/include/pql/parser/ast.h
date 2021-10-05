@@ -40,7 +40,8 @@ namespace pql::ast
         ASSIGN,
         VARIABLE,
         CONSTANT,
-        PROCEDURE
+        PROCEDURE,
+        PROG_LINE,
     };
 
     enum class AttrName
@@ -54,7 +55,7 @@ namespace pql::ast
 
     // Set of all statement design entities
     const std::unordered_set<DESIGN_ENT> kStmtDesignEntities = { DESIGN_ENT::STMT, DESIGN_ENT::READ, DESIGN_ENT::PRINT,
-        DESIGN_ENT::CALL, DESIGN_ENT::WHILE, DESIGN_ENT::IF, DESIGN_ENT::ASSIGN };
+        DESIGN_ENT::CALL, DESIGN_ENT::WHILE, DESIGN_ENT::IF, DESIGN_ENT::ASSIGN, DESIGN_ENT::PROG_LINE };
 
     // Maps string representation of design ent to enum representation of it. ie: {"if": DESIGN_ENT::IF}
     extern const std::unordered_map<std::string, DESIGN_ENT> DESIGN_ENT_MAP;

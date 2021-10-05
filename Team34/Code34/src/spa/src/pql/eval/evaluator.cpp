@@ -119,13 +119,18 @@ namespace pql::eval
     std::unordered_set<table::Entry> Evaluator::getInitialDomain(ast::Declaration* declaration)
     {
         util::logfmt("pql::eval", "Getting initial domain for {}", declaration->toString());
+
         if(declaration->design_ent == ast::DESIGN_ENT::VARIABLE)
             return getInitialDomainVar(declaration);
-        if(declaration->design_ent == ast::DESIGN_ENT::PROCEDURE)
+
+        else if(declaration->design_ent == ast::DESIGN_ENT::PROCEDURE)
             return getInitialDomainProc(declaration);
-        if(declaration->design_ent == ast::DESIGN_ENT::CONSTANT)
+
+        else if(declaration->design_ent == ast::DESIGN_ENT::CONSTANT)
             return getInitialDomainConst(declaration);
-        return getInitialDomainStmt(declaration);
+
+        else
+            return getInitialDomainStmt(declaration);
     }
 
     void Evaluator::processDeclarations(const ast::DeclarationList& declaration_list)

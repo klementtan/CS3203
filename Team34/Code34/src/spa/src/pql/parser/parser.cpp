@@ -108,11 +108,6 @@ namespace pql::parser
     };
 
 
-    // Design entities
-    const std::unordered_set<std::string> KW_DesignEntities { "stmt", "assign", "variable", "constant", "procedure",
-        "read", "print", "if", "call", "while" };
-
-
     // Process the next token as a variable and insert it into declaration_list
     static void parse_one_declaration(ParserState* ps, ast::DESIGN_ENT ent)
     {
@@ -577,9 +572,13 @@ namespace pql::parser
             // reuse 'Elem' parsing.
             auto tmp_elem = parse_elem(ps);
             if(tmp_elem.isDeclaration())
+            {
                 return ast::WithCondRef::ofDeclaration(tmp_elem.declaration());
+            }
             else
+            {
                 return ast::WithCondRef::ofAttrRef(tmp_elem.attrRef());
+            }
         }
     }
 
