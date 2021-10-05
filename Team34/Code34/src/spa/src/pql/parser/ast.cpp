@@ -10,9 +10,7 @@
 
 namespace pql::ast
 {
-    RelCond::~RelCond() { }
-
-    PatternCond::~PatternCond() { }
+    Clause::~Clause() { }
 
     const std::unordered_map<std::string, DESIGN_ENT> DESIGN_ENT_MAP = {
         { "stmt", DESIGN_ENT::STMT },
