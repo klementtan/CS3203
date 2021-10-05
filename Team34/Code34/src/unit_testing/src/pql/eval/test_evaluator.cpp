@@ -20,9 +20,11 @@ procedure A {
     c = 3;
 }
 )";
+
 TEST_CASE("No such that")
 {
     TEST_OK(prog_1, "stmt a; Select a", 1, 2, 3);
+    TEST_OK(prog_1, "prog_line a; Select a", 1, 2, 3);
 }
 
 TEST_CASE("Check valid domain")
@@ -60,4 +62,11 @@ TEST_CASE("Variable")
     {
         TEST_OK(prog_1, "variable v; Select v", "a", "b", "c");
     }
+}
+
+
+TEST_CASE("prog_line")
+{
+    // check that prog_line and stmt are interchangeable
+    TEST_OK(prog_1, "prog_line a, b; Select <a, b> such that Follows(a, b)", "1 2", "2 3");
 }

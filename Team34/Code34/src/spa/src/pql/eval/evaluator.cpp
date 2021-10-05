@@ -40,7 +40,9 @@ namespace pql::eval
         for(const auto& pkb_stmt : m_pkb->getAllStatements())
         {
             m_all_ent_stmt_map[getDesignEnt(pkb_stmt.getAstStmt())].push_back(pkb_stmt.getAstStmt());
+
             m_all_ent_stmt_map[ast::DESIGN_ENT::STMT].push_back(pkb_stmt.getAstStmt());
+            m_all_ent_stmt_map[ast::DESIGN_ENT::PROG_LINE].push_back(pkb_stmt.getAstStmt());
         }
     }
 
