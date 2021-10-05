@@ -51,6 +51,8 @@ namespace pql::parser
         KW_StmtNum,
         KW_VarName,
         KW_ProcName,
+
+        KW_ProgLine,
     };
 
     struct Token

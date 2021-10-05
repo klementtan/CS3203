@@ -118,9 +118,12 @@ namespace pql::parser
     // Process the next tokens as the start of an entity declaration and insert declarations into declaration_list
     static void parse_declarations(ParserState* ps)
     {
-        auto tok = ps->expect(TT::Identifier);
+        std::string ent_string {};
+        if(auto tok = ps->peek_keyword(); tok == TT::KW_ProgLine)
+            ent_string = ps->next_keyword().text.str();
+        else
+            ent_string = ps->expect(TT::Identifier).text.str();
 
-        std::string ent_string = tok.text.str();
         util::logfmt("pql::parser", "Parsing declaration with design_ent:{}", ent_string);
 
         if(ast::DESIGN_ENT_MAP.count(ent_string) == 0)
@@ -573,6 +576,9 @@ namespace pql::parser
             auto tmp_elem = parse_elem(ps);
             if(tmp_elem.isDeclaration())
             {
+                if(tmp_elem.declaration()->design_ent != ast::DESIGN_ENT::PROG_LINE)
+                    ps->setInvalid("only 'prog_line' synonyms can be used in a 'with' without an attr_ref");
+
                 return ast::WithCondRef::ofDeclaration(tmp_elem.declaration());
             }
             else
