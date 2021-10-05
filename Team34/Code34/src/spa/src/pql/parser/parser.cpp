@@ -584,7 +584,6 @@ namespace pql::parser
                 // the same purpose. after all, prog_line and stmt are interchangeable.
 
                 return ast::WithCondRef::ofAttrRef(ast::AttrRef { tmp_elem.declaration(), ast::AttrName::kStmtNum });
-                // return ast::WithCondRef::ofDeclaration(tmp_elem.declaration());
             }
             else
             {
