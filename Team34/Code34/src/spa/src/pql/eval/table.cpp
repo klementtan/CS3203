@@ -176,7 +176,7 @@ namespace pql::eval::table
     Table::~Table() { }
 
 
-    void Table::upsertDomains(ast::Declaration* decl, const std::unordered_set<Entry>& entries)
+    void Table::putDomain(ast::Declaration* decl, const std::unordered_set<Entry>& entries)
     {
         util::logfmt("pql::eval::table", "Updating domain of {} with {} entries", decl->toString(), entries.size());
         m_domains[decl] = entries;

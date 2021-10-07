@@ -138,7 +138,7 @@ namespace pql::eval
     void Evaluator::processDeclarations(const ast::DeclarationList& declaration_list)
     {
         for(const auto& [_, decl_ptr] : declaration_list.getAllDeclarations())
-            m_table.upsertDomains(decl_ptr, getInitialDomain(decl_ptr));
+            m_table.putDomain(decl_ptr, getInitialDomain(decl_ptr));
     }
 
     std::list<std::string> Evaluator::evaluate()

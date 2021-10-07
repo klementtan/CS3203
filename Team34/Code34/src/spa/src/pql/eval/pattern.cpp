@@ -99,7 +99,7 @@ namespace pql::ast
             tbl->addJoin(table::Join(assignment_declaration, var_ent.declaration(), allowed_entries));
         }
 
-        tbl->upsertDomains(this->assignment_declaration, domain);
+        tbl->putDomain(this->assignment_declaration, domain);
     }
 
     void evaluate_if_while_pattern(
@@ -166,7 +166,7 @@ namespace pql::ast
         if(var_ent.isDeclaration())
             tbl->addJoin(table::Join(stmt_decl, var_ent.declaration(), join_pairs));
 
-        tbl->upsertDomains(stmt_decl, domain);
+        tbl->putDomain(stmt_decl, domain);
     }
 
 

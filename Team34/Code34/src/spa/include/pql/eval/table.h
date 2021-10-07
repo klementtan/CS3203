@@ -138,7 +138,7 @@ namespace pql::eval::table
             const Row& row, const std::vector<ast::Elem>& return_tuple, const pkb::ProgramKB* pkb) const;
 
     public:
-        void upsertDomains(ast::Declaration* decl, const Domain& entries);
+        void putDomain(ast::Declaration* decl, const Domain& entries);
         void addSelectDecl(ast::Declaration* decl);
         static Entry extractAttr(const Entry& entry, const ast::AttrRef& attr_ref, const pkb::ProgramKB* pkb);
         Domain getDomain(ast::Declaration* decl) const;

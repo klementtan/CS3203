@@ -188,7 +188,7 @@ namespace pql::eval
                 new_domain.emplace(var_decl, var);
 
             auto old_domain = table->getDomain(var_decl);
-            table->upsertDomains(var_decl, table::entry_set_intersect(old_domain, new_domain));
+            table->putDomain(var_decl, table::entry_set_intersect(old_domain, new_domain));
         }
         else if(proc_ent.isName() && var_ent.isWildcard())
         {
@@ -217,7 +217,7 @@ namespace pql::eval
                 new_domain.emplace(proc_decl, proc_name);
 
             auto old_domain = table->getDomain(proc_decl);
-            table->upsertDomains(proc_decl, table::entry_set_intersect(old_domain, new_domain));
+            table->putDomain(proc_decl, table::entry_set_intersect(old_domain, new_domain));
         }
         else if(proc_ent.isDeclaration() && var_ent.isDeclaration())
         {
@@ -247,7 +247,7 @@ namespace pql::eval
                 new_domain.insert(entry);
             }
 
-            table->upsertDomains(proc_decl, table::entry_set_intersect(new_domain, table->getDomain(proc_decl)));
+            table->putDomain(proc_decl, table::entry_set_intersect(new_domain, table->getDomain(proc_decl)));
         }
         else
         {
@@ -300,7 +300,7 @@ namespace pql::eval
             for(const auto& var : this->getStmtRelatedVariables(pkb->getStatementAt(user_sid)))
                 new_domain.emplace(var_decl, var);
 
-            table->upsertDomains(var_decl, table::entry_set_intersect(new_domain, table->getDomain(var_decl)));
+            table->putDomain(var_decl, table::entry_set_intersect(new_domain, table->getDomain(var_decl)));
         }
         else if(user_stmt.isStatementId() && var_ent.isWildcard())
         {
@@ -324,7 +324,7 @@ namespace pql::eval
             for(auto sid : this->getVariableRelatedStmts(var, user_decl->design_ent))
                 new_domain.emplace(user_decl, sid);
 
-            table->upsertDomains(user_decl, table::entry_set_intersect(new_domain, table->getDomain(user_decl)));
+            table->putDomain(user_decl, table::entry_set_intersect(new_domain, table->getDomain(user_decl)));
         }
         else if(user_stmt.isDeclaration() && var_ent.isDeclaration())
         {
@@ -354,7 +354,7 @@ namespace pql::eval
                 new_domain.insert(entry);
             }
 
-            table->upsertDomains(user_decl, table::entry_set_intersect(new_domain, table->getDomain(user_decl)));
+            table->putDomain(user_decl, table::entry_set_intersect(new_domain, table->getDomain(user_decl)));
         }
         else
         {
