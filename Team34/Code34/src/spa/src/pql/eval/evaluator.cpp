@@ -154,18 +154,6 @@ namespace pql::eval
         processDeclarations(m_query->declarations);
         util::logfmt("pql::eval", "Table after initial processing of declaration: {}", m_table.toString());
 
-        // All queries should have select clause
-        if(m_query->select.result.isTuple())
-        {
-            for(const ast::Elem& elem : m_query->select.result.tuple())
-            {
-                if(elem.isAttrRef())
-                    m_table.addSelectDecl(elem.attrRef().decl);
-                else if(elem.isDeclaration())
-                    m_table.addSelectDecl(elem.declaration());
-            }
-        }
-
         for(const auto& rel : m_query->select.relations)
             handleRelation(rel.get());
 
