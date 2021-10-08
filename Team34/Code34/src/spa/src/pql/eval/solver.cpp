@@ -82,10 +82,7 @@ namespace pql::eval::solver
 
     IntRow IntRow::mergeRow(const IntRow& other) const
     {
-        if(!canMerge(other))
-            throw util::PqlException("pql::eval::solver",
-                "Cannot merge {} with {} as there are conflicting entries for the same decl", toString(),
-                other.toString());
+        assert(canMerge(other));
         std::unordered_set<const ast::Declaration*> other_headers = other.getHeaders();
         std::unordered_map<const ast::Declaration*, table::Entry> new_columns = m_columns;
         for(const auto& decl : other_headers)
@@ -506,7 +503,7 @@ namespace pql::eval::solver
             // TODO: we should sort in increasing order of table size
             for(const ast::Declaration* decl : component)
             {
-                IntTable prev_table = m_int_tables[get_table_index(decl)];
+                IntTable& prev_table = m_int_tables[get_table_index(decl)];
                 // merge to new table if it has not been processed
                 if(new_table.getHeaders().count(decl) == 0)
                 {
@@ -518,18 +515,17 @@ namespace pql::eval::solver
                 for(const table::Join& join : joins)
                 {
                     // TODO: experiment if we really need to constantly filter all joins
-                    new_table.filterRows(join);
 
                     const ast::Declaration* other_decl = join.getDeclA() == decl ? join.getDeclB() : join.getDeclA();
-                    util::logfmt("pql::eval::solver", "merging decl {} from {} into {}", decl->toString(),
-                        prev_table.toString(), new_table.toString());
+                    assert(other_decl != decl);
                     if(new_table.getHeaders().count(other_decl) == 0)
                     {
-                        IntTable other_prev_table = m_int_tables[get_table_index(other_decl)];
+                        IntTable& other_prev_table = m_int_tables[get_table_index(other_decl)];
                         util::logfmt(
                             "pql::eval::solver", "Merging {} to {}", other_prev_table.toString(), new_table.toString());
                         new_table = new_table.merge(other_prev_table);
                     }
+                    new_table.filterRows(join);
                 }
             }
             util::logfmt("pql::eval::solver", "New final merged table for component {}", new_table.toString());
@@ -572,7 +568,7 @@ namespace pql::eval::solver
             // already added into table by another decl in the same component
             if(ret_table.getHeaders().count(decl))
                 continue;
-            IntTable prev_table = m_int_tables[get_table_index(decl)];
+            IntTable& prev_table = m_int_tables[get_table_index(decl)];
             util::logfmt("pql::eval::solver", "Merging table {} to {}", ret_table.toString(), prev_table.toString());
             ret_table = ret_table.merge(prev_table);
         }
