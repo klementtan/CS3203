@@ -127,14 +127,7 @@ namespace pql::eval::table
         std::vector<Join> m_joins;
         // All declaration involved in select query
         std::unordered_set<ast::Declaration*> m_select_decls;
-        // Get all possible rows with decls as the column. The value of each entry in the
-        // row will exist in the domain of declaration.
-        [[nodiscard]] std::vector<Row> getRows(
-            const std::vector<ast::Declaration*>& decls, const std::vector<Join>& joins) const;
-        // Get the rows in candidate_rows that fulfill all of the joins
-        [[nodiscard]] std::vector<Row> getValidRows(const std::vector<Row>& candidate_rows) const;
         // Get mapping of declaration to the join that is involved in.
-        [[nodiscard]] std::unordered_map<ast::Declaration*, std::vector<Join>> getDeclJoins() const;
         [[nodiscard]] bool hasValidDomain() const;
 
     public:
