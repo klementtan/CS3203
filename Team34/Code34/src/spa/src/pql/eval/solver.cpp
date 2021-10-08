@@ -510,8 +510,8 @@ namespace pql::eval::solver
                 // merge to new table if it has not been processed
                 if(new_table.getHeaders().count(decl) == 0)
                 {
-                    util::logfmt("pql::eval::solver", "merging decl {} from {} into {}",
-                        decl->toString() ,prev_table.toString() ,new_table.toString());
+                    util::logfmt("pql::eval::solver", "merging decl {} from {} into {}", decl->toString(),
+                        prev_table.toString(), new_table.toString());
                     new_table = new_table.merge(prev_table);
                 }
                 std::vector<table::Join> joins = get_joins(decl);
@@ -521,8 +521,8 @@ namespace pql::eval::solver
                     new_table.filterRows(join);
 
                     const ast::Declaration* other_decl = join.getDeclA() == decl ? join.getDeclB() : join.getDeclA();
-                    util::logfmt("pql::eval::solver", "merging decl {} from {} into {}",
-                        decl->toString() ,prev_table.toString() ,new_table.toString());
+                    util::logfmt("pql::eval::solver", "merging decl {} from {} into {}", decl->toString(),
+                        prev_table.toString(), new_table.toString());
                     if(new_table.getHeaders().count(other_decl) == 0)
                     {
                         IntTable other_prev_table = m_int_tables[get_table_index(other_decl)];

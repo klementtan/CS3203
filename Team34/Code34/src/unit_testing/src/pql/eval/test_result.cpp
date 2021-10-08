@@ -89,3 +89,16 @@ TEST_CASE("Tuple Result Clause")
     TEST_OK(prog_2, R"(if ifs; variable v; Select <ifs, v> pattern ifs(v,_,_))", "4 x");
     TEST_OK(prog_1, R"(call c; read r; Select <c, r>)", "3 1", "3 2", "8 1", "8 2");
 }
+
+TEST_CASE("Multiple Clauses")
+{
+    TEST_OK(prog_1, R"(procedure p; Select p such that Calls (p, "Third") and Modifies (p, "i"))", "Second");
+    // Disjoin components in Select but merged in return decl
+    TEST_OK(prog_1,
+        R"(read r1,r2; assign a; variable v; Select <r1,a> such that Follows(r1,r2) pattern a(v, "z") such that Modifies(a,v))",
+        "1 17");
+
+    // Disjoin ret, select decl and invalid assignment to decl
+    TEST_EMPTY(prog_1,
+        R"(assign a1, a2; print p; read r; stmt s; variable v; Select <a1, a2> such that Follows(p,r) and Modifies(s, v))");
+}
