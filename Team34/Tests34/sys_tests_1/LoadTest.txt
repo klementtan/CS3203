@@ -13,3 +13,8 @@ variable v, v1; assign a, a1;
 Select v1 such that Modifies (a, v) pattern a1(v1, _)
 read,s,b,a,Extra,then,p1,p,call,j,b1,else,print,if,A,a2,ff,q,q1,a1,while,c1,a3,n,c3,c2,zzzzz,procedure,zzzz,k,zzz,n1,m
 5000
+4 - 4 clauses
+stmt s1,s2,s3,s4;
+Select <s1,s2,s3,s4> such that Follows(1,s1) and Follows(s1,s2) and Follows(s2,s3) and Follows(s3,s4)
+2 3 4 5
+50000
