@@ -13,6 +13,7 @@
 #include "pkb.h"
 #include "pql/parser/ast.h"
 #include "pql/eval/table.h"
+#include "pql/eval/solver.h"
 
 namespace pql::eval::table
 {
@@ -157,6 +158,10 @@ namespace pql::eval::table
     std::unordered_set<std::pair<Entry, Entry>> Join::getAllowedEntries() const
     {
         return this->m_allowed_entries;
+    }
+    void Join::setAllowedEntries(const std::unordered_set<std::pair<Entry, Entry>>& allowed_entries)
+    {
+        this->m_allowed_entries = allowed_entries;
     }
 
     std::string Join::toString() const
@@ -419,20 +424,16 @@ namespace pql::eval::table
         return extracted_entry;
     }
 
-    std::vector<Entry> Table::extract_result(
-        const Row& row, const std::vector<ast::Elem>& return_tuple, const pkb::ProgramKB* pkb) const
+    std::vector<Entry> extract_result(
+        const solver::IntRow& row, const std::vector<ast::Elem>& return_tuple, const pkb::ProgramKB* pkb)
     {
-        util::logfmt("pql::parser::table", "Extracting result from row: {}", rowToString(row));
+        util::logfmt("pql::parser::table", "Extracting result from row: {}", row.toString());
         std::vector<Entry> tuple;
         for(const ast::Elem& elem : return_tuple)
         {
             assert(elem.isAttrRef() || elem.isDeclaration());
             ast::Declaration* decl = elem.isDeclaration() ? elem.declaration() : elem.attrRef().decl;
-            auto it = row.find(decl);
-            if(it == row.end())
-                throw util::PqlException(
-                    "pql::eval::table", "Cannot get {} from row {}", decl->toString(), rowToString(row));
-            Entry entry = it->second;
+            Entry entry = row.getVal(decl);
 
             if(elem.isDeclaration())
             {
@@ -458,19 +459,9 @@ namespace pql::eval::table
     {
         util::logfmt("pql::eval::table", "Starting to get {} for table {}.", result_cl.toString(), toString());
         std::vector<std::vector<Entry>> result_entries;
-        std::unordered_map<ast::Declaration*, std::vector<Join>> decl_joins = getDeclJoins();
 
-        // We only need to permutate on decl involded in joins
-        std::vector<ast::Declaration*> columns;
-        for(auto [decl, joins] : decl_joins)
-        {
-            columns.push_back(decl);
-        }
 
-        // We will need to get the cross product across all elements in the return tuple.
-        //
-        // TODO(#131): We do not need to cross product with join decl if none of the return element
-        // is in a Join
+        std::vector<ast::Declaration*> ret_cols;
         if(result_cl.isTuple())
         {
             for(const ast::Elem& elem : result_cl.tuple())
@@ -478,35 +469,51 @@ namespace pql::eval::table
                 util::logfmt("pql::eval::table", "Adding {} to columns", elem.toString());
                 if(elem.isDeclaration())
                 {
-                    columns.push_back(elem.declaration());
+                    ret_cols.push_back(elem.declaration());
                 }
                 else if(elem.isAttrRef())
                 {
-                    columns.push_back(elem.attrRef().decl);
+                    ret_cols.push_back(elem.attrRef().decl);
                 }
             }
         }
 
-        // All domain involved in query should have non-empty domain
-        if(!hasValidDomain())
-            return Table::getFailedResult(result_cl);
-
-        std::vector<Row> candidate_rows = getRows(columns, m_joins);
-        std::vector<Row> valid_rows = getValidRows(candidate_rows);
-
-        // There should exist a valid assignment that satisfies all joins even if ret declaration is not
-        // involved in any clause
-        if(valid_rows.empty())
+        std::unordered_set<const ast::Declaration*> select_decls;
+        for(const ast::Declaration* decl : m_select_decls)
         {
-            return Table::getFailedResult(result_cl);
+            select_decls.insert(decl);
         }
-        else
+        std::unordered_set<const ast::Declaration*> ret_decls;
+        for(const ast::Declaration* decl : ret_cols)
+        {
+            ret_decls.insert(decl);
+        }
+
+        std::unordered_map<const ast::Declaration*, table::Domain> domains;
+        for(const auto& [decl, domain] : m_domains)
+        {
+            domains[decl] = domain;
+        }
+        solver::Solver solver(
+            /** joins=*/m_joins, /**domains=*/domains, /**return_decls=*/ret_decls, /**select_decls=*/select_decls);
+
+        if(solver.isValid())
         {
             if(result_cl.isBool())
                 return std::list<std::string> { "TRUE" };
         }
+        else
+        {
+            return Table::getFailedResult(result_cl);
+        }
+        solver::IntTable ret_tbl = solver.getRetTbl();
 
-        for(const Row& row : valid_rows)
+        if(ret_tbl.empty())
+        {
+            return Table::getFailedResult(result_cl);
+        }
+
+        for(const solver::IntRow& row : ret_tbl.getRows())
         {
             result_entries.push_back(extract_result(row, result_cl.tuple(), pkb));
         }
