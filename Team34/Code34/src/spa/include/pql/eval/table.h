@@ -110,9 +110,11 @@ namespace pql::eval::table
         Join() = default;
         Join(pql::ast::Declaration* decl_a, pql::ast::Declaration* decl_b,
             std::unordered_set<std::pair<Entry, Entry>> allowed_entries);
+        void setAllowedEntries(const std::unordered_set<std::pair<Entry, Entry>>& allowed_entries);
         [[nodiscard]] pql::ast::Declaration* getDeclA() const;
         [[nodiscard]] pql::ast::Declaration* getDeclB() const;
         [[nodiscard]] std::unordered_set<std::pair<Entry, Entry>> getAllowedEntries() const;
+        [[nodiscard]] std::unordered_set<std::pair<Entry, Entry>> getAllowedEntries(pql::ast::Declaration* decl) const;
         [[nodiscard]] std::string toString() const;
     };
 
@@ -125,20 +127,11 @@ namespace pql::eval::table
         std::vector<Join> m_joins;
         // All declaration involved in select query
         std::unordered_set<ast::Declaration*> m_select_decls;
-        // Get all possible rows with decls as the column. The value of each entry in the
-        // row will exist in the domain of declaration.
-        [[nodiscard]] std::vector<Row> getRows(
-            const std::vector<ast::Declaration*>& decls, const std::vector<Join>& joins) const;
-        // Get the rows in candidate_rows that fulfill all of the joins
-        [[nodiscard]] std::vector<Row> getValidRows(const std::vector<Row>& candidate_rows) const;
         // Get mapping of declaration to the join that is involved in.
-        [[nodiscard]] std::unordered_map<ast::Declaration*, std::vector<Join>> getDeclJoins() const;
         [[nodiscard]] bool hasValidDomain() const;
-        std::vector<Entry> extract_result(
-            const Row& row, const std::vector<ast::Elem>& return_tuple, const pkb::ProgramKB* pkb) const;
 
     public:
-        void upsertDomains(ast::Declaration* decl, const Domain& entries);
+        void putDomain(ast::Declaration* decl, const Domain& entries);
         void addSelectDecl(ast::Declaration* decl);
         static Entry extractAttr(const Entry& entry, const ast::AttrRef& attr_ref, const pkb::ProgramKB* pkb);
         Domain getDomain(ast::Declaration* decl) const;
