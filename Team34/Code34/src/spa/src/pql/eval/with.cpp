@@ -50,7 +50,7 @@ namespace pql::ast
         throw PqlException("pql::eval", "invalid WithCondRef '{}'", ref.toString());
     }
 
-    void WithCond::evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const
+    void WithCond::evaluate(const pkb::ProgramKB* pkb, eval::table::Table* tbl) const
     {
         using Table = eval::table::Table;
         using Entry = eval::table::Entry;
@@ -89,7 +89,7 @@ namespace pql::ast
             {
                 auto num = right->stringOrNumber();
 
-                auto domain = table->getDomain(l_decl);
+                auto domain = tbl->getDomain(l_decl);
                 for(auto it = domain.begin(); it != domain.end();)
                 {
                     if(std::to_string(it->getStmtNum()) == num)
@@ -98,7 +98,7 @@ namespace pql::ast
                         it = domain.erase(it);
                 }
 
-                table->putDomain(l_decl, domain);
+                tbl->putDomain(l_decl, domain);
             }
             else if(right->isDeclaration())
             {
@@ -106,17 +106,42 @@ namespace pql::ast
                 auto r_decl = right->declaration();
                 assert(r_decl->design_ent == ast::DESIGN_ENT::PROG_LINE);
 
-                // in this case, all we need to do is perform a set intersection,
-                // since the only requirement is that they are equal value-wise.
-                auto l_domain = table->getDomain(l_decl);
-                auto r_domain = table->getDomain(r_decl);
+                auto l_domain = tbl->getDomain(l_decl);
+                auto r_domain = tbl->getDomain(r_decl);
 
-                auto new_domain = eval::table::entry_set_intersect(l_domain, r_domain);
-                table->putDomain(l_decl, new_domain);
-                table->putDomain(r_decl, new_domain);
+                // while we would in the ideal case like to just perform a simple set
+                // intersection (since all we really need is to ensure the values are
+                // the same), this is not possible since an Entry is tied to a particular
+                // Declaration, so Entries with the same value (but different declarations,
+                // as in this case) will hash to different values. however, we can still
+                // make this an O(n) algorithm.
+
+                // note that this does not require joins, since we only need the values
+                // to be exactly the same (and not if A == X then B == Y)
+
+                // in this case, we know that both sides are PROG_LINE, so they will be statement
+                // numbers. we do not make a distinction between prog_line and stmt.
+                std::unordered_set<pkb::StatementNum> l_nums {};
+                std::unordered_set<pkb::StatementNum> r_nums {};
+
+                std::for_each(l_domain.begin(), l_domain.end(), [&](auto& v) { l_nums.insert(v.getStmtNum()); });
+                std::for_each(r_domain.begin(), r_domain.end(), [&](auto& v) { r_nums.insert(v.getStmtNum()); });
+
+                auto common_nums = table::setIntersction(l_nums, r_nums);
+
+                auto make_new_domain = [&common_nums](ast::Declaration* decl) -> auto {
+                    table::Domain ret {};
+                    for(auto& num : common_nums)
+                        ret.emplace(decl, num);
+                    return ret;
+                };
+
+                tbl->putDomain(l_decl, make_new_domain(l_decl));
+                tbl->putDomain(r_decl, make_new_domain(r_decl));
             }
             else if(right->isAttrRef())
             {
+                // this is a little more complicated
             }
             else
             {
@@ -126,7 +151,7 @@ namespace pql::ast
         else if(left->isAttrRef())
         {
             auto l_ref = left->attrRef();
-            auto l_domain = table->getDomain(l_ref.decl);
+            auto l_domain = tbl->getDomain(l_ref.decl);
 
             if(right->isNumber() || right->isString())
             {
@@ -141,35 +166,16 @@ namespace pql::ast
                         ++it;
                 }
 
-                table->putDomain(l_ref.decl, l_domain);
+                tbl->putDomain(l_ref.decl, l_domain);
+            }
+            else if(right->isAttrRef())
+            {
             }
             else
             {
-            #if 0
-                // because unordered_set returns const iterators because it sucks, we are forced
-                // to construct a new set.
-                eval::table::Domain new_l_domain {};
-                std::transform(l_domain.begin(), l_domain.end(), std::inserter(new_l_domain, new_l_domain.begin()),
-                    [&](auto& entry) { return Table::extractAttr(entry, l_ref, pkb); });
-
-                eval::table::Domain r_domain {};
-                if(right->isDeclaration())
-                {
-                    r_domain = table->getDomain(right->declaration());
-                }
-                else
-                {
-
-                }
-
-                auto r_domain = right->isDeclaration()
-                    ? table->getDomain(right->declaration())
-                    : table->getDomain(right->attrRef().decl);
-
-                eval::table::Domain new_r_domain {};
-                std::transform(r_domain.begin(), r_domain.end(), std::inserter(new_r_domain, new_r_domain.begin()),
-                    [&](auto& entry) { return Table::extractAttr(entry, r_ref, pkb); });
-            #endif
+                // right cannot be a decl because (attrRef, decl) would've been swapped to
+                // (decl, attrRef) above.
+                throw PqlException("pql::eval", "unreachable");
             }
         }
         else
