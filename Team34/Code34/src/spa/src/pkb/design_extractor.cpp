@@ -169,8 +169,6 @@ namespace pkb
             }
         }
 
-
-
         // now process uses, modifies, parent, and parent* in one go
         for(const auto& it : list->statements)
         {
@@ -344,6 +342,32 @@ namespace pkb
         }
     }
 
+    void DesignExtractor::processNextRelations() {
+        // get cfg first
+        m_pkb->cfg = std::make_unique<CFG>(std::move(CFG(m_pkb->m_statements.size())));
+        for(auto& [name, proc] : m_pkb->m_procedures)
+        {
+            auto body = &proc.getAstProc()->body;
+            this->processCFG(body, 0);
+        }
+        // get all shortest paths
+        auto cfg = this->m_pkb->cfg.get();
+        cfg->computeDistMat();
+
+        // store next and next* info into stmts
+        for(size_t i = 0; i < m_pkb->m_statements.size(); i++)
+        {
+            auto stmt = &m_pkb->getStatementAt(i + 1);
+            for(size_t j = 0; j < m_pkb->m_statements.size(); j++)
+            {
+                if(cfg->adj_mat[i][j] == 1)
+                    stmt->m_directly_nexts.insert(j + 1);
+                if(cfg->adj_mat[i][j] >= 1)
+                    stmt->m_nexts.insert(j + 1);
+            }
+        }
+    }
+
     std::unique_ptr<ProgramKB> DesignExtractor::run()
     {
         // assign the statement numbers. this has to use the vector of procedures in
@@ -353,6 +377,8 @@ namespace pkb
             m_pkb->addProcedure(proc->name, proc.get());
             this->assignStatementNumbers(&proc->body);
         }
+
+        processNextRelations();
 
         // process the entire thing
         for(auto& [name, proc] : m_pkb->m_procedures)
@@ -367,18 +393,8 @@ namespace pkb
 
             this->processStmtList(body, ts);
         }
-        
-        m_pkb->cfg = std::make_unique<CFG>(std::move(CFG(m_pkb->m_statements.size())));
 
-        for(auto& [name, proc] : m_pkb->m_procedures)
-        {
-            auto body = &proc.getAstProc()->body;
-            this->processCFG(body, 0);
-        }
 
-        // get all shortest paths
-        auto cfg = this->m_pkb->cfg.get();
-        cfg->computeDistMat();
 
         return std::move(this->m_pkb);
     }

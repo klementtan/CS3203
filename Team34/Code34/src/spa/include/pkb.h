@@ -112,6 +112,11 @@ namespace pkb
         const StatementSet& getParent() const;
         const StatementSet& getAncestors() const;
 
+        bool isStatementNext(StatementNum id) const;
+        bool isStatementTransitivelyNext(StatementNum id) const;
+        const StatementSet& getNextStatements(StatementNum id) const;
+        const StatementSet& getTransitivelyNextStatements(StatementNum id) const;
+
         const std::unordered_set<std::string>& getVariablesUsedInCondition() const;
 
     private:
@@ -138,6 +143,10 @@ namespace pkb
 
         StatementSet m_ancestors {};
         StatementSet m_descendants {};
+
+        // there can be more than 1 next.
+        StatementSet m_directly_nexts {};
+        StatementSet m_nexts {};
     };
 
     struct Variable
@@ -168,14 +177,12 @@ namespace pkb
         void addEdge(StatementNum stmt1, StatementNum stmt2);
         std::string getMatRep();
         void computeDistMat();
-        bool isStatementNext(StatementNum stmt1, StatementNum stmt2);
-        bool isStatementTransitivelyNext(StatementNum stmt1, StatementNum stmt2);
-        const StatementSet& getNextStatements(StatementNum stmt);
-        const StatementSet& getTransitivelyNextStatements(StatementNum stmt);
+
     private:
         int total_inst;
         // adjacency matrix for lengths of shortest paths between 2 instructions. i(row) is the source and j(col) is the destination.
         int** adj_mat;
+        friend struct DesignExtractor;
     };
 
     struct ProgramKB

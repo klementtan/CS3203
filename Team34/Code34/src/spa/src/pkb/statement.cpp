@@ -129,6 +129,28 @@ namespace pkb
         return m_ancestors;
     }
 
+    bool Statement::isStatementNext(StatementNum id) const
+    {
+        return m_directly_nexts.count(id) > 0;
+    };
+    bool Statement::isStatementTransitivelyNext(StatementNum id) const
+    {
+        zpr::print("it is fsf");
+        for(auto a : m_nexts)
+        {
+            zpr::print("it is {}", a);
+        }
+        return m_nexts.count(id) > 0;
+    };
+    const StatementSet& Statement::getNextStatements(StatementNum id) const
+    {
+        return m_directly_nexts;
+    };
+    const StatementSet& Statement::getTransitivelyNextStatements(StatementNum id) const
+    {
+        return m_nexts;
+    };
+
     const std::unordered_set<std::string>& Statement::getVariablesUsedInCondition() const
     {
         return m_condition_uses;
