@@ -34,23 +34,23 @@ namespace pkb
 
     std::string CFG::getMatRep()
     {
-        zpr::print("printing matrix with side {}\n", total_inst);
-        zpr::print("      ");
+        auto res = zpr::sprint("      ");
         for(int i = 0; i < total_inst; i++)
         {
-            zpr::print("{03} ", i + 1); 
+            res += zpr::sprint("{03} ", i + 1); 
         }
-        zpr::print("\n");
+        res += zpr::sprint("\n"); 
 
         for(int i = 0; i < total_inst; i++)
         {
-            zpr::print("{03} | ", i+1);
+            res += zpr::sprint("{03} | ", i+1);
             for(int j = 0; j <total_inst; j++)
             {
-                zpr::print("{03} ", adj_mat[i][j] == INF ? -1 : adj_mat[i][j]);
+                res += zpr::sprint("{03} ", adj_mat[i][j] == INF ? -1 : adj_mat[i][j]);
             }
-            zpr::print("\n");
+            res += zpr::sprint("\n");
         }
+        return res;
     }
 
     void CFG::computeDistMat()
