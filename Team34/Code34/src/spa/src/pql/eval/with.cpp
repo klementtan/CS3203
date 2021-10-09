@@ -52,6 +52,7 @@ namespace pql::ast
         throw PqlException("pql::eval", "invalid WithCondRef '{}'", ref.toString());
     }
 
+    using Join = table::Join;
     using Table = table::Table;
     using Entry = table::Entry;
     using Domain = table::Domain;
@@ -78,6 +79,17 @@ namespace pql::ast
             for(auto& val : values)
                 ret.emplace(decl, val);
         }
+
+        return ret;
+    }
+
+    template <typename T>
+    static std::unordered_set<std::pair<Entry, Entry>> make_join_pairs(const std::unordered_set<T>& values,
+        Declaration* a_decl, Declaration* b_decl)
+    {
+        std::unordered_set<std::pair<Entry, Entry>> ret {};
+        for(auto& val : values)
+            ret.emplace(Entry(a_decl, val), Entry(b_decl, val));
 
         return ret;
     }
@@ -171,7 +183,6 @@ namespace pql::ast
 
                 Declaration* r_decl = nullptr;
 
-
                 if(right->isDeclaration())
                 {
                     // again, this should be true.
@@ -194,22 +205,16 @@ namespace pql::ast
                     throw PqlException("pql::eval", "unreachable");
                 }
 
-                // while we would in the ideal case like to just perform a simple set
-                // intersection (since all we really need is to ensure the values are
-                // the same), this is not possible since an Entry is tied to a particular
-                // Declaration, so Entries with the same value (but different declarations,
-                // as in this case) will hash to different values. however, we can still
-                // make this an O(n) algorithm.
-
-                // note that this does not require joins, since we only need the values
-                // to be exactly the same (and not if A == X then B == Y)
-
                 assert(r_decl != nullptr);
 
-                auto common_nums = table::setIntersction(l_nums, r_nums);
+                auto common = table::setIntersction(l_nums, r_nums);
 
-                tbl->putDomain(l_decl, make_new_domain(l_decl, common_nums));
-                tbl->putDomain(r_decl, make_new_domain(r_decl, common_nums));
+                // we still need joins here. first, replace the domain with the smaller one:
+                tbl->putDomain(l_decl, make_new_domain(l_decl, common));
+                tbl->putDomain(r_decl, make_new_domain(r_decl, common));
+
+                // then, add all the joins
+                tbl->addJoin(Join(l_decl, r_decl, make_join_pairs(common, l_decl, r_decl)));
             }
         }
         else if(left->isAttrRef())
@@ -224,8 +229,26 @@ namespace pql::ast
                 {
                     auto attr = Table::extractAttr(*it, l_ref, pkb);
 
-                    // note: string and number return the same field.
-                    if(attr.getVal() != right->stringOrNumber())
+                    bool equals = false;
+                    if(l_ref.attr_name == AttrName::kValue)
+                    {
+                        assert(right->isNumber());
+                        equals = right->stringOrNumber() == attr.getVal();
+                    }
+                    else if(l_ref.attr_name == AttrName::kStmtNum)
+                    {
+                        // TODO: consider changing this to convert the string to a number, since
+                        // (i think) that is potentially faster.
+                        assert(right->isNumber());
+                        equals = right->stringOrNumber() == std::to_string(attr.getStmtNum());
+                    }
+                    else
+                    {
+                        assert(l_ref.attr_name == AttrName::kProcName || l_ref.attr_name == AttrName::kVarName);
+                        equals = right->stringOrNumber() == attr.getVal();
+                    }
+
+                    if(!equals)
                         it = l_domain.erase(it);
                     else
                         ++it;
@@ -257,10 +280,12 @@ namespace pql::ast
                     std::for_each(l_domain.begin(), l_domain.end(), [&](auto& v) { l_strs.insert(v.getVal()); });
                     std::for_each(r_domain.begin(), r_domain.end(), [&](auto& v) { r_strs.insert(v.getVal()); });
 
-                    auto common_strs = table::setIntersction(l_strs, r_strs);
+                    auto common = table::setIntersction(l_strs, r_strs);
 
-                    tbl->putDomain(l_decl, make_new_domain(l_decl, common_strs));
-                    tbl->putDomain(r_decl, make_new_domain(r_decl, common_strs));
+                    tbl->putDomain(l_decl, make_new_domain(l_decl, common));
+                    tbl->putDomain(r_decl, make_new_domain(r_decl, common));
+
+                    tbl->addJoin(Join(l_decl, r_decl, make_join_pairs(common, l_decl, r_decl)));
                 }
                 else if((l_name == AttrName::kStmtNum || l_name == AttrName::kValue)
                     && (r_name == AttrName::kStmtNum || r_name == AttrName::kValue))
@@ -271,10 +296,12 @@ namespace pql::ast
                     get_numbers_from_domain(l_domain, l_ref, &l_nums);
                     get_numbers_from_domain(r_domain, r_ref, &r_nums);
 
-                    auto common_nums = table::setIntersction(l_nums, r_nums);
+                    auto common = table::setIntersction(l_nums, r_nums);
 
-                    tbl->putDomain(l_decl, make_new_domain(l_decl, common_nums));
-                    tbl->putDomain(r_decl, make_new_domain(r_decl, common_nums));
+                    tbl->putDomain(l_decl, make_new_domain(l_decl, common));
+                    tbl->putDomain(r_decl, make_new_domain(r_decl, common));
+
+                    tbl->addJoin(Join(l_decl, r_decl, make_join_pairs(common, l_decl, r_decl)));
                 }
                 else
                 {
