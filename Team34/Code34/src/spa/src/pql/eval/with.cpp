@@ -107,40 +107,36 @@ namespace pql::ast
 
         assert(!left->isNumber() && !left->isString());
 
-
         if(left->isDeclaration())
         {
             auto l_decl = left->declaration();
+            auto l_domain = tbl->getDomain(l_decl);
             tbl->addSelectDecl(l_decl);
 
             // this should always be true. (many prior places verify this)
             assert(l_decl->design_ent == DESIGN_ENT::PROG_LINE);
 
-
             if(right->isNumber())
             {
                 auto num = right->stringOrNumber();
 
-                auto domain = tbl->getDomain(l_decl);
-                for(auto it = domain.begin(); it != domain.end();)
+                for(auto it = l_domain.begin(); it != l_domain.end();)
                 {
                     // number literals in the with clause are stored as strings (because they may be
                     // arbitrarily long), so convert the stmtnum (actually a prog_line) to string.
                     if(std::to_string(it->getStmtNum()) == num)
                         ++it;
                     else
-                        it = domain.erase(it);
+                        it = l_domain.erase(it);
                 }
 
-                tbl->putDomain(l_decl, domain);
+                tbl->putDomain(l_decl, l_domain);
             }
-            else
+            else if(right->isDeclaration())
             {
-                auto r_decl = right->isDeclaration() ? right->declaration() : right->attrRef().decl;
-                tbl->addSelectDecl(r_decl);
-
-                auto l_domain = tbl->getDomain(l_decl);
+                auto r_decl = right->declaration();
                 auto r_domain = tbl->getDomain(r_decl);
+                tbl->addSelectDecl(r_decl);
 
                 std::unordered_set<std::pair<Entry, Entry>> join_pairs {};
 
@@ -153,6 +149,39 @@ namespace pql::ast
 
                 for(auto& entry : l_domain)
                     join_pairs.emplace(entry, replace_entry_decl(entry, r_decl));
+
+                tbl->addJoin(Join(l_decl, r_decl, std::move(join_pairs)));
+            }
+            else
+            {
+                assert(right->isAttrRef());
+                auto r_ref = right->attrRef();
+                auto r_decl = r_ref.decl;
+                auto r_domain = tbl->getDomain(r_decl);
+                tbl->addSelectDecl(r_decl);
+
+                // the right side is an attrref. we cannot directly perform joins on
+                // the extracted attrref, because the domain of the decl must still
+                // contain its "original values". eg. for a `call`, it must still be
+                // stmt numbers, and not strings if we did `c.procName`.
+
+                // since we know the left side is always a decl, and furthermore it's
+                // always a prog_line, we can iterate the right side only and keep this O(n).
+
+                std::unordered_set<std::pair<Entry, Entry>> join_pairs {};
+                for(auto it = r_domain.begin(); it != r_domain.end(); ++it)
+                {
+                    auto r_entry = Table::extractAttr(*it, r_ref, pkb);
+                    if(r_ref.attr_name == AttrName::kValue)
+                    {
+                        join_pairs.emplace(Entry(l_decl, std::stoll(r_entry.getVal())), *it);
+                    }
+                    else
+                    {
+                        assert(r_ref.attr_name == AttrName::kStmtNum);
+                        join_pairs.emplace(Entry(l_decl, r_entry.getStmtNum()), *it);
+                    }
+                }
 
                 tbl->addJoin(Join(l_decl, r_decl, std::move(join_pairs)));
             }
@@ -200,21 +229,76 @@ namespace pql::ast
             }
             else if(right->isAttrRef())
             {
-                auto r_decl = right->attrRef().decl;
+                auto r_ref = right->attrRef();
+                auto r_decl = r_ref.decl;
                 auto r_domain = tbl->getDomain(r_decl);
                 tbl->addSelectDecl(r_decl);
 
+                auto l_attr = l_ref.attr_name;
+                auto r_attr = r_ref.attr_name;
+
                 std::unordered_set<std::pair<Entry, Entry>> join_pairs {};
 
-                // loop over the smaller set.
-                if(r_domain.size() < l_domain.size())
+                // same as the above with rhs=attrref, but this time we don't have the guarantee that
+                // the left side is always a prog_line. this explodes the checking space.
+                // instead of doing an O(n^2) check, special case all possible things.
+                if((l_attr == AttrName::kValue || l_attr == AttrName::kStmtNum) &&
+                    (r_attr == AttrName::kValue || r_attr == AttrName::kStmtNum))
                 {
-                    std::swap(l_domain, r_domain);
-                    std::swap(l_decl, r_decl);
+                    for(auto& lent : l_domain)
+                        join_pairs.emplace(lent, replace_entry_decl(lent, r_decl));
                 }
-
-                for(auto& entry : l_domain)
-                    join_pairs.emplace(entry, replace_entry_decl(entry, r_decl));
+                else
+                {
+                    for(const auto& lent : l_domain)
+                    {
+                        auto lattrval = Table::extractAttr(lent, l_ref, pkb);
+                        if(r_attr == AttrName::kProcName)
+                        {
+                            if(r_decl->design_ent == DESIGN_ENT::PROCEDURE)
+                            {
+                                join_pairs.emplace(lent, Entry(r_decl, lattrval.getVal()));
+                            }
+                            else if(r_decl->design_ent == DESIGN_ENT::CALL)
+                            {
+                                auto& proc = pkb->getProcedureNamed(lattrval.getVal());
+                                for(auto& i : proc.getCallStmts())
+                                    join_pairs.emplace(lent, Entry(r_decl, i));
+                            }
+                            else
+                            {
+                                throw PqlException("pql::eval", "unreachable");
+                            }
+                        }
+                        else if(r_attr == AttrName::kVarName)
+                        {
+                            if(r_decl->design_ent == DESIGN_ENT::VARIABLE)
+                            {
+                                join_pairs.emplace(lent, Entry(r_decl, lattrval.getVal()));
+                            }
+                            else if(r_decl->design_ent == DESIGN_ENT::PRINT)
+                            {
+                                auto& var = pkb->getVariableNamed(lattrval.getVal());
+                                for(auto& i : var.getPrintStmts())
+                                    join_pairs.emplace(lent, Entry(r_decl, i));
+                            }
+                            else if(r_decl->design_ent == DESIGN_ENT::READ)
+                            {
+                                auto& var = pkb->getVariableNamed(lattrval.getVal());
+                                for(auto& i : var.getReadStmts())
+                                    join_pairs.emplace(lent, Entry(r_decl, i));
+                            }
+                            else
+                            {
+                                throw PqlException("pql::eval", "unreachable");
+                            }
+                        }
+                        else
+                        {
+                            throw PqlException("pql::eval", "unreachable");
+                        }
+                    }
+                }
 
                 tbl->addJoin(Join(l_decl, r_decl, std::move(join_pairs)));
             }

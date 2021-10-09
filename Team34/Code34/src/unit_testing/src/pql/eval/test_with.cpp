@@ -31,6 +31,26 @@ constexpr const auto prog_1 = R"(
           print v; }
 )";
 
+constexpr const auto prog_2 = R"(
+procedure a
+{
+    print c;
+    read b;
+}
+procedure b
+{
+    print a;
+    read c;
+    call a;
+}
+procedure c
+{
+    print b;
+    read a;
+    call a;
+}
+)";
+
 TEST_CASE("with decl/decl")
 {
     TEST_OK(prog_1, "prog_line a, b; Select <a,b> with a = b", "1 1", "2 2", "3 3", "4 4", "5 5", "6 6", "7 7", "8 8",
@@ -66,8 +86,8 @@ TEST_CASE("with decl/string")
 
 TEST_CASE("with decl/stmt#")
 {
-    TEST_OK(prog_1, "prog_line a; stmt s; Select a with a = s.stmt#", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
-        15, 16, 17, 18);
+    TEST_OK(prog_1, "prog_line a; stmt s; Select a with a = s.stmt#", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+        16, 17, 18);
 
     TEST_OK(prog_1, "prog_line a; call s; Select a with a = s.stmt#", 3, 8);
     TEST_OK(prog_1, "prog_line a; print s; Select a with a = s.stmt#", 18);
@@ -80,8 +100,8 @@ TEST_CASE("with stmt#/stmt#")
     TEST_EMPTY(prog_1, "stmt a; Select a with a.stmt# = 69");
     TEST_EMPTY(prog_1, "call a; print b; Select <a, b> with a.stmt# = b.stmt#");
 
-    TEST_OK(prog_1, "stmt a, b; Select <a, b> with a.stmt# = b.stmt#", "1 1", "2 2", "3 3", "4 4", "5 5", "6 6",
-        "7 7", "8 8", "9 9", "10 10", "11 11", "12 12", "13 13", "14 14", "15 15", "16 16", "17 17", "18 18");
+    TEST_OK(prog_1, "stmt a, b; Select <a, b> with a.stmt# = b.stmt#", "1 1", "2 2", "3 3", "4 4", "5 5", "6 6", "7 7",
+        "8 8", "9 9", "10 10", "11 11", "12 12", "13 13", "14 14", "15 15", "16 16", "17 17", "18 18");
 
     TEST_OK(prog_1, "call a; stmt b; Select <a, b> with a.stmt# = b.stmt#", "3 3", "8 8");
 }
@@ -111,9 +131,21 @@ TEST_CASE("with stmt#/number")
 
 TEST_CASE("with procName")
 {
-    TEST_OK(prog_1, "procedure p; Select p with a.procName = \"Third\"", "Third");
-    TEST_OK(prog_1, "procedure p; Select p with \"Third\" = a.procName", "Third");
+    TEST_OK(prog_1, "procedure p; Select p with p.procName = \"Third\"", "Third");
+    TEST_OK(prog_1, "procedure p; Select p with \"Third\" = p.procName", "Third");
 
     TEST_OK(prog_1, "call c; procedure p; Select <c, p> with c.procName = p.procName", "3 Second", "8 Third");
     TEST_OK(prog_1, "call c; procedure p; Select <c, p> with p.procName = c.procName", "3 Second", "8 Third");
+}
+
+TEST_CASE("with varName")
+{
+    TEST_OK(prog_2, "variable v; Select v with v.varName = \"a\"", "a");
+    TEST_OK(prog_2, "variable v; Select v with \"a\" = v.varName", "a");
+
+    TEST_OK(prog_2, "read c; variable v; Select <c, v> with c.varName = v.varName", "2 b", "4 c", "7 a");
+    TEST_OK(prog_2, "read c; variable v; Select <c, v> with v.varName = c.varName", "2 b", "4 c", "7 a");
+
+    TEST_OK(prog_2, "print c; variable v; Select <c, v> with c.varName = v.varName", "1 c", "3 a", "6 b");
+    TEST_OK(prog_2, "print c; variable v; Select <c, v> with v.varName = c.varName", "1 c", "3 a", "6 b");
 }

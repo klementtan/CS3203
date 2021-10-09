@@ -55,6 +55,12 @@ namespace pkb
         throw util::PkbException("pkb", "no variable named '{}'", name);
     }
 
+    Variable& ProgramKB::getVariableNamed(const std::string& name)
+    {
+        return const_cast<Variable&>(const_cast<const ProgramKB*>(this)->getVariableNamed(name));
+    }
+
+
     void ProgramKB::addConstant(std::string value)
     {
         m_constants.insert(std::move(value));
