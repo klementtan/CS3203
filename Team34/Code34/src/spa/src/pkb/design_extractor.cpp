@@ -394,8 +394,6 @@ namespace pkb
             this->processStmtList(body, ts);
         }
 
-
-
         return std::move(this->m_pkb);
     }
 

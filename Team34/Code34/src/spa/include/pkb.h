@@ -208,7 +208,7 @@ namespace pkb
         const std::unordered_set<std::string>& getAllConstants() const;
         const std::unordered_map<std::string, Variable>& getAllVariables() const;
         const std::unordered_map<std::string, Procedure>& getAllProcedures() const;
-        pkb::CFG* getCFG();
+        const pkb::CFG* getCFG() const;
 
         void addConstant(std::string value);
         Procedure& addProcedure(const std::string& name, const simple::ast::Procedure* proc);

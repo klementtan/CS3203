@@ -5,7 +5,7 @@ file(GLOB_RECURSE headers "${CMAKE_CURRENT_SOURCE_DIR}/src/*.h" "${CMAKE_CURRENT
 file(GLOB_RECURSE includes "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
 file(GLOB_RECURSE externals "${CMAKE_CURRENT_SOURCE_DIR}/external/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/external/*.hpp")
 
-add_library(spa ${srcs} ${headers} ${includes} ${externals} "src/pkb/cfg.cpp")
+add_library(spa ${srcs} ${headers} ${includes} ${externals})
 
 if (WIN32)
 	set(WARNING_FLAGS "/permissive- /W3 /w14265 /w14263 /w14548")
