@@ -517,7 +517,6 @@ namespace pql::eval::solver
                     // TODO: experiment if we really need to constantly filter all joins
 
                     const ast::Declaration* other_decl = join.getDeclA() == decl ? join.getDeclB() : join.getDeclA();
-                    assert(other_decl != decl);
                     if(new_table.getHeaders().count(other_decl) == 0)
                     {
                         IntTable& other_prev_table = m_int_tables[get_table_index(other_decl)];
