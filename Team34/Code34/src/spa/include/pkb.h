@@ -170,8 +170,8 @@ namespace pkb
         void computeDistMat();
         bool isStatementNext(StatementNum stmt1, StatementNum stmt2);
         bool isStatementTransitivelyNext(StatementNum stmt1, StatementNum stmt2);
-        StatementNum getNextStatement();
-        const StatementSet& getTransitivielyNextStatements();
+        const StatementSet& getNextStatements(StatementNum stmt);
+        const StatementSet& getTransitivelyNextStatements(StatementNum stmt);
     private:
         int total_inst;
         // adjacency matrix for lengths of shortest paths between 2 instructions. i(row) is the source and j(col) is the destination.

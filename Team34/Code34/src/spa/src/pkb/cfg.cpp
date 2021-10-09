@@ -25,6 +25,33 @@ namespace pkb
         }
     }
 
+    bool CFG::isStatementNext(StatementNum stmt1, StatementNum stmt2)
+    {
+        return adj_mat[stmt1][stmt2] == 1;
+    };
+    bool CFG::isStatementTransitivelyNext(StatementNum stmt1, StatementNum stmt2) {
+        return adj_mat[stmt1][stmt2] >= 1;
+    };
+    const StatementSet& CFG::getNextStatements(StatementNum stmt)
+    {
+        StatementSet ret = {};
+        for(int j = 0; j < total_inst; j++)
+        {
+            if (adj_mat[stmt][j] == 1) ret.insert(j);
+        }
+        return ret;
+    };
+    const StatementSet& CFG::getTransitivelyNextStatements(StatementNum stmt)
+    {
+        StatementSet ret = {};
+        for(int j = 0; j < total_inst; j++)
+        {
+            if(adj_mat[stmt][j] >= 1)
+                ret.insert(j);
+        }
+        return ret;
+    };
+
     void CFG::addEdge(StatementNum stmt1, StatementNum stmt2)
     {
         assert(stmt1 <= total_inst && stmt1 > 0);
@@ -56,13 +83,11 @@ namespace pkb
     void CFG::computeDistMat()
     {
         // Adapted from https://www.geeksforgeeks.org/floyd-warshall-algorithm-dp-16/
-        int k, i, j;
-
-        for(k = 0; k < total_inst; k++)
+        for(int k = 0; k < total_inst; k++)
         {
-            for(i = 0; i < total_inst; i++)
+            for(int i = 0; i < total_inst; i++)
             {
-                for(j = 0; j < total_inst; j++)
+                for(int j = 0; j < total_inst; j++)
                 {
                     if(adj_mat[i][j] > (adj_mat[i][k] + adj_mat[k][j]) &&
                         (adj_mat[k][j] != INF && adj_mat[i][k] != INF))
