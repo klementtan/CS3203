@@ -162,6 +162,17 @@ namespace pkb
         std::unordered_set<std::string> m_modified_by_procs {};
     };
 
+    struct CFG
+    {
+        CFG(int v);
+        void addEdge(int inst_no1, int inst_no2);
+        void showMat();
+        void computeDistMat();
+        int total_inst;
+        // adjacency matrix for lengths of shortest paths between 2 instructions. i(row) is the source and j(col) is the destination.
+        int** adj_mat;
+    };
+
     struct ProgramKB
     {
         ProgramKB(std::unique_ptr<simple::ast::Program> program);
@@ -185,6 +196,7 @@ namespace pkb
         const std::unordered_set<std::string>& getAllConstants() const;
         const std::unordered_map<std::string, Variable>& getAllVariables() const;
         const std::unordered_map<std::string, Procedure>& getAllProcedures() const;
+        pkb::CFG* getCFG();
 
         void addConstant(std::string value);
         Procedure& addProcedure(const std::string& name, const simple::ast::Procedure* proc);
@@ -196,6 +208,7 @@ namespace pkb
         std::unordered_map<std::string, Variable> m_variables {};
         std::unordered_set<std::string> m_constants {};
         std::vector<Statement> m_statements {};
+        std::unique_ptr<pkb::CFG> cfg {};
 
         bool m_follows_exists = false;
         bool m_parent_exists = false;

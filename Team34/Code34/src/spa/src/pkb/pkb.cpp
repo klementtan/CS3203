@@ -94,7 +94,11 @@ namespace pkb
     {
         return this->m_calls_exists;
     }
-
+    
+    pkb::CFG* ProgramKB::getCFG()
+    {
+        return this->cfg.get();
+    }
 
     ProgramKB::ProgramKB(std::unique_ptr<simple::ast::Program> program)
     {
