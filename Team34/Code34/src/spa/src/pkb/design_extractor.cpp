@@ -16,6 +16,7 @@
 namespace pkb
 {
     namespace s_ast = simple::ast;
+    using StatementNum = simple::ast::StatementNum;
 
 #define CONST_DCAST(AstType, value) dynamic_cast<const s_ast::AstType*>(value)
 
@@ -306,7 +307,7 @@ namespace pkb
         }
     }
 
-    void DesignExtractor::processStmtList2(const s_ast::StmtList* list, int last_checkpt)
+    void DesignExtractor::processCFG(const s_ast::StmtList* list, StatementNum last_checkpt)
     {
         auto cfg = this->m_pkb->cfg.get();
 
@@ -328,17 +329,17 @@ namespace pkb
 
             if(auto if_stmt = CONST_DCAST(IfStmt, ast_stmt); if_stmt)
             {
-                this->processStmtList2(&if_stmt->true_case, nextStmtId == 0 ? last_checkpt : nextStmtId);
-                this->processStmtList2(&if_stmt->false_case, nextStmtId == 0 ? last_checkpt : nextStmtId);
+                this->processCFG(&if_stmt->true_case, nextStmtId == 0 ? last_checkpt : nextStmtId); // If 'if' is at the end of stmtlist, loop back
+                this->processCFG(&if_stmt->false_case, nextStmtId == 0 ? last_checkpt : nextStmtId);
             }
             else 
             {
                 if(nextStmtId != 0)
-                    cfg->addEdge(sid, nextStmtId);
+                    cfg->addEdge(sid, nextStmtId); // not the end of stmtlist so we don't need to loop back yet
                 else if(last_checkpt != 0)
                     cfg->addEdge(sid, last_checkpt); // only non-if stmts can loop back
                 if(auto while_loop = CONST_DCAST(WhileLoop, ast_stmt); while_loop)
-                    this->processStmtList2(&while_loop->body, sid);
+                    this->processCFG(&while_loop->body, sid);
             }
         }
     }
@@ -372,8 +373,13 @@ namespace pkb
         for(auto& [name, proc] : m_pkb->m_procedures)
         {
             auto body = &proc.getAstProc()->body;
-            this->processStmtList2(body, 0);
+            this->processCFG(body, 0);
         }
+
+        // get all shortest paths
+        auto cfg = this->m_pkb->cfg.get();
+        cfg->computeDistMat();
+
         return std::move(this->m_pkb);
     }
 

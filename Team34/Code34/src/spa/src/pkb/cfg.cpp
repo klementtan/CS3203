@@ -9,6 +9,8 @@
 
 namespace pkb
 {
+    using StatementNum = simple::ast::StatementNum;
+
     CFG::CFG(int v)
     {
         total_inst = v;
@@ -23,14 +25,14 @@ namespace pkb
         }
     }
 
-    void CFG::addEdge(int stmt_no1, int stmt_no2)
+    void CFG::addEdge(StatementNum stmt1, StatementNum stmt2)
     {
-        assert(stmt_no1 <= total_inst && stmt_no1 > 0);
-        assert(stmt_no2 <= total_inst && stmt_no2 > 0);
-        adj_mat[stmt_no1 - 1][stmt_no2 - 1] = 1;
+        assert(stmt1 <= total_inst && stmt1 > 0);
+        assert(stmt2 <= total_inst && stmt2 > 0);
+        adj_mat[stmt1 - 1][stmt2 - 1] = 1;
     }
 
-    void CFG::showMat()
+    std::string CFG::getMatRep()
     {
         zpr::print("printing matrix with side {}\n", total_inst);
         zpr::print("      ");

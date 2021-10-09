@@ -165,9 +165,14 @@ namespace pkb
     struct CFG
     {
         CFG(int v);
-        void addEdge(int inst_no1, int inst_no2);
-        void showMat();
+        void addEdge(StatementNum stmt1, StatementNum stmt2);
+        std::string getMatRep();
         void computeDistMat();
+        bool isStatementNext(StatementNum stmt1, StatementNum stmt2);
+        bool isStatementTransitivelyNext(StatementNum stmt1, StatementNum stmt2);
+        StatementNum getNextStatement();
+        const StatementSet& getTransitivielyNextStatements();
+    private:
         int total_inst;
         // adjacency matrix for lengths of shortest paths between 2 instructions. i(row) is the source and j(col) is the destination.
         int** adj_mat;
