@@ -406,8 +406,7 @@ namespace pql::ast
         static WithCondRef ofAttrRef(AttrRef a);
         static WithCondRef ofDeclaration(Declaration* d);
 
-        std::string str() const;
-        std::string number() const;
+        std::string stringOrNumber() const;
         AttrRef attrRef() const;
         Declaration* declaration() const;
 

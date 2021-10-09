@@ -225,18 +225,10 @@ namespace pql::ast
         return _tuple;
     }
 
-    std::string WithCondRef::str() const
+    std::string WithCondRef::stringOrNumber() const
     {
-        if(m_type != Type::String)
-            throw util::PqlException("pql", "WithCondRef is not a string");
-
-        return this->_string_or_number;
-    }
-
-    std::string WithCondRef::number() const
-    {
-        if(m_type != Type::Number)
-            throw util::PqlException("pql", "WithCondRef is not an integer");
+        if(m_type != Type::String && m_type != Type::Number)
+            throw util::PqlException("pql", "WithCondRef is not a string or number");
 
         return this->_string_or_number;
     }
