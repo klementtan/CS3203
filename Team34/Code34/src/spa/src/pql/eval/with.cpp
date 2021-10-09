@@ -57,31 +57,6 @@ namespace pql::ast
     using Entry = table::Entry;
     using Domain = table::Domain;
 
-    static Entry replace_entry_decl(const Entry& ent, Declaration* new_decl)
-    {
-        auto ent_de = ent.getDeclaration()->design_ent;
-        auto new_de = new_decl->design_ent;
-
-        if(new_de == DESIGN_ENT::CONSTANT)
-        {
-            if(ent_de != DESIGN_ENT::CONSTANT)
-                return Entry(new_decl, std::to_string(ent.getStmtNum()));
-            else
-                return Entry(new_decl, ent.getVal());
-        }
-        else
-        {
-            if(ent_de == DESIGN_ENT::PROCEDURE || ent_de == DESIGN_ENT::VARIABLE)
-                return Entry(new_decl, ent.getVal());
-            else if(ent_de == DESIGN_ENT::CONSTANT)
-                return Entry(new_decl, std::stoll(ent.getVal()));
-            else
-                return Entry(new_decl, ent.getStmtNum());
-        }
-    }
-
-
-
     void WithCond::evaluate(const pkb::ProgramKB* pkb, Table* tbl) const
     {
         if(get_type(this->lhs) != get_type(this->rhs))
@@ -148,7 +123,7 @@ namespace pql::ast
                 }
 
                 for(auto& entry : l_domain)
-                    join_pairs.emplace(entry, replace_entry_decl(entry, r_decl));
+                    join_pairs.emplace(entry, Entry(r_decl, entry.getStmtNum()));
 
                 tbl->addJoin(Join(l_decl, r_decl, std::move(join_pairs)));
             }
@@ -239,14 +214,47 @@ namespace pql::ast
 
                 std::unordered_set<std::pair<Entry, Entry>> join_pairs {};
 
+                // always iterate the smaller domain
+                if(r_domain.size() < l_domain.size())
+                {
+                    std::swap(l_domain, r_domain);
+                    std::swap(l_attr, r_attr);
+                    std::swap(l_decl, r_decl);
+                    std::swap(l_ref, r_ref);
+                }
+
                 // same as the above with rhs=attrref, but this time we don't have the guarantee that
                 // the left side is always a prog_line. this explodes the checking space.
                 // instead of doing an O(n^2) check, special case all possible things.
                 if((l_attr == AttrName::kValue || l_attr == AttrName::kStmtNum) &&
                     (r_attr == AttrName::kValue || r_attr == AttrName::kStmtNum))
                 {
-                    for(auto& lent : l_domain)
-                        join_pairs.emplace(lent, replace_entry_decl(lent, r_decl));
+                    if(l_attr == r_attr)
+                    {
+                        if(l_attr == AttrName::kValue)
+                        {
+                            for(const auto& lent : l_domain)
+                                join_pairs.emplace(lent, Entry(r_decl, lent.getVal()));
+                        }
+                        else
+                        {
+                            for(const auto& lent : l_domain)
+                                join_pairs.emplace(lent, Entry(r_decl, lent.getStmtNum()));
+                        }
+                    }
+                    else
+                    {
+                        if(l_attr == AttrName::kValue && r_attr == AttrName::kStmtNum)
+                        {
+                            for(const auto& lent : l_domain)
+                                join_pairs.emplace(lent, Entry(r_decl, std::stoll(lent.getVal())));
+                        }
+                        else
+                        {
+                            for(const auto& lent : l_domain)
+                                join_pairs.emplace(lent, Entry(r_decl, std::to_string(lent.getStmtNum())));
+                        }
+                    }
                 }
                 else
                 {
