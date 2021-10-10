@@ -112,11 +112,6 @@ namespace pkb
         const StatementSet& getParent() const;
         const StatementSet& getAncestors() const;
 
-        bool isStatementNext(StatementNum id) const;
-        bool isStatementTransitivelyNext(StatementNum id) const;
-        const StatementSet& getNextStatements(StatementNum id) const;
-        const StatementSet& getTransitivelyNextStatements(StatementNum id) const;
-
         const std::unordered_set<std::string>& getVariablesUsedInCondition() const;
 
     private:
@@ -175,8 +170,8 @@ namespace pkb
         std::string getMatRep() const;
         bool isStatementNext(StatementNum stmt1, StatementNum stmt2) const;
         bool isStatementTransitivelyNext(StatementNum stmt1, StatementNum stmt2) const;
-        const StatementSet& getNextStatements(StatementNum id) const;
-        const StatementSet& getTransitivelyNextStatements(StatementNum id) const;
+        StatementSet getNextStatements(StatementNum id) const;
+        StatementSet getTransitivelyNextStatements(StatementNum id) const;
 
     private:
         size_t total_inst;

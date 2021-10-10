@@ -85,7 +85,7 @@ namespace pkb
             throw util::PkbException("pkb", "Statement number out of range");
         return adj_mat[stmt1 - 1][stmt2 - 1] < INF; // impossible to be 0 since no recursive call
     }
-    const StatementSet& CFG::getNextStatements(StatementNum id) const
+    StatementSet CFG::getNextStatements(StatementNum id) const
     {
         if(id > total_inst || id <= 0)
             throw util::PkbException("pkb", "Statement number out of range");
@@ -97,7 +97,7 @@ namespace pkb
         }
         return ret;
     }
-    const StatementSet& CFG::getTransitivelyNextStatements(StatementNum id) const
+    StatementSet CFG::getTransitivelyNextStatements(StatementNum id) const
     {
         if(id > total_inst || id <= 0)
             throw util::PkbException("pkb", "Statement number out of range");
