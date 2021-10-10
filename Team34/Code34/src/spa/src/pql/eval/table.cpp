@@ -109,26 +109,6 @@ namespace pql::eval::table
         return !(*this == other);
     }
 
-
-    std::unordered_set<Entry> entry_set_intersect(
-        const std::unordered_set<Entry>& a, const std::unordered_set<Entry>& b)
-    {
-        std::unordered_set<Entry> intersect;
-        for(const Entry& entry_a : a)
-        {
-            if(b.count(entry_a))
-            {
-                util::logfmt("pql::eval::table", "{} added to intersect", entry_a.toString());
-                intersect.insert(entry_a);
-            }
-            else
-            {
-                util::logfmt("pql::eval::table", "{} does not exists in intersect", entry_a.toString());
-            }
-        }
-        return intersect;
-    }
-
     Join::Join(pql::ast::Declaration* decl_a, pql::ast::Declaration* decl_b,
         std::unordered_set<std::pair<Entry, Entry>> allowed_entries)
     {

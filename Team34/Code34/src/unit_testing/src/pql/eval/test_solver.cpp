@@ -131,7 +131,7 @@ TEST_CASE("IntTable")
     {
         std::vector<std::unique_ptr<pql::ast::Declaration>> decls = generate_decl(5, 0);
         std::vector<pql::ast::Declaration*> decl_observers(decls.size());
-        for(int i = 0; i < decls.size(); i++)
+        for(size_t i = 0; i < decls.size(); i++)
             decl_observers[i] = decls[i].get();
         std::vector<pql::eval::solver::IntRow> rows = generate_rows(5, decl_observers);
         pql::eval::solver::IntTable tbl(
@@ -147,7 +147,7 @@ TEST_CASE("IntTable")
         pql::eval::solver::IntTable tbl0;
         std::vector<std::unique_ptr<pql::ast::Declaration>> decls1 = generate_decl(5, 0);
         std::vector<pql::ast::Declaration*> decl_observers1(decls1.size());
-        for(int i = 0; i < decls1.size(); i++)
+        for(size_t i = 0; i < decls1.size(); i++)
             decl_observers1[i] = decls1[i].get();
         std::vector<pql::eval::solver::IntRow> rows1 = generate_rows(2, decl_observers1);
         pql::eval::solver::IntTable tbl1(
@@ -157,7 +157,7 @@ TEST_CASE("IntTable")
 
         std::vector<std::unique_ptr<pql::ast::Declaration>> decls2 = generate_decl(5, 5);
         std::vector<pql::ast::Declaration*> decl_observers2(decls2.size());
-        for(int i = 0; i < decls2.size(); i++)
+        for(size_t i = 0; i < decls2.size(); i++)
             decl_observers2[i] = decls2[i].get();
         std::vector<pql::eval::solver::IntRow> rows2 = generate_rows(2, decl_observers2);
         pql::eval::solver::IntTable tbl2(
@@ -187,7 +187,7 @@ TEST_CASE("IntTable")
     {
         std::vector<std::unique_ptr<pql::ast::Declaration>> decls1 = generate_decl(5, 0);
         std::vector<pql::ast::Declaration*> decl_observers1(decls1.size());
-        for(int i = 0; i < decls1.size(); i++)
+        for(size_t i = 0; i < decls1.size(); i++)
             decl_observers1[i] = decls1[i].get();
         std::vector<pql::eval::solver::IntRow> rows1 = generate_rows(10, decl_observers1);
         pql::eval::solver::IntTable tbl1(
