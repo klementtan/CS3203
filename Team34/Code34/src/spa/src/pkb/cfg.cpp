@@ -1,11 +1,12 @@
 // cfg.cpp
 
 #include "pkb.h"
+#include "exceptions.h"
 
 #include <zpr.h>
 #include <assert.h>
 
-#define INF INT_MAX
+#define INF SIZE_MAX
 
 namespace pkb
 {
@@ -32,7 +33,7 @@ namespace pkb
         adj_mat[stmt1 - 1][stmt2 - 1] = 1;
     }
 
-    std::string CFG::getMatRep()
+    std::string CFG::getMatRep() const
     {
         auto res = zpr::sprint("      ");
         for(size_t i = 0; i < total_inst; i++)
@@ -46,10 +47,11 @@ namespace pkb
             res += zpr::sprint("{03} | ", i+1);
             for(size_t j = 0; j < total_inst; j++)
             {
-                res += zpr::sprint("{03} ", adj_mat[i][j] == INF ? -1 : adj_mat[i][j]);
+                res += zpr::sprint("{03} ", adj_mat[i][j] == INF ? 0 : adj_mat[i][j]);
             }
             res += zpr::sprint("\n");
         }
+
         return res;
     }
 
@@ -69,4 +71,43 @@ namespace pkb
             }
         }
     }
+    
+    bool CFG::isStatementNext(StatementNum stmt1, StatementNum stmt2) const
+    {
+        if(stmt1 > total_inst || stmt1 <= 0 || stmt2 > total_inst || stmt2 <= 0)
+            throw util::PkbException("pkb", "Statement number out of range");
+        return adj_mat[stmt1 - 1][stmt2 - 1] == 1;
+    }
+
+    bool CFG::isStatementTransitivelyNext(StatementNum stmt1, StatementNum stmt2) const
+    {
+        if(stmt1 > total_inst || stmt1 <= 0 || stmt2 > total_inst || stmt2 <= 0)
+            throw util::PkbException("pkb", "Statement number out of range");
+        return adj_mat[stmt1 - 1][stmt2 - 1] < INF; // impossible to be 0 since no recursive call
+    }
+    const StatementSet& CFG::getNextStatements(StatementNum id) const
+    {
+        if(id > total_inst || id <= 0)
+            throw util::PkbException("pkb", "Statement number out of range");
+        StatementSet ret {};
+        for(size_t j = 0; j < total_inst; j++)
+        {
+            if(adj_mat[id - 1][j] == 1)
+                ret.insert(j + 1);
+        }
+        return ret;
+    }
+    const StatementSet& CFG::getTransitivelyNextStatements(StatementNum id) const
+    {
+        if(id > total_inst || id <= 0)
+            throw util::PkbException("pkb", "Statement number out of range");
+        StatementSet ret {};
+        for(size_t j = 0; j < total_inst; j++)
+        {
+            if(adj_mat[id - 1][j] < INF)
+                ret.insert(j + 1);
+        }
+        return ret;
+    }
+
 }

@@ -87,7 +87,6 @@ namespace pkb
         return m_modifies;
     }
 
-
     bool Statement::isParentOf(StatementNum id) const
     {
         return m_children.count(id) > 0;
@@ -127,23 +126,6 @@ namespace pkb
     const StatementSet& Statement::getAncestors() const
     {
         return m_ancestors;
-    }
-
-    bool Statement::isStatementNext(StatementNum id) const
-    {
-        return m_directly_nexts.count(id) > 0;
-    }
-    bool Statement::isStatementTransitivelyNext(StatementNum id) const
-    {
-        return m_nexts.count(id) > 0;
-    }
-    const StatementSet& Statement::getNextStatements(StatementNum id) const
-    {
-        return m_directly_nexts;
-    }
-    const StatementSet& Statement::getTransitivelyNextStatements(StatementNum id) const
-    {
-        return m_nexts;
     }
 
     const std::unordered_set<std::string>& Statement::getVariablesUsedInCondition() const

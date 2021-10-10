@@ -143,10 +143,6 @@ namespace pkb
 
         StatementSet m_ancestors {};
         StatementSet m_descendants {};
-
-        // there can be more than 1 next.
-        StatementSet m_directly_nexts {};
-        StatementSet m_nexts {};
     };
 
     struct Variable
@@ -173,15 +169,19 @@ namespace pkb
 
     struct CFG
     {
-        CFG(int v);
+        CFG(size_t v);
         void addEdge(StatementNum stmt1, StatementNum stmt2);
-        std::string getMatRep();
         void computeDistMat();
+        std::string getMatRep() const;
+        bool isStatementNext(StatementNum stmt1, StatementNum stmt2) const;
+        bool isStatementTransitivelyNext(StatementNum stmt1, StatementNum stmt2) const;
+        const StatementSet& getNextStatements(StatementNum id) const;
+        const StatementSet& getTransitivelyNextStatements(StatementNum id) const;
 
     private:
-        int total_inst;
+        size_t total_inst;
         // adjacency matrix for lengths of shortest paths between 2 instructions. i(row) is the source and j(col) is the destination.
-        int** adj_mat;
+        size_t** adj_mat;
         friend struct DesignExtractor;
     };
 
