@@ -74,6 +74,10 @@ namespace pql::parser
         else if(auto kw = "value"; sv.find(kw) == 0)    return do_keyword(sv, kw, TT::KW_Value);
         else if(auto kw = "varName"; sv.find(kw) == 0)  return do_keyword(sv, kw, TT::KW_VarName);
         else if(auto kw = "procName"; sv.find(kw) == 0) return do_keyword(sv, kw, TT::KW_ProcName);
+
+        // because prog_line has an underscore (and normal identifiers can't):
+        else if(auto kw = "prog_line"; sv.find(kw) == 0)return do_keyword(sv, kw, TT::KW_ProgLine);
+
         // clang-format on
 
         return getNextToken(sv);

@@ -15,6 +15,7 @@ namespace pkb
         switch(ent)
         {
             case DESIGN_ENT::STMT:
+            case DESIGN_ENT::PROG_LINE:
                 return true;
             case DESIGN_ENT::READ:
                 return dynamic_cast<const s_ast::ReadStmt*>(stmt);

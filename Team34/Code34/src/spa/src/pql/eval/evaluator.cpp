@@ -3,6 +3,7 @@
 #include <cassert>
 #include <algorithm>
 
+#include "timer.h"
 #include "exceptions.h"
 #include "pql/eval/table.h"
 #include "pql/eval/evaluator.h"
@@ -40,7 +41,9 @@ namespace pql::eval
         for(const auto& pkb_stmt : m_pkb->getAllStatements())
         {
             m_all_ent_stmt_map[getDesignEnt(pkb_stmt.getAstStmt())].push_back(pkb_stmt.getAstStmt());
+
             m_all_ent_stmt_map[ast::DESIGN_ENT::STMT].push_back(pkb_stmt.getAstStmt());
+            m_all_ent_stmt_map[ast::DESIGN_ENT::PROG_LINE].push_back(pkb_stmt.getAstStmt());
         }
     }
 
@@ -119,23 +122,29 @@ namespace pql::eval
     std::unordered_set<table::Entry> Evaluator::getInitialDomain(ast::Declaration* declaration)
     {
         util::logfmt("pql::eval", "Getting initial domain for {}", declaration->toString());
+
         if(declaration->design_ent == ast::DESIGN_ENT::VARIABLE)
             return getInitialDomainVar(declaration);
-        if(declaration->design_ent == ast::DESIGN_ENT::PROCEDURE)
+
+        else if(declaration->design_ent == ast::DESIGN_ENT::PROCEDURE)
             return getInitialDomainProc(declaration);
-        if(declaration->design_ent == ast::DESIGN_ENT::CONSTANT)
+
+        else if(declaration->design_ent == ast::DESIGN_ENT::CONSTANT)
             return getInitialDomainConst(declaration);
-        return getInitialDomainStmt(declaration);
+
+        else
+            return getInitialDomainStmt(declaration);
     }
 
     void Evaluator::processDeclarations(const ast::DeclarationList& declaration_list)
     {
         for(const auto& [_, decl_ptr] : declaration_list.getAllDeclarations())
-            m_table.upsertDomains(decl_ptr, getInitialDomain(decl_ptr));
+            m_table.putDomain(decl_ptr, getInitialDomain(decl_ptr));
     }
 
     std::list<std::string> Evaluator::evaluate()
     {
+        START_BENCHMARK_TIMER("PQL Evaluation Timer");
         util::logfmt("pql::eval", "Evaluating query: {}", m_query->toString());
         if(m_query->isInvalid())
         {
@@ -146,18 +155,6 @@ namespace pql::eval
 
         processDeclarations(m_query->declarations);
         util::logfmt("pql::eval", "Table after initial processing of declaration: {}", m_table.toString());
-
-        // All queries should have select clause
-        if(m_query->select.result.isTuple())
-        {
-            for(const ast::Elem& elem : m_query->select.result.tuple())
-            {
-                if(elem.isAttrRef())
-                    m_table.addSelectDecl(elem.attrRef().decl);
-                else if(elem.isDeclaration())
-                    m_table.addSelectDecl(elem.declaration());
-            }
-        }
 
         for(const auto& rel : m_query->select.relations)
             handleRelation(rel.get());

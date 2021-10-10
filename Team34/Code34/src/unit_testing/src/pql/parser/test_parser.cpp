@@ -298,6 +298,7 @@ TEST_CASE("invalid queries")
 }
 
 #define TEST_VALID(query) CHECK(pql::parser::parsePQL(query)->isValid())
+#define TEST_INVALID(query) CHECK(pql::parser::parsePQL(query)->isInvalid())
 
 TEST_CASE("valid multi-queries")
 {
@@ -313,5 +314,10 @@ TEST_CASE("valid multi-queries")
     TEST_VALID("call c1; call c2; Select <c1,c2> with c1.stmt# = c2.stmt# and c1.procName = c2.procName");
     TEST_VALID("call c1; call c2; Select <c1,c2> with c1.stmt# = c2.stmt# with c1.procName = c2.procName");
     TEST_VALID("call c1; call c2; Select <c1,c2> with c1.stmt# = 69 and c1.procName = \"kekw\"");
-    TEST_VALID("call c1; call c2; Select <c1,c2> with c1.stmt# = 69 and c1 = c2");
+
+    // only prog_lines can be used without attr_ref
+    TEST_VALID("prog_line p1, p2; Select <p1,p2> with p1 = 69 and p1 = p2");
+
+    TEST_INVALID("prog_line p1, p2; Select <p1,p2> with p1.stmt# = 69 and p1 = p2");
+    TEST_INVALID("call c1; call c2; Select <c1,c2> with c1.stmt# = 69 and c1 = c2");
 }

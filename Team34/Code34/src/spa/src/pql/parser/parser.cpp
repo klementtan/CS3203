@@ -108,11 +108,6 @@ namespace pql::parser
     };
 
 
-    // Design entities
-    const std::unordered_set<std::string> KW_DesignEntities { "stmt", "assign", "variable", "constant", "procedure",
-        "read", "print", "if", "call", "while" };
-
-
     // Process the next token as a variable and insert it into declaration_list
     static void parse_one_declaration(ParserState* ps, ast::DESIGN_ENT ent)
     {
@@ -123,9 +118,12 @@ namespace pql::parser
     // Process the next tokens as the start of an entity declaration and insert declarations into declaration_list
     static void parse_declarations(ParserState* ps)
     {
-        auto tok = ps->expect(TT::Identifier);
+        std::string ent_string {};
+        if(auto tok = ps->peek_keyword(); tok == TT::KW_ProgLine)
+            ent_string = ps->next_keyword().text.str();
+        else
+            ent_string = ps->expect(TT::Identifier).text.str();
 
-        std::string ent_string = tok.text.str();
         util::logfmt("pql::parser", "Parsing declaration with design_ent:{}", ent_string);
 
         if(ast::DESIGN_ENT_MAP.count(ent_string) == 0)
@@ -577,9 +575,20 @@ namespace pql::parser
             // reuse 'Elem' parsing.
             auto tmp_elem = parse_elem(ps);
             if(tmp_elem.isDeclaration())
-                return ast::WithCondRef::ofDeclaration(tmp_elem.declaration());
+            {
+                if(tmp_elem.declaration()->design_ent != ast::DESIGN_ENT::PROG_LINE)
+                    ps->setInvalid("only 'prog_line' synonyms can be used in a 'with' without an attr_ref");
+
+                // desugar prog_line references here to just be .stmt#, so we don't have
+                // to deal with two different things (stmt.stmt# and prog_line) that serve
+                // the same purpose. after all, prog_line and stmt are interchangeable.
+
+                return ast::WithCondRef::ofAttrRef(ast::AttrRef { tmp_elem.declaration(), ast::AttrName::kStmtNum });
+            }
             else
+            {
                 return ast::WithCondRef::ofAttrRef(tmp_elem.attrRef());
+            }
         }
     }
 
