@@ -16,6 +16,7 @@
 namespace pkb
 {
     namespace s_ast = simple::ast;
+    using StatementNum = simple::ast::StatementNum;
 
 #define CONST_DCAST(AstType, value) dynamic_cast<const s_ast::AstType*>(value)
 
@@ -168,8 +169,6 @@ namespace pkb
             }
         }
 
-
-
         // now process uses, modifies, parent, and parent* in one go
         for(const auto& it : list->statements)
         {
@@ -310,6 +309,58 @@ namespace pkb
         }
     }
 
+    void DesignExtractor::processCFG(const s_ast::StmtList* list, StatementNum last_checkpt)
+    {
+        auto cfg = this->m_pkb->cfg.get();
+
+        // there must be a 'flow' from parent to first stmt of its body
+        if(list->parent_statement != nullptr)
+        {
+            if(StatementNum parent_id = list->parent_statement->id; parent_id != 0)
+            {
+                cfg->addEdge(parent_id, list->statements[0].get()->id);
+            }
+        }
+
+        for(const auto& it : list->statements)
+        {
+            const auto ast_stmt = it.get();
+            auto stmt = &m_pkb->getStatementAt(ast_stmt->id);
+            auto sid = ast_stmt->id;
+            StatementNum nextStmtId = stmt->getStmtDirectlyAfter();
+
+            if(auto if_stmt = CONST_DCAST(IfStmt, ast_stmt); if_stmt)
+            {
+                this->processCFG(&if_stmt->true_case,
+                    nextStmtId == 0 ? last_checkpt : nextStmtId); // If 'if' is at the end of stmtlist, loop back
+                this->processCFG(&if_stmt->false_case, nextStmtId == 0 ? last_checkpt : nextStmtId);
+            }
+            else
+            {
+                if(nextStmtId != 0)
+                    cfg->addEdge(sid, nextStmtId); // not the end of stmtlist so we don't need to loop back yet
+                else if(last_checkpt != 0)
+                    cfg->addEdge(sid, last_checkpt); // only non-if stmts can loop back
+                if(auto while_loop = CONST_DCAST(WhileLoop, ast_stmt); while_loop)
+                    this->processCFG(&while_loop->body, sid);
+            }
+        }
+    }
+
+    void DesignExtractor::processNextRelations()
+    {
+        // get adj of of direct nexts first
+        m_pkb->cfg = std::make_unique<CFG>(m_pkb->m_statements.size());
+        for(auto& [name, proc] : m_pkb->m_procedures)
+        {
+            auto body = &proc.getAstProc()->body;
+            this->processCFG(body, 0);
+        }
+        // get all shortest paths
+        auto cfg = this->m_pkb->cfg.get();
+        cfg->computeDistMat();
+    }
+
     std::unique_ptr<ProgramKB> DesignExtractor::run()
     {
         // assign the statement numbers. this has to use the vector of procedures in
@@ -333,6 +384,8 @@ namespace pkb
 
             this->processStmtList(body, ts);
         }
+
+        processNextRelations();
 
         return std::move(this->m_pkb);
     }

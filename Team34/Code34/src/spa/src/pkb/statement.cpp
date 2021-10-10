@@ -87,7 +87,6 @@ namespace pkb
         return m_modifies;
     }
 
-
     bool Statement::isParentOf(StatementNum id) const
     {
         return m_children.count(id) > 0;

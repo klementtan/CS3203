@@ -172,6 +172,24 @@ namespace pkb
         StatementSet m_print_stmts {};
     };
 
+    struct CFG
+    {
+        CFG(size_t v);
+        void addEdge(StatementNum stmt1, StatementNum stmt2);
+        void computeDistMat();
+        std::string getMatRep() const;
+        bool isStatementNext(StatementNum stmt1, StatementNum stmt2) const;
+        bool isStatementTransitivelyNext(StatementNum stmt1, StatementNum stmt2) const;
+        StatementSet getNextStatements(StatementNum id) const;
+        StatementSet getTransitivelyNextStatements(StatementNum id) const;
+
+    private:
+        size_t total_inst;
+        // adjacency matrix for lengths of shortest paths between 2 inst. i(row) is source and j(col) is destination.
+        size_t** adj_mat;
+        friend struct DesignExtractor;
+    };
+
     struct ProgramKB
     {
         ProgramKB(std::unique_ptr<simple::ast::Program> program);
@@ -196,6 +214,7 @@ namespace pkb
         const std::unordered_set<std::string>& getAllConstants() const;
         const std::unordered_map<std::string, Variable>& getAllVariables() const;
         const std::unordered_map<std::string, Procedure>& getAllProcedures() const;
+        const pkb::CFG* getCFG() const;
 
         void addConstant(std::string value);
         Procedure& addProcedure(const std::string& name, const simple::ast::Procedure* proc);
@@ -207,6 +226,7 @@ namespace pkb
         std::unordered_map<std::string, Variable> m_variables {};
         std::unordered_set<std::string> m_constants {};
         std::vector<Statement> m_statements {};
+        std::unique_ptr<pkb::CFG> cfg {};
 
         bool m_follows_exists = false;
         bool m_parent_exists = false;

@@ -35,6 +35,9 @@ namespace pkb
         void processUses(const std::string& var, Statement* stmt, const TraversalState& ts);
         void processModifies(const std::string& var, Statement* stmt, const TraversalState& ts);
 
+        void processNextRelations();
+        void processCFG(const simple::ast::StmtList* list, StatementNum last_checkpt);
+
     private:
         const simple::ast::Program* m_program {};
         std::unique_ptr<ProgramKB> m_pkb {};
