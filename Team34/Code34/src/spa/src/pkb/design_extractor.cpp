@@ -312,7 +312,7 @@ namespace pkb
         // there must be a 'flow' from parent to first stmt of its body
         if(list->parent_statement != nullptr)
         {
-            if(int parent_id = list->parent_statement->id; parent_id != 0)
+            if(StatementNum parent_id = list->parent_statement->id; parent_id != 0)
             {
                 cfg->addEdge(parent_id, list->statements[0].get()->id);
             }
@@ -323,7 +323,7 @@ namespace pkb
             const auto ast_stmt = it.get();
             auto stmt = &m_pkb->getStatementAt(ast_stmt->id);
             auto sid = ast_stmt->id;
-            int nextStmtId = stmt->getStmtDirectlyAfter();
+            StatementNum nextStmtId = stmt->getStmtDirectlyAfter();
 
             if(auto if_stmt = CONST_DCAST(IfStmt, ast_stmt); if_stmt)
             {
@@ -342,9 +342,10 @@ namespace pkb
         }
     }
 
-    void DesignExtractor::processNextRelations() {
+    void DesignExtractor::processNextRelations()
+    {
         // get cfg first
-        m_pkb->cfg = std::make_unique<CFG>(std::move(CFG(m_pkb->m_statements.size())));
+        m_pkb->cfg = std::make_unique<CFG>(m_pkb->m_statements.size());
         for(auto& [name, proc] : m_pkb->m_procedures)
         {
             auto body = &proc.getAstProc()->body;
