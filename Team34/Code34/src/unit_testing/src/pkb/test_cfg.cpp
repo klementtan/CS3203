@@ -351,4 +351,3 @@ TEST_CASE("Next*(a,b)")
             cfg1->getTransitivelyNextStatements(0), Catch::Matchers::Contains("Statement number out of range"));
     }
 }
-

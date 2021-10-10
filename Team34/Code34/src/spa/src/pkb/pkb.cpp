@@ -94,7 +94,7 @@ namespace pkb
     {
         return this->m_calls_exists;
     }
-    
+
     const pkb::CFG* ProgramKB::getCFG() const
     {
         return this->cfg.get();

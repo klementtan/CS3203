@@ -327,10 +327,11 @@ namespace pkb
 
             if(auto if_stmt = CONST_DCAST(IfStmt, ast_stmt); if_stmt)
             {
-                this->processCFG(&if_stmt->true_case, nextStmtId == 0 ? last_checkpt : nextStmtId); // If 'if' is at the end of stmtlist, loop back
+                this->processCFG(&if_stmt->true_case,
+                    nextStmtId == 0 ? last_checkpt : nextStmtId); // If 'if' is at the end of stmtlist, loop back
                 this->processCFG(&if_stmt->false_case, nextStmtId == 0 ? last_checkpt : nextStmtId);
             }
-            else 
+            else
             {
                 if(nextStmtId != 0)
                     cfg->addEdge(sid, nextStmtId); // not the end of stmtlist so we don't need to loop back yet
