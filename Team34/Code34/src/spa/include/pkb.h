@@ -180,7 +180,7 @@ namespace pkb
 
     private:
         size_t total_inst;
-        // adjacency matrix for lengths of shortest paths between 2 instructions. i(row) is the source and j(col) is the destination.
+        // adjacency matrix for lengths of shortest paths between 2 inst. i(row) is source and j(col) is destination.
         size_t** adj_mat;
         friend struct DesignExtractor;
     };

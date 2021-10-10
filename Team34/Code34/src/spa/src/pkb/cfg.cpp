@@ -38,13 +38,13 @@ namespace pkb
         auto res = zpr::sprint("      ");
         for(size_t i = 0; i < total_inst; i++)
         {
-            res += zpr::sprint("{03} ", i + 1); 
+            res += zpr::sprint("{03} ", i + 1);
         }
-        res += zpr::sprint("\n"); 
+        res += zpr::sprint("\n");
 
         for(size_t i = 0; i < total_inst; i++)
         {
-            res += zpr::sprint("{03} | ", i+1);
+            res += zpr::sprint("{03} | ", i + 1);
             for(size_t j = 0; j < total_inst; j++)
             {
                 res += zpr::sprint("{03} ", adj_mat[i][j] == INF ? 0 : adj_mat[i][j]);
@@ -71,7 +71,7 @@ namespace pkb
             }
         }
     }
-    
+
     bool CFG::isStatementNext(StatementNum stmt1, StatementNum stmt2) const
     {
         if(stmt1 > total_inst || stmt1 <= 0 || stmt2 > total_inst || stmt2 <= 0)

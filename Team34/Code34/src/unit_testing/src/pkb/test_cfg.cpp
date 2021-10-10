@@ -74,9 +74,9 @@ constexpr const auto sample_source_B = R"(
 )";
 
 static auto kb1 = DesignExtractor(parseProgram(sample_source_A)).run();
-static auto cfg1 = kb1->getCFG();
+static auto cfg1 = kb1 -> getCFG();
 static auto kb2 = DesignExtractor(parseProgram(sample_source_B)).run();
-static auto cfg2 = kb2->getCFG();
+static auto cfg2 = kb2 -> getCFG();
 
 TEST_CASE("CFG")
 {
@@ -169,7 +169,6 @@ TEST_CASE("Next(a,b)")
         CHECK(cfg2->isStatementNext(6, 1));
         CHECK(cfg2->isStatementNext(7, 1));
         CHECK(cfg2->getNextStatements(7).size() == 1);
-
     }
     SECTION("while loop back")
     {

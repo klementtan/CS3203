@@ -37,6 +37,7 @@ namespace pkb
 
         void processNextRelations();
         void processCFG(const simple::ast::StmtList* list, StatementNum last_checkpt);
+
     private:
         const simple::ast::Program* m_program {};
         std::unique_ptr<ProgramKB> m_pkb {};
