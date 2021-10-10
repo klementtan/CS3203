@@ -338,12 +338,18 @@ TEST_CASE("Next*(a,b)")
     }
     SECTION("Fail from indices out of range")
     {
-        CHECK_THROWS_WITH(cfg1->isStatementTransitivelyNext(1, 8000), Catch::Matchers::Contains("Statement number out of range"));
-        CHECK_THROWS_WITH(cfg1->isStatementTransitivelyNext(-1, 5), Catch::Matchers::Contains("Statement number out of range"));
-        CHECK_THROWS_WITH(cfg1->isStatementTransitivelyNext(0, 5), Catch::Matchers::Contains("Statement number out of range"));
-        CHECK_THROWS_WITH(cfg1->getTransitivelyNextStatements(8000), Catch::Matchers::Contains("Statement number out of range"));
-        CHECK_THROWS_WITH(cfg1->getTransitivelyNextStatements(-1), Catch::Matchers::Contains("Statement number out of range"));
-        CHECK_THROWS_WITH(cfg1->getTransitivelyNextStatements(0), Catch::Matchers::Contains("Statement number out of range"));
+        CHECK_THROWS_WITH(
+            cfg1->isStatementTransitivelyNext(1, 8000), Catch::Matchers::Contains("Statement number out of range"));
+        CHECK_THROWS_WITH(
+            cfg1->isStatementTransitivelyNext(-1, 5), Catch::Matchers::Contains("Statement number out of range"));
+        CHECK_THROWS_WITH(
+            cfg1->isStatementTransitivelyNext(0, 5), Catch::Matchers::Contains("Statement number out of range"));
+        CHECK_THROWS_WITH(
+            cfg1->getTransitivelyNextStatements(8000), Catch::Matchers::Contains("Statement number out of range"));
+        CHECK_THROWS_WITH(
+            cfg1->getTransitivelyNextStatements(-1), Catch::Matchers::Contains("Statement number out of range"));
+        CHECK_THROWS_WITH(
+            cfg1->getTransitivelyNextStatements(0), Catch::Matchers::Contains("Statement number out of range"));
     }
 }
 
