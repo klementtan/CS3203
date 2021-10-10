@@ -144,7 +144,7 @@ namespace pql::eval
 
     std::list<std::string> Evaluator::evaluate()
     {
-        START_BENCHMARK_TIMER("my timer");
+        START_BENCHMARK_TIMER("PQL Evaluation Timer");
         util::logfmt("pql::eval", "Evaluating query: {}", m_query->toString());
         if(m_query->isInvalid())
         {

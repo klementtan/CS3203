@@ -19,10 +19,7 @@ namespace bench
         {
             const auto elapsed =
                 std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();
-            std::string where = file + std::string(":") + std::to_string(line);
-            std::string text = "[TIMER: " + title + "];" + "function=" + fn + ";" + "where=" + where + ";" +
-                               "elapsed=" + std::to_string(elapsed) + "ms";
-            zpr::println(std::move(text));
+            zpr::println("[TIMER: {}]: function={}; where={}:{}; elapsed={}ms", title, fn, file, line, elapsed);
         }
     };
 }
