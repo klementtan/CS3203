@@ -88,7 +88,7 @@ namespace pql::eval::solver
         // all allowed entries should be in the domain and all domain should be in the allowed entries
         void trim(const std::unordered_set<const ast::Declaration*>& decls);
         void trim_helper(const ast::Declaration* decls, table::Join& join);
-        int get_table_index(const ast::Declaration* decl) const;
+        size_t get_table_index(const ast::Declaration* decl) const;
         // preprocess by joining tables based on the Joins
         void preprocess_int_table();
         bool has_table(const ast::Declaration* decl) const;

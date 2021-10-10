@@ -221,21 +221,20 @@ namespace pql::ast
         AttrRef _attr_ref {};
     };
 
-    /** Abstract class for Relationship Conditions between Statements and Entities. */
-    struct RelCond
+    // the (abstract) base class for all PQL clauses -- relational, with, and pattern.
+    struct Clause
     {
-        virtual ~RelCond();
+        virtual ~Clause();
         virtual std::string toString() const = 0;
     };
 
-    /** Abstract class for Uses relationship condition. */
-    struct Modifies : RelCond
+    /** Abstract class for Relationship Conditions between Statements and Entities. */
+    struct RelCond : Clause
     {
-        virtual std::string toString() const = 0;
     };
 
     /** Represents `Modifies(EntRef, EntRef)` relationship condition. */
-    struct ModifiesP : Modifies
+    struct ModifiesP : RelCond
     {
         virtual std::string toString() const override;
 
@@ -244,7 +243,7 @@ namespace pql::ast
     };
 
     /** Represents `Modifies(StmtRef, EntRef)` relationship condition. */
-    struct ModifiesS : Modifies
+    struct ModifiesS : RelCond
     {
         virtual std::string toString() const override;
 
@@ -252,14 +251,8 @@ namespace pql::ast
         EntRef ent {};
     };
 
-    /** Abstract class for Uses relationship condition. */
-    struct Uses : RelCond
-    {
-        virtual std::string toString() const = 0;
-    };
-
     /** Represents `Uses(EntRef, EntRef)` relationship condition. */
-    struct UsesP : Uses
+    struct UsesP : RelCond
     {
         virtual std::string toString() const override;
 
@@ -268,7 +261,7 @@ namespace pql::ast
     };
 
     /** Represents `Uses(StmtRef, EntRef)` relationship condition. */
-    struct UsesS : Uses
+    struct UsesS : RelCond
     {
         virtual std::string toString() const override;
 
@@ -341,11 +334,8 @@ namespace pql::ast
     };
 
     /** Condition for a pattern. */
-    struct PatternCond
+    struct PatternCond : Clause
     {
-        virtual ~PatternCond();
-        virtual std::string toString() const = 0;
-
         virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const = 0;
     };
 
@@ -416,8 +406,7 @@ namespace pql::ast
         static WithCondRef ofAttrRef(AttrRef a);
         static WithCondRef ofDeclaration(Declaration* d);
 
-        std::string str() const;
-        std::string number() const;
+        std::string stringOrNumber() const;
         AttrRef attrRef() const;
         Declaration* declaration() const;
 
@@ -430,11 +419,13 @@ namespace pql::ast
         Declaration* _decl {};
     };
 
-    struct WithCond
+    struct WithCond : Clause
     {
         WithCondRef lhs {};
         WithCondRef rhs {};
-        std::string toString() const;
+
+        virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const;
     };
 
     struct ResultCl

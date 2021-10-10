@@ -76,4 +76,13 @@ namespace pkb
         return m_modified_by_procs;
     }
 
+    const StatementSet& Variable::getReadStmts() const
+    {
+        return m_read_stmts;
+    }
+
+    const StatementSet& Variable::getPrintStmts() const
+    {
+        return m_print_stmts;
+    }
 }

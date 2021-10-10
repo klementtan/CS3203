@@ -232,10 +232,12 @@ namespace pkb
             else if(auto read_stmt = CONST_DCAST(ReadStmt, ast_stmt); read_stmt)
             {
                 this->processModifies(read_stmt->var_name, stmt, ts);
+                m_pkb->getVariableNamed(read_stmt->var_name).m_read_stmts.insert(sid);
             }
             else if(auto print_stmt = CONST_DCAST(PrintStmt, ast_stmt); print_stmt)
             {
                 this->processUses(print_stmt->var_name, stmt, ts);
+                m_pkb->getVariableNamed(print_stmt->var_name).m_print_stmts.insert(sid);
             }
             else if(auto call_stmt = CONST_DCAST(ProcCall, ast_stmt); call_stmt)
             {
@@ -245,6 +247,8 @@ namespace pkb
 
                 auto& callee = m_pkb->getProcedureNamed(call_stmt->proc_name);
                 auto* body = &callee.getAstProc()->body;
+
+                callee.m_call_stmts.insert(sid);
 
                 // (b) cyclic calls
                 if(std::find(ts.proc_stack.begin(), ts.proc_stack.end(), &callee) != ts.proc_stack.end())

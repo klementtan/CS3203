@@ -50,6 +50,8 @@ namespace pkb
         const std::unordered_set<std::string>& getAllTransitiveCallers() const;
         const std::unordered_set<std::string>& getAllTransitivelyCalledProcedures() const;
 
+        const StatementSet& getCallStmts() const;
+
         std::string getName() const;
         const simple::ast::Procedure* getAstProc() const;
 
@@ -64,6 +66,8 @@ namespace pkb
 
         std::unordered_set<std::string> m_calls_transitive {};
         std::unordered_set<std::string> m_called_by_transitive {};
+
+        StatementSet m_call_stmts {};
     };
 
     struct Statement
@@ -154,12 +158,18 @@ namespace pkb
         const std::unordered_set<std::string>& getUsingProcNames() const;
         const std::unordered_set<std::string>& getModifyingProcNames() const;
 
+        const StatementSet& getReadStmts() const;
+        const StatementSet& getPrintStmts() const;
+
     private:
         std::unordered_set<const Statement*> m_used_by {};
         std::unordered_set<const Statement*> m_modified_by {};
 
         std::unordered_set<std::string> m_used_by_procs {};
         std::unordered_set<std::string> m_modified_by_procs {};
+
+        StatementSet m_read_stmts {};
+        StatementSet m_print_stmts {};
     };
 
     struct CFG
@@ -192,6 +202,7 @@ namespace pkb
         Procedure& getProcedureNamed(const std::string& name);
 
         const Variable& getVariableNamed(const std::string& name) const;
+        Variable& getVariableNamed(const std::string& name);
 
         bool callsRelationExists() const;
         bool parentRelationExists() const;

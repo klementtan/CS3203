@@ -120,10 +120,8 @@ namespace pql::ast
 
     std::string WithCondRef::toString() const
     {
-        if(this->isString())
-            return zpr::sprint("WithCondRef(string: '{}')", this->str());
-        else if(this->isNumber())
-            return zpr::sprint("WithCondRef(num: '{}')", this->number());
+        if(this->isString() || this->isNumber())
+            return zpr::sprint("WithCondRef({}: '{}')", this->isString() ? "str" : "num", this->stringOrNumber());
         else if(this->isDeclaration())
             return zpr::sprint("WithCondRef(decl: {})", this->declaration()->toString());
         else if(this->isAttrRef())

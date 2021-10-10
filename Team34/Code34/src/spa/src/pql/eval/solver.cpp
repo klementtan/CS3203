@@ -468,10 +468,10 @@ namespace pql::eval::solver
         return false;
     }
 
-    int Solver::get_table_index(const ast::Declaration* decl) const
+    size_t Solver::get_table_index(const ast::Declaration* decl) const
     {
-        std::vector<int> ret;
-        for(unsigned long i = 0; i < m_int_tables.size(); i++)
+        std::vector<size_t> ret;
+        for(size_t i = 0; i < m_int_tables.size(); i++)
         {
             if(m_int_tables[i].getHeaders().count(decl))
                 ret.emplace_back(i);

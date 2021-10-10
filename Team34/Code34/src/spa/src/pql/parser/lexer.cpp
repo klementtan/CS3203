@@ -174,11 +174,11 @@ namespace pql::parser
             case TT::KW_Follows:    return "'Follows'";
             case TT::KW_Affects:    return "'Affects'";
             case TT::KW_Modifies:   return "'Modifies'";
-            case TT::KW_NextStar:   return "'Next'*";
-            case TT::KW_CallsStar:  return "'Calls'*";
-            case TT::KW_ParentStar: return "'Parent'*";
-            case TT::KW_FollowsStar:return "'Follows'*";
-            case TT::KW_AffectsStar:return "'Affects'*";
+            case TT::KW_NextStar:   return "'Next*'";
+            case TT::KW_CallsStar:  return "'Calls*'";
+            case TT::KW_ParentStar: return "'Parent*'";
+            case TT::KW_FollowsStar:return "'Follows*'";
+            case TT::KW_AffectsStar:return "'Affects*'";
             case TT::KW_And:        return "'and'";
             case TT::KW_With:       return "'with'";
             case TT::KW_Select:     return "'Select'";

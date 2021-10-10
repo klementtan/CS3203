@@ -75,4 +75,9 @@ namespace pkb
     {
         return m_calls_transitive;
     }
+
+    const StatementSet& Procedure::getCallStmts() const
+    {
+        return m_call_stmts;
+    }
 }

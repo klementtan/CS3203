@@ -94,7 +94,24 @@ namespace pql::eval::table
     using Domain = std::unordered_set<Entry>;
     using Row = std::unordered_map<ast::Declaration*, Entry>;
 
-    Domain entry_set_intersect(const Domain& a, const Domain& b);
+    // there isn't actually a need to restrict this to sets of Entry.
+    template <typename T>
+    std::unordered_set<T> setIntersction(const std::unordered_set<T>& a, const std::unordered_set<T>& b)
+    {
+        // always loop over the smaller one.
+        if(b.size() > a.size())
+            return setIntersction(b, a);
+
+        std::unordered_set<T> ret {};
+        for(const auto& entry : a)
+        {
+            if(b.count(entry) > 0)
+                ret.insert(entry);
+        }
+        return ret;
+    }
+
+    constexpr auto entry_set_intersect = setIntersction<Entry>;
 
     // Class representing the dependency between two declaration in a clause.
     // For a table permutation to be valid, the value of m_decl_a,m_decl_b
