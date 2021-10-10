@@ -22,7 +22,7 @@ namespace bench
             std::string where = file + std::string(":") + std::to_string(line);
             std::string text = "[TIMER: " + title + "];" + "function=" + fn + ";" + "where=" + where + ";" +
                                "elapsed=" + std::to_string(elapsed) + "ms";
-            zpr::println(text);
+            zpr::println(std::move(text));
         }
     };
 }
