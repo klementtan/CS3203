@@ -33,4 +33,3 @@ static constexpr inline void dummy_fn() { }
 #else
 #define START_BENCHMARK_TIMER(title) bench::Timer timer(__FILE__, __LINE__, __FUNCTION__, title)
 #endif
-
