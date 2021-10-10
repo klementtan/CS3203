@@ -3,6 +3,7 @@
 #include <cassert>
 #include <algorithm>
 
+#include "timer.h"
 #include "exceptions.h"
 #include "pql/eval/table.h"
 #include "pql/eval/evaluator.h"
@@ -143,6 +144,7 @@ namespace pql::eval
 
     std::list<std::string> Evaluator::evaluate()
     {
+        START_BENCHMARK_TIMER("PQL Evaluation Timer");
         util::logfmt("pql::eval", "Evaluating query: {}", m_query->toString());
         if(m_query->isInvalid())
         {
