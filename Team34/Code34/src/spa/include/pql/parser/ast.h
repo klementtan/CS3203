@@ -323,6 +323,40 @@ namespace pql::ast
         EntRef proc {};
     };
 
+    struct Next : RelCond
+    {
+        virtual std::string toString() const override;
+
+        StmtRef first {};
+        StmtRef second {};
+    };
+
+    struct NextT : RelCond
+    {
+        virtual std::string toString() const override;
+
+        StmtRef first {};
+        StmtRef second {};
+    };
+
+    struct Affects : RelCond
+    {
+        virtual std::string toString() const override;
+
+        StmtRef first {};
+        StmtRef second {};
+    };
+
+    struct AffectsT : RelCond
+    {
+        virtual std::string toString() const override;
+
+        StmtRef first {};
+        StmtRef second {};
+    };
+
+
+
     /** Expression Specification: pattern segment  of an assignment pattern. */
     struct ExprSpec
     {
