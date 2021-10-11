@@ -116,11 +116,7 @@ namespace pkb
         this->m_program = std::move(program);
     }
 
-    ProgramKB::~ProgramKB()
-    {
-        // for(auto follow : this->follows)
-        //     delete follow;
-    }
+    ProgramKB::~ProgramKB() { }
 
     const simple::ast::Program* ProgramKB::getProgram() const
     {

@@ -48,8 +48,8 @@ namespace pql::eval
             else if(std::is_same_v<RefType, ast::StmtRef> &&
                     ast::kStmtDesignEntities.count(leftRef->declaration()->design_ent) == 0)
             {
-                throw PqlException("pql::eval", "first argument of '{}' must be a statement-like synonym",
-                    this->relationName);
+                throw PqlException(
+                    "pql::eval", "first argument of '{}' must be a statement-like synonym", this->relationName);
             }
         }
 
@@ -64,8 +64,8 @@ namespace pql::eval
             else if(std::is_same_v<RefType, ast::StmtRef> &&
                     ast::kStmtDesignEntities.count(rightRef->declaration()->design_ent) == 0)
             {
-                throw PqlException("pql::eval", "second argument of '{}' must be a statement-like synonym",
-                    this->relationName);
+                throw PqlException(
+                    "pql::eval", "second argument of '{}' must be a statement-like synonym", this->relationName);
             }
         }
 
