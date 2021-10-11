@@ -273,15 +273,41 @@ TEST_CASE("Result Clause")
     }
 }
 
+
+#define TEST_VALID(query) CHECK(pql::parser::parsePQL(query)->isValid())
+#define TEST_INVALID(query) CHECK(pql::parser::parsePQL(query)->isInvalid())
+
+
+TEST_CASE("Next/*")
+{
+    using namespace pql::parser;
+
+    TEST_VALID("stmt s1, s2; Select <s1, s2> such that Next(s1, s2)");
+    TEST_VALID("stmt s1, s2; Select <s1, s2> such that Next(s1, _)");
+    TEST_VALID("stmt s1, s2; Select <s1, s2> such that Next(_, _)");
+    TEST_VALID("stmt s1, s2; Select <s1, s2> such that Next(_, s2)");
+    TEST_VALID("stmt s1, s2; Select <s1, s2> such that Next(69, 420)");
+    TEST_VALID("stmt s1, s2; Select <s1, s2> such that Next(69, s1)");
+}
+
+
+
+
 TEST_CASE("invalid queries")
 {
     using namespace pql::parser;
 
-    SECTION("duplicate queries")
+    SECTION("duplicate declarations")
     {
         auto query = "stmt s; assign s; Select s";
         auto q = parsePQL(query);
         REQUIRE(q->isInvalid());
+    }
+
+    SECTION("wrong types")
+    {
+        CHECK_THROWS_WITH(parsePQL("stmt s; Select BOOLEAN such that Next(s, \"asdf\")"),
+            Catch::Contains("Invalid stmt ref starting with asdf"));
     }
 
     SECTION("such-that/parent*/follows* spacing")
@@ -296,9 +322,6 @@ TEST_CASE("invalid queries")
             parsePQL("stmt s; Select s such that Parent  *  (s, _)"), Catch::Contains("invalid token '*'"));
     }
 }
-
-#define TEST_VALID(query) CHECK(pql::parser::parsePQL(query)->isValid())
-#define TEST_INVALID(query) CHECK(pql::parser::parsePQL(query)->isInvalid())
 
 TEST_CASE("valid multi-queries")
 {
