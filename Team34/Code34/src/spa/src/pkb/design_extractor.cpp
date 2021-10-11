@@ -410,7 +410,7 @@ namespace pkb
         this->m_program = this->m_pkb->getProgram();
 
         // pre-populate the kinds in the pkb with all the valid stmt thingies
-        for(auto stmt_ent : pql::ast::kStmtDesignEntities)
+        for(auto stmt_ent : pql::ast::getStmtDesignEntities())
             m_pkb->m_stmt_kinds[stmt_ent] = {};
     }
 }
