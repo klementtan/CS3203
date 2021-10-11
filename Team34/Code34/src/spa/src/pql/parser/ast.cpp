@@ -14,11 +14,8 @@ namespace pql::ast
 
     const std::unordered_set<DESIGN_ENT>& getStmtDesignEntities()
     {
-        static std::unordered_set<DESIGN_ENT> ret = {
-            DESIGN_ENT::STMT, DESIGN_ENT::READ, DESIGN_ENT::PRINT,
-            DESIGN_ENT::CALL, DESIGN_ENT::WHILE, DESIGN_ENT::IF, DESIGN_ENT::ASSIGN,
-            DESIGN_ENT::PROG_LINE
-        };
+        static std::unordered_set<DESIGN_ENT> ret = { DESIGN_ENT::STMT, DESIGN_ENT::READ, DESIGN_ENT::PRINT,
+            DESIGN_ENT::CALL, DESIGN_ENT::WHILE, DESIGN_ENT::IF, DESIGN_ENT::ASSIGN, DESIGN_ENT::PROG_LINE };
         return ret;
     }
 

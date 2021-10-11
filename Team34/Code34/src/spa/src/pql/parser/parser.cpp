@@ -528,8 +528,8 @@ namespace pql::parser
 
         if(it->second.count(design_ent) == 0)
         {
-            ps->setInvalid("entity '{}' does not contain attribute '{}'", ast::getInverseDesignEntityMap().at(design_ent),
-                ast::getInverseAttrNameMap().at(attr_name));
+            ps->setInvalid("entity '{}' does not contain attribute '{}'",
+                ast::getInverseDesignEntityMap().at(design_ent), ast::getInverseAttrNameMap().at(attr_name));
         }
 
         return ast::Elem::ofAttrRef(attr_ref);
