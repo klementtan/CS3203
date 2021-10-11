@@ -199,6 +199,10 @@ namespace pql::eval
             handleCalls(calls);
         else if(auto calls_t = dynamic_cast<const ast::CallsT*>(rel_cond); calls_t)
             handleCallsT(calls_t);
+        else if(auto next = dynamic_cast<const ast::Next*>(rel_cond); next)
+            handleNext(next);
+        else if(auto next_t = dynamic_cast<const ast::NextT*>(rel_cond); next_t)
+            handleNextT(next_t);
         else
             throw util::PqlException("pql::eval", "unknown relation type");
     }
