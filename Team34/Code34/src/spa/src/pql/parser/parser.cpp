@@ -78,7 +78,8 @@ namespace pql::parser
                 return &_dummy_decl;
             }
 
-            util::logfmt("pql::parser", "added declaration '{}' (type '{}')", name, ast::INV_DESIGN_ENT_MAP.at(type));
+            util::logfmt(
+                "pql::parser", "added declaration '{}' (type '{}')", name, ast::getInverseDesignEntityMap().at(type));
             return m_query->declarations.addDeclaration(name.str(), type);
         }
 
