@@ -1,6 +1,7 @@
 #include <chrono>
 #include <string>
 #include <zpr.h>
+#include <util.h>
 
 namespace bench
 {
@@ -19,7 +20,7 @@ namespace bench
         {
             const auto elapsed =
                 std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();
-            zpr::println("[TIMER: {}]: function={}; where={}:{}; elapsed={}ms", title, fn, file, line, elapsed);
+            util::logfmt("TIMER", "{}: function={}; where={}:{}; elapsed={}ms", title, fn, file, line, elapsed);
         }
     };
 }
