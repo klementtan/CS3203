@@ -93,6 +93,26 @@ namespace pql::ast
         return zpr::sprint("CallsT(caller:{}, proc:{})", this->caller.toString(), this->proc.toString());
     }
 
+    std::string Next::toString() const
+    {
+        return zpr::sprint("Next(first:{}, second:{})", this->first.toString(), this->second.toString());
+    }
+
+    std::string NextT::toString() const
+    {
+        return zpr::sprint("NextT(first:{}, second:{})", this->first.toString(), this->second.toString());
+    }
+
+    std::string Affects::toString() const
+    {
+        return zpr::sprint("Affects(first:{}, second:{})", this->first.toString(), this->second.toString());
+    }
+
+    std::string AffectsT::toString() const
+    {
+        return zpr::sprint("AffectsT(first:{}, second:{})", this->first.toString(), this->second.toString());
+    }
+
     std::string ExprSpec::toString() const
     {
         return zpr::sprint(
