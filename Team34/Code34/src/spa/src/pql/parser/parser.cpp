@@ -126,10 +126,10 @@ namespace pql::parser
 
         util::logfmt("pql::parser", "Parsing declaration with design_ent:{}", ent_string);
 
-        if(ast::DESIGN_ENT_MAP.count(ent_string) == 0)
+        if(ast::getDesignEntityMap().count(ent_string) == 0)
             throw SyntaxError("Invalid entity '{}' provided in declaration", ent_string);
 
-        ast::DESIGN_ENT ent = ast::DESIGN_ENT_MAP.find(ent_string)->second;
+        auto ent = ast::getDesignEntityMap().find(ent_string)->second;
         parse_one_declaration(ps, ent);
 
         // Handle trailing additional var using `,`
@@ -327,7 +327,7 @@ namespace pql::parser
                 // TODO: we won't be able to parse the rest of the pattern without knowing the correct
                 // type of the declaration. should this be a syntactic error?
                 ps->setInvalid("invalid synonym type '{}' in pattern clause (can only have 'if', 'while', or 'assign'",
-                    ast::INV_DESIGN_ENT_MAP.at(decl_ent));
+                    ast::getInverseDesignEntityMap().at(decl_ent));
             }
 
         } while(ps->peek_keyword() == TT::KW_And ? (ps->next_keyword(), true) : false);
@@ -384,7 +384,7 @@ namespace pql::parser
         auto decl = ps->getDeclaration(tok.text.str());
 
         // Check if the reference to previously declared entity is a stmt.
-        return ast::kStmtDesignEntities.count(decl->design_ent) > 0;
+        return ast::getStmtDesignEntities().count(decl->design_ent) > 0;
     }
 
     static std::unique_ptr<ast::RelCond> parse_uses_modifies(ParserState* ps)
@@ -528,8 +528,8 @@ namespace pql::parser
 
         if(it->second.count(design_ent) == 0)
         {
-            ps->setInvalid("entity '{}' does not contain attribute '{}'", ast::INV_DESIGN_ENT_MAP.at(design_ent),
-                ast::InvAttrNameMap.at(attr_name));
+            ps->setInvalid("entity '{}' does not contain attribute '{}'", ast::getInverseDesignEntityMap().at(design_ent),
+                ast::getInverseAttrNameMap().at(attr_name));
         }
 
         return ast::Elem::ofAttrRef(attr_ref);

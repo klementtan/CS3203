@@ -12,50 +12,83 @@ namespace pql::ast
 {
     Clause::~Clause() { }
 
-    const std::unordered_map<std::string, DESIGN_ENT> DESIGN_ENT_MAP = {
-        { "stmt", DESIGN_ENT::STMT },
-        { "read", DESIGN_ENT::READ },
-        { "print", DESIGN_ENT::PRINT },
-        { "call", DESIGN_ENT::CALL },
-        { "while", DESIGN_ENT::WHILE },
-        { "if", DESIGN_ENT::IF },
-        { "assign", DESIGN_ENT::ASSIGN },
-        { "variable", DESIGN_ENT::VARIABLE },
-        { "constant", DESIGN_ENT::CONSTANT },
-        { "procedure", DESIGN_ENT::PROCEDURE },
-        { "prog_line", DESIGN_ENT::PROG_LINE },
-    };
+    const std::unordered_set<DESIGN_ENT>& getStmtDesignEntities()
+    {
+        static std::unordered_set<DESIGN_ENT> ret = {
+            DESIGN_ENT::STMT, DESIGN_ENT::READ, DESIGN_ENT::PRINT,
+            DESIGN_ENT::CALL, DESIGN_ENT::WHILE, DESIGN_ENT::IF, DESIGN_ENT::ASSIGN,
+            DESIGN_ENT::PROG_LINE
+        };
+        return ret;
+    }
 
-    const std::unordered_map<DESIGN_ENT, std::string> INV_DESIGN_ENT_MAP = {
-        { DESIGN_ENT::STMT, "stmt" },
-        { DESIGN_ENT::READ, "read" },
-        { DESIGN_ENT::PRINT, "print" },
-        { DESIGN_ENT::CALL, "call" },
-        { DESIGN_ENT::WHILE, "while" },
-        { DESIGN_ENT::IF, "if" },
-        { DESIGN_ENT::ASSIGN, "assign" },
-        { DESIGN_ENT::VARIABLE, "variable" },
-        { DESIGN_ENT::CONSTANT, "constant" },
-        { DESIGN_ENT::PROCEDURE, "procedure" },
-        { DESIGN_ENT::PROG_LINE, "prog_line" },
+    const std::unordered_map<std::string, DESIGN_ENT>& getDesignEntityMap()
+    {
+        static std::unordered_map<std::string, DESIGN_ENT> ret = {
+            { "stmt", DESIGN_ENT::STMT },
+            { "read", DESIGN_ENT::READ },
+            { "print", DESIGN_ENT::PRINT },
+            { "call", DESIGN_ENT::CALL },
+            { "while", DESIGN_ENT::WHILE },
+            { "if", DESIGN_ENT::IF },
+            { "assign", DESIGN_ENT::ASSIGN },
+            { "variable", DESIGN_ENT::VARIABLE },
+            { "constant", DESIGN_ENT::CONSTANT },
+            { "procedure", DESIGN_ENT::PROCEDURE },
+            { "prog_line", DESIGN_ENT::PROG_LINE },
+        };
+        return ret;
+    }
 
-        { DESIGN_ENT::INVALID, "invalid" },
-    };
+    const std::unordered_map<DESIGN_ENT, std::string>& getInverseDesignEntityMap()
+    {
+        static std::unordered_map<DESIGN_ENT, std::string> ret = {
+            { DESIGN_ENT::STMT, "stmt" },
+            { DESIGN_ENT::READ, "read" },
+            { DESIGN_ENT::PRINT, "print" },
+            { DESIGN_ENT::CALL, "call" },
+            { DESIGN_ENT::WHILE, "while" },
+            { DESIGN_ENT::IF, "if" },
+            { DESIGN_ENT::ASSIGN, "assign" },
+            { DESIGN_ENT::VARIABLE, "variable" },
+            { DESIGN_ENT::CONSTANT, "constant" },
+            { DESIGN_ENT::PROCEDURE, "procedure" },
+            { DESIGN_ENT::PROG_LINE, "prog_line" },
 
-    const std::unordered_map<std::string, AttrName> AttrNameMap = {
-        { "procName", AttrName::kProcName },
-        { "varName", AttrName::kVarName },
-        { "value", AttrName::kValue },
-        { "stmt#", AttrName::kStmtNum },
-    };
+            { DESIGN_ENT::INVALID, "invalid" },
+        };
+        return ret;
+    }
 
-    const std::unordered_map<AttrName, std::string> InvAttrNameMap = {
-        { AttrName::kProcName, "procName" },
-        { AttrName::kVarName, "varName" },
-        { AttrName::kValue, "value" },
-        { AttrName::kStmtNum, "stmt#" },
-        { AttrName::kInvalid, "invalid" },
-    };
+    const std::unordered_map<std::string, AttrName>& getAttrNameMap()
+    {
+        static std::unordered_map<std::string, AttrName> ret = {
+            { "procName", AttrName::kProcName },
+            { "varName", AttrName::kVarName },
+            { "value", AttrName::kValue },
+            { "stmt#", AttrName::kStmtNum },
+        };
+        return ret;
+    }
+
+    const std::unordered_map<AttrName, std::string>& getInverseAttrNameMap()
+    {
+        static std::unordered_map<AttrName, std::string> ret = {
+            { AttrName::kProcName, "procName" },
+            { AttrName::kVarName, "varName" },
+            { AttrName::kValue, "value" },
+            { AttrName::kStmtNum, "stmt#" },
+            { AttrName::kInvalid, "invalid" },
+        };
+        return ret;
+    }
+
+
+
+
+
+
+
 
     bool DeclarationList::hasDeclaration(const std::string& name) const
     {

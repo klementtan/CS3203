@@ -43,10 +43,10 @@ namespace pql::eval
             if(auto lde = this->leftDeclEntity; lde && leftRef->declaration()->design_ent != *lde)
             {
                 throw PqlException("pql::eval", "entity for first argument of '{}' must be a {}", this->relationName,
-                    ast::INV_DESIGN_ENT_MAP.at(*lde));
+                    ast::getInverseDesignEntityMap().at(*lde));
             }
             else if(std::is_same_v<RefType, ast::StmtRef> &&
-                    ast::kStmtDesignEntities.count(leftRef->declaration()->design_ent) == 0)
+                    ast::getStmtDesignEntities().count(leftRef->declaration()->design_ent) == 0)
             {
                 throw PqlException(
                     "pql::eval", "first argument of '{}' must be a statement-like synonym", this->relationName);
@@ -59,10 +59,10 @@ namespace pql::eval
             if(auto rde = this->rightDeclEntity; rde && rightRef->declaration()->design_ent != *rde)
             {
                 throw PqlException("pql::eval", "entity for second argument of '{}' must be a {}", this->relationName,
-                    ast::INV_DESIGN_ENT_MAP.at(*rde));
+                    ast::getInverseDesignEntityMap().at(*rde));
             }
             else if(std::is_same_v<RefType, ast::StmtRef> &&
-                    ast::kStmtDesignEntities.count(rightRef->declaration()->design_ent) == 0)
+                    ast::getStmtDesignEntities().count(rightRef->declaration()->design_ent) == 0)
             {
                 throw PqlException(
                     "pql::eval", "second argument of '{}' must be a statement-like synonym", this->relationName);

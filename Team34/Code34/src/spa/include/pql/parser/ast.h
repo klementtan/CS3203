@@ -53,19 +53,14 @@ namespace pql::ast
         kStmtNum
     };
 
-    // Set of all statement design entities
-    const std::unordered_set<DESIGN_ENT> kStmtDesignEntities = { DESIGN_ENT::STMT, DESIGN_ENT::READ, DESIGN_ENT::PRINT,
-        DESIGN_ENT::CALL, DESIGN_ENT::WHILE, DESIGN_ENT::IF, DESIGN_ENT::ASSIGN, DESIGN_ENT::PROG_LINE };
+    const std::unordered_set<DESIGN_ENT>& getStmtDesignEntities();
+    const std::unordered_map<std::string, DESIGN_ENT>& getDesignEntityMap();
+    const std::unordered_map<DESIGN_ENT, std::string>& getInverseDesignEntityMap();
+    const std::unordered_map<std::string, AttrName>& getAttrNameMap();
+    const std::unordered_map<AttrName, std::string>& getInverseAttrNameMap();
 
-    // Maps string representation of design ent to enum representation of it. ie: {"if": DESIGN_ENT::IF}
-    extern const std::unordered_map<std::string, DESIGN_ENT> DESIGN_ENT_MAP;
-    // Maps enum representation of design ent to string representation of it. ie: {DESIGN_ENT::IF: "if"}
-    extern const std::unordered_map<DESIGN_ENT, std::string> INV_DESIGN_ENT_MAP;
 
-    // Maps string representation of  attribute name to enum representation of it. ie: {"procName": AttrName::kProcName}
-    extern const std::unordered_map<std::string, AttrName> AttrNameMap;
-    // Maps enum representation of attribute name to string. ie: {AttrName::kProcName, "procName"}
-    extern const std::unordered_map<AttrName, std::string> InvAttrNameMap;
+
     /** List of design entity declaration. ie Represents [`assign a`, `print p`]. */
     struct DeclarationList
     {

@@ -302,7 +302,7 @@ namespace pql::eval::table
         {
             // Only statement-like entites declarations are allowed to have 'stmt#' AttrName (enforced on parser) and
             // the entry should already be populated with the stmt
-            assert(ast::kStmtDesignEntities.count(decl->design_ent) && extracted_entry.getType() == EntryType::kStmt);
+            assert(ast::getStmtDesignEntities().count(decl->design_ent) && extracted_entry.getType() == EntryType::kStmt);
         }
         else
         {
