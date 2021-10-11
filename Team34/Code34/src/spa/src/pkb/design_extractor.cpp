@@ -311,7 +311,7 @@ namespace pkb
 
     void DesignExtractor::processCFG(const s_ast::StmtList* list, StatementNum last_checkpt)
     {
-        auto cfg = this->m_pkb->cfg.get();
+        auto cfg = this->m_pkb->m_cfg.get();
 
         // there must be a 'flow' from parent to first stmt of its body
         if(list->parent_statement != nullptr)
@@ -350,15 +350,14 @@ namespace pkb
     void DesignExtractor::processNextRelations()
     {
         // get adj of of direct nexts first
-        m_pkb->cfg = std::make_unique<CFG>(m_pkb->m_statements.size());
+        m_pkb->m_cfg = std::make_unique<CFG>(m_pkb->m_statements.size());
         for(auto& [name, proc] : m_pkb->m_procedures)
         {
             auto body = &proc.getAstProc()->body;
             this->processCFG(body, 0);
         }
         // get all shortest paths
-        auto cfg = this->m_pkb->cfg.get();
-        cfg->computeDistMat();
+        this->m_pkb->m_cfg->computeDistMat();
     }
 
     std::unique_ptr<ProgramKB> DesignExtractor::run()

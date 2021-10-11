@@ -16,6 +16,8 @@ namespace pkb
     {
         total_inst = v;
         adj_mat = new size_t*[v];
+        m_next_exists = false;
+
         for(size_t i = 0; i < v; i++)
         {
             this->adj_mat[i] = new size_t[v];
@@ -26,11 +28,26 @@ namespace pkb
         }
     }
 
+    CFG::~CFG()
+    {
+        for(size_t i = 0; i < total_inst; i++)
+            delete[] this->adj_mat[i];
+
+        delete[] this->adj_mat;
+    }
+
+
     void CFG::addEdge(StatementNum stmt1, StatementNum stmt2)
     {
         assert(stmt1 <= total_inst && stmt1 > 0);
         assert(stmt2 <= total_inst && stmt2 > 0);
         adj_mat[stmt1 - 1][stmt2 - 1] = 1;
+        m_next_exists = true;
+    }
+
+    bool CFG::nextRelationExists() const
+    {
+        return m_next_exists;
     }
 
     std::string CFG::getMatRep() const
