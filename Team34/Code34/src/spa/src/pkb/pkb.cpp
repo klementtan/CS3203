@@ -101,9 +101,14 @@ namespace pkb
         return this->m_calls_exists;
     }
 
+    bool ProgramKB::nextRelationExists() const
+    {
+        return m_cfg->nextRelationExists();
+    }
+
     const pkb::CFG* ProgramKB::getCFG() const
     {
-        return this->cfg.get();
+        return m_cfg.get();
     }
 
     ProgramKB::ProgramKB(std::unique_ptr<simple::ast::Program> program)
@@ -111,11 +116,7 @@ namespace pkb
         this->m_program = std::move(program);
     }
 
-    ProgramKB::~ProgramKB()
-    {
-        // for(auto follow : this->follows)
-        //     delete follow;
-    }
+    ProgramKB::~ProgramKB() { }
 
     const simple::ast::Program* ProgramKB::getProgram() const
     {

@@ -16,6 +16,8 @@ namespace pkb
     {
         total_inst = v;
         adj_mat = new size_t*[v];
+        m_next_exists = false;
+
         for(size_t i = 0; i < v; i++)
         {
             this->adj_mat[i] = new size_t[v];
@@ -26,11 +28,26 @@ namespace pkb
         }
     }
 
+    CFG::~CFG()
+    {
+        for(size_t i = 0; i < total_inst; i++)
+            delete[] this->adj_mat[i];
+
+        delete[] this->adj_mat;
+    }
+
+
     void CFG::addEdge(StatementNum stmt1, StatementNum stmt2)
     {
         assert(stmt1 <= total_inst && stmt1 > 0);
         assert(stmt2 <= total_inst && stmt2 > 0);
         adj_mat[stmt1 - 1][stmt2 - 1] = 1;
+        m_next_exists = true;
+    }
+
+    bool CFG::nextRelationExists() const
+    {
+        return m_next_exists;
     }
 
     std::string CFG::getMatRep() const
@@ -72,23 +89,30 @@ namespace pkb
         }
     }
 
+    static void check_in_range(StatementNum num, size_t max)
+    {
+        if(num > max || num <= 0)
+            throw util::PkbException("pkb", "Statement number out of range");
+    }
+
     bool CFG::isStatementNext(StatementNum stmt1, StatementNum stmt2) const
     {
-        if(stmt1 > total_inst || stmt1 <= 0 || stmt2 > total_inst || stmt2 <= 0)
-            throw util::PkbException("pkb", "Statement number out of range");
+        check_in_range(stmt1, total_inst);
+        check_in_range(stmt2, total_inst);
         return adj_mat[stmt1 - 1][stmt2 - 1] == 1;
     }
 
     bool CFG::isStatementTransitivelyNext(StatementNum stmt1, StatementNum stmt2) const
     {
-        if(stmt1 > total_inst || stmt1 <= 0 || stmt2 > total_inst || stmt2 <= 0)
-            throw util::PkbException("pkb", "Statement number out of range");
+        check_in_range(stmt1, total_inst);
+        check_in_range(stmt2, total_inst);
         return adj_mat[stmt1 - 1][stmt2 - 1] < INF; // impossible to be 0 since no recursive call
     }
+
     StatementSet CFG::getNextStatements(StatementNum id) const
     {
-        if(id > total_inst || id <= 0)
-            throw util::PkbException("pkb", "Statement number out of range");
+        check_in_range(id, total_inst);
+
         StatementSet ret {};
         for(size_t j = 0; j < total_inst; j++)
         {
@@ -97,16 +121,45 @@ namespace pkb
         }
         return ret;
     }
+
     StatementSet CFG::getTransitivelyNextStatements(StatementNum id) const
     {
-        if(id > total_inst || id <= 0)
-            throw util::PkbException("pkb", "Statement number out of range");
+        check_in_range(id, total_inst);
+
         StatementSet ret {};
         for(size_t j = 0; j < total_inst; j++)
         {
             if(adj_mat[id - 1][j] < INF)
                 ret.insert(j + 1);
         }
+        return ret;
+    }
+
+    StatementSet CFG::getPreviousStatements(StatementNum id) const
+    {
+        check_in_range(id, total_inst);
+        StatementSet ret {};
+
+        for(size_t i = 0; i < this->total_inst; i++)
+        {
+            if(adj_mat[i][id - 1] == 1)
+                ret.insert(i + 1);
+        }
+
+        return ret;
+    }
+
+    StatementSet CFG::getTransitivelyPreviousStatements(StatementNum id) const
+    {
+        check_in_range(id, total_inst);
+        StatementSet ret {};
+
+        for(size_t i = 0; i < this->total_inst; i++)
+        {
+            if(adj_mat[i][id - 1] < INF)
+                ret.insert(i + 1);
+        }
+
         return ret;
     }
 

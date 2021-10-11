@@ -70,3 +70,8 @@ TEST_CASE("prog_line")
     // check that prog_line and stmt are interchangeable
     TEST_OK(prog_1, "prog_line a, b; Select <a, b> such that Follows(a, b)", "1 2", "2 3");
 }
+
+TEST_CASE("bad arguments")
+{
+    TEST_EMPTY(prog_1, "procedure a, b; Select <a, b> such that Follows(a, b)");
+}

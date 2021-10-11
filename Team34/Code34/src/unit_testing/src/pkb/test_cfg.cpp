@@ -139,8 +139,11 @@ TEST_CASE("Next(a,b)")
     {
         CHECK(cfg1->isStatementNext(1, 2));
         CHECK(cfg1->isStatementNext(2, 3));
-        CHECK(cfg1->isStatementNext(2, 3));
         CHECK(cfg2->getNextStatements(19).size() == 1);
+
+        CHECK(cfg1->getPreviousStatements(2) == StatementSet { 1, 3 });
+        CHECK(cfg2->isStatementNext(8, 9));
+        CHECK(cfg2->getPreviousStatements(9) == StatementSet { 8 });
     }
     SECTION("while->while")
     {

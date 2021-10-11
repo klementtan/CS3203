@@ -175,18 +175,29 @@ namespace pkb
     struct CFG
     {
         CFG(size_t v);
+        ~CFG();
+
         void addEdge(StatementNum stmt1, StatementNum stmt2);
         void computeDistMat();
         std::string getMatRep() const;
+
+        bool nextRelationExists() const;
         bool isStatementNext(StatementNum stmt1, StatementNum stmt2) const;
         bool isStatementTransitivelyNext(StatementNum stmt1, StatementNum stmt2) const;
+
         StatementSet getNextStatements(StatementNum id) const;
         StatementSet getTransitivelyNextStatements(StatementNum id) const;
+
+        StatementSet getPreviousStatements(StatementNum id) const;
+        StatementSet getTransitivelyPreviousStatements(StatementNum id) const;
 
     private:
         size_t total_inst;
         // adjacency matrix for lengths of shortest paths between 2 inst. i(row) is source and j(col) is destination.
         size_t** adj_mat;
+
+        bool m_next_exists = false;
+
         friend struct DesignExtractor;
     };
 
@@ -204,6 +215,7 @@ namespace pkb
         const Variable& getVariableNamed(const std::string& name) const;
         Variable& getVariableNamed(const std::string& name);
 
+        bool nextRelationExists() const;
         bool callsRelationExists() const;
         bool parentRelationExists() const;
         bool followsRelationExists() const;
@@ -226,7 +238,7 @@ namespace pkb
         std::unordered_map<std::string, Variable> m_variables {};
         std::unordered_set<std::string> m_constants {};
         std::vector<Statement> m_statements {};
-        std::unique_ptr<pkb::CFG> cfg {};
+        std::unique_ptr<pkb::CFG> m_cfg {};
 
         bool m_follows_exists = false;
         bool m_parent_exists = false;
