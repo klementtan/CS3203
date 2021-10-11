@@ -53,13 +53,20 @@ namespace pql::ast
         kStmtNum
     };
 
+    // Set of all statement design entities
     const std::unordered_set<DESIGN_ENT>& getStmtDesignEntities();
+
+    // Maps string representation of design ent to enum representation of it. ie: {"if": DESIGN_ENT::IF}
     const std::unordered_map<std::string, DESIGN_ENT>& getDesignEntityMap();
+
+    // Maps enum representation of design ent to string representation of it. ie: {DESIGN_ENT::IF: "if"}
     const std::unordered_map<DESIGN_ENT, std::string>& getInverseDesignEntityMap();
+
+    // Maps string representation of  attribute name to enum representation of it. ie: {"procName": AttrName::kProcName}
     const std::unordered_map<std::string, AttrName>& getAttrNameMap();
+
+    // Maps enum representation of attribute name to string. ie: {AttrName::kProcName, "procName"}
     const std::unordered_map<AttrName, std::string>& getInverseAttrNameMap();
-
-
 
     /** List of design entity declaration. ie Represents [`assign a`, `print p`]. */
     struct DeclarationList
