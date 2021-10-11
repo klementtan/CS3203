@@ -49,7 +49,6 @@ namespace pql::eval
 
 
 
-#if 0
     void Evaluator::handleNextT(const ast::NextT* rel)
     {
         assert(rel);
@@ -61,26 +60,25 @@ namespace pql::eval
             abs.leftDeclEntity = {};
             abs.rightDeclEntity = {};
 
-            abs.relationHolds = [](const Statement& a, const Statement& b) -> bool {
-                return a.isAncestorOf(b.getStmtNum());
+            abs.relationHolds = [this](const Statement& a, const Statement& b) -> bool {
+                return m_pkb->getCFG()->isStatementTransitivelyNext(a.getStmtNum(), b.getStmtNum());
             };
 
-            abs.inverseRelationHolds = [](const Statement& a, const Statement& b) -> bool {
-                return a.isDescendantOf(b.getStmtNum());
+            abs.inverseRelationHolds = [this](const Statement& a, const Statement& b) -> bool {
+                return m_pkb->getCFG()->isStatementTransitivelyNext(b.getStmtNum(), a.getStmtNum());
             };
 
-            abs.getAllRelated = [](const Statement& s) -> decltype(auto) {
-                return s.getDescendants();
+            abs.getAllRelated = [this](const Statement& s) -> decltype(auto) {
+                return m_pkb->getCFG()->getTransitivelyNextStatements(s.getStmtNum());
             };
 
-            abs.getAllInverselyRelated = [](const Statement& s) -> decltype(auto) {
-                return s.getAncestors();
+            abs.getAllInverselyRelated = [this](const Statement& s) -> decltype(auto) {
+                return m_pkb->getCFG()->getTransitivelyPreviousStatements(s.getStmtNum());
             };
 
-            abs.relationExists = &pkb::ProgramKB::parentRelationExists;
+            abs.relationExists = &pkb::ProgramKB::nextRelationExists;
             abs.getEntity = &pkb::ProgramKB::getStatementAt;
         }
-        abs.evaluate(m_pkb, &m_table, rel, &rel->ancestor, &rel->descendant);
+        abs.evaluate(m_pkb, &m_table, rel, &rel->first, &rel->second);
     }
-#endif
 }
