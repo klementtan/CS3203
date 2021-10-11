@@ -38,8 +38,7 @@ namespace pql::eval
             };
 
             abs.getAllInverselyRelated = [this](const Statement& s) -> decltype(auto) {
-                // return s.getParent();
-                return StatementSet{};
+                return m_pkb->getCFG()->getPreviousStatements(s.getStmtNum());
             };
 
             abs.relationExists = &pkb::ProgramKB::nextRelationExists;
