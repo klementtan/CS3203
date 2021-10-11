@@ -277,7 +277,7 @@ namespace pql::eval
         if(var_ent.isDeclaration() && var_ent.declaration()->design_ent != ast::DESIGN_ENT::VARIABLE)
             throw PqlException("pql::eval", "entity for second argument of {} must be a variable", this->relationName);
 
-        if(user_stmt.isDeclaration() && (ast::kStmtDesignEntities.count(user_stmt.declaration()->design_ent) == 0))
+        if(user_stmt.isDeclaration() && (ast::getStmtDesignEntities().count(user_stmt.declaration()->design_ent) == 0))
             throw PqlException("pql::eval", "first argument for {} must be a statement entity", this->relationName);
 
         if(user_stmt.isStatementId() && var_ent.isName())

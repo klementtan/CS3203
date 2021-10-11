@@ -32,8 +32,8 @@ namespace pql::ast
 
     std::string Declaration::toString() const
     {
-        auto it = INV_DESIGN_ENT_MAP.find(this->design_ent);
-        if(it == INV_DESIGN_ENT_MAP.end())
+        auto it = getInverseDesignEntityMap().find(this->design_ent);
+        if(it == getInverseDesignEntityMap().end())
         {
             return zpr::sprint("Declaration(nullptr)");
         }
@@ -219,8 +219,8 @@ namespace pql::ast
 
     std::string AttrRef::toString() const
     {
-        auto it = InvAttrNameMap.find(this->attr_name);
-        std::string attr_name = it == InvAttrNameMap.end() ? "invalid" : it->second;
+        auto it = getInverseAttrNameMap().find(this->attr_name);
+        std::string attr_name = it == getInverseAttrNameMap().end() ? "invalid" : it->second;
         return zpr::sprint("AttrRef(decl: {}, attr_name: {})", decl ? decl->toString() : "nullptr", attr_name);
     }
 
