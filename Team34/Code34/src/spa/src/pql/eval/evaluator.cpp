@@ -14,8 +14,6 @@ namespace pql::eval
     {
         this->m_pkb = pkb;
         this->m_query = std::move(query);
-
-        preprocessPkb();
     }
 
     ast::DESIGN_ENT getDesignEnt(const simple::ast::Stmt* stmt)
