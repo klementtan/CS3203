@@ -471,6 +471,12 @@ namespace pql::parser
         else if(rel_tok == TT::KW_NextStar)
             return parse_relation(ps, rel_tok, &NextT::first, &NextT::second);
 
+        else if(rel_tok == TT::KW_Affects)
+            return parse_relation(ps, rel_tok, &Affects::first, &Affects::second);
+
+        else if(rel_tok == TT::KW_AffectsStar)
+            return parse_relation(ps, rel_tok, &AffectsT::first, &AffectsT::second);
+
         else if(rel_tok == TT::KW_Uses || rel_tok == TT::KW_Modifies)
             return parse_uses_modifies(ps);
 
