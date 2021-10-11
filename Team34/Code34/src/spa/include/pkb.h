@@ -231,6 +231,8 @@ namespace pkb
         void addConstant(std::string value);
         Procedure& addProcedure(const std::string& name, const simple::ast::Procedure* proc);
 
+        const StatementSet& getAllStatementsOfKind(pql::ast::DESIGN_ENT ent) const;
+
     private:
         std::unique_ptr<simple::ast::Program> m_program {};
 
@@ -239,6 +241,8 @@ namespace pkb
         std::unordered_set<std::string> m_constants {};
         std::vector<Statement> m_statements {};
         std::unique_ptr<pkb::CFG> m_cfg {};
+
+        std::unordered_map<pql::ast::DESIGN_ENT, StatementSet> m_stmt_kinds {};
 
         bool m_follows_exists = false;
         bool m_parent_exists = false;

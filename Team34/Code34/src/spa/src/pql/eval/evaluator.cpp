@@ -35,18 +35,6 @@ namespace pql::eval
         throw util::PqlException("pql::eval", "{} does not have a design ent", stmt->toString(1));
     }
 
-
-    void Evaluator::preprocessPkb()
-    {
-        for(const auto& pkb_stmt : m_pkb->getAllStatements())
-        {
-            m_all_ent_stmt_map[getDesignEnt(pkb_stmt.getAstStmt())].push_back(pkb_stmt.getAstStmt());
-
-            m_all_ent_stmt_map[ast::DESIGN_ENT::STMT].push_back(pkb_stmt.getAstStmt());
-            m_all_ent_stmt_map[ast::DESIGN_ENT::PROG_LINE].push_back(pkb_stmt.getAstStmt());
-        }
-    }
-
     std::unordered_set<table::Entry> Evaluator::getInitialDomainVar(ast::Declaration* declaration)
     {
         std::unordered_set<table::Entry> domain;
@@ -104,18 +92,11 @@ namespace pql::eval
     }
     std::unordered_set<table::Entry> Evaluator::getInitialDomainStmt(ast::Declaration* declaration)
     {
-        std::unordered_set<table::Entry> domain;
-        auto it = m_all_ent_stmt_map.find(declaration->design_ent);
-        if(it == m_all_ent_stmt_map.end())
-        {
-            util::logfmt("pql::eval", "No statement in source for {}", declaration->toString());
-            return domain;
-        }
-        for(const simple::ast::Stmt* stmt : it->second)
-        {
-            util::logfmt("pql::eval", "Adding {} to initial stmt domain", stmt->toString(0));
-            domain.insert(table::Entry(declaration, stmt->id));
-        }
+        std::unordered_set<table::Entry> domain {};
+        const auto& all_stmts = m_pkb->getAllStatementsOfKind(declaration->design_ent);
+        for(auto sid : all_stmts)
+            domain.emplace(declaration, sid);
+
         return domain;
     }
 

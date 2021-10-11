@@ -86,6 +86,11 @@ namespace pkb
         return m_variables;
     }
 
+    const StatementSet& ProgramKB::getAllStatementsOfKind(pql::ast::DESIGN_ENT ent) const
+    {
+        return m_stmt_kinds.at(ent);
+    }
+
     bool ProgramKB::followsRelationExists() const
     {
         return this->m_follows_exists;
