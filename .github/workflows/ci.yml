@@ -53,7 +53,31 @@ jobs:
           path: |
             Team34/Tests34/sys_tests_1/*.xml
             Team34/Tests34/autotester_summary.txt
-
+  bench:
+    runs-on: windows-2019
+    steps:
+      - uses: actions/checkout@v1
+        # this runs vcvarsall for us, so we get the MSVC toolchain in PATH.
+      - uses: seanmiddleditch/gha-setup-vsdevenv@master
+      - name: build
+        run: |
+          cd Team34/Code34
+          mkdir build
+          cd build
+          cmake -A Win32  .. -DENABLE_LOGGING=ON -DENABLE_BENCHMARK=ON &&
+          cmake --build . --target autotester --config Release -DENABLE_LOGGING=ON -DENABLE_BENCHMARK=ON
+          if ($lastexitcode -ne 0) { throw "build failed" }
+      - name: run autotester
+        run: |
+          cd Team34/Tests34/bench
+          ..\..\Code34\build\src\autotester\Release\autotester.exe bench.simple bench_queries.txt bench-out.xml
+          if ($lastexitcode -ne 0) { throw "autotester failed" }
+      - name: Show bench result
+        run: |
+          cd Team34/Tests34/bench
+          dir
+          echo "Bench Result"
+          findstr "TIMER" "debug.log"
   formatting-check:
     name: Formatting Check
     runs-on: ubuntu-latest

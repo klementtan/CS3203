@@ -5,6 +5,7 @@
 #include <cassert>
 #include <utility>
 #include "util.h"
+#include "timer.h"
 
 namespace pql::eval::solver
 {
@@ -343,6 +344,7 @@ namespace pql::eval::solver
         : m_domains(std::move(domains)), m_joins(joins), m_return_decls(return_decls), m_int_tables(),
           m_decl_components(), m_dep_graph(mergeAndCopySet(return_decls, select_decls), joins)
     {
+        START_BENCHMARK_TIMER("Solver constructor");
         m_decl_components = m_dep_graph.getComponents();
 
         trim(return_decls);
@@ -351,6 +353,7 @@ namespace pql::eval::solver
         // all declaration should start as table initially
         for(const ast::Declaration* decl : return_decls)
         {
+            START_BENCHMARK_TIMER("Create initial table for return declarations");
             IntTable tbl;
             if(m_domains.count(decl) == 0)
                 throw util::PqlException("pql::eval::solver", "{} does not have any domain", decl->toString());
@@ -361,6 +364,7 @@ namespace pql::eval::solver
         // all declaration should start as table initially
         for(const ast::Declaration* decl : select_decls)
         {
+            START_BENCHMARK_TIMER("Create initial table for select declarations");
             IntTable tbl;
             if(m_domains.count(decl) == 0)
                 throw util::PqlException("pql::eval::solver", "{} does not have any domain", decl->toString());
@@ -448,6 +452,7 @@ namespace pql::eval::solver
 
     void Solver::trim(const std::unordered_set<const ast::Declaration*>& decls)
     {
+        START_BENCHMARK_TIMER("Trimming declarations and joins");
         util::logfmt("pql::eval::solver", "Trimming declarations");
         for(table::Join& join : m_joins)
         {
@@ -487,6 +492,7 @@ namespace pql::eval::solver
     // update m_int_tables with tables that corresponds to a comp
     void Solver::preprocess_int_table()
     {
+        START_BENCHMARK_TIMER("Preprocess initial table");
         util::logfmt("pql::eval::solver", "Starting pre-process");
         std::unordered_set<const ast::Declaration*> processed_decl;
         std::vector<IntTable> new_int_tables;
@@ -558,6 +564,7 @@ namespace pql::eval::solver
     }
     IntTable Solver::getRetTbl()
     {
+        START_BENCHMARK_TIMER("Create return table");
         util::logfmt("pql::eval::solver", "Getting return table");
         IntTable ret_table;
         assert(!m_return_decls.empty());
