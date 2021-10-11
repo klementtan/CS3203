@@ -184,8 +184,12 @@ namespace pkb
         bool nextRelationExists() const;
         bool isStatementNext(StatementNum stmt1, StatementNum stmt2) const;
         bool isStatementTransitivelyNext(StatementNum stmt1, StatementNum stmt2) const;
+
         StatementSet getNextStatements(StatementNum id) const;
         StatementSet getTransitivelyNextStatements(StatementNum id) const;
+
+        StatementSet getPreviousStatements(StatementNum id) const;
+        StatementSet getTransitivelyPreviousStatements(StatementNum id) const;
 
     private:
         size_t total_inst;
