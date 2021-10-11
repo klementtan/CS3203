@@ -152,21 +152,29 @@ namespace pql::eval
             return table::Table::getFailedResult(m_query->select.result);
         }
 
+        // this should check for exceptions.
+        try
+        {
+            processDeclarations(m_query->declarations);
+            util::logfmt("pql::eval", "Table after initial processing of declaration: {}", m_table.toString());
 
-        processDeclarations(m_query->declarations);
-        util::logfmt("pql::eval", "Table after initial processing of declaration: {}", m_table.toString());
+            for(const auto& rel : m_query->select.relations)
+                handleRelation(rel.get());
 
-        for(const auto& rel : m_query->select.relations)
-            handleRelation(rel.get());
+            for(const auto& pattern : m_query->select.patterns)
+                pattern->evaluate(m_pkb, &m_table);
 
-        for(const auto& pattern : m_query->select.patterns)
-            pattern->evaluate(m_pkb, &m_table);
+            for(const auto& with : m_query->select.withs)
+                with->evaluate(m_pkb, &m_table);
 
-        for(const auto& with : m_query->select.withs)
-            with->evaluate(m_pkb, &m_table);
-
-        util::logfmt("pql::eval", "Table after processing of such that: {}", m_table.toString());
-        return this->m_table.getResult(m_query->select.result, this->m_pkb);
+            util::logfmt("pql::eval", "Table after processing of such that: {}", m_table.toString());
+            return this->m_table.getResult(m_query->select.result, this->m_pkb);
+        }
+        catch(const util::Exception& e)
+        {
+            util::logfmt("pql::eval", "caught exception during evaluation of query: '{}'", e.what());
+            return table::Table::getFailedResult(m_query->select.result);
+        }
     }
 
     void Evaluator::handleRelation(const ast::RelCond* rel_cond)
