@@ -11,12 +11,14 @@
 #include "util.h"
 #include "simple/ast.h"
 #include "exceptions.h"
+#include "pql/parser/ast.h"
 #include "design_extractor.h"
 
 namespace pkb
 {
     namespace s_ast = simple::ast;
     using StatementNum = simple::ast::StatementNum;
+    using DesignEnt = pql::ast::DESIGN_ENT;
 
 #define CONST_DCAST(AstType, value) dynamic_cast<const s_ast::AstType*>(value)
 
@@ -203,7 +205,8 @@ namespace pkb
                 m_pkb->m_parent_exists = true;
             }
 
-
+            m_pkb->m_stmt_kinds[DesignEnt::STMT].insert(sid);
+            m_pkb->m_stmt_kinds[DesignEnt::PROG_LINE].insert(sid);
 
             if(auto if_stmt = CONST_DCAST(IfStmt, ast_stmt); if_stmt)
             {
@@ -214,6 +217,8 @@ namespace pkb
                 this->processExpr(if_stmt->condition.get(), stmt, new_ts);
                 this->processStmtList(&if_stmt->true_case, new_ts);
                 this->processStmtList(&if_stmt->false_case, new_ts);
+
+                m_pkb->m_stmt_kinds[DesignEnt::IF].insert(sid);
             }
             else if(auto while_loop = CONST_DCAST(WhileLoop, ast_stmt); while_loop)
             {
@@ -223,21 +228,29 @@ namespace pkb
 
                 this->processExpr(while_loop->condition.get(), stmt, new_ts);
                 this->processStmtList(&while_loop->body, new_ts);
+
+                m_pkb->m_stmt_kinds[DesignEnt::WHILE].insert(sid);
             }
             else if(auto assign_stmt = CONST_DCAST(AssignStmt, ast_stmt); assign_stmt)
             {
                 this->processModifies(assign_stmt->lhs, stmt, ts);
                 this->processExpr(assign_stmt->rhs.get(), stmt, ts);
+
+                m_pkb->m_stmt_kinds[DesignEnt::ASSIGN].insert(sid);
             }
             else if(auto read_stmt = CONST_DCAST(ReadStmt, ast_stmt); read_stmt)
             {
                 this->processModifies(read_stmt->var_name, stmt, ts);
                 m_pkb->getVariableNamed(read_stmt->var_name).m_read_stmts.insert(sid);
+
+                m_pkb->m_stmt_kinds[DesignEnt::READ].insert(sid);
             }
             else if(auto print_stmt = CONST_DCAST(PrintStmt, ast_stmt); print_stmt)
             {
                 this->processUses(print_stmt->var_name, stmt, ts);
                 m_pkb->getVariableNamed(print_stmt->var_name).m_print_stmts.insert(sid);
+
+                m_pkb->m_stmt_kinds[DesignEnt::PRINT].insert(sid);
             }
             else if(auto call_stmt = CONST_DCAST(ProcCall, ast_stmt); call_stmt)
             {
@@ -276,6 +289,8 @@ namespace pkb
                 m_visited_procs.insert(call_stmt->proc_name);
 
                 this->processStmtList(body, new_ts);
+
+                m_pkb->m_stmt_kinds[DesignEnt::CALL].insert(sid);
             }
             else
             {
@@ -393,5 +408,9 @@ namespace pkb
     {
         this->m_pkb = std::make_unique<ProgramKB>(std::move(program));
         this->m_program = this->m_pkb->getProgram();
+
+        // pre-populate the kinds in the pkb with all the valid stmt thingies
+        for(auto stmt_ent : pql::ast::getStmtDesignEntities())
+            m_pkb->m_stmt_kinds[stmt_ent] = {};
     }
 }
