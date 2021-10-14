@@ -358,6 +358,16 @@ namespace pkb
                     cfg->addEdge(sid, last_checkpt); // only non-if stmts can loop back
                 if(auto while_loop = CONST_DCAST(WhileLoop, ast_stmt); while_loop)
                     this->processCFG(&while_loop->body, sid);
+
+                if(auto assign_stmt = CONST_DCAST(AssignStmt, ast_stmt); assign_stmt)
+                {
+                    cfg->addAssignStmtMapping(sid, stmt);
+                    cfg->addModStmtMapping(sid, stmt);
+                }
+                else if(auto read_stmt = CONST_DCAST(ReadStmt, ast_stmt); read_stmt)
+                    cfg->addModStmtMapping(sid, stmt);
+                else if(auto proc_call = CONST_DCAST(ProcCall, ast_stmt); proc_call)
+                    cfg->addModStmtMapping(sid, stmt);
             }
         }
     }
