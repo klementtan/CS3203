@@ -230,7 +230,7 @@ namespace pkb
 
         while(!q.empty())
         {
-            auto& [num, var] = q.front();
+            auto [num, var] = q.front();
             q.pop();
 
             if(num == id2)
