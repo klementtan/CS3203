@@ -209,13 +209,13 @@ namespace pkb
         if(stmt1 == nullptr || stmt2 == nullptr)
             return false;
 
-        auto vars1 = stmt1->getModifiedVariables();
-        auto vars2 = stmt2->getUsedVariables();
+        const auto& modified = stmt1->getModifiedVariables();
+        const auto& used = stmt2->getUsedVariables();
 
         std::unordered_set<std::string> vars;
-        for(auto var : vars1)
+        for(const auto& var : modified)
         {
-            if(vars2.count(var))
+            if(used.count(var))
                 vars.insert(var);
         }
 
@@ -224,7 +224,7 @@ namespace pkb
         for(auto stmt : adj_lst.at(id1))
         {
             for(auto var : vars)
-                q.push({ stmt, var });
+                q.emplace(stmt, var);
             visited.insert(stmt);
         }
 
@@ -243,7 +243,7 @@ namespace pkb
                 if(visited.count(stmt))
                     continue;
                 visited.insert(stmt);
-                q.push({ stmt, var });
+                q.emplace(stmt, var);
             }
         }
 
