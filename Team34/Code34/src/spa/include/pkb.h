@@ -178,15 +178,26 @@ namespace pkb
         void addEdge(StatementNum stmt1, StatementNum stmt2);
         void computeDistMat();
         std::string getMatRep() const;
+        void addAssignStmtMapping(StatementNum stmt1, Statement* stmt2);
+        void addModStmtMapping(StatementNum stmt1, Statement* stmt2);
+        const Statement* getAssignStmtMapping(StatementNum id) const;
+        const Statement* getModStmtMapping(StatementNum id) const;
         bool isStatementNext(StatementNum stmt1, StatementNum stmt2) const;
         bool isStatementTransitivelyNext(StatementNum stmt1, StatementNum stmt2) const;
         StatementSet getNextStatements(StatementNum id) const;
         StatementSet getTransitivelyNextStatements(StatementNum id) const;
+        bool doesAffect(StatementNum stmt1, StatementNum stmt2) const;
+        bool doesTransitivelyAffect(StatementNum stmt1, StatementNum stmt2) const;
+        StatementSet getAffectedStatements(StatementNum id) const;
+        StatementSet getTransitivelyAffectedStatements(StatementNum id) const;
 
     private:
         size_t total_inst;
         // adjacency matrix for lengths of shortest paths between 2 inst. i(row) is source and j(col) is destination.
         size_t** adj_mat;
+        std::unordered_map<StatementNum, std::vector<StatementNum>> adj_lst;
+        std::unordered_map<StatementNum, const Statement*> assign_stmts;
+        std::unordered_map<StatementNum, const Statement*> mod_stmts;
         friend struct DesignExtractor;
     };
 

@@ -73,10 +73,57 @@ constexpr const auto sample_source_B = R"(
         x = x * y + z; }
 )";
 
+
+constexpr const auto sample_source_C = R"(
+    procedure First {
+        x = 0;
+        i = 5;
+        while (i!=0) {
+            x = x + 2*y;
+            read x;
+            y = 2;
+            i = i - 1; }
+        if (x==1) then {
+            x = x+1; }
+        else {
+            if (x==2) then {
+                i = 222;
+            } else {
+                x = 333;
+            }
+        }
+        z = z + x + i;
+        y = z + 2;
+        x = x * y + z; }
+)";
+
+constexpr const auto sample_source_D = R"(
+    procedure Second {
+        x = 0;
+        i = 5;
+        while (i!=0) {
+            x = x + 2*y;
+            a = 1;
+            i = i - 1; }
+        if (x==1) then {
+            x = x+1; }
+        else {
+            z = 1; }
+        z = z + x + i;
+        y = z + 2;
+        a = z * 3;
+        b = a + 3;
+        c = b + b; }
+)";
+
 static auto kb1 = DesignExtractor(parseProgram(sample_source_A)).run();
 static auto cfg1 = kb1 -> getCFG();
 static auto kb2 = DesignExtractor(parseProgram(sample_source_B)).run();
 static auto cfg2 = kb2 -> getCFG();
+static auto kb3 = DesignExtractor(parseProgram(sample_source_C)).run();
+static auto cfg3 = kb3 -> getCFG();
+static auto kb4 = DesignExtractor(parseProgram(sample_source_D)).run();
+static auto cfg4 = kb4 -> getCFG();
 
 TEST_CASE("CFG")
 {
@@ -349,5 +396,99 @@ TEST_CASE("Next*(a,b)")
             cfg1->getTransitivelyNextStatements(-1), Catch::Matchers::Contains("Statement number out of range"));
         CHECK_THROWS_WITH(
             cfg1->getTransitivelyNextStatements(0), Catch::Matchers::Contains("Statement number out of range"));
+    }
+}
+
+TEST_CASE("Affects(a,b)")
+{
+    SECTION("Straightforward")
+    {
+        CHECK(cfg2->doesAffect(8, 11));
+        CHECK(cfg2->doesAffect(9, 13));
+        CHECK(cfg2->doesAffect(19, 20));
+        CHECK(cfg2->doesAffect(19, 21));
+        CHECK(cfg2->doesAffect(20, 21));
+    }
+
+    SECTION("Prefer to skip while")
+    {
+        CHECK(cfg2->doesAffect(8, 15));
+        CHECK(cfg2->doesAffect(9, 19));
+    }
+
+    SECTION("Prefer one branch")
+    {
+        CHECK(cfg3->doesAffect(1, 13));
+        CHECK(cfg3->doesAffect(2, 13));
+    }
+
+    SECTION("Negative test case: modified by procedure call")
+    {
+        CHECK(!cfg2->doesAffect(11, 15));
+    }
+
+    SECTION("Negative test case: modified by read statement")
+    {
+        CHECK(!cfg3->doesAffect(4, 9));
+    }
+
+    SECTION("Negative test case: cannot skip over both branches")
+    {
+        CHECK(!cfg2->doesAffect(8, 19));
+        CHECK(!cfg2->doesAffect(8, 21));
+        CHECK(!cfg2->doesAffect(11, 19));
+        CHECK(!cfg2->doesAffect(11, 21));
+    }
+
+    SECTION("Negative test case: not assign statements")
+    {
+        CHECK(!cfg1->doesAffect(1, 3));
+        CHECK(!cfg1->doesAffect(1, 4));
+        CHECK(!cfg2->doesAffect(4, 5));
+        CHECK(!cfg2->doesAffect(14, 16));
+    }
+
+    SECTION("Negative test case: Next*(a, b) doesn't hold")
+    {
+        CHECK(!cfg1->doesAffect(5, 5));
+        CHECK(!cfg1->doesAffect(6, 5));
+        CHECK(!cfg2->doesAffect(6, 7));
+        CHECK(!cfg2->doesAffect(21, 8));
+    }
+}
+
+TEST_CASE("Affects*(a,b)")
+{
+    SECTION("Affects(a,b) holds")
+    {
+        CHECK(cfg2->doesTransitivelyAffect(8, 11));
+        CHECK(cfg2->doesTransitivelyAffect(9, 13));
+        CHECK(cfg4->doesTransitivelyAffect(1, 4));
+        CHECK(cfg4->doesTransitivelyAffect(1, 10));
+    }
+
+    SECTION("One intermediary variable")
+    {
+        CHECK(cfg4->doesTransitivelyAffect(1, 11));
+        CHECK(cfg4->doesTransitivelyAffect(1, 12));
+    }
+
+    SECTION("Two or more intermediary variables")
+    {
+        CHECK(cfg4->doesTransitivelyAffect(1, 13));
+        CHECK(cfg4->doesTransitivelyAffect(1, 14));
+    }
+
+    SECTION("Negative test case: not assignment statements")
+    {
+        CHECK(!cfg3->doesTransitivelyAffect(1, 3));
+        CHECK(!cfg3->doesTransitivelyAffect(3, 5));
+        CHECK(!cfg4->doesTransitivelyAffect(6, 7));
+    }
+
+    SECTION("Negative test case: Next*(a,b) doesn't hold")
+    {
+        CHECK(!cfg3->doesTransitivelyAffect(3, 1));
+        CHECK(!cfg4->doesTransitivelyAffect(8, 9));
     }
 }

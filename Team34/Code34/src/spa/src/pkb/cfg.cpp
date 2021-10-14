@@ -5,6 +5,7 @@
 
 #include <zpr.h>
 #include <assert.h>
+#include <queue>
 
 #define INF SIZE_MAX
 
@@ -31,6 +32,16 @@ namespace pkb
         assert(stmt1 <= total_inst && stmt1 > 0);
         assert(stmt2 <= total_inst && stmt2 > 0);
         adj_mat[stmt1 - 1][stmt2 - 1] = 1;
+
+        if (!adj_lst.count(stmt1))
+        {
+            std::vector<StatementNum> stmts = { stmt2 };
+            adj_lst[stmt1] = stmts;
+        }
+        else
+        {
+            adj_lst[stmt1].push_back(stmt2);
+        }
     }
 
     std::string CFG::getMatRep() const
@@ -72,6 +83,30 @@ namespace pkb
         }
     }
 
+    void CFG::addAssignStmtMapping(StatementNum id, Statement* stmt)
+    {
+        assign_stmts[id] = stmt;
+    }
+
+    void CFG::addModStmtMapping(StatementNum id, Statement* stmt)
+    {
+        mod_stmts[id] = stmt;
+    }
+
+    const Statement* CFG::getAssignStmtMapping(StatementNum id) const
+    {
+        if(assign_stmts.count(id) == 0)
+            return nullptr;
+        return assign_stmts.at(id);
+    }
+
+    const Statement* CFG::getModStmtMapping(StatementNum id) const
+    {
+        if(mod_stmts.count(id) == 0)
+            return nullptr;
+        return mod_stmts.at(id);
+    }
+
     bool CFG::isStatementNext(StatementNum stmt1, StatementNum stmt2) const
     {
         if(stmt1 > total_inst || stmt1 <= 0 || stmt2 > total_inst || stmt2 <= 0)
@@ -85,18 +120,20 @@ namespace pkb
             throw util::PkbException("pkb", "Statement number out of range");
         return adj_mat[stmt1 - 1][stmt2 - 1] < INF; // impossible to be 0 since no recursive call
     }
+
     StatementSet CFG::getNextStatements(StatementNum id) const
     {
         if(id > total_inst || id <= 0)
             throw util::PkbException("pkb", "Statement number out of range");
         StatementSet ret {};
-        for(size_t j = 0; j < total_inst; j++)
-        {
-            if(adj_mat[id - 1][j] == 1)
-                ret.insert(j + 1);
-        }
+        if(!adj_lst.count(id))
+            return ret;
+
+        for(auto stmt : adj_lst.at(id))
+            ret.insert(stmt);
         return ret;
     }
+
     StatementSet CFG::getTransitivelyNextStatements(StatementNum id) const
     {
         if(id > total_inst || id <= 0)
@@ -110,4 +147,100 @@ namespace pkb
         return ret;
     }
 
+    bool CFG::doesAffect(StatementNum id1, StatementNum id2) const
+    {
+        if(!isStatementTransitivelyNext(id1, id2))
+            return false;
+
+        auto stmt1 = getAssignStmtMapping(id1);
+        auto stmt2 = getAssignStmtMapping(id2);
+
+        if(stmt1 == nullptr || stmt2 == nullptr)
+            return false;
+
+        auto vars1 = stmt1->getModifiedVariables();
+        auto vars2 = stmt2->getUsedVariables();
+
+        std::unordered_set<std::string> vars;
+        for(auto var : vars1)
+        {
+            if (vars2.count(var))
+                vars.insert(var);
+        }
+
+        StatementSet visited;
+        std::queue<std::pair<StatementNum, std::string>> q;
+        for(auto stmt : adj_lst.at(id1))
+        {
+            for(auto var : vars)
+                q.push({ stmt, var });
+            visited.insert(stmt);
+        }
+
+        while(!q.empty())
+        {
+            auto& [num, var] = q.front();
+            q.pop();
+
+            if(num == id2)
+                return true;
+            if(getModStmtMapping(num) != nullptr && getModStmtMapping(num)->modifiesVariable(var))
+                continue;
+
+            for(auto stmt : adj_lst.at(num))
+            {
+                if(visited.count(stmt))
+                    continue;
+                visited.insert(stmt);
+                q.push({ stmt, var });
+            }
+        }
+
+        return false;
+    }
+
+    bool CFG::doesTransitivelyAffect(StatementNum id1, StatementNum id2) const
+    {
+        StatementSet visited;
+        std::queue<StatementNum> q;
+        for(auto stmt : getAffectedStatements(id1))
+        {
+            q.push(stmt);
+            visited.insert(stmt);
+        }
+
+        while(!q.empty())
+        {
+            auto num = q.front();
+            q.pop();
+            if(num == id2)
+                return true;
+
+            for(auto stmt : getAffectedStatements(num))
+            {
+                if(visited.count(stmt) == 0)
+                    q.push(stmt);
+                visited.insert(stmt);
+            }
+        }
+        return false;
+    }
+
+    StatementSet CFG::getAffectedStatements(StatementNum id) const
+    {
+        StatementSet ret {};
+        for(auto stmt : getTransitivelyNextStatements(id))
+            if(doesAffect(id, stmt))
+                ret.insert(stmt);
+        return ret;
+    }
+
+    StatementSet CFG::getTransitivelyAffectedStatements(StatementNum id) const
+    {
+        StatementSet ret {};
+        for(auto stmt : getTransitivelyNextStatements(id))
+            if(doesTransitivelyAffect(id, stmt))
+                ret.insert(stmt);
+        return ret;
+    }
 }
