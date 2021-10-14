@@ -45,7 +45,7 @@ namespace pkb
         adj_mat[stmt1 - 1][stmt2 - 1] = 1;
         m_next_exists = true;
 
-        if (!adj_lst.count(stmt1))
+        if(!adj_lst.count(stmt1))
         {
             std::vector<StatementNum> stmts = { stmt2 };
             adj_lst[stmt1] = stmts;
@@ -215,7 +215,7 @@ namespace pkb
         std::unordered_set<std::string> vars;
         for(auto var : vars1)
         {
-            if (vars2.count(var))
+            if(vars2.count(var))
                 vars.insert(var);
         }
 
