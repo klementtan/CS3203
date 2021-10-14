@@ -286,11 +286,29 @@ namespace pkb
         return ret;
     }
 
+    StatementSet CFG::getAffectingStatements(StatementNum id) const
+    {
+        StatementSet ret {};
+        for(auto stmt : getTransitivelyPreviousStatements(id))
+            if(doesAffect(stmt, id))
+                ret.insert(stmt);
+        return ret;
+    }
+
     StatementSet CFG::getTransitivelyAffectedStatements(StatementNum id) const
     {
         StatementSet ret {};
         for(auto stmt : getTransitivelyNextStatements(id))
             if(doesTransitivelyAffect(id, stmt))
+                ret.insert(stmt);
+        return ret;
+    }
+
+    StatementSet CFG::getTransitivelyAffectingStatements(StatementNum id) const
+    {
+        StatementSet ret {};
+        for(auto stmt : getTransitivelyPreviousStatements(id))
+            if(doesTransitivelyAffect(stmt, id))
                 ret.insert(stmt);
         return ret;
     }

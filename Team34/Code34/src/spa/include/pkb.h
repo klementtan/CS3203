@@ -191,13 +191,15 @@ namespace pkb
         bool isStatementTransitivelyNext(StatementNum stmt1, StatementNum stmt2) const;
         StatementSet getNextStatements(StatementNum id) const;
         StatementSet getTransitivelyNextStatements(StatementNum id) const;
+        StatementSet getPreviousStatements(StatementNum id) const;
+        StatementSet getTransitivelyPreviousStatements(StatementNum id) const;
+
         bool doesAffect(StatementNum stmt1, StatementNum stmt2) const;
         bool doesTransitivelyAffect(StatementNum stmt1, StatementNum stmt2) const;
         StatementSet getAffectedStatements(StatementNum id) const;
         StatementSet getTransitivelyAffectedStatements(StatementNum id) const;
-
-        StatementSet getPreviousStatements(StatementNum id) const;
-        StatementSet getTransitivelyPreviousStatements(StatementNum id) const;
+        StatementSet getAffectingStatements(StatementNum id) const;
+        StatementSet getTransitivelyAffectingStatements(StatementNum id) const;
 
     private:
         size_t total_inst;
