@@ -47,7 +47,7 @@ namespace pkb
 
         if(!adj_lst.count(stmt1))
         {
-            StatementSet stmts {stmt2};
+            StatementSet stmts { stmt2 };
             adj_lst[stmt1] = stmts;
         }
         else
