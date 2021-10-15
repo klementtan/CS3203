@@ -208,7 +208,7 @@ namespace pkb
 
         bool m_next_exists = false;
 
-        std::unordered_map<StatementNum, std::vector<StatementNum>> adj_lst;
+        std::unordered_map<StatementNum, StatementSet> adj_lst;
         std::unordered_map<StatementNum, const Statement*> assign_stmts;
         std::unordered_map<StatementNum, const Statement*> mod_stmts;
         friend struct DesignExtractor;

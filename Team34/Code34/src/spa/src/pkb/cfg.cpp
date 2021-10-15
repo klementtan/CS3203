@@ -47,12 +47,12 @@ namespace pkb
 
         if(!adj_lst.count(stmt1))
         {
-            std::vector<StatementNum> stmts = { stmt2 };
+            StatementSet stmts {stmt2};
             adj_lst[stmt1] = stmts;
         }
         else
         {
-            adj_lst[stmt1].push_back(stmt2);
+            adj_lst[stmt1].insert(stmt2);
         }
     }
 
@@ -152,9 +152,7 @@ namespace pkb
         if(!adj_lst.count(id))
             return ret;
 
-        for(auto stmt : adj_lst.at(id))
-            ret.insert(stmt);
-        return ret;
+        return adj_lst.at(id);
     }
 
     StatementSet CFG::getTransitivelyNextStatements(StatementNum id) const
