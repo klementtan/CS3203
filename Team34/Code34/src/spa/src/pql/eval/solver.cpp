@@ -496,6 +496,7 @@ namespace pql::eval::solver
         util::logfmt("pql::eval::solver", "Starting pre-process");
         std::unordered_set<const ast::Declaration*> processed_decl;
         std::vector<IntTable> new_int_tables;
+
         for(const std::unordered_set<const ast::Declaration*>& component : m_decl_components)
         {
             IntTable new_table;
@@ -518,6 +519,7 @@ namespace pql::eval::solver
                     new_table = new_table.merge(prev_table);
                 }
 
+                START_BENCHMARK_TIMER(zpr::sprint("**** filtered joins for {}", decl->name));
                 std::vector<table::Join> joins = get_joins(decl);
                 for(const table::Join& join : joins)
                 {
