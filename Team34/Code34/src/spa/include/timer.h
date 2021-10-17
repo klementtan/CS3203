@@ -19,7 +19,7 @@ namespace bench
         {
             const auto elapsed =
                 std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();
-            util::logfmt("TIMER", "{}: function={}; elapsed={}ms", title, fn, elapsed);
+            util::fmtlog("TIMER", "{}: function={}; elapsed={}ms", title, fn, elapsed / 1000.0);
         }
     };
 }
