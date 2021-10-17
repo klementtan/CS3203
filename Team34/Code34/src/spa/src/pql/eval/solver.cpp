@@ -52,7 +52,7 @@ namespace pql::eval::solver
         const std::pair<table::Entry, table::Entry> curr_entries =
             std::make_pair(m_columns.find(decl_a)->second, m_columns.find(decl_b)->second);
         // curr_entries just needs to exist in one of the set of allowed entries
-        return join.getAllowedEntries().count(curr_entries) > 0;
+        return join.m_allowed_entries.count(curr_entries) > 0;
     }
     std::unordered_set<const ast::Declaration*> IntRow::getHeaders() const
     {
@@ -517,6 +517,7 @@ namespace pql::eval::solver
                         prev_table.toString(), new_table.toString());
                     new_table = new_table.merge(prev_table);
                 }
+
                 std::vector<table::Join> joins = get_joins(decl);
                 for(const table::Join& join : joins)
                 {
