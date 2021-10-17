@@ -13,7 +13,7 @@ def run_autotester(autotester_exe, folder, source, query):
 	query_path = os.path.join(folder, query)
 
 	# we know query ends in ".txt"
-	xml_path = os.path.join(folder, f"output-{query[:-4]}.xml")
+	xml_path = os.path.join(folder, f"zzz_output-{query[:-4]}.xml")
 
 	print(f"    running '{query} - {source}'")
 	subprocess.run([autotester_exe, source_path, query_path, xml_path], stdout=subprocess.DEVNULL)

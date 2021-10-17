@@ -1,0 +1,30 @@
+1 - Calls(decl, decl)
+procedure p1, p2;
+Select <p1, p2> such that Calls(p1, p2)
+A B,A Extra,A Extra2,A Extra3,A UsesAndModifies,A UsesAndModifies2,A C,UsesAndModifies UsesAndModifies2,UsesAndModifies2 UsesAndModifies3
+5000
+2 - Calls*(decl, decl)
+procedure p1, p2;
+Select <p1, p2> such that Calls*(p1, p2)
+A UsesAndModifies2,A C,A UsesAndModifies3,A B,A Extra,A Extra2,A Extra3,A UsesAndModifies,UsesAndModifies2 UsesAndModifies3,UsesAndModifies UsesAndModifies2,UsesAndModifies UsesAndModifies3
+5000
+3 - Calls*(name, decl)
+procedure p1, p2;
+Select <p1, p2> such that Calls*(p1, p2) with p2.procName = "UsesAndModifies3"
+UsesAndModifies2 UsesAndModifies3,UsesAndModifies UsesAndModifies3,A UsesAndModifies3
+5000
+4 - Calls(name, name) (boolean) (1)
+procedure p1, p2;
+Select BOOLEAN such that Calls(p1, p2) with p1.procName = "A" and p2.procName = "B"
+TRUE
+5000
+5 - Calls(name, name) (boolean) (2)
+procedure p1, p2;
+Select BOOLEAN such that Calls(p1, p2) with p2.procName = "A"
+FALSE
+5000
+6 - Calls(_, _) (boolean)
+procedure p1, p2;
+Select BOOLEAN such that Calls(_, _)
+TRUE
+5000

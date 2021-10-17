@@ -28,3 +28,8 @@ stmt s1, s2;
 Select s1 such that Next(38, s1)
 39, 57
 5000
+7 - Next(_, _) (boolean)
+stmt s;
+Select BOOLEAN such that Next(_, _)
+TRUE
+5000
