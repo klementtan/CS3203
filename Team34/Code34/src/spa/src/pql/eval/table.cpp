@@ -109,6 +109,19 @@ namespace pql::eval::table
         return !(*this == other);
     }
 
+
+    int Join::get_next_id()
+    {
+        static int next_id = 0;
+        next_id++;
+        return next_id;
+    };
+
+    int Join::getId() const
+    {
+        return this->m_id;
+    }
+
     Join::Join(pql::ast::Declaration* decl_a, pql::ast::Declaration* decl_b,
         std::unordered_set<std::pair<Entry, Entry>> allowed_entries)
     {
@@ -123,6 +136,12 @@ namespace pql::eval::table
         this->m_decl_a = decl_a;
         this->m_decl_b = decl_b;
         this->m_allowed_entries = allowed_entries;
+        this->m_id = Join::get_next_id();
+        util::logfmt("pql::eval::table::join", "Creating join with id {}", this->m_id);
+    }
+    bool Join::isAllowedEntry(const std::pair<Entry, Entry>& entry) const
+    {
+        return m_allowed_entries.count(entry) > 0;
     }
 
     pql::ast::Declaration* Join::getDeclA() const

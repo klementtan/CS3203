@@ -49,10 +49,10 @@ namespace pql::eval::solver
                 "Fail to check if {} is valid against {}. {} or {} is not in IntRow", toString(), join.toString(),
                 decl_a->toString(), decl_b->toString());
         }
-        const std::pair<table::Entry, table::Entry> curr_entries =
+        const std::pair<table::Entry, table::Entry> curr_entry =
             std::make_pair(m_columns.find(decl_a)->second, m_columns.find(decl_b)->second);
         // curr_entries just needs to exist in one of the set of allowed entries
-        return join.m_allowed_entries.count(curr_entries) > 0;
+        return join.isAllowedEntry(curr_entry);
     }
     std::unordered_set<const ast::Declaration*> IntRow::getHeaders() const
     {
@@ -142,6 +142,8 @@ namespace pql::eval::solver
 
     IntTable IntTable::merge(const IntTable& other)
     {
+        START_BENCHMARK_TIMER(
+            zpr::sprint("****** Time spent merging tables of {} x {}", m_rows.size(), other.getRows().size()));
         // use copy assignment to create new rows
         std::vector<IntRow> new_rows;
         // m_rows should never be empty. Empty IntTable should contain an empty IntRow with no columns
@@ -210,6 +212,7 @@ namespace pql::eval::solver
 
     void IntTable::filterRows(const table::Join& join)
     {
+        START_BENCHMARK_TIMER(zpr::sprint("****** Time spent filtering {} rows", m_rows.size()));
         const ast::Declaration* decl_a = join.getDeclA();
         const ast::Declaration* decl_b = join.getDeclB();
         if(!(m_headers.count(decl_a) && m_headers.count(decl_b)))
@@ -218,21 +221,15 @@ namespace pql::eval::solver
                 join.toString(), toString(), decl_a->toString(), decl_b->toString());
             return;
         }
-        std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries = join.getAllowedEntries();
-        auto it = m_rows.begin();
-        while(it != m_rows.end())
+        std::vector<IntRow> new_rows;
+        for(const IntRow& row : m_rows)
         {
-            if(it->isAllowed(join))
-            {
-                it++;
-            }
-            else
-            {
-                util::logfmt("pql::eval::solver", "Filtering {} from {}. Removing IntRow {}.", join.toString(),
-                    toString(), it->toString());
-                it = m_rows.erase(it);
-            }
+            if(row.isAllowed(join))
+                new_rows.emplace_back(row);
         }
+        util::logfmt(
+            "pql::eval::solver", "Join(id: {}) filter tbl from {} to {}", join.getId(), m_rows.size(), new_rows.size());
+        m_rows = new_rows;
     }
     bool IntTable::empty() const
     {
@@ -496,6 +493,7 @@ namespace pql::eval::solver
         util::logfmt("pql::eval::solver", "Starting pre-process");
         std::unordered_set<const ast::Declaration*> processed_decl;
         std::vector<IntTable> new_int_tables;
+        std::unordered_set<int> processed_join;
 
         for(const std::unordered_set<const ast::Declaration*>& component : m_decl_components)
         {
@@ -523,7 +521,12 @@ namespace pql::eval::solver
                 std::vector<table::Join> joins = get_joins(decl);
                 for(const table::Join& join : joins)
                 {
-                    // TODO: experiment if we really need to constantly filter all joins
+                    if(processed_join.count(join.getId()))
+                    {
+                        util::logfmt("pql::eval::solver",
+                            "Skipping filter join with id {} as it has already been processed.", join.getId());
+                        continue;
+                    }
 
                     const ast::Declaration* other_decl = join.getDeclA() == decl ? join.getDeclB() : join.getDeclA();
                     if(new_table.getHeaders().count(other_decl) == 0)
@@ -534,6 +537,7 @@ namespace pql::eval::solver
                         new_table = new_table.merge(other_prev_table);
                     }
                     new_table.filterRows(join);
+                    processed_join.insert(join.getId());
                 }
             }
             util::logfmt("pql::eval::solver", "New final merged table for component {}", new_table.toString());
