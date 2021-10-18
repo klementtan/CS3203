@@ -140,8 +140,8 @@ def main():
 		if len(tests) == 0:
 			continue
 
-		if name.startswith("output-"):
-			name = name[len("output-"):]
+		if name.startswith("zzz_output-"):
+			name = name[len("zzz_output-"):]
 
 		print(f"test {name}:")
 		for t in tests:
