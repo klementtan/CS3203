@@ -121,9 +121,6 @@ namespace pql::eval::table
     private:
         pql::ast::Declaration* m_decl_a;
         pql::ast::Declaration* m_decl_b;
-
-        // TODO: dirty hack!!!!!!
-    public:
         std::unordered_set<std::pair<Entry, Entry>> m_allowed_entries;
 
     public:
@@ -135,6 +132,7 @@ namespace pql::eval::table
         [[nodiscard]] pql::ast::Declaration* getDeclB() const;
         [[nodiscard]] std::unordered_set<std::pair<Entry, Entry>> getAllowedEntries() const;
         [[nodiscard]] std::unordered_set<std::pair<Entry, Entry>> getAllowedEntries(pql::ast::Declaration* decl) const;
+        [[nodiscard]] bool isAllowedEntry(const std::pair<Entry, Entry>& entry) const;
         [[nodiscard]] std::string toString() const;
     };
 

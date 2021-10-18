@@ -49,10 +49,10 @@ namespace pql::eval::solver
                 "Fail to check if {} is valid against {}. {} or {} is not in IntRow", toString(), join.toString(),
                 decl_a->toString(), decl_b->toString());
         }
-        const std::pair<table::Entry, table::Entry> curr_entries =
+        const std::pair<table::Entry, table::Entry> curr_entry =
             std::make_pair(m_columns.find(decl_a)->second, m_columns.find(decl_b)->second);
         // curr_entries just needs to exist in one of the set of allowed entries
-        return join.m_allowed_entries.count(curr_entries) > 0;
+        return join.isAllowedEntry(curr_entry);
     }
     std::unordered_set<const ast::Declaration*> IntRow::getHeaders() const
     {
@@ -218,7 +218,6 @@ namespace pql::eval::solver
                 join.toString(), toString(), decl_a->toString(), decl_b->toString());
             return;
         }
-        std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries = join.getAllowedEntries();
         auto it = m_rows.begin();
         while(it != m_rows.end())
         {

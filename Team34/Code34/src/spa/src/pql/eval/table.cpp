@@ -124,6 +124,9 @@ namespace pql::eval::table
         this->m_decl_b = decl_b;
         this->m_allowed_entries = allowed_entries;
     }
+    bool Join::isAllowedEntry(const std::pair<Entry, Entry>& entry) const {
+      return m_allowed_entries.count(entry) > 0;
+    }
 
     pql::ast::Declaration* Join::getDeclA() const
     {
