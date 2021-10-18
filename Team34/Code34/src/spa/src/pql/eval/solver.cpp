@@ -142,6 +142,8 @@ namespace pql::eval::solver
 
     IntTable IntTable::merge(const IntTable& other)
     {
+        START_BENCHMARK_TIMER(
+            zpr::sprint("****** Time spent merging tables of {} x {}", m_rows.size(), other.getRows().size()));
         // use copy assignment to create new rows
         std::vector<IntRow> new_rows;
         // m_rows should never be empty. Empty IntTable should contain an empty IntRow with no columns
@@ -210,6 +212,7 @@ namespace pql::eval::solver
 
     void IntTable::filterRows(const table::Join& join)
     {
+        START_BENCHMARK_TIMER(zpr::sprint("****** Time spent filtering {} rows", m_rows.size()));
         const ast::Declaration* decl_a = join.getDeclA();
         const ast::Declaration* decl_b = join.getDeclB();
         if(!(m_headers.count(decl_a) && m_headers.count(decl_b)))
@@ -218,20 +221,15 @@ namespace pql::eval::solver
                 join.toString(), toString(), decl_a->toString(), decl_b->toString());
             return;
         }
-        auto it = m_rows.begin();
-        while(it != m_rows.end())
+        std::vector<IntRow> new_rows;
+        for(const IntRow& row : m_rows)
         {
-            if(it->isAllowed(join))
-            {
-                it++;
-            }
-            else
-            {
-                util::logfmt("pql::eval::solver", "Filtering {} from {}. Removing IntRow {}.", join.toString(),
-                    toString(), it->toString());
-                it = m_rows.erase(it);
-            }
+            if(row.isAllowed(join))
+                new_rows.emplace_back(row);
         }
+        util::logfmt(
+            "pql::eval::solver", "Join(id: {}) filter tbl from {} to {}", join.getId(), m_rows.size(), new_rows.size());
+        m_rows = new_rows;
     }
     bool IntTable::empty() const
     {
