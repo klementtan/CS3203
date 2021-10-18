@@ -495,6 +495,7 @@ namespace pql::eval::solver
         util::logfmt("pql::eval::solver", "Starting pre-process");
         std::unordered_set<const ast::Declaration*> processed_decl;
         std::vector<IntTable> new_int_tables;
+        std::unordered_set<int> processed_join;
 
         for(const std::unordered_set<const ast::Declaration*>& component : m_decl_components)
         {
@@ -522,7 +523,12 @@ namespace pql::eval::solver
                 std::vector<table::Join> joins = get_joins(decl);
                 for(const table::Join& join : joins)
                 {
-                    // TODO: experiment if we really need to constantly filter all joins
+                    if(processed_join.count(join.getId()))
+                    {
+                        util::logfmt("pql::eval::solver",
+                            "Skipping filter join with id {} as it has already been processed.", join.getId());
+                        continue;
+                    }
 
                     const ast::Declaration* other_decl = join.getDeclA() == decl ? join.getDeclB() : join.getDeclA();
                     if(new_table.getHeaders().count(other_decl) == 0)
@@ -533,6 +539,7 @@ namespace pql::eval::solver
                         new_table = new_table.merge(other_prev_table);
                     }
                     new_table.filterRows(join);
+                    processed_join.insert(join.getId());
                 }
             }
             util::logfmt("pql::eval::solver", "New final merged table for component {}", new_table.toString());

@@ -122,6 +122,8 @@ namespace pql::eval::table
         pql::ast::Declaration* m_decl_a;
         pql::ast::Declaration* m_decl_b;
         std::unordered_set<std::pair<Entry, Entry>> m_allowed_entries;
+        int m_id;
+        static int get_next_id();
 
     public:
         Join() = default;
@@ -134,6 +136,7 @@ namespace pql::eval::table
         [[nodiscard]] std::unordered_set<std::pair<Entry, Entry>> getAllowedEntries(pql::ast::Declaration* decl) const;
         [[nodiscard]] bool isAllowedEntry(const std::pair<Entry, Entry>& entry) const;
         [[nodiscard]] std::string toString() const;
+        [[nodiscard]] int getId() const;
     };
 
     class Table
