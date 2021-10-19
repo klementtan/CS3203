@@ -289,12 +289,12 @@ TEST_CASE("Select")
 
     INFO(select.toString());
     REQUIRE(select.toString() == "Select(result:ResultCl(type: Tuple, tuple: [Elem(ref_type: Declaration, "
-        "decl: Declaration(ent:assign, name:foo))], clauses:[\n"
-        "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:bar)), "
-            "ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))\n"
-        "\tAssignPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)), "
-            "assignment_declaration:Declaration(ent:assign, name:foo), "
-            "expr_spec:ExprSpec(is_subexpr:true, expr:(x + y)))\n])");
+                                 "decl: Declaration(ent:assign, name:foo))], clauses:[\n"
+                                 "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:bar)), "
+                                 "ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))\n"
+                                 "\tAssignPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)), "
+                                 "assignment_declaration:Declaration(ent:assign, name:foo), "
+                                 "expr_spec:ExprSpec(is_subexpr:true, expr:(x + y)))\n])");
 }
 
 TEST_CASE("Query")
@@ -343,16 +343,17 @@ TEST_CASE("Query")
     INFO(query.toString());
 
     constexpr auto expected = "Query(select:Select(result:ResultCl(type: Tuple, tuple: [Elem(ref_type: Declaration, "
-        "decl: Declaration(ent:assign, name:foo))], clauses:[\n"
-            "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:bar)), "
-            "ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))\n"
-            "\tAssignPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:buzz)), "
-            "assignment_declaration:Declaration(ent:assign, name:buzz), expr_spec:ExprSpec(is_subexpr:true, expr:(x + y)))\n"
-            "]), declarations:DeclarationList[\n"
-            "\tname:bar, declaration:Declaration(ent:assign, name:bar)\n"
-            "\tname:buzz, declaration:Declaration(ent:assign, name:buzz)\n"
-            "\tname:foo, declaration:Declaration(ent:assign, name:foo)\n"
-            "])";
+                              "decl: Declaration(ent:assign, name:foo))], clauses:[\n"
+                              "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:bar)), "
+                              "ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))\n"
+                              "\tAssignPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:buzz)), "
+                              "assignment_declaration:Declaration(ent:assign, name:buzz), "
+                              "expr_spec:ExprSpec(is_subexpr:true, expr:(x + y)))\n"
+                              "]), declarations:DeclarationList[\n"
+                              "\tname:bar, declaration:Declaration(ent:assign, name:bar)\n"
+                              "\tname:buzz, declaration:Declaration(ent:assign, name:buzz)\n"
+                              "\tname:foo, declaration:Declaration(ent:assign, name:foo)\n"
+                              "])";
 
     REQUIRE(query.toString() == expected);
 }
