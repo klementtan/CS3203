@@ -51,6 +51,7 @@ namespace pql::eval::solver
         [[nodiscard]] std::vector<IntRow> getRows() const;
         void filterRows(const table::Join& join);
         [[nodiscard]] bool empty() const;
+        [[nodiscard]] int size() const;
         [[nodiscard]] std::string toString() const;
     };
 
@@ -78,7 +79,7 @@ namespace pql::eval::solver
         std::vector<table::Join> m_joins;
         std::unordered_set<const ast::Declaration*> m_return_decls;
         std::vector<IntTable> m_int_tables;
-        std::vector<std::unordered_set<const ast::Declaration*>> m_decl_components;
+        std::vector<std::vector<const ast::Declaration*>> m_decl_components;
         DepGraph m_dep_graph;
 
         std::vector<table::Join> get_joins(const ast::Declaration* decl) const;
@@ -92,6 +93,8 @@ namespace pql::eval::solver
         // preprocess by joining tables based on the Joins
         void preprocess_int_table();
         bool has_table(const ast::Declaration* decl) const;
+        std::vector<std::vector<const ast::Declaration*>> sort_components(
+            const std::vector<std::unordered_set<const ast::Declaration*>>& components) const;
 
     public:
         Solver(const std::vector<table::Join>& joins,

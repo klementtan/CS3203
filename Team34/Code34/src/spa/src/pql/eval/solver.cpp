@@ -210,6 +210,11 @@ namespace pql::eval::solver
         return this->m_rows;
     }
 
+    int IntTable::size() const
+    {
+        return m_rows.size();
+    }
+
     void IntTable::filterRows(const table::Join& join)
     {
         START_BENCHMARK_TIMER(zpr::sprint("****** Time spent filtering {} rows", m_rows.size()));
@@ -334,6 +339,35 @@ namespace pql::eval::solver
         }
         return ret;
     }
+
+    std::vector<std::vector<const ast::Declaration*>> Solver::sort_components(
+        const std::vector<std::unordered_set<const ast::Declaration*>>& components) const
+    {
+        std::vector<std::vector<const ast::Declaration*>> ret;
+        for(const auto& component : components)
+        {
+            std::vector<std::pair<int, const ast::Declaration*>> size_decls;
+            for(const auto decl : component)
+            {
+                // All decl should belong to a table
+                assert(has_table(decl));
+                size_t table_i = get_table_index(decl);
+                size_decls.emplace_back(m_int_tables[table_i].size(), decl);
+            }
+            // sort smallest IntTable first
+            sort(size_decls.begin(), size_decls.end());
+
+            std::vector<const ast::Declaration*> sorted_decl(size_decls.size());
+
+            for(int i = 0; i < size_decls.size(); i++)
+            {
+                sorted_decl[i] = size_decls[i].second;
+            }
+
+            ret.emplace_back(sorted_decl);
+        }
+        return ret;
+    };
     Solver::Solver(const std::vector<table::Join>& joins,
         std::unordered_map<const ast::Declaration*, table::Domain> domains,
         const std::unordered_set<const ast::Declaration*>& return_decls,
@@ -342,7 +376,6 @@ namespace pql::eval::solver
           m_decl_components(), m_dep_graph(mergeAndCopySet(return_decls, select_decls), joins)
     {
         START_BENCHMARK_TIMER("Solver constructor");
-        m_decl_components = m_dep_graph.getComponents();
 
         trim(return_decls);
         trim(select_decls);
@@ -374,6 +407,8 @@ namespace pql::eval::solver
             m_int_tables.push_back(tbl);
             util::logfmt("pql::eval::solver", "Adding {} to m_int_tables", tbl.toString());
         }
+        // only sort component after forming the IntTable
+        m_decl_components = sort_components(m_dep_graph.getComponents());
         preprocess_int_table();
     }
     std::vector<table::Join> Solver::get_joins(const ast::Declaration* decl) const
@@ -495,7 +530,7 @@ namespace pql::eval::solver
         std::vector<IntTable> new_int_tables;
         std::unordered_set<int> processed_join;
 
-        for(const std::unordered_set<const ast::Declaration*>& component : m_decl_components)
+        for(const std::vector<const ast::Declaration*>& component : m_decl_components)
         {
             IntTable new_table;
             // A component should never be empty
