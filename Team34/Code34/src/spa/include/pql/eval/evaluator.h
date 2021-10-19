@@ -25,20 +25,6 @@ namespace pql::eval
         std::unique_ptr<ast::Query> m_query;
 
         void processDeclarations(const ast::DeclarationList& declaration_list);
-        void handleRelation(const ast::RelCond* rel_cond);
-
-        void handleFollows(const ast::Follows* follows);
-        void handleFollowsT(const ast::FollowsT* follows_t);
-        void handleUsesP(const ast::UsesP* uses_p);
-        void handleUsesS(const ast::UsesS* uses_p);
-        void handleModifiesP(const ast::ModifiesP* modifies_p);
-        void handleModifiesS(const ast::ModifiesS* modifies_s);
-        void handleParent(const ast::Parent* parent);
-        void handleParentT(const ast::ParentT* parent_t);
-        void handleCalls(const ast::Calls* rel);
-        void handleCallsT(const ast::CallsT* rel);
-        void handleNext(const ast::Next* rel);
-        void handleNextT(const ast::NextT* rel);
 
         std::unordered_set<table::Entry> getInitialDomainVar(ast::Declaration* declaration);
         std::unordered_set<table::Entry> getInitialDomainProc(ast::Declaration* declaration);

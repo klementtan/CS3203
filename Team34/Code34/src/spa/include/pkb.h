@@ -181,6 +181,7 @@ namespace pkb
         void computeDistMat();
         std::string getMatRep() const;
         bool nextRelationExists() const;
+        bool affectsRelationExists() const;
 
         void addAssignStmtMapping(StatementNum stmt1, Statement* stmt2);
         void addModStmtMapping(StatementNum stmt1, Statement* stmt2);
@@ -232,6 +233,7 @@ namespace pkb
         bool callsRelationExists() const;
         bool parentRelationExists() const;
         bool followsRelationExists() const;
+        bool affectsRelationExists() const;
 
         const simple::ast::Program* getProgram() const;
 

@@ -275,6 +275,18 @@ namespace pkb
         return false;
     }
 
+    bool CFG::affectsRelationExists() const
+    {
+        // TODO: is there a cheaper way of doing this?
+        for(auto [assid, _] : this->assign_stmts)
+        {
+            if(!this->getAffectedStatements(assid).empty())
+                return true;
+        }
+
+        return false;
+    }
+
     StatementSet CFG::getAffectedStatements(StatementNum id) const
     {
         StatementSet ret {};

@@ -359,7 +359,7 @@ namespace pql::eval::solver
 
             std::vector<const ast::Declaration*> sorted_decl(size_decls.size());
 
-            for(int i = 0; i < size_decls.size(); i++)
+            for(size_t i = 0; i < size_decls.size(); i++)
             {
                 sorted_decl[i] = size_decls[i].second;
             }
@@ -535,11 +535,13 @@ namespace pql::eval::solver
             IntTable new_table;
             // A component should never be empty
             assert(!component.empty());
-            std::string log = "{";
-            for(const ast::Declaration* decl : component)
-                log += zpr::sprint("{}, ", decl->toString());
-            log += "}";
-            util::logfmt("pql::eval::solver", "Merging component {}", log);
+            util::logfmt("pql::eval::solver", "Merging component {}", [&]() -> std::string {
+                std::string log = "{";
+                for(const ast::Declaration* decl : component)
+                    log += decl->toString() + ", ";
+                return log + "}";
+            }());
+
             // TODO: we should sort in increasing order of table size
             for(const ast::Declaration* decl : component)
             {

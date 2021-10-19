@@ -24,22 +24,19 @@ namespace pql::eval
         std::optional<ast::DESIGN_ENT> rightDeclEntity {};
 
         // Relation[*](A, B) <=> A.relationHolds(B) <=> B.inverseRelationHolds(A)
-        std::function<bool(const Entity&, const Entity&)> relationHolds {};
-        std::function<bool(const Entity&, const Entity&)> inverseRelationHolds {};
+        bool (*relationHolds)(const pkb::ProgramKB*, const Entity&, const Entity&) {};
+        bool (*inverseRelationHolds)(const pkb::ProgramKB*, const Entity&, const Entity&) {};
 
         template <typename T>
         using SetWrapper = std::conditional_t<SetsAreConstRef, const std::unordered_set<T>&, std::unordered_set<T>>;
 
         // Relation[*](A, _) <=> A.getAllRelated()
         // Relation[*](_, B) <=> B.getAllInverselyRelated()
-        std::function<SetWrapper<RelationParam>(const Entity&)> getAllRelated {};
-        std::function<SetWrapper<RelationParam>(const Entity&)> getAllInverselyRelated {};
+        SetWrapper<RelationParam> (*getAllRelated)(const pkb::ProgramKB*, const Entity&) {};
+        SetWrapper<RelationParam> (*getAllInverselyRelated)(const pkb::ProgramKB*, const Entity&) {};
 
         // getStatementAt, getProcedureNamed, getVariableNamed
         const Entity& (pkb::ProgramKB::*getEntity)(const RelationParam&) const;
-
-        // Entry::getVal(), getStmtNum()
-        // RelationParam (table::Entry::*getEntryValue)() const;
 
         // callsRelationExists, parentRelationExists, etc.
         bool (pkb::ProgramKB::*relationExists)() const;

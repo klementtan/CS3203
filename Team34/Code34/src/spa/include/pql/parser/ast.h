@@ -228,6 +228,7 @@ namespace pql::ast
     {
         virtual ~Clause();
         virtual std::string toString() const = 0;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const = 0;
     };
 
     /** Abstract class for Relationship Conditions between Statements and Entities. */
@@ -239,6 +240,7 @@ namespace pql::ast
     struct ModifiesP : RelCond
     {
         virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
 
         EntRef modifier {};
         EntRef ent {};
@@ -248,6 +250,7 @@ namespace pql::ast
     struct ModifiesS : RelCond
     {
         virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
 
         StmtRef modifier {};
         EntRef ent {};
@@ -257,6 +260,7 @@ namespace pql::ast
     struct UsesP : RelCond
     {
         virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
 
         EntRef user {};
         EntRef ent {};
@@ -266,6 +270,7 @@ namespace pql::ast
     struct UsesS : RelCond
     {
         virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
 
         StmtRef user {};
         EntRef ent {};
@@ -275,6 +280,7 @@ namespace pql::ast
     struct Parent : RelCond
     {
         virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
 
         StmtRef parent {};
         StmtRef child {};
@@ -284,6 +290,7 @@ namespace pql::ast
     struct ParentT : RelCond
     {
         virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
 
         StmtRef ancestor {};
         StmtRef descendant {};
@@ -293,6 +300,7 @@ namespace pql::ast
     struct Follows : RelCond
     {
         virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
 
         StmtRef directly_before {};
         StmtRef directly_after {};
@@ -302,6 +310,7 @@ namespace pql::ast
     struct FollowsT : RelCond
     {
         virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
 
         StmtRef before {};
         StmtRef after {};
@@ -311,6 +320,7 @@ namespace pql::ast
     struct Calls : RelCond
     {
         virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
 
         EntRef caller {};
         EntRef proc {};
@@ -320,6 +330,7 @@ namespace pql::ast
     struct CallsT : RelCond
     {
         virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
 
         EntRef caller {};
         EntRef proc {};
@@ -328,6 +339,7 @@ namespace pql::ast
     struct Next : RelCond
     {
         virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
 
         StmtRef first {};
         StmtRef second {};
@@ -336,6 +348,7 @@ namespace pql::ast
     struct NextT : RelCond
     {
         virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
 
         StmtRef first {};
         StmtRef second {};
@@ -344,6 +357,7 @@ namespace pql::ast
     struct Affects : RelCond
     {
         virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
 
         StmtRef first {};
         StmtRef second {};
@@ -352,6 +366,7 @@ namespace pql::ast
     struct AffectsT : RelCond
     {
         virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
 
         StmtRef first {};
         StmtRef second {};
@@ -372,7 +387,6 @@ namespace pql::ast
     /** Condition for a pattern. */
     struct PatternCond : Clause
     {
-        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const = 0;
     };
 
     /** Assignment pattern condition. ie `assign a; Select a pattern a ("x",_);`*/
@@ -461,7 +475,7 @@ namespace pql::ast
         WithCondRef rhs {};
 
         virtual std::string toString() const override;
-        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
     };
 
     struct ResultCl
@@ -498,11 +512,8 @@ namespace pql::ast
     /** Select query. */
     struct Select
     {
-        std::vector<std::unique_ptr<PatternCond>> patterns {};
-        std::vector<std::unique_ptr<RelCond>> relations {};
-        std::vector<std::unique_ptr<WithCond>> withs {};
-
         ResultCl result {};
+        std::vector<std::unique_ptr<Clause>> clauses {};
 
         std::string toString() const;
     };

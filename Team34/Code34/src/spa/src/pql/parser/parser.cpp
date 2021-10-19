@@ -317,11 +317,11 @@ namespace pql::parser
 
             if(decl_ent == ast::DESIGN_ENT::ASSIGN)
             {
-                select->patterns.push_back(parse_assign_pattern(ps, pattern_decl));
+                select->clauses.push_back(parse_assign_pattern(ps, pattern_decl));
             }
             else if(decl_ent == ast::DESIGN_ENT::IF || decl_ent == ast::DESIGN_ENT::WHILE)
             {
-                select->patterns.push_back(parse_if_while_pattern(ps, pattern_decl));
+                select->clauses.push_back(parse_if_while_pattern(ps, pattern_decl));
             }
             else
             {
@@ -490,11 +490,11 @@ namespace pql::parser
 
         util::logfmt("pql::parser", "Parsing such that clause.");
 
-        select->relations.push_back(parse_rel_cond(ps));
+        select->clauses.push_back(parse_rel_cond(ps));
         while(ps->peek_keyword() == TT::KW_And)
         {
             ps->next_keyword();
-            select->relations.push_back(parse_rel_cond(ps));
+            select->clauses.push_back(parse_rel_cond(ps));
         }
     }
 
@@ -623,11 +623,11 @@ namespace pql::parser
     {
         ps->expect_keyword(TT::KW_With);
 
-        select->withs.push_back(parse_with_cond(ps));
+        select->clauses.push_back(parse_with_cond(ps));
         while(ps->peek_keyword() == TT::KW_And)
         {
             ps->next_keyword();
-            select->withs.push_back(parse_with_cond(ps));
+            select->clauses.push_back(parse_with_cond(ps));
         }
     }
 

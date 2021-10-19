@@ -17,9 +17,7 @@ TEST_CASE("Basic Query")
     REQUIRE(v_declaration->design_ent == pql::ast::DESIGN_ENT::VARIABLE);
     REQUIRE(v_declaration->name == "v");
     REQUIRE(query->select.result.tuple().front().declaration() == v_declaration);
-    REQUIRE(query->select.relations.empty());
-    REQUIRE(query->select.patterns.empty());
-    REQUIRE(query->select.withs.empty());
+    REQUIRE(query->select.clauses.empty());
 }
 
 TEST_CASE("Follows* Query")
@@ -31,9 +29,9 @@ TEST_CASE("Follows* Query")
     REQUIRE(s_declaration->design_ent == pql::ast::DESIGN_ENT::STMT);
     REQUIRE(s_declaration->name == "s");
     REQUIRE(query->select.result.tuple().front().declaration() == s_declaration);
-    REQUIRE(query->select.relations.size() == 1);
+    REQUIRE(query->select.clauses.size() == 1);
 
-    auto follows_t = dynamic_cast<pql::ast::FollowsT*>(query->select.relations[0].get());
+    auto follows_t = dynamic_cast<pql::ast::FollowsT*>(query->select.clauses[0].get());
     REQUIRE(follows_t != nullptr);
 
     CHECK(follows_t->before.id() == 6);
@@ -49,8 +47,8 @@ TEST_CASE("ModifiesS Query")
     REQUIRE(v_declaration->design_ent == pql::ast::DESIGN_ENT::VARIABLE);
     REQUIRE(v_declaration->name == "v");
     REQUIRE(query->select.result.tuple().front().declaration() == v_declaration);
-    REQUIRE(query->select.relations.size() == 1);
-    auto modifies_s = dynamic_cast<pql::ast::ModifiesS*>(query->select.relations[0].get());
+    REQUIRE(query->select.clauses.size() == 1);
+    auto modifies_s = dynamic_cast<pql::ast::ModifiesS*>(query->select.clauses[0].get());
     REQUIRE(modifies_s != nullptr);
 
     CHECK(modifies_s->modifier.id() == 6);
@@ -66,8 +64,8 @@ TEST_CASE("ModifiesP Query")
     REQUIRE(p_declaration->design_ent == pql::ast::DESIGN_ENT::PROCEDURE);
     REQUIRE(p_declaration->name == "p");
     REQUIRE(query->select.result.tuple().front().declaration() == p_declaration);
-    REQUIRE(query->select.relations.size() == 1);
-    auto modifies_p = dynamic_cast<pql::ast::ModifiesP*>(query->select.relations[0].get());
+    REQUIRE(query->select.clauses.size() == 1);
+    auto modifies_p = dynamic_cast<pql::ast::ModifiesP*>(query->select.clauses[0].get());
     REQUIRE(modifies_p != nullptr);
 
     CHECK(modifies_p->modifier.declaration() == p_declaration);
@@ -83,8 +81,8 @@ TEST_CASE("UsesS Query")
     REQUIRE(v_declaration->design_ent == pql::ast::DESIGN_ENT::VARIABLE);
     REQUIRE(v_declaration->name == "v");
     REQUIRE(query->select.result.tuple().front().declaration() == v_declaration);
-    REQUIRE(query->select.relations.size() == 1);
-    auto uses_s = dynamic_cast<pql::ast::UsesS*>(query->select.relations[0].get());
+    REQUIRE(query->select.clauses.size() == 1);
+    auto uses_s = dynamic_cast<pql::ast::UsesS*>(query->select.clauses[0].get());
     REQUIRE(uses_s != nullptr);
 
     CHECK(uses_s->user.id() == 14);
@@ -100,8 +98,8 @@ TEST_CASE("Pattern Query")
     REQUIRE(a_declaration->design_ent == pql::ast::DESIGN_ENT::ASSIGN);
     REQUIRE(a_declaration->name == "a");
     REQUIRE(query->select.result.tuple().front().declaration() == a_declaration);
-    REQUIRE(query->select.patterns.size() == 1);
-    auto assign_pattern_cond = dynamic_cast<pql::ast::AssignPatternCond*>(query->select.patterns[0].get());
+    REQUIRE(query->select.clauses.size() == 1);
+    auto assign_pattern_cond = dynamic_cast<pql::ast::AssignPatternCond*>(query->select.clauses[0].get());
     REQUIRE(assign_pattern_cond != nullptr);
     REQUIRE(assign_pattern_cond->assignment_declaration == a_declaration);
 
@@ -131,8 +129,8 @@ TEST_CASE("Parent Query")
         REQUIRE(s_declaration->design_ent == pql::ast::DESIGN_ENT::STMT);
         REQUIRE(s_declaration->name == "s");
         REQUIRE(query->select.result.tuple().front().declaration() == s_declaration);
-        REQUIRE(query->select.relations.size() == 1);
-        auto parent = dynamic_cast<pql::ast::Parent*>(query->select.relations[0].get());
+        REQUIRE(query->select.clauses.size() == 1);
+        auto parent = dynamic_cast<pql::ast::Parent*>(query->select.clauses[0].get());
         REQUIRE(parent != nullptr);
 
         CHECK(parent->parent.id() == 6);
