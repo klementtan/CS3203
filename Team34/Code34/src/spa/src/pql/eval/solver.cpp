@@ -535,11 +535,13 @@ namespace pql::eval::solver
             IntTable new_table;
             // A component should never be empty
             assert(!component.empty());
-            std::string log = "{";
-            for(const ast::Declaration* decl : component)
-                log += zpr::sprint("{}, ", decl->toString());
-            log += "}";
-            util::logfmt("pql::eval::solver", "Merging component {}", log);
+            util::logfmt("pql::eval::solver", "Merging component {}", [&]() -> std::string {
+                std::string log = "{";
+                for(const ast::Declaration* decl : component)
+                    log += decl->toString() + ", ";
+                return log + "}";
+            }());
+
             // TODO: we should sort in increasing order of table size
             for(const ast::Declaration* decl : component)
             {
