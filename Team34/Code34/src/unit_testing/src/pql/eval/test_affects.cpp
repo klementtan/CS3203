@@ -181,8 +181,8 @@ TEST_CASE("Affects")
 
         TEST_OK(prog_4, "stmt a; Select a such that Affects(1, a)", 4, 8, 10);
         TEST_OK(prog_4, "stmt a; Select a such that Affects(a, 10)", 1, 2, 4, 6, 8, 9);
-        TEST_OK(prog_4, "stmt a, b; Select <a, b> such that Affects(a, b)", "1 4", "1 8", "1 10", "2 6", "2 10",
-            "4 4", "4 8", "4 10", "6 6", "6 10", "8 10", "9 10", "10 11", "10 12", "12 13", "13 14");
+        TEST_OK(prog_4, "stmt a, b; Select <a, b> such that Affects(a, b)", "1 4", "1 8", "1 10", "2 6", "2 10", "4 4",
+            "4 8", "4 10", "6 6", "6 10", "8 10", "9 10", "10 11", "10 12", "12 13", "13 14");
     }
 }
 
