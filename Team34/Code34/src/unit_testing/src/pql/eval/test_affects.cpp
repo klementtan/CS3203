@@ -169,7 +169,23 @@ TEST_CASE("Affects")
         TEST_OK(prog_2, "Select BOOLEAN such that Affects(6, 7)", "FALSE");
         TEST_OK(prog_2, "Select BOOLEAN such that Affects(21, 8)", "FALSE");
     }
+
+    SECTION("pql testing")
+    {
+        TEST_OK(prog_1, "Select BOOLEAN such that Affects(_, _)", "FALSE");
+        TEST_OK(prog_1, "stmt a, b; Select <a, b> such that Affects(a, b)");
+
+        TEST_OK(prog_2, "Select BOOLEAN such that Affects(_, _)", "TRUE");
+        TEST_OK(prog_2, "stmt a; Select a such that Affects(a, _)", 8, 9, 13, 15, 17, 18, 19, 20);
+        TEST_OK(prog_2, "stmt a; Select a such that Affects(_, a)", 11, 13, 15, 19, 20, 21);
+
+        TEST_OK(prog_4, "stmt a, b; Select <a, b> such that Affects(a, b)", "1 4", "1 8", "1 10", "2 6", "2 10",
+            "4 4", "4 8", "4 10", "6 6", "6 10", "8 10", "9 10", "10 11", "10 12", "12 13", "13 14");
+    }
 }
+
+
+
 
 TEST_CASE("Affects*")
 {

@@ -24,8 +24,8 @@ namespace pql::ast
         if(abs.relationName == nullptr)
         {
             abs.relationName = "Affects";
-            abs.leftDeclEntity = DESIGN_ENT::ASSIGN;
-            abs.rightDeclEntity = DESIGN_ENT::ASSIGN;
+            abs.leftDeclEntity = {};
+            abs.rightDeclEntity = {};
 
             abs.relationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
                 return pkb->getCFG()->doesAffect(a.getStmtNum(), b.getStmtNum());
@@ -58,8 +58,8 @@ namespace pql::ast
         if(abs.relationName == nullptr)
         {
             abs.relationName = "Affects*";
-            abs.leftDeclEntity = DESIGN_ENT::ASSIGN;
-            abs.rightDeclEntity = DESIGN_ENT::ASSIGN;
+            abs.leftDeclEntity = {};
+            abs.rightDeclEntity = {};
 
             abs.relationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
                 return pkb->getCFG()->doesTransitivelyAffect(a.getStmtNum(), b.getStmtNum());
