@@ -38,26 +38,6 @@ namespace pql::eval
         void evaluateP(const ProgramKB* pkb, table::Table* table, const ast::RelCond* rel, const ast::EntRef& proc,
             const ast::EntRef& right) const;
     };
-
-    void Evaluator::handleUsesP(const ast::UsesP* rel)
-    {
-        rel->evaluate(m_pkb, &m_table);
-    }
-
-    void Evaluator::handleUsesS(const ast::UsesS* rel)
-    {
-        rel->evaluate(m_pkb, &m_table);
-    }
-
-    void Evaluator::handleModifiesP(const ast::ModifiesP* rel)
-    {
-        rel->evaluate(m_pkb, &m_table);
-    }
-
-    void Evaluator::handleModifiesS(const ast::ModifiesS* rel)
-    {
-        rel->evaluate(m_pkb, &m_table);
-    }
 }
 
 namespace pql::ast

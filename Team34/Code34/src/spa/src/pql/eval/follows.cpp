@@ -8,19 +8,6 @@
 #include "pql/eval/common.h"
 #include "pql/eval/evaluator.h"
 
-namespace pql::eval
-{
-    void Evaluator::handleFollows(const ast::Follows* rel)
-    {
-        rel->evaluate(m_pkb, &m_table);
-    }
-
-    void Evaluator::handleFollowsT(const ast::FollowsT* rel)
-    {
-        rel->evaluate(m_pkb, &m_table);
-    }
-}
-
 namespace pql::ast
 {
     using namespace pkb;

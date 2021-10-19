@@ -138,12 +138,6 @@ namespace pql::eval
             processDeclarations(m_query->declarations);
             util::logfmt("pql::eval", "Table after initial processing of declaration: {}", m_table.toString());
 
-            // for(const auto& rel : m_query->select.relations)
-            //     handleRelation(rel.get());
-
-            // for(const auto& pattern : m_query->select.patterns)
-            //     pattern->evaluate(m_pkb, &m_table);
-
             for(const auto& clause : m_query->select.clauses)
                 clause->evaluate(m_pkb, &m_table);
 
@@ -155,35 +149,5 @@ namespace pql::eval
             util::logfmt("pql::eval", "caught exception during evaluation of query: '{}'", e.what());
             return table::Table::getFailedResult(m_query->select.result);
         }
-    }
-
-    void Evaluator::handleRelation(const ast::RelCond* rel_cond)
-    {
-        if(auto follows = dynamic_cast<const ast::Follows*>(rel_cond); follows)
-            handleFollows(follows);
-        else if(auto follows_t = dynamic_cast<const ast::FollowsT*>(rel_cond); follows_t)
-            handleFollowsT(follows_t);
-        else if(auto uses_p = dynamic_cast<const ast::UsesP*>(rel_cond); uses_p)
-            handleUsesP(uses_p);
-        else if(auto uses_s = dynamic_cast<const ast::UsesS*>(rel_cond); uses_s)
-            handleUsesS(uses_s);
-        else if(auto modifies_p = dynamic_cast<const ast::ModifiesP*>(rel_cond); modifies_p)
-            handleModifiesP(modifies_p);
-        else if(auto modifies_s = dynamic_cast<const ast::ModifiesS*>(rel_cond); modifies_s)
-            handleModifiesS(modifies_s);
-        else if(auto parent = dynamic_cast<const ast::Parent*>(rel_cond); parent)
-            handleParent(parent);
-        else if(auto parent_t = dynamic_cast<const ast::ParentT*>(rel_cond); parent_t)
-            handleParentT(parent_t);
-        else if(auto calls = dynamic_cast<const ast::Calls*>(rel_cond); calls)
-            handleCalls(calls);
-        else if(auto calls_t = dynamic_cast<const ast::CallsT*>(rel_cond); calls_t)
-            handleCallsT(calls_t);
-        else if(auto next = dynamic_cast<const ast::Next*>(rel_cond); next)
-            handleNext(next);
-        else if(auto next_t = dynamic_cast<const ast::NextT*>(rel_cond); next_t)
-            handleNextT(next_t);
-        else
-            throw util::PqlException("pql::eval", "unknown relation type");
     }
 }

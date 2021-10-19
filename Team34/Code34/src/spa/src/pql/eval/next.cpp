@@ -8,20 +8,6 @@
 #include "pql/eval/common.h"
 #include "pql/eval/evaluator.h"
 
-namespace pql::eval
-{
-    void Evaluator::handleNext(const ast::Next* rel)
-    {
-        rel->evaluate(m_pkb, &m_table);
-    }
-
-    void Evaluator::handleNextT(const ast::NextT* rel)
-    {
-        rel->evaluate(m_pkb, &m_table);
-    }
-}
-
-
 namespace pql::ast
 {
     using namespace pkb;

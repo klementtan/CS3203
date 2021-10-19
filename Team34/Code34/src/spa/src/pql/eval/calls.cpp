@@ -8,19 +8,6 @@
 #include "pql/eval/common.h"
 #include "pql/eval/evaluator.h"
 
-namespace pql::eval
-{
-    void Evaluator::handleCalls(const ast::Calls* rel)
-    {
-        rel->evaluate(m_pkb, &m_table);
-    }
-
-    void Evaluator::handleCallsT(const ast::CallsT* rel)
-    {
-        rel->evaluate(m_pkb, &m_table);
-    }
-}
-
 namespace pql::ast
 {
     using namespace pkb;

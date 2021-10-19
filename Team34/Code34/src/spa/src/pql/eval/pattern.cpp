@@ -7,7 +7,6 @@
 #include "pql/eval/table.h"
 #include "pql/eval/evaluator.h"
 
-
 namespace pql::ast
 {
     namespace s_ast = simple::ast;
