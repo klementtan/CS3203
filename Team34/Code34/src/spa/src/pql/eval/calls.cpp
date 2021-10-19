@@ -10,18 +10,35 @@
 
 namespace pql::eval
 {
-    using namespace pkb;
-
     void Evaluator::handleCalls(const ast::Calls* rel)
     {
-        assert(rel);
+        rel->evaluate(m_pkb, &m_table);
+    }
 
-        static RelationAbstractor<pkb::Procedure, std::string, ast::EntRef, /* SetsAreConstRef: */ true> abs {};
+    void Evaluator::handleCallsT(const ast::CallsT* rel)
+    {
+        rel->evaluate(m_pkb, &m_table);
+    }
+}
+
+namespace pql::ast
+{
+    using namespace pkb;
+    namespace table = pql::eval::table;
+
+    using PqlException = util::PqlException;
+
+    void Calls::evaluate(const ProgramKB* pkb, table::Table* tbl) const
+    {
+        assert(pkb);
+        assert(tbl);
+
+        static eval::RelationAbstractor<Procedure, std::string, ast::EntRef, /* SetsAreConstRef: */ true> abs {};
         if(abs.relationName == nullptr)
         {
             abs.relationName = "Calls";
-            abs.leftDeclEntity = ast::DESIGN_ENT::PROCEDURE;
-            abs.rightDeclEntity = ast::DESIGN_ENT::PROCEDURE;
+            abs.leftDeclEntity = DESIGN_ENT::PROCEDURE;
+            abs.rightDeclEntity = DESIGN_ENT::PROCEDURE;
 
             abs.relationHolds = [](const Procedure& a, const Procedure& b) -> bool {
                 return a.callsProcedure(b.getName());
@@ -39,24 +56,24 @@ namespace pql::eval
                 return p.getAllCallers();
             };
 
-            abs.relationExists = &pkb::ProgramKB::callsRelationExists;
-            abs.getEntity = &pkb::ProgramKB::getProcedureNamed;
+            abs.relationExists = &ProgramKB::callsRelationExists;
+            abs.getEntity = &ProgramKB::getProcedureNamed;
         }
 
-        abs.evaluate(m_pkb, &m_table, rel, &rel->caller, &rel->proc);
+        abs.evaluate(pkb, tbl, this, &this->caller, &this->proc);
     }
 
-
-    void Evaluator::handleCallsT(const ast::CallsT* rel)
+    void CallsT::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
-        assert(rel);
+        assert(pkb);
+        assert(tbl);
 
-        static RelationAbstractor<pkb::Procedure, std::string, ast::EntRef, /* SetsAreConstRef: */ true> abs {};
+        static eval::RelationAbstractor<Procedure, std::string, EntRef, /* SetsAreConstRef: */ true> abs {};
         if(abs.relationName == nullptr)
         {
             abs.relationName = "Calls*";
-            abs.leftDeclEntity = ast::DESIGN_ENT::PROCEDURE;
-            abs.rightDeclEntity = ast::DESIGN_ENT::PROCEDURE;
+            abs.leftDeclEntity = DESIGN_ENT::PROCEDURE;
+            abs.rightDeclEntity = DESIGN_ENT::PROCEDURE;
 
             abs.relationHolds = [](const Procedure& a, const Procedure& b) -> bool {
                 return a.callsProcedureTransitively(b.getName());
@@ -74,10 +91,10 @@ namespace pql::eval
                 return p.getAllTransitiveCallers();
             };
 
-            abs.relationExists = &pkb::ProgramKB::callsRelationExists;
-            abs.getEntity = &pkb::ProgramKB::getProcedureNamed;
+            abs.relationExists = &ProgramKB::callsRelationExists;
+            abs.getEntity = &ProgramKB::getProcedureNamed;
         }
 
-        abs.evaluate(m_pkb, &m_table, rel, &rel->caller, &rel->proc);
+        abs.evaluate(pkb, tbl, this, &this->caller, &this->proc);
     }
 }

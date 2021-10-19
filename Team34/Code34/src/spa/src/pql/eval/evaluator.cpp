@@ -125,9 +125,13 @@ namespace pql::eval
     {
         START_BENCHMARK_TIMER("PQL Evaluation Timer");
         util::logfmt("pql::eval", "Evaluating query: {}", m_query->toString());
+        zpr::fprintln(stderr, "Evaluating query: {}", m_query->toString());
+
         if(m_query->isInvalid())
         {
             util::logfmt("pql::eval", "refusing to evaluate; query was semantically invalid");
+            zpr::fprintln(stderr, "refusing to evaluate; query was semantically invalid");
+
             return table::Table::getFailedResult(m_query->select.result);
         }
 
@@ -152,6 +156,7 @@ namespace pql::eval
         catch(const util::Exception& e)
         {
             util::logfmt("pql::eval", "caught exception during evaluation of query: '{}'", e.what());
+            zpr::fprintln(stderr, "caught exception during evaluation of query: '{}'", e.what());
             return table::Table::getFailedResult(m_query->select.result);
         }
     }

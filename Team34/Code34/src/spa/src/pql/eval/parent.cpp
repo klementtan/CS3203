@@ -10,15 +10,30 @@
 
 namespace pql::eval
 {
-    using namespace pkb;
-    using PqlException = util::PqlException;
-    using StatementSet = std::unordered_set<StatementNum>;
-
     void Evaluator::handleParent(const ast::Parent* rel)
     {
-        assert(rel);
+        rel->evaluate(m_pkb, &m_table);
+    }
 
-        static RelationAbstractor<Statement, StatementNum, ast::StmtRef, /* SetsAreConstRef: */ true> abs {};
+    void Evaluator::handleParentT(const ast::ParentT* rel)
+    {
+        rel->evaluate(m_pkb, &m_table);
+    }
+}
+
+namespace pql::ast
+{
+    using namespace pkb;
+    namespace table = pql::eval::table;
+
+    using PqlException = util::PqlException;
+
+    void Parent::evaluate(const ProgramKB* pkb, table::Table* tbl) const
+    {
+        assert(pkb);
+        assert(tbl);
+
+        static eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ true> abs {};
         if(abs.relationName == nullptr)
         {
             abs.relationName = "Parent";
@@ -41,20 +56,18 @@ namespace pql::eval
                 return s.getParent();
             };
 
-            abs.relationExists = &pkb::ProgramKB::parentRelationExists;
-            abs.getEntity = &pkb::ProgramKB::getStatementAt;
+            abs.relationExists = &ProgramKB::parentRelationExists;
+            abs.getEntity = &ProgramKB::getStatementAt;
         }
-        abs.evaluate(m_pkb, &m_table, rel, &rel->parent, &rel->child);
+        abs.evaluate(pkb, tbl, this, &this->parent, &this->child);
     }
 
-
-
-
-    void Evaluator::handleParentT(const ast::ParentT* rel)
+    void ParentT::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
-        assert(rel);
+        assert(pkb);
+        assert(tbl);
 
-        static RelationAbstractor<Statement, StatementNum, ast::StmtRef, /* SetsAreConstRef: */ true> abs {};
+        static eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ true> abs {};
         if(abs.relationName == nullptr)
         {
             abs.relationName = "Parent*";
@@ -77,9 +90,9 @@ namespace pql::eval
                 return s.getAncestors();
             };
 
-            abs.relationExists = &pkb::ProgramKB::parentRelationExists;
-            abs.getEntity = &pkb::ProgramKB::getStatementAt;
+            abs.relationExists = &ProgramKB::parentRelationExists;
+            abs.getEntity = &ProgramKB::getStatementAt;
         }
-        abs.evaluate(m_pkb, &m_table, rel, &rel->ancestor, &rel->descendant);
+        abs.evaluate(pkb, tbl, this, &this->ancestor, &this->descendant);
     }
 }

@@ -1,4 +1,4 @@
-// follows.cpp
+// affects.cpp
 
 #include <cassert>
 #include <algorithm>
@@ -8,19 +8,6 @@
 #include "pql/eval/common.h"
 #include "pql/eval/evaluator.h"
 
-namespace pql::eval
-{
-    void Evaluator::handleFollows(const ast::Follows* rel)
-    {
-        rel->evaluate(m_pkb, &m_table);
-    }
-
-    void Evaluator::handleFollowsT(const ast::FollowsT* rel)
-    {
-        rel->evaluate(m_pkb, &m_table);
-    }
-}
-
 namespace pql::ast
 {
     using namespace pkb;
@@ -28,8 +15,9 @@ namespace pql::ast
 
     using PqlException = util::PqlException;
 
-    void Follows::evaluate(const ProgramKB* pkb, table::Table* tbl) const
+    void Affects::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
+    #if 0
         assert(pkb);
         assert(tbl);
 
@@ -66,10 +54,12 @@ namespace pql::ast
             abs.getEntity = &ProgramKB::getStatementAt;
         }
         abs.evaluate(pkb, tbl, this, &this->directly_before, &this->directly_after);
+    #endif
     }
 
-    void FollowsT::evaluate(const ProgramKB* pkb, table::Table* tbl) const
+    void AffectsT::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
+    #if 0
         assert(pkb);
         assert(tbl);
 
@@ -100,5 +90,6 @@ namespace pql::ast
             abs.getEntity = &ProgramKB::getStatementAt;
         }
         abs.evaluate(pkb, tbl, this, &this->before, &this->after);
+    #endif
     }
 }

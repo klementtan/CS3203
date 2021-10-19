@@ -39,10 +39,35 @@ namespace pql::eval
             const ast::EntRef& right) const;
     };
 
-
     void Evaluator::handleUsesP(const ast::UsesP* rel)
     {
-        static UsesModifiesRelationAbstractor abs {};
+        rel->evaluate(m_pkb, &m_table);
+    }
+
+    void Evaluator::handleUsesS(const ast::UsesS* rel)
+    {
+        rel->evaluate(m_pkb, &m_table);
+    }
+
+    void Evaluator::handleModifiesP(const ast::ModifiesP* rel)
+    {
+        rel->evaluate(m_pkb, &m_table);
+    }
+
+    void Evaluator::handleModifiesS(const ast::ModifiesS* rel)
+    {
+        rel->evaluate(m_pkb, &m_table);
+    }
+}
+
+namespace pql::ast
+{
+    using namespace pkb;
+    namespace table = pql::eval::table;
+
+    void UsesP::evaluate(const ProgramKB* pkb, table::Table* tbl) const
+    {
+        static eval::UsesModifiesRelationAbstractor abs {};
         if(abs.relationName == nullptr)
         {
             abs.relationName = "UsesP";
@@ -60,12 +85,12 @@ namespace pql::eval
             };
         }
 
-        abs.evaluateP(m_pkb, &m_table, rel, rel->user, rel->ent);
+        abs.evaluateP(pkb, tbl, this, this->user, this->ent);
     }
 
-    void Evaluator::handleUsesS(const ast::UsesS* rel)
+    void UsesS::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
-        static UsesModifiesRelationAbstractor abs {};
+        static eval::UsesModifiesRelationAbstractor abs {};
         if(abs.relationName == nullptr)
         {
             abs.relationName = "UsesS";
@@ -83,12 +108,12 @@ namespace pql::eval
             };
         }
 
-        abs.evaluateS(m_pkb, &m_table, rel, rel->user, rel->ent);
+        abs.evaluateS(pkb, tbl, this, this->user, this->ent);
     }
 
-    void Evaluator::handleModifiesP(const ast::ModifiesP* rel)
+    void ModifiesP::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
-        static UsesModifiesRelationAbstractor abs {};
+        static eval::UsesModifiesRelationAbstractor abs {};
         if(abs.relationName == nullptr)
         {
             abs.relationName = "ModifiesP";
@@ -106,12 +131,12 @@ namespace pql::eval
             };
         }
 
-        abs.evaluateP(m_pkb, &m_table, rel, rel->modifier, rel->ent);
+        abs.evaluateP(pkb, tbl, this, this->modifier, this->ent);
     }
 
-    void Evaluator::handleModifiesS(const ast::ModifiesS* rel)
+    void ModifiesS::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
-        static UsesModifiesRelationAbstractor abs {};
+        static eval::UsesModifiesRelationAbstractor abs {};
         if(abs.relationName == nullptr)
         {
             abs.relationName = "ModifiesS";
@@ -129,8 +154,9 @@ namespace pql::eval
             };
         }
 
-        abs.evaluateS(m_pkb, &m_table, rel, rel->modifier, rel->ent);
+        abs.evaluateS(pkb, tbl, this, this->modifier, this->ent);
     }
+}
 
 
 
@@ -139,8 +165,8 @@ namespace pql::eval
 
 
 
-
-
+namespace pql::eval
+{
     // Uses/ModifiesP
     void UsesModifiesRelationAbstractor::evaluateP(const ProgramKB* pkb, table::Table* table, const ast::RelCond* rel,
         const ast::EntRef& proc_ent, const ast::EntRef& var_ent) const
