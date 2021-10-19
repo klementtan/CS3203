@@ -167,8 +167,7 @@ namespace pql::ast
 
     std::string Select::toString() const
     {
-        return zpr::sprint("Select(relations:{}, patterns:{}, withs:{}, result:{})", list_to_string(this->relations),
-            list_to_string(this->patterns), list_to_string(this->withs), this->result.toString());
+        return zpr::sprint("Select(result:{}, clauses:{})", this->result.toString(), list_to_string(this->clauses));
     }
 
     std::string Query::toString() const
@@ -252,7 +251,7 @@ namespace pql::ast
         }
         else if(this->type == Type::Tuple)
         {
-            std::string ret { "ResultCl(type: Tuple, tuple :[" };
+            std::string ret { "ResultCl(type: Tuple, tuple: [" };
             for(const Elem& elem : _tuple)
             {
                 ret += zpr::sprint("{}", elem.toString());

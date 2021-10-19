@@ -512,11 +512,8 @@ namespace pql::ast
     /** Select query. */
     struct Select
     {
-        std::vector<std::unique_ptr<PatternCond>> patterns {};
-        std::vector<std::unique_ptr<RelCond>> relations {};
-        std::vector<std::unique_ptr<WithCond>> withs {};
-
         ResultCl result {};
+        std::vector<std::unique_ptr<Clause>> clauses {};
 
         std::string toString() const;
     };

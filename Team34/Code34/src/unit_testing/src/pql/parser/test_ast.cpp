@@ -283,21 +283,18 @@ TEST_CASE("Select")
     auto result_cl = pql::ast::ResultCl::ofTuple({ pql::ast::Elem::ofDeclaration(&declaration1) });
 
     pql::ast::Select select {};
-    select.relations.push_back(std::move(relationship));
-    select.patterns.push_back(std::move(assign_pattern_cond));
+    select.clauses.push_back(std::move(relationship));
+    select.clauses.push_back(std::move(assign_pattern_cond));
     select.result = std::move(result_cl);
 
     INFO(select.toString());
-    REQUIRE(select.toString() == "Select(relations:[\n"
-                                 "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:"
-                                 "bar)), ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))\n"
-                                 "], patterns:[\n"
-                                 "\tAssignPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)), "
-                                 "assignment_declaration:Declaration(ent:assign, name:foo), expr_spec:ExprSpec"
-                                 "(is_subexpr:true, expr:(x + y)))\n"
-                                 "], withs:[\n"
-                                 "], result:ResultCl(type: Tuple, tuple :[Elem(ref_type: Declaration, decl: "
-                                 "Declaration(ent:assign, name:foo))])");
+    REQUIRE(select.toString() == "Select(result:ResultCl(type: Tuple, tuple: [Elem(ref_type: Declaration, "
+        "decl: Declaration(ent:assign, name:foo))], clauses:[\n"
+        "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:bar)), "
+            "ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))\n"
+        "\tAssignPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)), "
+            "assignment_declaration:Declaration(ent:assign, name:foo), "
+            "expr_spec:ExprSpec(is_subexpr:true, expr:(x + y)))\n])");
 }
 
 TEST_CASE("Query")
@@ -335,8 +332,8 @@ TEST_CASE("Query")
 
     auto result_cl = pql::ast::ResultCl::ofTuple({ pql::ast::Elem::ofDeclaration(declaration1) });
     pql::ast::Select select {};
-    select.relations.push_back(std::move(relationship));
-    select.patterns.push_back(std::move(assign_pattern_cond));
+    select.clauses.push_back(std::move(relationship));
+    select.clauses.push_back(std::move(assign_pattern_cond));
     select.result = std::move(result_cl);
 
     pql::ast::Query query {};
@@ -345,20 +342,17 @@ TEST_CASE("Query")
 
     INFO(query.toString());
 
-    constexpr auto expected = "Query(select:Select(relations:[\n"
-                              "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:"
-                              "bar)), ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))\n"
-                              "], patterns:[\n"
-                              "\tAssignPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:buzz)), "
-                              "assignment_declaration:Declaration(ent:assign, name:buzz), expr_spec:ExprSpec"
-                              "(is_subexpr:true, expr:(x + y)))\n"
-                              "], withs:[\n"
-                              "], result:ResultCl(type: Tuple, tuple :[Elem(ref_type: Declaration, decl: "
-                              "Declaration(ent:assign, name:foo))]), declarations:DeclarationList[\n"
-                              "\tname:bar, declaration:Declaration(ent:assign, name:bar)\n"
-                              "\tname:buzz, declaration:Declaration(ent:assign, name:buzz)\n"
-                              "\tname:foo, declaration:Declaration(ent:assign, name:foo)\n"
-                              "])";
+    constexpr auto expected = "Query(select:Select(result:ResultCl(type: Tuple, tuple: [Elem(ref_type: Declaration, "
+        "decl: Declaration(ent:assign, name:foo))], clauses:[\n"
+            "\tModifiesS(modifier:DeclaredStmt(declaration: Declaration(ent:assign, name:bar)), "
+            "ent:DeclaredEnt(declaration:Declaration(ent:assign, name:foo)))\n"
+            "\tAssignPatternCl(ent:DeclaredEnt(declaration:Declaration(ent:assign, name:buzz)), "
+            "assignment_declaration:Declaration(ent:assign, name:buzz), expr_spec:ExprSpec(is_subexpr:true, expr:(x + y)))\n"
+            "]), declarations:DeclarationList[\n"
+            "\tname:bar, declaration:Declaration(ent:assign, name:bar)\n"
+            "\tname:buzz, declaration:Declaration(ent:assign, name:buzz)\n"
+            "\tname:foo, declaration:Declaration(ent:assign, name:foo)\n"
+            "])";
 
     REQUIRE(query.toString() == expected);
 }

@@ -138,14 +138,14 @@ namespace pql::eval
             processDeclarations(m_query->declarations);
             util::logfmt("pql::eval", "Table after initial processing of declaration: {}", m_table.toString());
 
-            for(const auto& rel : m_query->select.relations)
-                handleRelation(rel.get());
+            // for(const auto& rel : m_query->select.relations)
+            //     handleRelation(rel.get());
 
-            for(const auto& pattern : m_query->select.patterns)
-                pattern->evaluate(m_pkb, &m_table);
+            // for(const auto& pattern : m_query->select.patterns)
+            //     pattern->evaluate(m_pkb, &m_table);
 
-            for(const auto& with : m_query->select.withs)
-                with->evaluate(m_pkb, &m_table);
+            for(const auto& clause : m_query->select.clauses)
+                clause->evaluate(m_pkb, &m_table);
 
             util::logfmt("pql::eval", "Table after processing of such that: {}", m_table.toString());
             return this->m_table.getResult(m_query->select.result, this->m_pkb);
