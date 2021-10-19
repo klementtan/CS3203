@@ -20,7 +20,7 @@ namespace pql::ast
         assert(pkb);
         assert(tbl);
 
-        static eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ false> abs {};
+        eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ false> abs {};
         if(abs.relationName == nullptr)
         {
             abs.relationName = "Affects";
@@ -54,7 +54,7 @@ namespace pql::ast
         assert(pkb);
         assert(tbl);
 
-        static eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ true> abs {};
+        eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ true> abs {};
         if(abs.relationName == nullptr)
         {
             abs.relationName = "Affects*";
