@@ -111,6 +111,11 @@ namespace pkb
         return m_cfg->nextRelationExists();
     }
 
+    bool ProgramKB::affectsRelationExists() const
+    {
+        return m_cfg->affectsRelationExists();
+    }
+
     const pkb::CFG* ProgramKB::getCFG() const
     {
         return m_cfg.get();

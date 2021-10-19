@@ -17,79 +17,69 @@ namespace pql::ast
 
     void Affects::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
-    #if 0
         assert(pkb);
         assert(tbl);
 
         static eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ false> abs {};
         if(abs.relationName == nullptr)
         {
-            abs.relationName = "Follows";
-            abs.leftDeclEntity = {};
-            abs.rightDeclEntity = {};
+            abs.relationName = "Affects";
+            abs.leftDeclEntity = DESIGN_ENT::ASSIGN;
+            abs.rightDeclEntity = DESIGN_ENT::ASSIGN;
 
-            abs.relationHolds = [](const Statement& a, const Statement& b) -> bool {
-                return a.isFollowedBy(b.getStmtNum());
+            abs.relationHolds = [pkb](const Statement& a, const Statement& b) -> bool {
+                return pkb->getCFG()->doesAffect(a.getStmtNum(), b.getStmtNum());
             };
 
-            abs.inverseRelationHolds = [](const Statement& a, const Statement& b) -> bool {
-                return a.doesFollow(b.getStmtNum());
+            abs.inverseRelationHolds = [pkb](const Statement& a, const Statement& b) -> bool {
+                return pkb->getCFG()->doesAffect(b.getStmtNum(), a.getStmtNum());
             };
 
-            abs.getAllRelated = [](const Statement& s) -> StatementSet {
-                if(auto tmp = s.getStmtDirectlyAfter(); tmp != 0)
-                    return { tmp };
-                else
-                    return {};
+            abs.getAllRelated = [pkb](const Statement& s) -> StatementSet {
+                return pkb->getCFG()->getAffectedStatements(s.getStmtNum());
             };
 
-            abs.getAllInverselyRelated = [](const Statement& s) -> StatementSet {
-                if(auto tmp = s.getStmtDirectlyBefore(); tmp != 0)
-                    return { tmp };
-                else
-                    return {};
+            abs.getAllInverselyRelated = [pkb](const Statement& s) -> StatementSet {
+                return pkb->getCFG()->getAffectingStatements(s.getStmtNum());
             };
 
-            abs.relationExists = &ProgramKB::followsRelationExists;
+            abs.relationExists = &ProgramKB::affectsRelationExists;
             abs.getEntity = &ProgramKB::getStatementAt;
         }
-        abs.evaluate(pkb, tbl, this, &this->directly_before, &this->directly_after);
-    #endif
+        abs.evaluate(pkb, tbl, this, &this->first, &this->second);
     }
 
     void AffectsT::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
-    #if 0
         assert(pkb);
         assert(tbl);
 
         static eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ true> abs {};
         if(abs.relationName == nullptr)
         {
-            abs.relationName = "Follows*";
-            abs.leftDeclEntity = {};
-            abs.rightDeclEntity = {};
+            abs.relationName = "Affects*";
+            abs.leftDeclEntity = DESIGN_ENT::ASSIGN;
+            abs.rightDeclEntity = DESIGN_ENT::ASSIGN;
 
-            abs.relationHolds = [](const Statement& a, const Statement& b) -> bool {
-                return a.isFollowedTransitivelyBy(b.getStmtNum());
+            abs.relationHolds = [pkb](const Statement& a, const Statement& b) -> bool {
+                return pkb->getCFG()->doesTransitivelyAffect(a.getStmtNum(), b.getStmtNum());
             };
 
-            abs.inverseRelationHolds = [](const Statement& a, const Statement& b) -> bool {
-                return a.doesFollowTransitively(b.getStmtNum());
+            abs.inverseRelationHolds = [pkb](const Statement& a, const Statement& b) -> bool {
+                return pkb->getCFG()->doesTransitivelyAffect(b.getStmtNum(), a.getStmtNum());
             };
 
-            abs.getAllRelated = [](const Statement& s) -> decltype(auto) {
-                return s.getStmtsTransitivelyAfter();
+            abs.getAllRelated = [pkb](const Statement& s) -> StatementSet {
+                return pkb->getCFG()->getTransitivelyAffectedStatements(s.getStmtNum());
             };
 
-            abs.getAllInverselyRelated = [](const Statement& s) -> decltype(auto) {
-                return s.getStmtsTransitivelyBefore();
+            abs.getAllInverselyRelated = [pkb](const Statement& s) -> StatementSet {
+                return pkb->getCFG()->getTransitivelyAffectingStatements(s.getStmtNum());
             };
 
-            abs.relationExists = &ProgramKB::followsRelationExists;
+            abs.relationExists = &ProgramKB::affectsRelationExists;
             abs.getEntity = &ProgramKB::getStatementAt;
         }
-        abs.evaluate(pkb, tbl, this, &this->before, &this->after);
-    #endif
+        abs.evaluate(pkb, tbl, this, &this->first, &this->second);
     }
 }

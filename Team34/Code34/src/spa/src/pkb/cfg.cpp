@@ -275,6 +275,11 @@ namespace pkb
         return false;
     }
 
+    bool CFG::affectsRelationExists() const
+    {
+        return false;
+    }
+
     StatementSet CFG::getAffectedStatements(StatementNum id) const
     {
         StatementSet ret {};
