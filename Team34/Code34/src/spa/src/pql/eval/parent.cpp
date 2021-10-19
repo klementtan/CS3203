@@ -27,19 +27,19 @@ namespace pql::ast
             abs.leftDeclEntity = {};
             abs.rightDeclEntity = {};
 
-            abs.relationHolds = [](const Statement& a, const Statement& b) -> bool {
+            abs.relationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
                 return a.isParentOf(b.getStmtNum());
             };
 
-            abs.inverseRelationHolds = [](const Statement& a, const Statement& b) -> bool {
+            abs.inverseRelationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
                 return a.isChildOf(b.getStmtNum());
             };
 
-            abs.getAllRelated = [](const Statement& s) -> decltype(auto) {
+            abs.getAllRelated = [](const ProgramKB* pkb, const Statement& s) -> decltype(auto) {
                 return s.getChildren();
             };
 
-            abs.getAllInverselyRelated = [](const Statement& s) -> decltype(auto) {
+            abs.getAllInverselyRelated = [](const ProgramKB* pkb, const Statement& s) -> decltype(auto) {
                 return s.getParent();
             };
 
@@ -61,19 +61,19 @@ namespace pql::ast
             abs.leftDeclEntity = {};
             abs.rightDeclEntity = {};
 
-            abs.relationHolds = [](const Statement& a, const Statement& b) -> bool {
+            abs.relationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
                 return a.isAncestorOf(b.getStmtNum());
             };
 
-            abs.inverseRelationHolds = [](const Statement& a, const Statement& b) -> bool {
+            abs.inverseRelationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
                 return a.isDescendantOf(b.getStmtNum());
             };
 
-            abs.getAllRelated = [](const Statement& s) -> decltype(auto) {
+            abs.getAllRelated = [](const ProgramKB* pkb, const Statement& s) -> decltype(auto) {
                 return s.getDescendants();
             };
 
-            abs.getAllInverselyRelated = [](const Statement& s) -> decltype(auto) {
+            abs.getAllInverselyRelated = [](const ProgramKB* pkb, const Statement& s) -> decltype(auto) {
                 return s.getAncestors();
             };
 

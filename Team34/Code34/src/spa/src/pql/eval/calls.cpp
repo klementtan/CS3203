@@ -27,19 +27,19 @@ namespace pql::ast
             abs.leftDeclEntity = DESIGN_ENT::PROCEDURE;
             abs.rightDeclEntity = DESIGN_ENT::PROCEDURE;
 
-            abs.relationHolds = [](const Procedure& a, const Procedure& b) -> bool {
+            abs.relationHolds = [](const ProgramKB* pkb, const Procedure& a, const Procedure& b) -> bool {
                 return a.callsProcedure(b.getName());
             };
 
-            abs.inverseRelationHolds = [](const Procedure& a, const Procedure& b) -> bool {
+            abs.inverseRelationHolds = [](const ProgramKB* pkb, const Procedure& a, const Procedure& b) -> bool {
                 return a.isCalledByProcedure(b.getName());
             };
 
-            abs.getAllRelated = [](const Procedure& p) -> decltype(auto) {
+            abs.getAllRelated = [](const ProgramKB* pkb, const Procedure& p) -> decltype(auto) {
                 return p.getAllCalledProcedures();
             };
 
-            abs.getAllInverselyRelated = [](const Procedure& p) -> decltype(auto) {
+            abs.getAllInverselyRelated = [](const ProgramKB* pkb, const Procedure& p) -> decltype(auto) {
                 return p.getAllCallers();
             };
 
@@ -62,19 +62,19 @@ namespace pql::ast
             abs.leftDeclEntity = DESIGN_ENT::PROCEDURE;
             abs.rightDeclEntity = DESIGN_ENT::PROCEDURE;
 
-            abs.relationHolds = [](const Procedure& a, const Procedure& b) -> bool {
+            abs.relationHolds = [](const ProgramKB* pkb, const Procedure& a, const Procedure& b) -> bool {
                 return a.callsProcedureTransitively(b.getName());
             };
 
-            abs.inverseRelationHolds = [](const Procedure& a, const Procedure& b) -> bool {
+            abs.inverseRelationHolds = [](const ProgramKB* pkb, const Procedure& a, const Procedure& b) -> bool {
                 return a.isTransitivelyCalledByProcedure(b.getName());
             };
 
-            abs.getAllRelated = [](const Procedure& p) -> decltype(auto) {
+            abs.getAllRelated = [](const ProgramKB* pkb, const Procedure& p) -> decltype(auto) {
                 return p.getAllTransitivelyCalledProcedures();
             };
 
-            abs.getAllInverselyRelated = [](const Procedure& p) -> decltype(auto) {
+            abs.getAllInverselyRelated = [](const ProgramKB* pkb, const Procedure& p) -> decltype(auto) {
                 return p.getAllTransitiveCallers();
             };
 

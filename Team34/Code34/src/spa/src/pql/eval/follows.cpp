@@ -27,22 +27,22 @@ namespace pql::ast
             abs.leftDeclEntity = {};
             abs.rightDeclEntity = {};
 
-            abs.relationHolds = [](const Statement& a, const Statement& b) -> bool {
+            abs.relationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
                 return a.isFollowedBy(b.getStmtNum());
             };
 
-            abs.inverseRelationHolds = [](const Statement& a, const Statement& b) -> bool {
+            abs.inverseRelationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
                 return a.doesFollow(b.getStmtNum());
             };
 
-            abs.getAllRelated = [](const Statement& s) -> StatementSet {
+            abs.getAllRelated = [](const ProgramKB* pkb, const Statement& s) -> StatementSet {
                 if(auto tmp = s.getStmtDirectlyAfter(); tmp != 0)
                     return { tmp };
                 else
                     return {};
             };
 
-            abs.getAllInverselyRelated = [](const Statement& s) -> StatementSet {
+            abs.getAllInverselyRelated = [](const ProgramKB* pkb, const Statement& s) -> StatementSet {
                 if(auto tmp = s.getStmtDirectlyBefore(); tmp != 0)
                     return { tmp };
                 else
@@ -67,19 +67,19 @@ namespace pql::ast
             abs.leftDeclEntity = {};
             abs.rightDeclEntity = {};
 
-            abs.relationHolds = [](const Statement& a, const Statement& b) -> bool {
+            abs.relationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
                 return a.isFollowedTransitivelyBy(b.getStmtNum());
             };
 
-            abs.inverseRelationHolds = [](const Statement& a, const Statement& b) -> bool {
+            abs.inverseRelationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
                 return a.doesFollowTransitively(b.getStmtNum());
             };
 
-            abs.getAllRelated = [](const Statement& s) -> decltype(auto) {
+            abs.getAllRelated = [](const ProgramKB* pkb, const Statement& s) -> decltype(auto) {
                 return s.getStmtsTransitivelyAfter();
             };
 
-            abs.getAllInverselyRelated = [](const Statement& s) -> decltype(auto) {
+            abs.getAllInverselyRelated = [](const ProgramKB* pkb, const Statement& s) -> decltype(auto) {
                 return s.getStmtsTransitivelyBefore();
             };
 

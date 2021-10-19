@@ -20,29 +20,24 @@ namespace pql::ast
         assert(pkb);
         assert(tbl);
 
-        // note: this is a bit of a problem, because the checkers must capture the pkb, and
-        // the "common evaluator" does not pass in the pkb. this means the lambdas must be
-        // re-created for each pkb, which means they can't be statically constructed.
-        // TODO(#175)
-
-        eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ false> abs {};
+        static eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ false> abs {};
         abs.relationName = "Next";
         abs.leftDeclEntity = {};
         abs.rightDeclEntity = {};
 
-        abs.relationHolds = [pkb](const Statement& a, const Statement& b) -> bool {
+        abs.relationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
             return pkb->getCFG()->isStatementNext(a.getStmtNum(), b.getStmtNum());
         };
 
-        abs.inverseRelationHolds = [pkb](const Statement& a, const Statement& b) -> bool {
+        abs.inverseRelationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
             return pkb->getCFG()->isStatementNext(b.getStmtNum(), a.getStmtNum());
         };
 
-        abs.getAllRelated = [pkb](const Statement& s) -> decltype(auto) {
+        abs.getAllRelated = [](const ProgramKB* pkb, const Statement& s) -> decltype(auto) {
             return pkb->getCFG()->getNextStatements(s.getStmtNum());
         };
 
-        abs.getAllInverselyRelated = [pkb](const Statement& s) -> decltype(auto) {
+        abs.getAllInverselyRelated = [](const ProgramKB* pkb, const Statement& s) -> decltype(auto) {
             return pkb->getCFG()->getPreviousStatements(s.getStmtNum());
         };
 
@@ -59,24 +54,24 @@ namespace pql::ast
         assert(pkb);
         assert(tbl);
 
-        eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ false> abs {};
+        static eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ false> abs {};
         abs.relationName = "Next*";
         abs.leftDeclEntity = {};
         abs.rightDeclEntity = {};
 
-        abs.relationHolds = [pkb](const Statement& a, const Statement& b) -> bool {
+        abs.relationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
             return pkb->getCFG()->isStatementTransitivelyNext(a.getStmtNum(), b.getStmtNum());
         };
 
-        abs.inverseRelationHolds = [pkb](const Statement& a, const Statement& b) -> bool {
+        abs.inverseRelationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
             return pkb->getCFG()->isStatementTransitivelyNext(b.getStmtNum(), a.getStmtNum());
         };
 
-        abs.getAllRelated = [pkb](const Statement& s) -> decltype(auto) {
+        abs.getAllRelated = [](const ProgramKB* pkb, const Statement& s) -> decltype(auto) {
             return pkb->getCFG()->getTransitivelyNextStatements(s.getStmtNum());
         };
 
-        abs.getAllInverselyRelated = [pkb](const Statement& s) -> decltype(auto) {
+        abs.getAllInverselyRelated = [](const ProgramKB* pkb, const Statement& s) -> decltype(auto) {
             return pkb->getCFG()->getTransitivelyPreviousStatements(s.getStmtNum());
         };
 

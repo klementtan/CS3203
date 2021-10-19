@@ -90,7 +90,7 @@ namespace pql::eval
             auto& left_ = (pkb->*getEntity)(get_concrete_value(leftRef));
             auto& right_ = (pkb->*getEntity)(get_concrete_value(rightRef));
 
-            if(!relation_holds(left_, right_))
+            if(!relation_holds(pkb, left_, right_))
                 throw PqlException("pql::eval", "{} always evaluates to false", rel->toString());
         }
         else if(is_concrete(leftRef) && rightRef->isDeclaration())
@@ -102,7 +102,7 @@ namespace pql::eval
             for(auto it = domain.begin(); it != domain.end();)
             {
                 auto& right_ = (pkb->*getEntity)(getEntryValue<RelationParam>(*it));
-                if(!relation_holds(left_, right_))
+                if(!relation_holds(pkb, left_, right_))
                     it = domain.erase(it);
                 else
                     ++it;
@@ -117,7 +117,7 @@ namespace pql::eval
             for(auto it = domain.begin(); it != domain.end();)
             {
                 auto& left = (pkb->*getEntity)(getEntryValue<RelationParam>(*it));
-                if(get_all_related(left).empty())
+                if(get_all_related(pkb, left).empty())
                     it = domain.erase(it);
                 else
                     ++it;
@@ -132,13 +132,13 @@ namespace pql::eval
             auto right_decl = rightRef->declaration();
 
             evaluateTwoDeclRelations<RelationParam, RelationParam>(pkb, table, rel, left_decl, right_decl,
-                [&](const RelationParam& p) -> decltype(auto) { return get_all_related((pkb->*getEntity)(p)); });
+                [&](const RelationParam& p) -> decltype(auto) { return get_all_related(pkb, (pkb->*getEntity)(p)); });
         }
         else if(is_concrete(leftRef) && rightRef->isWildcard())
         {
             util::logfmt("pql::eval", "Processing {}(EntRef, _)", this->relationName);
             auto& left_ = (pkb->*getEntity)(get_concrete_value(leftRef));
-            if(get_all_related(left_).empty())
+            if(get_all_related(pkb, left_).empty())
                 throw PqlException("pql::eval", "{} always evaluates to false", rel->toString());
         }
         else if(leftRef->isWildcard() && rightRef->isWildcard())

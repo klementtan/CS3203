@@ -20,26 +20,26 @@ namespace pql::ast
         assert(pkb);
         assert(tbl);
 
-        eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ false> abs {};
+        static eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ false> abs {};
         if(abs.relationName == nullptr)
         {
             abs.relationName = "Affects";
             abs.leftDeclEntity = DESIGN_ENT::ASSIGN;
             abs.rightDeclEntity = DESIGN_ENT::ASSIGN;
 
-            abs.relationHolds = [pkb](const Statement& a, const Statement& b) -> bool {
+            abs.relationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
                 return pkb->getCFG()->doesAffect(a.getStmtNum(), b.getStmtNum());
             };
 
-            abs.inverseRelationHolds = [pkb](const Statement& a, const Statement& b) -> bool {
+            abs.inverseRelationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
                 return pkb->getCFG()->doesAffect(b.getStmtNum(), a.getStmtNum());
             };
 
-            abs.getAllRelated = [pkb](const Statement& s) -> StatementSet {
+            abs.getAllRelated = [](const ProgramKB* pkb, const Statement& s) -> StatementSet {
                 return pkb->getCFG()->getAffectedStatements(s.getStmtNum());
             };
 
-            abs.getAllInverselyRelated = [pkb](const Statement& s) -> StatementSet {
+            abs.getAllInverselyRelated = [](const ProgramKB* pkb, const Statement& s) -> StatementSet {
                 return pkb->getCFG()->getAffectingStatements(s.getStmtNum());
             };
 
@@ -54,26 +54,26 @@ namespace pql::ast
         assert(pkb);
         assert(tbl);
 
-        eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ true> abs {};
+        static eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ false> abs {};
         if(abs.relationName == nullptr)
         {
             abs.relationName = "Affects*";
             abs.leftDeclEntity = DESIGN_ENT::ASSIGN;
             abs.rightDeclEntity = DESIGN_ENT::ASSIGN;
 
-            abs.relationHolds = [pkb](const Statement& a, const Statement& b) -> bool {
+            abs.relationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
                 return pkb->getCFG()->doesTransitivelyAffect(a.getStmtNum(), b.getStmtNum());
             };
 
-            abs.inverseRelationHolds = [pkb](const Statement& a, const Statement& b) -> bool {
+            abs.inverseRelationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
                 return pkb->getCFG()->doesTransitivelyAffect(b.getStmtNum(), a.getStmtNum());
             };
 
-            abs.getAllRelated = [pkb](const Statement& s) -> StatementSet {
+            abs.getAllRelated = [](const ProgramKB* pkb, const Statement& s) -> StatementSet {
                 return pkb->getCFG()->getTransitivelyAffectedStatements(s.getStmtNum());
             };
 
-            abs.getAllInverselyRelated = [pkb](const Statement& s) -> StatementSet {
+            abs.getAllInverselyRelated = [](const ProgramKB* pkb, const Statement& s) -> StatementSet {
                 return pkb->getCFG()->getTransitivelyAffectingStatements(s.getStmtNum());
             };
 
