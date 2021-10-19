@@ -359,7 +359,7 @@ namespace pql::eval::solver
 
             std::vector<const ast::Declaration*> sorted_decl(size_decls.size());
 
-            for(int i = 0; i < size_decls.size(); i++)
+            for(size_t i = 0; i < size_decls.size(); i++)
             {
                 sorted_decl[i] = size_decls[i].second;
             }
