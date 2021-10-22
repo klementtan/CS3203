@@ -9,6 +9,7 @@
 
 #include "pkb.h"
 #include "util.h"
+#include "timer.h"
 #include "simple/ast.h"
 #include "exceptions.h"
 #include "pql/parser/ast.h"
@@ -58,6 +59,7 @@ namespace pkb
             processor(stmt.get(), list);
     }
 
+
     void DesignExtractor::processUses(const std::string& varname, Statement* stmt, const TraversalState& ts)
     {
         stmt->m_uses.insert(varname);
@@ -72,23 +74,8 @@ namespace pkb
             m_pkb->getStatementAt(s->getStmtNum()).m_uses.insert(varname);
         }
 
-        for(auto s : ts.global_stmt_stack)
-        {
-            var.m_used_by.insert(s);
-            m_pkb->getStatementAt(s->getStmtNum()).m_uses.insert(varname);
-        }
-
-        for(auto proc : ts.proc_stack)
-        {
-            var.m_used_by_procs.insert(proc->getName());
-            m_pkb->getProcedureNamed(proc->getName()).m_uses.insert(varname);
-        }
-
-        for(auto call : ts.call_stack)
-        {
-            call->m_uses.insert(varname);
-            var.m_used_by.insert(call);
-        }
+        var.m_used_by_procs.insert(ts.current_proc->getName());
+        ts.current_proc->m_uses.insert(varname);
 
         // populate condition_uses for ifs and whiles
         if(auto astmt = stmt->getAstStmt(); CONST_DCAST(WhileLoop, astmt) || CONST_DCAST(IfStmt, astmt))
@@ -110,27 +97,11 @@ namespace pkb
             m_pkb->getStatementAt(s->getStmtNum()).m_modifies.insert(varname);
         }
 
-        for(auto s : ts.global_stmt_stack)
-        {
-            var.m_modified_by.insert(s);
-            m_pkb->getStatementAt(s->getStmtNum()).m_modifies.insert(varname);
-        }
-
-        for(auto proc : ts.proc_stack)
-        {
-            var.m_modified_by_procs.insert(proc->getName());
-            m_pkb->getProcedureNamed(proc->getName()).m_modifies.insert(varname);
-        }
-
-        for(auto call : ts.call_stack)
-        {
-            call->m_modifies.insert(varname);
-            var.m_modified_by.insert(call);
-        }
+        var.m_modified_by_procs.insert(ts.current_proc->getName());
+        ts.current_proc->m_modifies.insert(varname);
     }
 
-
-    void DesignExtractor::processStmtList(const s_ast::StmtList* list, const TraversalState& ts)
+    void DesignExtractor::processStmtList(const s_ast::StmtList* list, TraversalState& ts)
     {
         // indices are easier to work with here.
         // do one pass forwards and one pass in reverse to effeciently set
@@ -186,11 +157,7 @@ namespace pkb
                 auto list = ts.local_stmt_stack.back();
                 auto list_sid = list->getStmtNum();
                 stmt->m_parent = { list_sid };
-
                 list->m_children.insert(sid);
-
-                // m_pkb->m_direct_parents[sid] = list_sid;
-                // m_pkb->m_direct_children[list_sid].insert(sid);
 
                 // the ancestors of this statement are simply:
                 // 1. the direct parent (list_sid)
@@ -210,26 +177,28 @@ namespace pkb
 
             if(auto if_stmt = CONST_DCAST(IfStmt, ast_stmt); if_stmt)
             {
-                auto new_ts = ts;
-                new_ts.local_stmt_stack.push_back(stmt);
-                new_ts.global_stmt_stack.push_back(stmt);
+                ts.local_stmt_stack.push_back(stmt);
 
-                this->processExpr(if_stmt->condition.get(), stmt, new_ts);
-                this->processStmtList(&if_stmt->true_case, new_ts);
-                this->processStmtList(&if_stmt->false_case, new_ts);
+                this->processExpr(if_stmt->condition.get(), stmt, ts);
+                this->processStmtList(&if_stmt->true_case, ts);
+                this->processStmtList(&if_stmt->false_case, ts);
 
                 m_pkb->m_stmt_kinds[DesignEnt::IF].insert(sid);
+
+                assert(ts.local_stmt_stack.back() == stmt);
+                ts.local_stmt_stack.pop_back();
             }
             else if(auto while_loop = CONST_DCAST(WhileLoop, ast_stmt); while_loop)
             {
-                auto new_ts = ts;
-                new_ts.local_stmt_stack.push_back(stmt);
-                new_ts.global_stmt_stack.push_back(stmt);
+                ts.local_stmt_stack.push_back(stmt);
 
-                this->processExpr(while_loop->condition.get(), stmt, new_ts);
-                this->processStmtList(&while_loop->body, new_ts);
+                this->processExpr(while_loop->condition.get(), stmt, ts);
+                this->processStmtList(&while_loop->body, ts);
 
                 m_pkb->m_stmt_kinds[DesignEnt::WHILE].insert(sid);
+
+                assert(ts.local_stmt_stack.back() == stmt);
+                ts.local_stmt_stack.pop_back();
             }
             else if(auto assign_stmt = CONST_DCAST(AssignStmt, ast_stmt); assign_stmt)
             {
@@ -259,38 +228,17 @@ namespace pkb
                     throw util::PkbException("pkb", "call to undefined procedure '{}'", call_stmt->proc_name);
 
                 auto& callee = m_pkb->getProcedureNamed(call_stmt->proc_name);
-                auto* body = &callee.getAstProc()->body;
-
                 callee.m_call_stmts.insert(sid);
 
-                // (b) cyclic calls
-                if(std::find(ts.proc_stack.begin(), ts.proc_stack.end(), &callee) != ts.proc_stack.end())
-                    throw util::PkbException("pkb", "illegal cyclic/recursive call", call_stmt->proc_name);
-
-                m_pkb->m_calls_exists = true;
-                for(size_t i = 0; i < ts.proc_stack.size(); i++)
-                {
-                    // only set the direct calls/called_by for the top of the stack
-                    if(i == ts.proc_stack.size() - 1)
-                    {
-                        ts.proc_stack[i]->m_calls.insert(callee.getName());
-                        callee.m_called_by.insert(ts.proc_stack[i]->getName());
-                    }
-
-                    ts.proc_stack[i]->m_calls_transitive.insert(callee.getName());
-                    callee.m_called_by_transitive.insert(ts.proc_stack[i]->getName());
-                }
-
-                auto new_ts = ts;
-                new_ts.local_stmt_stack.clear();
-                new_ts.proc_stack.push_back(&callee);
-                new_ts.call_stack.push_back(stmt);
-
-                m_visited_procs.insert(call_stmt->proc_name);
-
-                this->processStmtList(body, new_ts);
-
                 m_pkb->m_stmt_kinds[DesignEnt::CALL].insert(sid);
+
+                // assert(m_visited_procs.find(call_stmt->proc_name) != m_visited_procs.end());
+                auto target = &m_pkb->getProcedureNamed(call_stmt->proc_name);
+                for(auto used : target->getUsedVariables())
+                    processUses(used, stmt, ts);
+
+                for(auto modified : target->getModifiedVariables())
+                    processModifies(modified, stmt, ts);
             }
             else
             {
@@ -385,8 +333,96 @@ namespace pkb
         this->m_pkb->m_cfg->computeDistMat();
     }
 
+
+
+
+    std::vector<Procedure*> DesignExtractor::processCallGraph()
+    {
+        std::vector<pkb::Procedure*> unseen {};
+        std::unordered_map<pkb::Procedure*, int> marks {};
+
+        std::vector<pkb::Procedure*> topo_order {};
+
+        for(auto& [n, p] : m_pkb->m_procedures)
+            unseen.push_back(&p);
+
+        std::function<void(pkb::Procedure*)> visit {};
+        visit = [&](pkb::Procedure* p) {
+            if(marks[p] == 2)
+                return;
+
+            else if(marks[p] == 1)
+                throw util::PkbException("pkb", "illegal cyclic/recursive call");
+
+            marks[p] = 1;
+
+            std::function<void(const s_ast::StmtList*, pkb::Procedure*)> visit_stmt {};
+            visit_stmt = [&](const s_ast::StmtList* list, pkb::Procedure* proc) {
+                for(auto& _stmt : list->statements)
+                {
+                    const auto* stmt = _stmt.get();
+                    if(auto i = CONST_DCAST(IfStmt, stmt); i)
+                    {
+                        visit_stmt(&i->true_case, p);
+                        visit_stmt(&i->false_case, p);
+                    }
+                    else if(auto w = CONST_DCAST(WhileLoop, stmt); w)
+                    {
+                        visit_stmt(&w->body, p);
+                    }
+                    else if(auto c = CONST_DCAST(ProcCall, stmt); c)
+                    {
+                        m_pkb->m_calls_exists = true;
+
+                        auto target = &m_pkb->getProcedureNamed(c->proc_name);
+                        visit(target);
+
+                        proc->m_calls.insert(c->proc_name);
+                        target->m_called_by.insert(proc->getName());
+
+                        // we can do calls_transitive properly here, since we are going *deeper*.
+                        proc->m_calls_transitive.insert(c->proc_name);
+                        proc->m_calls_transitive.insert(
+                            target->m_calls_transitive.begin(), target->m_calls_transitive.end());
+
+                        // called_by_transitive will be done outside, once we have established the
+                        // topological order.
+                    }
+                }
+            };
+
+            visit_stmt(&p->getAstProc()->body, p);
+            topo_order.push_back(p);
+            marks[p] = 2;
+        };
+
+        while(unseen.size() > 0)
+        {
+            auto p = unseen.back();
+            unseen.pop_back();
+            visit(p);
+        }
+
+        // now that the order is established, populate called_by_transitive by iterating in reverse.
+        for(auto it = topo_order.rbegin(); it != topo_order.rend(); ++it)
+        {
+            auto proc = *it;
+            for(const auto& _caller : proc->m_called_by)
+            {
+                auto* caller = &m_pkb->getProcedureNamed(_caller);
+                proc->m_called_by_transitive.insert(_caller);
+                proc->m_called_by_transitive.insert(
+                    caller->m_called_by_transitive.begin(), caller->m_called_by_transitive.end());
+            }
+        }
+
+        return topo_order;
+    }
+
+
     std::unique_ptr<ProgramKB> DesignExtractor::run()
     {
+        START_BENCHMARK_TIMER("design extractor");
         // assign the statement numbers. this has to use the vector of procedures in
         // m_program, since the numbering depends on the order.
         for(const auto& proc : m_program->procedures)
@@ -395,22 +431,19 @@ namespace pkb
             this->assignStatementNumbers(&proc->body);
         }
 
-        // process the entire thing
-        for(auto& [name, proc] : m_pkb->m_procedures)
+        auto topo_order = this->processCallGraph();
+        for(auto* proc : topo_order)
         {
-            if(m_visited_procs.find(name) != m_visited_procs.end())
-                continue;
-
-            auto body = &proc.getAstProc()->body;
+            auto body = &proc->getAstProc()->body;
 
             TraversalState ts {};
-            ts.proc_stack.push_back(&proc);
+            ts.current_proc = proc;
 
             this->processStmtList(body, ts);
+            m_visited_procs.insert(proc->getName());
         }
 
-        processNextRelations();
-
+        this->processNextRelations();
         return std::move(this->m_pkb);
     }
 

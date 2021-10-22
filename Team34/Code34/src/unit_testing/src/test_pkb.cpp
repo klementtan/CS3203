@@ -85,6 +85,6 @@ TEST_CASE("Populate PKB")
             }
         )";
         auto prog = parseProgram(in);
-        REQUIRE_THROWS_WITH(DesignExtractor(std::move(prog)).run(), "call to undefined procedure 'C'");
+        REQUIRE_THROWS_WITH(DesignExtractor(std::move(prog)).run(), "no procedure named 'C'");
     }
 }

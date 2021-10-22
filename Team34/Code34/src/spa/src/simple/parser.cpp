@@ -5,6 +5,7 @@
 
 #include <zpr.h>
 #include "util.h"
+#include "timer.h"
 #include "exceptions.h"
 #include "simple/ast.h"
 #include "simple/parser.h"
@@ -153,7 +154,7 @@ namespace simple::parser
         if(auto n = ps->next(); n != TT::LParen)
             throw util::ParseException("simple::parser", "expected '(' after '{}', found '{}' instead", op, n.text);
 
-        auto rhs = parseCondExpr(ps);
+        auto rhs = parseCondExpr(ps, 1);
 
         if(auto n = ps->next(); n != TT::RParen)
             throw util::ParseException("simple::parser", "expected ')' after expression, found '{}' instead", n.text);
@@ -452,6 +453,7 @@ namespace simple::parser
 
     std::unique_ptr<Program> parseProgram(zst::str_view input)
     {
+        START_BENCHMARK_TIMER("parse");
         auto ps = ParserState { input };
         auto prog = std::make_unique<Program>();
 

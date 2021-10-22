@@ -16,20 +16,11 @@ namespace pkb
 
         struct TraversalState
         {
-            // contains only ifs and whiles local to the current function
             std::vector<Statement*> local_stmt_stack {};
-
-            // contains ifs and whiles for the entire traversal (including across functions)
-            std::vector<Statement*> global_stmt_stack {};
-
-            // contains the procedures call stack
-            std::vector<pkb::Procedure*> proc_stack {};
-
-            // contains the stack of call statements themselves
-            std::vector<Statement*> call_stack {};
+            pkb::Procedure* current_proc {};
         };
 
-        void processStmtList(const simple::ast::StmtList* list, const TraversalState& ts);
+        void processStmtList(const simple::ast::StmtList* list, TraversalState& ts);
         void processExpr(const simple::ast::Expr* expr, Statement* stmt, const TraversalState& ts);
 
         void processUses(const std::string& var, Statement* stmt, const TraversalState& ts);
@@ -37,6 +28,8 @@ namespace pkb
 
         void processNextRelations();
         void processCFG(const simple::ast::StmtList* list, StatementNum last_checkpt);
+
+        std::vector<Procedure*> processCallGraph();
 
     private:
         const simple::ast::Program* m_program {};

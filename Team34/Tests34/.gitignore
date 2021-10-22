@@ -2,3 +2,4 @@
 __pycache__
 autotester_summary.txt
 secret_tests*
+cache-*

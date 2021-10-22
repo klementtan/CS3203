@@ -37,30 +37,6 @@ namespace simple::parser
         {
             return Token { "", TT::EndOfFile };
         }
-        else if(sv.find(">=") == 0)
-        {
-            return Token { sv.take_prefix(2), TT::GreaterEqual };
-        }
-        else if(sv.find("<=") == 0)
-        {
-            return Token { sv.take_prefix(2), TT::LessEqual };
-        }
-        else if(sv.find("!=") == 0)
-        {
-            return Token { sv.take_prefix(2), TT::NotEqual };
-        }
-        else if(sv.find("==") == 0)
-        {
-            return Token { sv.take_prefix(2), TT::EqualsTo };
-        }
-        else if(sv.find("&&") == 0)
-        {
-            return Token { sv.take_prefix(2), TT::LogicalAnd };
-        }
-        else if(sv.find("||") == 0)
-        {
-            return Token { sv.take_prefix(2), TT::LogicalOr };
-        }
         else if(is_letter(sv[0]))
         {
             size_t num_chars = 0;
@@ -76,6 +52,30 @@ namespace simple::parser
                 num_chars += 1;
 
             return Token { sv.take_prefix(num_chars), TT::Number };
+        }
+        else if(sv.starts_with(">="))
+        {
+            return Token { sv.take_prefix(2), TT::GreaterEqual };
+        }
+        else if(sv.starts_with("<="))
+        {
+            return Token { sv.take_prefix(2), TT::LessEqual };
+        }
+        else if(sv.starts_with("!="))
+        {
+            return Token { sv.take_prefix(2), TT::NotEqual };
+        }
+        else if(sv.starts_with("=="))
+        {
+            return Token { sv.take_prefix(2), TT::EqualsTo };
+        }
+        else if(sv.starts_with("&&"))
+        {
+            return Token { sv.take_prefix(2), TT::LogicalAnd };
+        }
+        else if(sv.starts_with("||"))
+        {
+            return Token { sv.take_prefix(2), TT::LogicalOr };
         }
         else
         {
