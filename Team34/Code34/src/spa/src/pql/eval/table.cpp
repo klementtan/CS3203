@@ -7,7 +7,7 @@
 #include <numeric>
 
 #include "zpr.h"
-
+#include "timer.h"
 #include "exceptions.h"
 #include "simple/ast.h"
 #include "pkb.h"
@@ -369,8 +369,8 @@ namespace pql::eval::table
 
     std::list<std::string> Table::getResult(const ast::ResultCl& result_cl, const pkb::ProgramKB* pkb)
     {
+        START_BENCHMARK_TIMER("Table get result");
         util::logfmt("pql::eval::table", "Starting to get {} for table {}.", result_cl.toString(), toString());
-        std::vector<std::vector<Entry>> result_entries;
 
 
         std::vector<ast::Declaration*> ret_cols;
@@ -425,25 +425,33 @@ namespace pql::eval::table
             return Table::getFailedResult(result_cl);
         }
 
-        for(const solver::IntRow& row : ret_tbl.getRows())
+        std::vector<std::vector<Entry>> result_entries(ret_tbl.size());
+
         {
-            result_entries.push_back(extract_result(row, result_cl.tuple(), pkb));
+            START_BENCHMARK_TIMER("Populating return table into result entries");
+            for(int i = 0; i < ret_tbl.size(); i++)
+            {
+                result_entries[i] = extract_result(ret_tbl.getRow(i), result_cl.tuple(), pkb);
+            }
         }
 
         std::list<std::string> result;
 
-        for(const std::vector<Entry>& entries : result_entries)
         {
-            std::vector<std::string> curr_results;
-            for(const Entry& entry : entries)
+            START_BENCHMARK_TIMER("Populating result entries into result (vector<string>)");
+            for(const std::vector<Entry>& entries : result_entries)
             {
-                curr_results.push_back(
-                    entry.getType() == EntryType::kStmt ? std::to_string(entry.getStmtNum()) : entry.getVal());
+                std::vector<std::string> curr_results;
+                for(const Entry& entry : entries)
+                {
+                    curr_results.push_back(
+                        entry.getType() == EntryType::kStmt ? std::to_string(entry.getStmtNum()) : entry.getVal());
+                }
+                std::string merged_result = std::accumulate(curr_results.begin(), curr_results.end(), std::string {},
+                    [](const std::string& a, const std::string& b) { return a.empty() ? b : a + " " + b; });
+                util::logfmt("pql::eval::table", "Adding \"{}\" to result", merged_result);
+                result.push_back(merged_result);
             }
-            std::string merged_result = std::accumulate(curr_results.begin(), curr_results.end(), std::string {},
-                [](const std::string& a, const std::string& b) { return a.empty() ? b : a + " " + b; });
-            util::logfmt("pql::eval::table", "Adding \"{}\" to result", merged_result);
-            result.push_back(merged_result);
         }
 
         return result;
