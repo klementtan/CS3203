@@ -369,14 +369,11 @@ namespace pql::eval::solver
           m_decl_components(), m_dep_graph(mergeAndCopySet(return_decls, select_decls), joins)
     {
         START_BENCHMARK_TIMER("Solver constructor");
-
         trim(return_decls);
         trim(select_decls);
-
         // all declaration should start as table initially
         for(const ast::Declaration* decl : return_decls)
         {
-            START_BENCHMARK_TIMER("Create initial table for return declarations");
             IntTable tbl;
             if(m_domains.count(decl) == 0)
                 throw util::PqlException("pql::eval::solver", "{} does not have any domain", decl->toString());
@@ -387,7 +384,6 @@ namespace pql::eval::solver
         // all declaration should start as table initially
         for(const ast::Declaration* decl : select_decls)
         {
-            START_BENCHMARK_TIMER("Create initial table for select declarations");
             IntTable tbl;
             if(m_domains.count(decl) == 0)
                 throw util::PqlException("pql::eval::solver", "{} does not have any domain", decl->toString());
