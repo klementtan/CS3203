@@ -216,4 +216,32 @@ TEST_CASE("IntTable")
             REQUIRE(is_b_valid);
         }
     }
+
+    SECTION("operator==")
+    {
+        std::vector<std::unique_ptr<pql::ast::Declaration>> decls1 = generate_decl(5, 0);
+        std::vector<pql::ast::Declaration*> decl_observers1(decls1.size());
+        for(size_t i = 0; i < decls1.size(); i++)
+            decl_observers1[i] = decls1[i].get();
+        auto row1 = generate_rows(1, decl_observers1).front();
+        auto row2 = generate_rows(1, decl_observers1).front();
+        INFO(row1.toString());
+        INFO(row2.toString());
+        REQUIRE(row1 == row2);
+        // Dedup identical rows
+        std::unordered_set<pql::eval::solver::IntRow> unique_rows = { row1, row2 };
+        REQUIRE(unique_rows.size() == 1);
+    }
+
+    SECTION("Set of IntRow")
+    {
+        std::vector<std::unique_ptr<pql::ast::Declaration>> decls1 = generate_decl(5, 0);
+        std::vector<pql::ast::Declaration*> decl_observers1(decls1.size());
+        for(size_t i = 0; i < decls1.size(); i++)
+            decl_observers1[i] = decls1[i].get();
+        auto row1 = generate_rows(1, decl_observers1).front();
+        auto row2 = row1;
+        std::unordered_set<pql::eval::solver::IntRow> rows = { row1 };
+        REQUIRE(rows.count(row2) == 1);
+    }
 }

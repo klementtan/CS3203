@@ -103,6 +103,30 @@ namespace pql::eval::solver
         }
     }
 
+    const std::unordered_map<const ast::Declaration*, table::Entry>& IntRow::getColumns() const
+    {
+        return m_columns;
+    }
+    int IntRow::size() const
+    {
+        return m_columns.size();
+    }
+
+    bool IntRow::operator==(const IntRow& other) const
+    {
+        if(size() != other.size())
+            return false;
+
+        for(const auto& [decl, entry] : m_columns)
+        {
+            if(!other.contains(decl))
+                return false;
+            if(other.getVal(decl) != entry)
+                return false;
+        }
+        return true;
+    }
+
     std::string IntRow::toString() const
     {
         std::string ret = "IntRow(\n";
@@ -210,6 +234,26 @@ namespace pql::eval::solver
         m_headers.insert(decl);
         m_rows = std::move(new_rows);
     }
+
+    void IntTable::dedupRows()
+    {
+        std::vector<IntRow> new_rows;
+        std::unordered_set<IntRow> added_rows;
+        for(const auto& row : m_rows)
+        {
+            if(added_rows.count(row))
+            {
+                util::logfmt("pql::eval::solver", "Removing duplicate row {}", row.toString());
+            }
+            else
+            {
+                new_rows.emplace_back(row);
+                added_rows.emplace(row);
+            }
+        }
+        util::logfmt("pql::eval::solver", "Rows after deduplicating {}", toString());
+        m_rows = std::move(new_rows);
+    }
     std::unordered_set<const ast::Declaration*> IntTable::getHeaders() const
     {
         return this->m_headers;
@@ -252,7 +296,7 @@ namespace pql::eval::solver
     }
     void IntTable::filterColumns(const std::unordered_set<const ast::Declaration*>& allowed_columns)
     {
-        for(auto row : m_rows)
+        for(auto& row : m_rows)
         {
             row.filterColumns(allowed_columns);
         }
@@ -662,6 +706,7 @@ namespace pql::eval::solver
             util::logfmt(
                 "pql::eval::solver", "Merging table {} to {}", ret_table.toString(), decl_int_table.toString());
             ret_table.merge(decl_int_table);
+            ret_table.dedupRows();
         }
         util::logfmt("pql::eval::solver", "Return table: {}", ret_table.toString());
         return ret_table;
