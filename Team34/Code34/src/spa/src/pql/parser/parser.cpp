@@ -325,10 +325,13 @@ namespace pql::parser
             }
             else
             {
-                // TODO: we won't be able to parse the rest of the pattern without knowing the correct
-                // type of the declaration. should this be a syntactic error?
                 ps->setInvalid("invalid synonym type '{}' in pattern clause (can only have 'if', 'while', or 'assign'",
                     ast::getInverseDesignEntityMap().at(decl_ent));
+
+                // throw an exception to get us out of here. abort parsing immediately *BUT* not with a
+                // syntactic error. we must still treat this as a semantic erorr, but obviously we cannot
+                // continue parsing.
+                throw std::string("please stop parsing thank you very much");
             }
 
         } while(ps->peek_keyword() == TT::KW_And ? (ps->next_keyword(), true) : false);
@@ -706,7 +709,20 @@ namespace pql::parser
             if(t == TT::KW_Pattern)
             {
                 util::logfmt("pql::parser", "Parsing pattern clause");
-                parse_pattern(ps, &select);
+
+                // this is the only one that can throw a string.
+                try
+                {
+                    parse_pattern(ps, &select);
+                }
+                catch(const std::string& e)
+                {
+                    // this is the special case. break here, but don't throw a syntax error.
+                    // consume all tokens.
+                    while(ps->next() != TT::EndOfFile)
+                        ;
+                    break;
+                }
             }
             else if(t == TT::KW_SuchThat)
             {
