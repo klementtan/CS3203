@@ -329,7 +329,7 @@ namespace pql::parser
                     ast::getInverseDesignEntityMap().at(decl_ent));
 
                 // throw an exception to get us out of here. abort parsing immediately *BUT* not with a
-                // syntactic error. we must still treat this as a semantic erorr, but obviously we cannot
+                // syntactic error. we must still treat this as a semantic error, but obviously we cannot
                 // continue parsing.
                 throw std::string("please stop parsing thank you very much");
             }
