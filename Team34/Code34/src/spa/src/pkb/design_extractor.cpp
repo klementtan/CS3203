@@ -74,11 +74,8 @@ namespace pkb
             m_pkb->getStatementAt(s->getStmtNum()).m_uses.insert(varname);
         }
 
-        for(auto proc : ts.proc_stack)
-        {
-            var.m_used_by_procs.insert(proc->getName());
-            m_pkb->getProcedureNamed(proc->getName()).m_uses.insert(varname);
-        }
+        var.m_used_by_procs.insert(ts.current_proc->getName());
+        ts.current_proc->m_uses.insert(varname);
 
         // populate condition_uses for ifs and whiles
         if(auto astmt = stmt->getAstStmt(); CONST_DCAST(WhileLoop, astmt) || CONST_DCAST(IfStmt, astmt))
@@ -100,14 +97,11 @@ namespace pkb
             m_pkb->getStatementAt(s->getStmtNum()).m_modifies.insert(varname);
         }
 
-        for(auto proc : ts.proc_stack)
-        {
-            var.m_modified_by_procs.insert(proc->getName());
-            m_pkb->getProcedureNamed(proc->getName()).m_modifies.insert(varname);
-        }
+        var.m_modified_by_procs.insert(ts.current_proc->getName());
+        ts.current_proc->m_modifies.insert(varname);
     }
 
-    void DesignExtractor::processStmtList(const s_ast::StmtList* list, const TraversalState& ts)
+    void DesignExtractor::processStmtList(const s_ast::StmtList* list, TraversalState& ts)
     {
         // indices are easier to work with here.
         // do one pass forwards and one pass in reverse to effeciently set
@@ -183,26 +177,28 @@ namespace pkb
 
             if(auto if_stmt = CONST_DCAST(IfStmt, ast_stmt); if_stmt)
             {
-                auto new_ts = ts;
-                new_ts.local_stmt_stack.push_back(stmt);
-                // new_ts.global_stmt_stack.push_back(stmt);
+                ts.local_stmt_stack.push_back(stmt);
 
-                this->processExpr(if_stmt->condition.get(), stmt, new_ts);
-                this->processStmtList(&if_stmt->true_case, new_ts);
-                this->processStmtList(&if_stmt->false_case, new_ts);
+                this->processExpr(if_stmt->condition.get(), stmt, ts);
+                this->processStmtList(&if_stmt->true_case, ts);
+                this->processStmtList(&if_stmt->false_case, ts);
 
                 m_pkb->m_stmt_kinds[DesignEnt::IF].insert(sid);
+
+                assert(ts.local_stmt_stack.back() == stmt);
+                ts.local_stmt_stack.pop_back();
             }
             else if(auto while_loop = CONST_DCAST(WhileLoop, ast_stmt); while_loop)
             {
-                auto new_ts = ts;
-                new_ts.local_stmt_stack.push_back(stmt);
-                // new_ts.global_stmt_stack.push_back(stmt);
+                ts.local_stmt_stack.push_back(stmt);
 
-                this->processExpr(while_loop->condition.get(), stmt, new_ts);
-                this->processStmtList(&while_loop->body, new_ts);
+                this->processExpr(while_loop->condition.get(), stmt, ts);
+                this->processStmtList(&while_loop->body, ts);
 
                 m_pkb->m_stmt_kinds[DesignEnt::WHILE].insert(sid);
+
+                assert(ts.local_stmt_stack.back() == stmt);
+                ts.local_stmt_stack.pop_back();
             }
             else if(auto assign_stmt = CONST_DCAST(AssignStmt, ast_stmt); assign_stmt)
             {
@@ -441,7 +437,7 @@ namespace pkb
             auto body = &proc->getAstProc()->body;
 
             TraversalState ts {};
-            ts.proc_stack.push_back(proc);
+            ts.current_proc = proc;
 
             this->processStmtList(body, ts);
             m_visited_procs.insert(proc->getName());
