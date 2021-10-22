@@ -49,9 +49,9 @@ namespace pql::eval::solver
         // Performs cross product on the Domain and return a new IntTable (O(N^2))
         void mergeColumn(const ast::Declaration* decl, const table::Domain& domain);
         [[nodiscard]] std::unordered_set<const ast::Declaration*> getHeaders() const;
-        [[nodiscard]] std::vector<IntRow> getRows() const;
+        [[nodiscard]] const std::vector<IntRow>& getRows() const;
         void filterRows(const table::Join& join);
-        IntRow getRow(int i) const;
+        const IntRow& getRow(int i) const;
         [[nodiscard]] bool empty() const;
         [[nodiscard]] int size() const;
         [[nodiscard]] std::string toString() const;
