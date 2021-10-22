@@ -538,6 +538,16 @@ namespace zpr::tt
 			return -1;
 		}
 
+		inline bool starts_with(str_view sv) const
+		{
+			if(sv.size() == 0)
+				return true;
+			else if(sv.size() > this->size())
+				return false;
+
+			return this->take(sv.size()) == sv;
+		}
+
 		inline str_view substr(size_t pos, size_t cnt) const { return str_view(this->ptr + pos, cnt); }
 
 
