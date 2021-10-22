@@ -154,10 +154,16 @@ namespace pql::eval::table
         return this->m_decl_b;
     }
 
-    std::unordered_set<std::pair<Entry, Entry>> Join::getAllowedEntries() const
+    const std::unordered_set<std::pair<Entry, Entry>>& Join::getAllowedEntries() const
     {
         return this->m_allowed_entries;
     }
+
+    std::unordered_set<std::pair<Entry, Entry>>& Join::getAllowedEntries()
+    {
+        return this->m_allowed_entries;
+    }
+
     void Join::setAllowedEntries(const std::unordered_set<std::pair<Entry, Entry>>& allowed_entries)
     {
         this->m_allowed_entries = allowed_entries;

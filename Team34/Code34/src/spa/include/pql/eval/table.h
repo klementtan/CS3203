@@ -132,8 +132,8 @@ namespace pql::eval::table
         void setAllowedEntries(const std::unordered_set<std::pair<Entry, Entry>>& allowed_entries);
         [[nodiscard]] pql::ast::Declaration* getDeclA() const;
         [[nodiscard]] pql::ast::Declaration* getDeclB() const;
-        [[nodiscard]] std::unordered_set<std::pair<Entry, Entry>> getAllowedEntries() const;
-        [[nodiscard]] std::unordered_set<std::pair<Entry, Entry>> getAllowedEntries(pql::ast::Declaration* decl) const;
+        [[nodiscard]] const std::unordered_set<std::pair<Entry, Entry>>& getAllowedEntries() const;
+        [[nodiscard]] std::unordered_set<std::pair<Entry, Entry>>& getAllowedEntries();
         [[nodiscard]] bool isAllowedEntry(const std::pair<Entry, Entry>& entry) const;
         [[nodiscard]] std::string toString() const;
         [[nodiscard]] int getId() const;

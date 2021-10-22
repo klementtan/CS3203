@@ -151,11 +151,12 @@ namespace pql::eval::solver
                 {
                     IntRow new_row(this_row);
                     new_row.mergeRow(other_row);
-                    new_rows.emplace_back(new_row);
+
+                    new_rows.emplace_back(std::move(new_row));
                 }
             }
         }
-        m_rows = new_rows;
+        m_rows = std::move(new_rows);
         for(const ast::Declaration* header : other.getHeaders())
         {
             m_headers.insert(header);
@@ -188,22 +189,23 @@ namespace pql::eval::solver
                 new_row.addColumn(decl, entry);
                 util::logfmt("pql::eval::solver", "New row:{} from merging {} with {}", new_row.toString(),
                     row.toString(), entry.toString());
-                new_rows.emplace_back(new_row);
+
+                new_rows.emplace_back(std::move(new_row));
             }
         }
         m_headers.insert(decl);
-        m_rows = new_rows;
+        m_rows = std::move(new_rows);
     }
     std::unordered_set<const ast::Declaration*> IntTable::getHeaders() const
     {
         return this->m_headers;
     }
-    std::vector<IntRow> IntTable::getRows() const
+    const std::vector<IntRow>& IntTable::getRows() const
     {
         return this->m_rows;
     }
 
-    IntRow IntTable::getRow(int i) const
+    const IntRow& IntTable::getRow(int i) const
     {
         return m_rows[i];
     }
@@ -362,7 +364,7 @@ namespace pql::eval::solver
                 sorted_decl[i] = size_decls[i].second;
             }
 
-            ret.emplace_back(sorted_decl);
+            ret.emplace_back(std::move(sorted_decl));
         }
         return ret;
     };
@@ -379,26 +381,30 @@ namespace pql::eval::solver
         // all declaration should start as table initially
         for(const ast::Declaration* decl : return_decls)
         {
-            IntTable tbl;
+            IntTable tbl {};
             if(m_domains.count(decl) == 0)
                 throw util::PqlException("pql::eval::solver", "{} does not have any domain", decl->toString());
+
             tbl.mergeColumn(decl, m_domains.find(decl)->second);
-            m_int_tables.push_back(tbl);
+            m_int_tables.push_back(std::move(tbl));
+
             util::logfmt("pql::eval::solver", "Adding {} to m_int_tables", tbl.toString());
         }
         // all declaration should start as table initially
         for(const ast::Declaration* decl : select_decls)
         {
-            IntTable tbl;
+            IntTable tbl {};
             if(m_domains.count(decl) == 0)
                 throw util::PqlException("pql::eval::solver", "{} does not have any domain", decl->toString());
+
             if(has_table(decl))
             {
                 // IntTbl already initialized as decl is also a ret decl.
                 continue;
             }
             tbl.mergeColumn(decl, m_domains.find(decl)->second);
-            m_int_tables.push_back(tbl);
+            m_int_tables.push_back(std::move(tbl));
+
             util::logfmt("pql::eval::solver", "Adding {} to m_int_tables", tbl.toString());
         }
         // only sort component after forming the IntTable
@@ -421,10 +427,12 @@ namespace pql::eval::solver
         util::logfmt("pql::eval::solver", "Trimming {} and {}", decl->toString(), join.toString());
         if(m_domains.count(decl) == 0)
             throw util::PqlException("pql::solver::eval",
-                "Failed to trim {} with {}. Declaration's domain not initialized", decl->toString(), join.toString());
+                "Failed to trim {} with {}. Declaration's domain not initialised", decl->toString(), join.toString());
+
         const std::unordered_set<table::Entry>& domain = m_domains.find(decl)->second;
-        std::unordered_set<std::pair<table::Entry, table::Entry>> join_allowed_entries = join.getAllowedEntries();
+        auto& join_allowed_entries = join.getAllowedEntries();
         // Extract out decls' Entry from join
+
         std::unordered_set<table::Entry> decl_join_allowed_entries;
         for(const auto& [entry_a, entry_b] : join_allowed_entries)
         {
@@ -450,20 +458,23 @@ namespace pql::eval::solver
             if(decl_join_allowed_entries.count(entry))
                 entry_set_intersect.insert(entry);
         }
+
         for(const auto& entry : decl_join_allowed_entries)
         {
             if(domain.count(entry))
                 entry_set_intersect.insert(entry);
         }
+
         // Update domain with the new trimmed domain
-        m_domains[decl] = entry_set_intersect;
+        m_domains[decl] = std::move(entry_set_intersect);
+
         // remove allowed entries to only contain trimmed entries
         auto join_it = join_allowed_entries.begin();
         while(join_it != join_allowed_entries.end())
         {
             const table::Entry& entry = join_it->first.getDeclaration() == decl ? join_it->first : join_it->second;
             // remove allowed entries that are not in intersect
-            if(entry_set_intersect.count(entry) == 0)
+            if(m_domains[decl].count(entry) == 0)
             {
                 util::logfmt("pql::eval::solver", "Removing {} from {}.", entry.toString(), join.toString());
                 join_it = join_allowed_entries.erase(join_it);
@@ -473,7 +484,6 @@ namespace pql::eval::solver
                 join_it++;
             }
         }
-        join.setAllowedEntries(join_allowed_entries);
     }
 
     void Solver::trim(const std::unordered_set<const ast::Declaration*>& decls)
