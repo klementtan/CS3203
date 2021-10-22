@@ -25,6 +25,8 @@ namespace pql::eval::solver
         // merge other row into current row
         void mergeRow(const IntRow& other);
         [[nodiscard]] std::unordered_set<const ast::Declaration*> getHeaders() const;
+        // Remove columns that are not in the allowed headers
+        void filterColumns(const std::unordered_set<const ast::Declaration*>& allowed_headers);
         table::Entry getVal(const ast::Declaration* decl) const;
         bool contains(const ast::Declaration* decl) const;
         // check columns in the row exist in one of the allowed joins
@@ -48,6 +50,8 @@ namespace pql::eval::solver
         void merge(const IntTable& other);
         // Performs cross product on the Domain and return a new IntTable (O(N^2))
         void mergeColumn(const ast::Declaration* decl, const table::Domain& domain);
+        // Remove columns that are not in the allowed headers
+        void filterColumns(const std::unordered_set<const ast::Declaration*>& allowed_headers);
         [[nodiscard]] std::unordered_set<const ast::Declaration*> getHeaders() const;
         [[nodiscard]] const std::vector<IntRow>& getRows() const;
         void filterRows(const table::Join& join);
