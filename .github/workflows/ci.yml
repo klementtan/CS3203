@@ -64,20 +64,13 @@ jobs:
           cd Team34/Code34
           mkdir build
           cd build
-          cmake -A Win32  .. -DENABLE_LOGGING=ON -DENABLE_BENCHMARK=ON &&
-          cmake --build . --target autotester --config Release -DENABLE_LOGGING=ON -DENABLE_BENCHMARK=ON
+          cmake -A Win32  .. -DENABLE_LOGGING=OFF -DENABLE_BENCHMARK=ON -DBENCHMARK_TO_STDERR=ON &&
+          cmake --build . --target autotester --config Release  
           if ($lastexitcode -ne 0) { throw "build failed" }
       - name: run autotester
         run: |
           cd Team34/Tests34/bench
-          ..\..\Code34\build\src\autotester\Release\autotester.exe bench.simple bench_queries.txt bench-out.xml
-          if ($lastexitcode -ne 0) { throw "autotester failed" }
-      - name: Show bench result
-        run: |
-          cd Team34/Tests34/bench
-          dir
-          echo "Bench Result"
-          findstr "TIMER" "debug.log"
+          ..\..\Code34\build\src\autotester\Release\autotester.exe bench.simple bench_queries.txt bench-out.xml > tmp.txt
   formatting-check:
     name: Formatting Check
     runs-on: ubuntu-latest
