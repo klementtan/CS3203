@@ -38,7 +38,8 @@ TEST_CASE("IntRow")
             std::make_unique<pql::ast::Declaration>(pql::ast::Declaration { "a", pql::ast::DESIGN_ENT::ASSIGN });
         pql::eval::table::Entry entry = pql::eval::table::Entry(decl.get(), 1);
         pql::eval::solver::IntRow row;
-        pql::eval::solver::IntRow result = row.addColumn(decl.get(), entry);
+        pql::eval::solver::IntRow result(row);
+        result.addColumn(decl.get(), entry);
         REQUIRE(result.getVal(decl.get()) == entry);
         REQUIRE(*(result.getHeaders().begin()) == decl.get());
         // Should not change original row
@@ -118,7 +119,8 @@ TEST_CASE("IntRow")
             { decl3.get(), entry3 } };
         pql::eval::solver::IntRow row1(columns1);
         pql::eval::solver::IntRow row2(columns2);
-        pql::eval::solver::IntRow merged_row = row1.mergeRow(row2);
+        pql::eval::solver::IntRow merged_row(row1);
+        merged_row.mergeRow(row2);
         // Disjoint rows
         REQUIRE(merged_row.getVal(decl1.get()) == entry1);
         REQUIRE(merged_row.getVal(decl2.get()) == entry2);
@@ -152,7 +154,8 @@ TEST_CASE("IntTable")
         std::vector<pql::eval::solver::IntRow> rows1 = generate_rows(2, decl_observers1);
         pql::eval::solver::IntTable tbl1(
             rows1, std::unordered_set<const pql::ast::Declaration*>(decl_observers1.begin(), decl_observers1.end()));
-        pql::eval::solver::IntTable merged_tbl1 = tbl0.merge(tbl1);
+        pql::eval::solver::IntTable merged_tbl1(tbl0);
+        merged_tbl1.merge(tbl1);
         REQUIRE(merged_tbl1.getRows().size() == 2);
 
         std::vector<std::unique_ptr<pql::ast::Declaration>> decls2 = generate_decl(5, 5);
@@ -162,7 +165,8 @@ TEST_CASE("IntTable")
         std::vector<pql::eval::solver::IntRow> rows2 = generate_rows(2, decl_observers2);
         pql::eval::solver::IntTable tbl2(
             rows2, std::unordered_set<const pql::ast::Declaration*>(decl_observers2.begin(), decl_observers2.end()));
-        pql::eval::solver::IntTable merged_tbl2 = tbl1.merge(tbl2);
+        pql::eval::solver::IntTable merged_tbl2(tbl1);
+        merged_tbl2.merge(tbl2);
         // cross product of table of sizes 2 x 2
         REQUIRE(merged_tbl2.getRows().size() == 4);
     }
@@ -174,7 +178,8 @@ TEST_CASE("IntTable")
             pql::eval::table::Entry(decl.get(), 2), pql::eval::table::Entry(decl.get(), 3),
             pql::eval::table::Entry(decl.get(), 4) };
         pql::eval::solver::IntTable tbl0;
-        pql::eval::solver::IntTable merged_tbl = tbl0.mergeColumn(decl.get(), entries);
+        pql::eval::solver::IntTable merged_tbl(tbl0);
+        merged_tbl.mergeColumn(decl.get(), entries);
         REQUIRE(merged_tbl.getRows().size() == entries.size());
         for(const pql::eval::solver::IntRow& row : merged_tbl.getRows())
         {

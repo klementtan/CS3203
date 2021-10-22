@@ -20,9 +20,10 @@ namespace pql::eval::solver
         explicit IntRow(std::unordered_map<const ast::Declaration*, table::Entry> columns);
         IntRow();
         // merge this row with a new column and return a new copy
-        [[nodiscard]] IntRow addColumn(const ast::Declaration* decl, const table::Entry& entry) const;
+        void addColumn(const ast::Declaration* decl, const table::Entry& entry);
         [[nodiscard]] bool canMerge(const IntRow& other) const;
-        [[nodiscard]] IntRow mergeRow(const IntRow& other) const;
+        // merge other row into current row
+        void mergeRow(const IntRow& other);
         [[nodiscard]] std::unordered_set<const ast::Declaration*> getHeaders() const;
         table::Entry getVal(const ast::Declaration* decl) const;
         bool contains(const ast::Declaration* decl) const;
@@ -43,10 +44,10 @@ namespace pql::eval::solver
         IntTable(std::vector<IntRow> rows, const std::unordered_set<const ast::Declaration*>& headers);
         IntTable();
         bool contains(const ast::Declaration* declaration);
-        // Performs cross product on the rows and returns a new IntTable (O(N^2))
-        [[nodiscard]] IntTable merge(const IntTable& other);
+        // Performs cross product on the rows
+        void merge(const IntTable& other);
         // Performs cross product on the Domain and return a new IntTable (O(N^2))
-        [[nodiscard]] IntTable mergeColumn(const ast::Declaration* decl, const table::Domain& domain) const;
+        void mergeColumn(const ast::Declaration* decl, const table::Domain& domain);
         [[nodiscard]] std::unordered_set<const ast::Declaration*> getHeaders() const;
         [[nodiscard]] std::vector<IntRow> getRows() const;
         void filterRows(const table::Join& join);
