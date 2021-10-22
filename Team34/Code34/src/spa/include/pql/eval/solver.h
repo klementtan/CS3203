@@ -51,6 +51,7 @@ namespace pql::eval::solver
         [[nodiscard]] std::unordered_set<const ast::Declaration*> getHeaders() const;
         [[nodiscard]] std::vector<IntRow> getRows() const;
         void filterRows(const table::Join& join);
+        IntRow getRow(int i) const;
         [[nodiscard]] bool empty() const;
         [[nodiscard]] int size() const;
         [[nodiscard]] std::string toString() const;

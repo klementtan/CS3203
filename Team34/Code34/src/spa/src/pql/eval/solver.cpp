@@ -203,6 +203,11 @@ namespace pql::eval::solver
         return this->m_rows;
     }
 
+    IntRow IntTable::getRow(int i) const
+    {
+        return m_rows[i];
+    }
+
     int IntTable::size() const
     {
         return m_rows.size();
