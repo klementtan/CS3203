@@ -484,7 +484,6 @@ namespace pql::eval::solver
                 join_it++;
             }
         }
-        // join.setAllowedEntries(join_allowed_entries);
     }
 
     void Solver::trim(const std::unordered_set<const ast::Declaration*>& decls)
