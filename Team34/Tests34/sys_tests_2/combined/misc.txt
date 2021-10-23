@@ -3,3 +3,8 @@ procedure p1, p2;
 Select <p1, p1> such that Calls(p1, p2)
 A A,UsesAndModifies UsesAndModifies,UsesAndModifies2 UsesAndModifies2
 5000
+2 - select bool semantic error
+stmt s;
+Select BOOLEAN pattern a(_, _)
+FALSE
+5000
