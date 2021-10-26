@@ -3,7 +3,6 @@
 // table.h Solver
 
 #pragma once
-
 #include <pql/parser/ast.h>
 #include <pql/eval/table.h>
 
@@ -25,11 +24,17 @@ namespace pql::eval::solver
         // merge other row into current row
         void mergeRow(const IntRow& other);
         [[nodiscard]] std::unordered_set<const ast::Declaration*> getHeaders() const;
+        // Remove columns that are not in the allowed headers
+        void filterColumns(const std::unordered_set<const ast::Declaration*>& allowed_headers);
         table::Entry getVal(const ast::Declaration* decl) const;
         bool contains(const ast::Declaration* decl) const;
+        int size() const;
+        const std::unordered_map<const ast::Declaration*, table::Entry>& getColumns() const;
         // check columns in the row exist in one of the allowed joins
         [[nodiscard]] bool isAllowed(const table::Join& join) const;
         [[nodiscard]] std::string toString() const;
+
+        bool operator==(const IntRow& other) const;
     };
 
     // Intermediate Table for solver
@@ -48,9 +53,12 @@ namespace pql::eval::solver
         void merge(const IntTable& other);
         // Performs cross product on the Domain and return a new IntTable (O(N^2))
         void mergeColumn(const ast::Declaration* decl, const table::Domain& domain);
+        // Remove columns that are not in the allowed headers
+        void filterColumns(const std::unordered_set<const ast::Declaration*>& allowed_headers);
         [[nodiscard]] std::unordered_set<const ast::Declaration*> getHeaders() const;
         [[nodiscard]] const std::vector<IntRow>& getRows() const;
         void filterRows(const table::Join& join);
+        void dedupRows();
         const IntRow& getRow(int i) const;
         [[nodiscard]] bool empty() const;
         [[nodiscard]] int size() const;
@@ -108,4 +116,28 @@ namespace pql::eval::solver
         [[nodiscard]] std::string toString() const;
     };
 
+}
+
+namespace std
+{
+    template <>
+    struct hash<pql::eval::solver::IntRow>
+    {
+        size_t operator()(const pql::eval::solver::IntRow& r) const
+        {
+            // http://stackoverflow.com/a/1646913/126995
+            size_t res = 17;
+            for(const auto& [decl, e] : r.getColumns())
+            {
+                res += std::hash<const pql::ast::Declaration*>()(decl);
+                if(e.getType() != pql::eval::table::EntryType::kStmt)
+                    res += std::hash<string>()(e.getVal());
+                if(e.getType() == pql::eval::table::EntryType::kStmt)
+                    res += std::hash<simple::ast::StatementNum>()(e.getStmtNum());
+                res += std::hash<pql::ast::Declaration>()(*e.getDeclaration());
+                res += std::hash<pql::eval::table::EntryType>()(e.getType());
+            }
+            return res;
+        }
+    };
 }
