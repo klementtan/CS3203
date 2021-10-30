@@ -686,7 +686,7 @@ namespace pql::parser
 
         ast::ResultCl result = [ps]() -> auto
         {
-            if(auto tok = ps->peek(); tok == TT::Identifier && tok.text == "BOOLEAN")
+            if(auto tok = ps->peek(); tok == TT::Identifier && tok.text == "BOOLEAN" && !ps->hasDeclaration("BOOLEAN"))
             {
                 ps->next();
                 return ast::ResultCl::ofBool();
