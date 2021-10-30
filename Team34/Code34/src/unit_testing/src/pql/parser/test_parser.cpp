@@ -20,6 +20,26 @@ TEST_CASE("Basic Query")
     REQUIRE(query->select.clauses.empty());
 }
 
+TEST_CASE("BOOLEAN as declaration name")
+{
+    auto query = pql::parser::parsePQL("variable BOOLEAN;\n"
+                                       "Select BOOLEAN");
+    REQUIRE(query->declarations.getAllDeclarations().size() == 1);
+    REQUIRE(query->select.result.isBool() == false);
+    REQUIRE(query->select.result.tuple().size() == 1);
+    REQUIRE(query->select.result.tuple().front().declaration()->name == "BOOLEAN");
+}
+
+TEST_CASE("variable as declaration name")
+{
+    auto query = pql::parser::parsePQL("variable variable;\n"
+                                       "Select variable");
+    REQUIRE(query->declarations.getAllDeclarations().size() == 1);
+    REQUIRE(query->select.result.isBool() == false);
+    REQUIRE(query->select.result.tuple().size() == 1);
+    REQUIRE(query->select.result.tuple().front().declaration()->name == "variable");
+}
+
 TEST_CASE("Follows* Query")
 {
     auto query = pql::parser::parsePQL("stmt s;\n"
