@@ -27,6 +27,7 @@ namespace pkb
         void processModifies(const std::string& var, Statement* stmt, const TraversalState& ts);
 
         void processNextRelations();
+        void processBipRelations();
         void processCFG(const simple::ast::StmtList* list, StatementNum last_checkpt);
 
         std::vector<Procedure*> processCallGraph();

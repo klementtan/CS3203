@@ -178,8 +178,9 @@ namespace pkb
         ~CFG();
 
         void addEdge(StatementNum stmt1, StatementNum stmt2);
+        void addEdgeBip(StatementNum stmt1, StatementNum stmt2);
         void computeDistMat();
-        std::string getMatRep() const;
+        std::string getMatRep(int i) const;
         bool nextRelationExists() const;
         bool affectsRelationExists() const;
 
@@ -202,14 +203,23 @@ namespace pkb
         StatementSet getAffectingStatements(StatementNum id) const;
         StatementSet getTransitivelyAffectingStatements(StatementNum id) const;
 
+        bool doesAffectBip(StatementNum stmt1, StatementNum stmt2) const;
+        bool doesTransitivelyAffectBip(StatementNum stmt1, StatementNum stmt2) const;
+        StatementSet getAffectedBipStatements(StatementNum id) const;
+        StatementSet getTransitivelyAffectedBipStatements(StatementNum id) const;
+        StatementSet getAffectingBipStatements(StatementNum id) const;
+        StatementSet getTransitivelyAffectingBipStatements(StatementNum id) const;
     private:
         size_t total_inst;
         // adjacency matrix for lengths of shortest paths between 2 inst. i(row) is source and j(col) is destination.
         size_t** adj_mat;
+        size_t** adj_mat_bip;
+        size_t** adj_mat_processed;
 
         bool m_next_exists = false;
 
         std::unordered_map<StatementNum, StatementSet> adj_lst;
+        std::unordered_map<StatementNum, StatementSet> adj_lst_bip;
         std::unordered_map<StatementNum, const Statement*> assign_stmts;
         std::unordered_map<StatementNum, const Statement*> mod_stmts;
         friend struct DesignExtractor;

@@ -17,14 +17,21 @@ namespace pkb
     {
         total_inst = v;
         adj_mat = new size_t*[v];
+        adj_mat_bip = new size_t*[v];
+        adj_mat_processed = new size_t*[v];
+        
         m_next_exists = false;
 
         for(size_t i = 0; i < v; i++)
         {
             this->adj_mat[i] = new size_t[v];
+            this->adj_mat_bip[i] = new size_t[v];
+            this->adj_mat_processed[i] = new size_t[v];
             for(size_t j = 0; j < v; j++)
             {
                 adj_mat[i][j] = INF;
+                adj_mat_bip[i][j] = INF;
+                adj_mat_processed[i][j] = INF;
             }
         }
     }
@@ -56,13 +63,37 @@ namespace pkb
         }
     }
 
+    void CFG::addEdgeBip(StatementNum stmt1, StatementNum stmt2)
+    {
+        assert(stmt1 <= total_inst && stmt1 > 0);
+        assert(stmt2 <= total_inst && stmt2 > 0);
+        adj_mat_bip[stmt1 - 1][stmt2 - 1] = 1;
+        m_next_exists = true;
+    }
+
     bool CFG::nextRelationExists() const
     {
         return m_next_exists;
     }
 
-    std::string CFG::getMatRep() const
+    std::string CFG::getMatRep(int i) const
     {
+        size_t** mat;
+        switch(i)
+        {
+            case 1:
+                mat = adj_mat;
+                break;
+            case 2:
+                mat = adj_mat_bip;
+                break;
+            case 3:
+                mat = adj_mat_processed;
+                break;
+            default:
+                mat = adj_mat;
+                break;
+        }
         auto res = zpr::sprint("      ");
         for(size_t i = 0; i < total_inst; i++)
         {
@@ -75,7 +106,7 @@ namespace pkb
             res += zpr::sprint("{03} | ", i + 1);
             for(size_t j = 0; j < total_inst; j++)
             {
-                res += zpr::sprint("{03} ", adj_mat[i][j] == INF ? 0 : adj_mat[i][j]);
+                res += zpr::sprint("{03} ", mat[i][j] == INF ? 0 : mat[i][j]);
             }
             res += zpr::sprint("\n");
         }

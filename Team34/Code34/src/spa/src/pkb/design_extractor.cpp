@@ -6,7 +6,9 @@
 #include <functional>
 
 #include <zpr.h>
-
+#include <iostream>
+#include <unordered_map>
+#include <utility>
 #include "pkb.h"
 #include "util.h"
 #include "timer.h"
@@ -329,8 +331,71 @@ namespace pkb
             auto body = &proc.getAstProc()->body;
             this->processCFG(body, 0);
         }
+        processBipRelations();
         // get all shortest paths
         this->m_pkb->m_cfg->computeDistMat();
+    }
+
+    void DesignExtractor::processBipRelations()
+    {
+        auto cfg = this->m_pkb->m_cfg.get();
+        auto adjMat = cfg->adj_mat;
+        auto adjMatBip = cfg->adj_mat_bip;
+        for(int i = 0; i < cfg->total_inst; i++)
+        {
+            for(int j = 0; j < cfg->total_inst; j++)
+            {
+                adjMatBip[i][j] = adjMat[i][j];
+            }
+        }
+        std::unordered_map<std::string, std::pair<StatementNum, std::vector<StatementNum>>> gates;
+        // get the last stmt(s)
+        auto getLastStmts = [](const s_ast::StmtList* stmtLst) {
+            std::vector<StatementNum> lastStmts {};
+            std::function<void(const s_ast::StmtList*)> visitStmtList {};
+            visitStmtList = [&](const s_ast::StmtList* stmtLst) {
+                auto lastStmt = stmtLst->statements.back().get();
+                if(auto stmt = CONST_DCAST(IfStmt, lastStmt); stmt)
+                {
+                    visitStmtList(&stmt->true_case);
+                    visitStmtList(&stmt->false_case);
+                }
+                else
+                {
+                    lastStmts.push_back(stmtLst->statements.back().get()->id);
+                }
+            };
+            visitStmtList(stmtLst);
+            return lastStmts;
+        };
+
+        for(auto& [name, proc] : m_pkb->m_procedures)
+        {
+            auto stmtList = &proc.getAstProc()->body.statements;
+            auto pair = std::make_pair(stmtList->begin()->get()->id, getLastStmts(&proc.getAstProc()->body));
+            gates.insert({ name, pair });
+        }
+        for(auto& [name, proc] : m_pkb->m_procedures)
+        {
+            for(auto& callStmt : proc.getCallStmts())
+            {
+                auto nextStmt = cfg->getNextStatements(callStmt);
+                assert(nextStmt.size() <= 1);
+                if(nextStmt.size() != 0)
+                {
+                    adjMatBip[callStmt-1][*nextStmt.begin()-1] = 0;
+                }
+                auto calledProc = CONST_DCAST(ProcCall, this->m_pkb->getStatementAt(callStmt).getAstStmt())->proc_name;
+                adjMatBip[callStmt-1][gates.at(calledProc).first-1] = callStmt;
+                if(nextStmt.size() != 0)
+                {
+                    for(auto from : gates.at(calledProc).second)
+                    {
+                        adjMatBip[from - 1][*nextStmt.begin() - 1] = callStmt;  
+                    }
+                }
+            }
+        }
     }
 
 
