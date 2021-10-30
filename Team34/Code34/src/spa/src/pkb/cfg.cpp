@@ -6,7 +6,8 @@
 #include <zpr.h>
 #include <assert.h>
 #include <queue>
-
+#include <unordered_set>
+#include <iostream>
 #define INF SIZE_MAX
 
 namespace pkb
@@ -131,6 +132,96 @@ namespace pkb
         }
     }
 
+    struct comparator
+    {
+        bool operator()(const std::pair<size_t, size_t*>& lhs, const std::pair<size_t, size_t*>& rhs)
+        {
+            return *lhs.second > *rhs.second;
+        }
+    };
+    template <class T>
+    void printQueue(T& q)
+    {
+        std::priority_queue<std::pair<size_t, size_t*>, std::vector<std::pair<size_t, size_t*>>, comparator> pq = q;
+        size_t size = pq.size();
+        for(int i = 0; i < size; ++i)
+        {
+            std::cout << pq.top().first << ", ";
+            pq.pop();
+        }
+        std::cout<<"\n";
+
+    }
+    void CFG::computeDistMatBip()
+    {
+        for(int i = 0; i < total_inst; i++)
+        {
+            for(int j = 0; j < total_inst; j++)
+            {
+                adj_mat_processed[i][j] = adj_mat_bip[i][j];
+            }
+        }
+        for(size_t start = 0; start < total_inst; start++) // for each starting node
+        {
+            std::unordered_set<StatementNum> procs_called {};
+            std::unordered_set<StatementNum> in_queue {};
+            size_t* dist = adj_mat_processed[start];
+            std::priority_queue<std::pair<size_t, size_t*>, std::vector<std::pair<size_t, size_t*>>, comparator> pq;
+            for(size_t i = 0; i < total_inst; i++)
+                dist[i] = INF;
+            pq.push(std::make_pair(start, &dist[start]));
+            dist[start] = 0;
+            in_queue.insert(start);
+            std::cout << "starting node " << start << std::endl;
+            while(!pq.empty())
+            {
+                auto curr_node = pq.top();
+                std::cout << curr_node.first << std::endl;
+                // check if it is a call
+                auto call_stmt = getCallStmtMapping(curr_node.first+1);
+                if(call_stmt != nullptr)
+                {
+                    procs_called.insert(call_stmt->getStmtNum()+1);
+                }
+                for(int i = 0; i < total_inst; i++)
+                {
+                    size_t weight = adj_mat_bip[curr_node.first][i];
+                    if(weight > 1 && weight != INF && procs_called.count(weight) != 0)
+                    {
+                        weight = 1;
+                    }
+                    if(weight == 1)
+                    {
+                        if(*curr_node.second == INF)
+                        {
+                            dist[i] = weight;
+                            if(in_queue.count(i) == 0)
+                            {
+                                pq.push(std::make_pair(i, &dist[i]));
+                                in_queue.insert(i);
+                            }
+                        }
+                        else
+                        {
+                            if(*curr_node.second + weight < dist[i])
+                            {
+                                dist[i] = *curr_node.second + weight;
+                                if(in_queue.count(i) == 0)
+                                {
+                                    pq.push(std::make_pair(i, &dist[i]));
+                                    in_queue.insert(i);
+                                }
+                            }
+                        }
+                    }
+                }
+                printQueue(pq);
+                in_queue.erase(curr_node.first);
+                pq.pop();
+            }
+        }
+    }
+
     static void check_in_range(StatementNum num, size_t max)
     {
         if(num > max || num <= 0)
@@ -140,6 +231,11 @@ namespace pkb
     void CFG::addAssignStmtMapping(StatementNum id, Statement* stmt)
     {
         assign_stmts[id] = stmt;
+    }
+
+    void CFG::addCallStmtMapping(StatementNum id, Statement* stmt)
+    {
+        call_stmts[id] = stmt;
     }
 
     void CFG::addModStmtMapping(StatementNum id, Statement* stmt)
@@ -152,6 +248,13 @@ namespace pkb
         if(assign_stmts.count(id) == 0)
             return nullptr;
         return assign_stmts.at(id);
+    }
+
+    const Statement* CFG::getCallStmtMapping(StatementNum id) const
+    {
+        if(call_stmts.count(id) == 0)
+            return nullptr;
+        return call_stmts.at(id);
     }
 
     const Statement* CFG::getModStmtMapping(StatementNum id) const
