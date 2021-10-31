@@ -6,6 +6,7 @@
 #include <utility>
 #include "util.h"
 #include "timer.h"
+#include <algorithm>
 
 namespace pql::eval::solver
 {
@@ -434,7 +435,7 @@ namespace pql::eval::solver
                 size_decls.emplace_back(m_int_tables[table_i].size(), decl);
             }
             // sort smallest IntTable first
-            sort(size_decls.begin(), size_decls.end());
+            std::sort(size_decls.begin(), size_decls.end());
 
             std::vector<const ast::Declaration*> sorted_decl(size_decls.size());
 
