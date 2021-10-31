@@ -25,16 +25,17 @@ namespace pkb
 
 #define CONST_DCAST(AstType, value) dynamic_cast<const s_ast::AstType*>(value)
 
-    void DesignExtractor::assignStatementNumbers(const s_ast::StmtList* list)
+    void DesignExtractor::assignStatementNumbersAndProc(const s_ast::StmtList* list, const s_ast::Procedure* proc)
     {
         std::function<void(s_ast::Stmt*, const s_ast::StmtList*)> processor {};
-        processor = [this, &processor](s_ast::Stmt* stmt, const s_ast::StmtList* parent) -> void {
+        processor = [this, &processor, proc](s_ast::Stmt* stmt, const s_ast::StmtList* parent) -> void {
             // the statement should not have been seen yet.
             assert(stmt->id == 0);
 
             stmt->parent_list = parent;
             stmt->id = m_pkb->m_statements.size() + 1;
             m_pkb->m_statements.emplace_back(stmt);
+            m_pkb->getStatementAt(stmt->id).proc = proc;
 
             if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt); i)
             {
@@ -495,7 +496,7 @@ namespace pkb
         for(const auto& proc : m_program->procedures)
         {
             m_pkb->addProcedure(proc->name, proc.get());
-            this->assignStatementNumbers(&proc->body);
+            this->assignStatementNumbersAndProc(&proc->body, proc.get());
         }
 
         auto topo_order = this->processCallGraph();
@@ -514,33 +515,6 @@ namespace pkb
         return std::move(this->m_pkb);
     }
 
-    std::unique_ptr<ProgramKB> DesignExtractor::run2()
-    {
-        START_BENCHMARK_TIMER("design extractor");
-        // assign the statement numbers. this has to use the vector of procedures in
-        // m_program, since the numbering depends on the order.
-        for(const auto& proc : m_program->procedures)
-        {
-            m_pkb->addProcedure(proc->name, proc.get());
-            this->assignStatementNumbers(&proc->body);
-        }
-
-        auto topo_order = this->processCallGraph();
-        for(auto* proc : topo_order)
-        {
-            auto body = &proc->getAstProc()->body;
-
-            TraversalState ts {};
-            ts.current_proc = proc;
-
-            this->processStmtList(body, ts);
-            m_visited_procs.insert(proc->getName());
-        }
-
-        this->processNextRelations();
-        this->m_pkb->m_cfg->computeDistMatBip();
-        return std::move(this->m_pkb);
-    }
 
     DesignExtractor::DesignExtractor(std::unique_ptr<s_ast::Program> program)
     {

@@ -118,6 +118,8 @@ namespace pkb
 
         const std::unordered_set<std::string>& getVariablesUsedInCondition() const;
 
+        const simple::ast::Procedure* getProc() const;
+
     private:
         const simple::ast::Stmt* m_stmt = nullptr;
 
@@ -142,6 +144,9 @@ namespace pkb
 
         StatementSet m_ancestors {};
         StatementSet m_descendants {};
+
+        // the containing procedure
+        const simple::ast::Procedure* proc;
     };
 
     struct Variable
@@ -178,7 +183,7 @@ namespace pkb
         ~CFG();
 
         void addEdge(StatementNum stmt1, StatementNum stmt2);
-        void addEdgeBip(StatementNum stmt1, StatementNum stmt2);
+        void addEdgeBip(StatementNum stmt1, StatementNum stmt2, size_t weight);
         void computeDistMat();
         void computeDistMatBip();
         std::string getMatRep(int i) const;
@@ -208,21 +213,21 @@ namespace pkb
 
         bool doesAffectBip(StatementNum stmt1, StatementNum stmt2) const;
         bool doesTransitivelyAffectBip(StatementNum stmt1, StatementNum stmt2) const;
-        StatementSet getAffectedBipStatements(StatementNum id) const;
-        StatementSet getTransitivelyAffectedBipStatements(StatementNum id) const;
-        StatementSet getAffectingBipStatements(StatementNum id) const;
-        StatementSet getTransitivelyAffectingBipStatements(StatementNum id) const;
+        StatementSet getAffectedStatementsBip(StatementNum id) const;
+        StatementSet getTransitivelyAffectedStatementsBip(StatementNum id) const;
+        StatementSet getAffectingStatementsBip(StatementNum id) const;
+        StatementSet getTransitivelyAffectingStatementsBip(StatementNum id) const;
     private:
         size_t total_inst;
         // adjacency matrix for lengths of shortest paths between 2 inst. i(row) is source and j(col) is destination.
         size_t** adj_mat;
         size_t** adj_mat_bip;
-        size_t** adj_mat_processed;
 
         bool m_next_exists = false;
         std::unordered_map<std::string, std::pair<StatementNum, std::vector<StatementNum>>> gates;
+        std::unordered_map<std::string, std::pair<StatementNum, std::vector<StatementNum>>> gates;
         std::unordered_map<StatementNum, StatementSet> adj_lst;
-        std::unordered_map<StatementNum, StatementSet> adj_lst_bip;
+        std::unordered_map<StatementNum, std::vector<std::pair<StatementNum, size_t>>> adj_lst_bip;
         std::unordered_map<StatementNum, const Statement*> assign_stmts;
         std::unordered_map<StatementNum, const Statement*> mod_stmts;
         std::unordered_map<StatementNum, const Statement*> call_stmts;
