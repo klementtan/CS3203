@@ -87,11 +87,11 @@ TEST_CASE("with decl/number")
 
 TEST_CASE("with decl/string")
 {
-    TEST_EMPTY(prog_1, "prog_line a; Select a with a = \"3\"");
+    TEST_EMPTY(prog_1, "prog_line a; Select a with a = \"x\"");
     TEST_EMPTY(prog_1, "stmt a; Select a with a = \"foo\"");
     TEST_EMPTY(prog_1, "call a; Select a with a = \"Third\"");
 
-    TEST_EMPTY(prog_1, "prog_line a; Select a with \"3\" = a");
+    TEST_EMPTY(prog_1, "prog_line a; Select a with \"x\" = a");
     TEST_EMPTY(prog_1, "stmt a; Select a with \"foo\" = a");
     TEST_EMPTY(prog_1, "call a; Select a with \"Third\" = a");
 }
@@ -105,7 +105,7 @@ TEST_CASE("with decl/stmt#")
     TEST_OK(prog_1, "prog_line a; print s; Select a with a = s.stmt#", 18);
     TEST_OK(prog_1, "prog_line a; if s; Select a with a = s.stmt#", 10);
 
-    TEST_OK(prog_2, "prog_line a; print s; Select a such that Uses(s, \"a\") with s.stmt# = a", 3);
+    TEST_OK(prog_2, "prog_line a; print s; Select a such that Uses(s, \"  a  \") with s.stmt# = a", 3);
 }
 
 TEST_CASE("with stmt#/stmt#")
@@ -155,7 +155,9 @@ TEST_CASE("with procName")
 TEST_CASE("with varName")
 {
     TEST_OK(prog_2, "variable v; Select v with v.varName = \"a\"", "a");
-    TEST_OK(prog_2, "variable v; Select v with \"a\" = v.varName", "a");
+
+    // test spaces (see PR #203)
+    TEST_OK(prog_2, "variable v; Select v with \"  a  \" = v.varName", "a");
 
     TEST_OK(prog_2, "read c; variable v; Select <c, v> with c.varName = v.varName", "2 b", "4 c", "7 a");
     TEST_OK(prog_2, "read c; variable v; Select <c, v> with v.varName = c.varName", "2 b", "4 c", "7 a");

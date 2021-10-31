@@ -126,6 +126,9 @@ TEST_CASE("UsesS(StmtId, _)")
 TEST_CASE("UsesS(Decl, Name)")
 {
     TEST_OK(prog_1, R"(assign a; Select a such that Uses(a, "cenX"))", 16, 21, 23);
+
+    // test spaces (see PR #203)
+    TEST_OK(prog_1, R"(assign a; Select a such that Uses(a, "   cenX       "))", 16, 21, 23);
 }
 
 TEST_CASE("UsesS(Decl, Decl)")
