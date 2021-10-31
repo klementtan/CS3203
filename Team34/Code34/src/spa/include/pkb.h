@@ -180,13 +180,16 @@ namespace pkb
         void addEdge(StatementNum stmt1, StatementNum stmt2);
         void addEdgeBip(StatementNum stmt1, StatementNum stmt2);
         void computeDistMat();
+        void computeDistMatBip();
         std::string getMatRep(int i) const;
         bool nextRelationExists() const;
         bool affectsRelationExists() const;
 
         void addAssignStmtMapping(StatementNum stmt1, Statement* stmt2);
         void addModStmtMapping(StatementNum stmt1, Statement* stmt2);
+        void addCallStmtMapping(StatementNum stmt1, Statement* stmt2);
         const Statement* getAssignStmtMapping(StatementNum id) const;
+        const Statement* getCallStmtMapping(StatementNum id) const;
         const Statement* getModStmtMapping(StatementNum id) const;
 
         bool isStatementNext(StatementNum stmt1, StatementNum stmt2) const;
@@ -217,11 +220,13 @@ namespace pkb
         size_t** adj_mat_processed;
 
         bool m_next_exists = false;
-
+        std::unordered_map<std::string, std::pair<StatementNum, std::vector<StatementNum>>> gates;
         std::unordered_map<StatementNum, StatementSet> adj_lst;
         std::unordered_map<StatementNum, StatementSet> adj_lst_bip;
         std::unordered_map<StatementNum, const Statement*> assign_stmts;
         std::unordered_map<StatementNum, const Statement*> mod_stmts;
+        std::unordered_map<StatementNum, const Statement*> call_stmts;
+
         friend struct DesignExtractor;
     };
 

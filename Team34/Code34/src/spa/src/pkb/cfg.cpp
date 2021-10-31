@@ -64,12 +64,21 @@ namespace pkb
         }
     }
 
-    void CFG::addEdgeBip(StatementNum stmt1, StatementNum stmt2)
+    void CFG::addEdgeBip(StatementNum stmt1, StatementNum stmt2, size_t weight)
     {
         assert(stmt1 <= total_inst && stmt1 > 0);
         assert(stmt2 <= total_inst && stmt2 > 0);
-        adj_mat_bip[stmt1 - 1][stmt2 - 1] = 1;
-        m_next_exists = true;
+        adj_mat_bip[stmt1 - 1][stmt2 - 1] = weight;
+        /*
+        if(!adj_lst_bip.count(stmt1))
+        {
+            std::unordered_set<std::pair<StatementNum, size_t>> stmts { std::make_pair(stmt2, weight) };
+            adj_lst_bip[stmt1] = stmts;
+        }
+        else
+        {
+            adj_lst_bip[stmt1].insert(std::make_pair(stmt2, weight));
+        }*/
     }
 
     bool CFG::nextRelationExists() const
@@ -161,6 +170,7 @@ namespace pkb
                 adj_mat_processed[i][j] = adj_mat_bip[i][j];
             }
         }
+        // for each procedure
         for(size_t start = 0; start < total_inst; start++) // for each starting node
         {
             std::unordered_set<StatementNum> procs_called {};
@@ -172,11 +182,9 @@ namespace pkb
             pq.push(std::make_pair(start, &dist[start]));
             dist[start] = 0;
             in_queue.insert(start);
-            std::cout << "starting node " << start << std::endl;
             while(!pq.empty())
             {
                 auto curr_node = pq.top();
-                std::cout << curr_node.first << std::endl;
                 // check if it is a call
                 auto call_stmt = getCallStmtMapping(curr_node.first+1);
                 if(call_stmt != nullptr)
@@ -192,32 +200,27 @@ namespace pkb
                     }
                     if(weight == 1)
                     {
-                        if(*curr_node.second == INF)
+                        if(*curr_node.second + weight < dist[i])
                         {
-                            dist[i] = weight;
+                            dist[i] = *curr_node.second + weight;
                             if(in_queue.count(i) == 0)
                             {
                                 pq.push(std::make_pair(i, &dist[i]));
                                 in_queue.insert(i);
                             }
                         }
-                        else
-                        {
-                            if(*curr_node.second + weight < dist[i])
-                            {
-                                dist[i] = *curr_node.second + weight;
-                                if(in_queue.count(i) == 0)
-                                {
-                                    pq.push(std::make_pair(i, &dist[i]));
-                                    in_queue.insert(i);
-                                }
-                            }
-                        }
                     }
                 }
-                printQueue(pq);
                 in_queue.erase(curr_node.first);
                 pq.pop();
+                if(call_stmt != nullptr)
+                {
+                    auto call = dynamic_cast<const simple::ast::ProcCall*>(call_stmt->getAstStmt());
+                    for(auto& a : gates[call->proc_name].second)
+                    {
+                        pq.push(std::make_pair(a - 1, &dist[a - 1]));
+                    }
+                }
             }
         }
     }
@@ -455,5 +458,25 @@ namespace pkb
             if(doesTransitivelyAffect(stmt, id))
                 ret.insert(stmt);
         return ret;
+    }
+
+    bool CFG::doesAffectBip(StatementNum id1, StatementNum id2) const {
+        auto stmt1 = getAssignStmtMapping(id1);
+        auto stmt2 = getAssignStmtMapping(id2);
+
+        if(stmt1 == nullptr || stmt2 == nullptr)
+            return false;
+
+        const auto& modified = stmt1->getModifiedVariables();
+        const auto& used = stmt2->getUsedVariables();
+        assert(modified.size() == 1);
+        const auto var = modified.begin();
+        if(used.count(*var) == 0)
+        {
+            return false;
+        }
+        std::vector<StatementNum> call_stack {};
+        StatementSet visited;
+
     }
 }

@@ -10,6 +10,7 @@ namespace pkb
     {
         DesignExtractor(std::unique_ptr<simple::ast::Program> program);
         std::unique_ptr<ProgramKB> run();
+        std::unique_ptr<ProgramKB> run2();
 
     private:
         void assignStatementNumbers(const simple::ast::StmtList* list);

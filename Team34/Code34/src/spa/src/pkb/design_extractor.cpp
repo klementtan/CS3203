@@ -317,7 +317,10 @@ namespace pkb
                 else if(auto read_stmt = CONST_DCAST(ReadStmt, ast_stmt); read_stmt)
                     cfg->addModStmtMapping(sid, stmt);
                 else if(auto proc_call = CONST_DCAST(ProcCall, ast_stmt); proc_call)
+                {
                     cfg->addModStmtMapping(sid, stmt);
+                    cfg->addCallStmtMapping(sid, stmt);
+                }
             }
         }
     }
@@ -348,7 +351,6 @@ namespace pkb
                 adjMatBip[i][j] = adjMat[i][j];
             }
         }
-        std::unordered_map<std::string, std::pair<StatementNum, std::vector<StatementNum>>> gates;
         // get the last stmt(s)
         auto getLastStmts = [](const s_ast::StmtList* stmtLst) {
             std::vector<StatementNum> lastStmts {};
@@ -371,9 +373,9 @@ namespace pkb
 
         for(auto& [name, proc] : m_pkb->m_procedures)
         {
-            auto stmtList = &proc.getAstProc()->body.statements;
-            auto pair = std::make_pair(stmtList->begin()->get()->id, getLastStmts(&proc.getAstProc()->body));
-            gates.insert({ name, pair });
+            auto stmtList = &proc.getAstProc()->body;
+            auto pair = std::make_pair(stmtList->statements.begin()->get()->id, getLastStmts(&proc.getAstProc()->body));
+            cfg->gates.insert({ name, pair });
         }
         for(auto& [name, proc] : m_pkb->m_procedures)
         {
@@ -386,12 +388,12 @@ namespace pkb
                     adjMatBip[callStmt-1][*nextStmt.begin()-1] = 0;
                 }
                 auto calledProc = CONST_DCAST(ProcCall, this->m_pkb->getStatementAt(callStmt).getAstStmt())->proc_name;
-                adjMatBip[callStmt-1][gates.at(calledProc).first-1] = callStmt;
+                adjMatBip[callStmt-1][cfg->gates.at(calledProc).first-1] = callStmt+1;
                 if(nextStmt.size() != 0)
                 {
-                    for(auto from : gates.at(calledProc).second)
+                    for(auto from : cfg->gates.at(calledProc).second)
                     {
-                        adjMatBip[from - 1][*nextStmt.begin() - 1] = callStmt;  
+                        adjMatBip[from - 1][*nextStmt.begin() - 1] = callStmt+1;  
                     }
                 }
             }
@@ -509,6 +511,34 @@ namespace pkb
         }
 
         this->processNextRelations();
+        return std::move(this->m_pkb);
+    }
+
+    std::unique_ptr<ProgramKB> DesignExtractor::run2()
+    {
+        START_BENCHMARK_TIMER("design extractor");
+        // assign the statement numbers. this has to use the vector of procedures in
+        // m_program, since the numbering depends on the order.
+        for(const auto& proc : m_program->procedures)
+        {
+            m_pkb->addProcedure(proc->name, proc.get());
+            this->assignStatementNumbers(&proc->body);
+        }
+
+        auto topo_order = this->processCallGraph();
+        for(auto* proc : topo_order)
+        {
+            auto body = &proc->getAstProc()->body;
+
+            TraversalState ts {};
+            ts.current_proc = proc;
+
+            this->processStmtList(body, ts);
+            m_visited_procs.insert(proc->getName());
+        }
+
+        this->processNextRelations();
+        this->m_pkb->m_cfg->computeDistMatBip();
         return std::move(this->m_pkb);
     }
 
