@@ -35,6 +35,8 @@ def get_matching_source(query):
 		return f"{query[:-len('_queries.txt')]}_source.txt"
 	elif query.endswith(".query"):
 		return f"{query[:-len('.query')]}.simple"
+	elif query.endswith(".txt"):
+		return f"{query[:-len('.txt')]}.simple"
 	else:
 		return None
 
@@ -43,7 +45,10 @@ def run_tests_in_folder(autotester_exe, folder):
 	queries = []
 
 	if len(sources) == 0:
-		print(f"no sources in '{folder}', skipping")
+		# print(f"no sources in '{folder}', skipping")
+		return
+
+	if "ignore" in os.listdir(folder):
 		return
 
 	print(f"test set {folder}:")
@@ -82,12 +87,14 @@ def run_tests(autotester_exe, folder):
 
 
 
-def clean_outputs():
-	for root, dirs, files in os.walk("."):
+def clean_outputs(folder, quiet = False):
+	for root, dirs, files in os.walk(folder):
 		for file in files:
 			if file.endswith(".xml"):
 				uwu = os.path.join(root, file)
-				print(f"removing '{uwu}'")
+				if not quiet:
+					print(f"removing '{uwu}'")
+
 				os.remove(uwu)
 
 def log_string(f, s):
@@ -96,7 +103,7 @@ def log_string(f, s):
 
 def main():
 	if len(sys.argv) > 0 and sys.argv[1] == "clean":
-		clean_outputs()
+		clean_outputs(".")
 		return
 
 	if len(sys.argv) < 3:
@@ -109,6 +116,8 @@ def main():
 		sys.exit(1)
 
 	for folder in sys.argv[2:]:
+		clean_outputs(folder, quiet = True)
+
 		if os.path.isdir(folder):
 			run_tests(autotester_exe, folder)
 		else:

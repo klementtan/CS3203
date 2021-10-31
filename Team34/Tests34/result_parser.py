@@ -90,6 +90,8 @@ def parse_one(filename):
 
 def iterate_dir(dir):
 	for root, dirs, files in os.walk(dir):
+		if "ignore" in files:
+			continue
 		for file in files:
 			if file.endswith(".xml"):
 				parse_one(os.path.join(root, file))
@@ -140,8 +142,7 @@ def main():
 		if len(tests) == 0:
 			continue
 
-		if name.startswith("zzz_output-"):
-			name = name[len("zzz_output-"):]
+		name = name.replace("zzz_output-", "")
 
 		print(f"test {name}:")
 		for t in tests:
