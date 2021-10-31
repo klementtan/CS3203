@@ -15,14 +15,17 @@ namespace pql::ast
 
     using PqlException = util::PqlException;
 
+
+    using Abstractor = eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ false>;
+
     void Affects::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
         assert(pkb);
         assert(tbl);
 
-        static eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ false> abs {};
-        if(abs.relationName == nullptr)
-        {
+        // see the comment in follows.cpp
+        static auto abs = []() -> auto {
+            Abstractor abs {};
             abs.relationName = "Affects";
             abs.leftDeclEntity = {};
             abs.rightDeclEntity = {};
@@ -45,7 +48,9 @@ namespace pql::ast
 
             abs.relationExists = &ProgramKB::affectsRelationExists;
             abs.getEntity = &ProgramKB::getStatementAt;
-        }
+            return abs;
+        }();
+
         abs.evaluate(pkb, tbl, this, &this->first, &this->second);
     }
 
@@ -54,9 +59,9 @@ namespace pql::ast
         assert(pkb);
         assert(tbl);
 
-        static eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ false> abs {};
-        if(abs.relationName == nullptr)
-        {
+        // see the comment in follows.cpp
+        static auto abs = []() -> auto {
+            Abstractor abs {};
             abs.relationName = "Affects*";
             abs.leftDeclEntity = {};
             abs.rightDeclEntity = {};
@@ -79,7 +84,9 @@ namespace pql::ast
 
             abs.relationExists = &ProgramKB::affectsRelationExists;
             abs.getEntity = &ProgramKB::getStatementAt;
-        }
+            return abs;
+        }();
+
         abs.evaluate(pkb, tbl, this, &this->first, &this->second);
     }
 }

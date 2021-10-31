@@ -15,14 +15,16 @@ namespace pql::ast
 
     using PqlException = util::PqlException;
 
+    using Abstractor = eval::RelationAbstractor<Procedure, std::string, EntRef, /* SetsAreConstRef: */ true>;
+
     void Calls::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
         assert(pkb);
         assert(tbl);
 
-        static eval::RelationAbstractor<Procedure, std::string, ast::EntRef, /* SetsAreConstRef: */ true> abs {};
-        if(abs.relationName == nullptr)
-        {
+        // see the comment in follows.cpp
+        static auto abs = []() -> auto {
+            Abstractor abs {};
             abs.relationName = "Calls";
             abs.leftDeclEntity = DESIGN_ENT::PROCEDURE;
             abs.rightDeclEntity = DESIGN_ENT::PROCEDURE;
@@ -45,7 +47,8 @@ namespace pql::ast
 
             abs.relationExists = &ProgramKB::callsRelationExists;
             abs.getEntity = &ProgramKB::getProcedureNamed;
-        }
+            return abs;
+        }();
 
         abs.evaluate(pkb, tbl, this, &this->caller, &this->proc);
     }
@@ -55,9 +58,9 @@ namespace pql::ast
         assert(pkb);
         assert(tbl);
 
-        static eval::RelationAbstractor<Procedure, std::string, EntRef, /* SetsAreConstRef: */ true> abs {};
-        if(abs.relationName == nullptr)
-        {
+        // see the comment in follows.cpp
+        static auto abs = []() -> auto {
+            Abstractor abs {};
             abs.relationName = "Calls*";
             abs.leftDeclEntity = DESIGN_ENT::PROCEDURE;
             abs.rightDeclEntity = DESIGN_ENT::PROCEDURE;
@@ -80,7 +83,8 @@ namespace pql::ast
 
             abs.relationExists = &ProgramKB::callsRelationExists;
             abs.getEntity = &ProgramKB::getProcedureNamed;
-        }
+            return abs;
+        }();
 
         abs.evaluate(pkb, tbl, this, &this->caller, &this->proc);
     }

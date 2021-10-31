@@ -15,14 +15,16 @@ namespace pql::ast
 
     using PqlException = util::PqlException;
 
+    using Abstractor = eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ true>;
+
     void Parent::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
         assert(pkb);
         assert(tbl);
 
-        static eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ true> abs {};
-        if(abs.relationName == nullptr)
-        {
+        static auto abs = []() -> auto {
+            Abstractor abs {};
+
             abs.relationName = "Parent";
             abs.leftDeclEntity = {};
             abs.rightDeclEntity = {};
@@ -45,7 +47,9 @@ namespace pql::ast
 
             abs.relationExists = &ProgramKB::parentRelationExists;
             abs.getEntity = &ProgramKB::getStatementAt;
-        }
+            return abs;
+        }();
+
         abs.evaluate(pkb, tbl, this, &this->parent, &this->child);
     }
 
@@ -54,9 +58,9 @@ namespace pql::ast
         assert(pkb);
         assert(tbl);
 
-        static eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ true> abs {};
-        if(abs.relationName == nullptr)
-        {
+        static auto abs = []() -> auto {
+            Abstractor abs {};
+
             abs.relationName = "Parent*";
             abs.leftDeclEntity = {};
             abs.rightDeclEntity = {};
@@ -79,7 +83,9 @@ namespace pql::ast
 
             abs.relationExists = &ProgramKB::parentRelationExists;
             abs.getEntity = &ProgramKB::getStatementAt;
-        }
+            return abs;
+        }();
+
         abs.evaluate(pkb, tbl, this, &this->ancestor, &this->descendant);
     }
 }
