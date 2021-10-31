@@ -309,9 +309,7 @@ namespace pkb
         if(list->parent_statement != nullptr)
         {
             if(StatementNum parent_id = list->parent_statement->id; parent_id != 0)
-            {
                 cfg->addEdge(parent_id, list->statements[0].get()->id);
-            }
         }
 
         for(const auto& it : list->statements)

@@ -92,6 +92,8 @@ TEST_CASE("with decl/stmt#")
     TEST_OK(prog_1, "prog_line a; call s; Select a with a = s.stmt#", 3, 8);
     TEST_OK(prog_1, "prog_line a; print s; Select a with a = s.stmt#", 18);
     TEST_OK(prog_1, "prog_line a; if s; Select a with a = s.stmt#", 10);
+
+    TEST_OK(prog_2, "prog_line a; print s; Select a such that Uses(s, \"a\") with s.stmt# = a", 3);
 }
 
 TEST_CASE("with stmt#/stmt#")
