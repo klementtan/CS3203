@@ -143,8 +143,11 @@ namespace pql::ast
         }
         else if(r_decl->design_ent == DESIGN_ENT::CALL)
         {
-            auto& proc = pkb->getProcedureNamed(lattrval.getVal());
-            for(auto& i : proc.getCallStmts())
+            auto proc = pkb->maybeGetProcedureNamed(lattrval.getVal());
+            if(proc == nullptr)
+                return;
+
+            for(auto& i : proc->getCallStmts())
                 join_pairs.emplace(lent, Entry(r_decl, i));
         }
         else
@@ -162,14 +165,20 @@ namespace pql::ast
         }
         else if(r_decl->design_ent == DESIGN_ENT::PRINT)
         {
-            auto& var = pkb->getVariableNamed(lattrval.getVal());
-            for(auto& i : var.getPrintStmts())
+            auto var = pkb->maybeGetVariableNamed(lattrval.getVal());
+            if(var == nullptr)
+                return;
+
+            for(auto& i : var->getPrintStmts())
                 join_pairs.emplace(lent, Entry(r_decl, i));
         }
         else if(r_decl->design_ent == DESIGN_ENT::READ)
         {
-            auto& var = pkb->getVariableNamed(lattrval.getVal());
-            for(auto& i : var.getReadStmts())
+            auto var = pkb->maybeGetVariableNamed(lattrval.getVal());
+            if(var == nullptr)
+                return;
+
+            for(auto& i : var->getReadStmts())
                 join_pairs.emplace(lent, Entry(r_decl, i));
         }
         else

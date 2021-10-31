@@ -51,6 +51,18 @@ procedure c
 }
 )";
 
+constexpr const auto prog_3 = R"(
+procedure a
+{
+    read b;
+}
+
+procedure b
+{
+    read x;
+}
+)";
+
 TEST_CASE("with decl/decl")
 {
     TEST_OK(prog_1, "prog_line a, b; Select <a,b> with a = b", "1 1", "2 2", "3 3", "4 4", "5 5", "6 6", "7 7", "8 8",
@@ -150,4 +162,7 @@ TEST_CASE("with varName")
 
     TEST_OK(prog_2, "print c; variable v; Select <c, v> with c.varName = v.varName", "1 c", "3 a", "6 b");
     TEST_OK(prog_2, "print c; variable v; Select <c, v> with v.varName = c.varName", "1 c", "3 a", "6 b");
+
+    TEST_OK(prog_2, "read r; procedure p; Select r.varName with r.varName = p.procName", "a", "b", "c");
+    TEST_OK(prog_3, "read r; procedure p; Select r.varName with p.procName = r.varName", "b");
 }

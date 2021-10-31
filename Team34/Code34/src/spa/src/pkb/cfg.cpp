@@ -118,16 +118,18 @@ namespace pkb
 
     const Statement* CFG::getAssignStmtMapping(StatementNum id) const
     {
-        if(assign_stmts.count(id) == 0)
-            return nullptr;
-        return assign_stmts.at(id);
+        if(auto it = assign_stmts.find(id); it != assign_stmts.end())
+            return it->second;
+
+        return nullptr;
     }
 
     const Statement* CFG::getModStmtMapping(StatementNum id) const
     {
-        if(mod_stmts.count(id) == 0)
-            return nullptr;
-        return mod_stmts.at(id);
+        if(auto it = mod_stmts.find(id); it != mod_stmts.end())
+            return it->second;
+
+        return nullptr;
     }
 
     bool CFG::isStatementNext(StatementNum stmt1, StatementNum stmt2) const
@@ -148,9 +150,8 @@ namespace pkb
     {
         check_in_range(id, total_inst);
 
-        StatementSet ret {};
         if(!adj_lst.count(id))
-            return ret;
+            return {};
 
         return adj_lst.at(id);
     }
@@ -236,12 +237,15 @@ namespace pkb
             if(getModStmtMapping(num) != nullptr && getModStmtMapping(num)->modifiesVariable(var))
                 continue;
 
-            for(auto stmt : adj_lst.at(num))
+            if(auto it = adj_lst.find(num); it != adj_lst.end())
             {
-                if(visited.count(stmt))
-                    continue;
-                visited.insert(stmt);
-                q.emplace(stmt, var);
+                for(auto stmt : it->second)
+                {
+                    if(visited.count(stmt))
+                        continue;
+                    visited.insert(stmt);
+                    q.emplace(stmt, var);
+                }
             }
         }
 
