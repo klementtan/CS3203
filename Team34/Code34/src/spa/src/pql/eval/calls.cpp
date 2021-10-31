@@ -23,7 +23,8 @@ namespace pql::ast
         assert(tbl);
 
         // see the comment in follows.cpp
-        static auto abs = []() -> auto {
+        static auto abs = []() -> auto
+        {
             Abstractor abs {};
             abs.relationName = "Calls";
             abs.leftDeclEntity = DESIGN_ENT::PROCEDURE;
@@ -48,7 +49,8 @@ namespace pql::ast
             abs.relationExists = &ProgramKB::callsRelationExists;
             abs.getEntity = &ProgramKB::getProcedureNamed;
             return abs;
-        }();
+        }
+        ();
 
         abs.evaluate(pkb, tbl, this, &this->caller, &this->proc);
     }
@@ -59,7 +61,8 @@ namespace pql::ast
         assert(tbl);
 
         // see the comment in follows.cpp
-        static auto abs = []() -> auto {
+        static auto abs = []() -> auto
+        {
             Abstractor abs {};
             abs.relationName = "Calls*";
             abs.leftDeclEntity = DESIGN_ENT::PROCEDURE;
@@ -84,7 +87,8 @@ namespace pql::ast
             abs.relationExists = &ProgramKB::callsRelationExists;
             abs.getEntity = &ProgramKB::getProcedureNamed;
             return abs;
-        }();
+        }
+        ();
 
         abs.evaluate(pkb, tbl, this, &this->caller, &this->proc);
     }

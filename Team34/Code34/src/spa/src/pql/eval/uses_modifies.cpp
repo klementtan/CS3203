@@ -21,10 +21,10 @@ namespace pql::eval
         const std::unordered_set<std::string>& (*getStmtRelatedVariables)(const Statement&) {};
 
         // proc.getUsedVariables/getModifiedVariables
-        const std::unordered_set<std::string>&(*getProcRelatedVariables)(const Procedure&) {};
+        const std::unordered_set<std::string>& (*getProcRelatedVariables)(const Procedure&) {};
 
         // var.getUsingProcs/getModifyingProcs
-        const std::unordered_set<std::string>&(*getVariableRelatedProcs)(const Variable&) {};
+        const std::unordered_set<std::string>& (*getVariableRelatedProcs)(const Variable&) {};
 
         StatementSet (*getVariableRelatedStmts)(const Variable&, ast::DESIGN_ENT) {};
 
@@ -46,7 +46,8 @@ namespace pql::ast
 
     void UsesP::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
-        static auto abs = []() -> auto {
+        static auto abs = []() -> auto
+        {
             eval::UsesModifiesRelationAbstractor abs {};
             abs.relationName = "UsesP";
 
@@ -62,14 +63,16 @@ namespace pql::ast
                 return p.usesVariable(s);
             };
             return abs;
-        }();
+        }
+        ();
 
         abs.evaluateP(pkb, tbl, this, this->user, this->ent);
     }
 
     void UsesS::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
-        static auto abs = []() -> auto {
+        static auto abs = []() -> auto
+        {
             eval::UsesModifiesRelationAbstractor abs {};
             abs.relationName = "UsesS";
 
@@ -85,14 +88,16 @@ namespace pql::ast
                 return s.usesVariable(v);
             };
             return abs;
-        }();
+        }
+        ();
 
         abs.evaluateS(pkb, tbl, this, this->user, this->ent);
     }
 
     void ModifiesP::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
-        static auto abs = []() -> auto {
+        static auto abs = []() -> auto
+        {
             eval::UsesModifiesRelationAbstractor abs {};
             abs.relationName = "ModifiesP";
 
@@ -108,14 +113,16 @@ namespace pql::ast
                 return p.modifiesVariable(s);
             };
             return abs;
-        }();
+        }
+        ();
 
         abs.evaluateP(pkb, tbl, this, this->modifier, this->ent);
     }
 
     void ModifiesS::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
-        static auto abs = []() -> auto {
+        static auto abs = []() -> auto
+        {
             eval::UsesModifiesRelationAbstractor abs {};
             abs.relationName = "ModifiesS";
 
@@ -131,7 +138,8 @@ namespace pql::ast
                 return s.modifiesVariable(v);
             };
             return abs;
-        }();
+        }
+        ();
 
         abs.evaluateS(pkb, tbl, this, this->modifier, this->ent);
     }

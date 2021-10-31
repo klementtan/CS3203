@@ -22,7 +22,8 @@ namespace pql::ast
         assert(pkb);
         assert(tbl);
 
-        static auto abs = []() -> auto {
+        static auto abs = []() -> auto
+        {
             Abstractor abs {};
 
             abs.relationName = "Parent";
@@ -48,7 +49,8 @@ namespace pql::ast
             abs.relationExists = &ProgramKB::parentRelationExists;
             abs.getEntity = &ProgramKB::getStatementAt;
             return abs;
-        }();
+        }
+        ();
 
         abs.evaluate(pkb, tbl, this, &this->parent, &this->child);
     }
@@ -58,7 +60,8 @@ namespace pql::ast
         assert(pkb);
         assert(tbl);
 
-        static auto abs = []() -> auto {
+        static auto abs = []() -> auto
+        {
             Abstractor abs {};
 
             abs.relationName = "Parent*";
@@ -84,7 +87,8 @@ namespace pql::ast
             abs.relationExists = &ProgramKB::parentRelationExists;
             abs.getEntity = &ProgramKB::getStatementAt;
             return abs;
-        }();
+        }
+        ();
 
         abs.evaluate(pkb, tbl, this, &this->ancestor, &this->descendant);
     }

@@ -25,7 +25,8 @@ namespace pql::ast
         // able to return const-refs (or not)) than I want; it's easier this way, trust me.
 
         using Abstractor = eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ false>;
-        static auto abs = []() -> auto {
+        static auto abs = []() -> auto
+        {
             Abstractor abs {};
 
             abs.relationName = "Follows";
@@ -58,7 +59,8 @@ namespace pql::ast
             abs.getEntity = &ProgramKB::getStatementAt;
 
             return abs;
-        }();
+        }
+        ();
 
         abs.evaluate(pkb, tbl, this, &this->directly_before, &this->directly_after);
     }
@@ -70,7 +72,8 @@ namespace pql::ast
 
         // see the comment above
         using Abstractor = eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ true>;
-        static auto abs = []() -> auto {
+        static auto abs = []() -> auto
+        {
             Abstractor abs {};
             abs.relationName = "Follows*";
             abs.leftDeclEntity = {};
@@ -95,7 +98,8 @@ namespace pql::ast
             abs.relationExists = &ProgramKB::followsRelationExists;
             abs.getEntity = &ProgramKB::getStatementAt;
             return abs;
-        }();
+        }
+        ();
 
         abs.evaluate(pkb, tbl, this, &this->before, &this->after);
     }
