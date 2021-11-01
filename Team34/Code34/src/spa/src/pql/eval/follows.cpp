@@ -20,9 +20,15 @@ namespace pql::ast
         assert(pkb);
         assert(tbl);
 
-        static eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ false> abs {};
-        if(abs.relationName == nullptr)
+        // note: the reason these aren't just virtal methods is not just me not using OOP out of spite,
+        // but because it would require a little more template magic (because of the relations being
+        // able to return const-refs (or not)) than I want; it's easier this way, trust me.
+
+        using Abstractor = eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ false>;
+        static auto abs = []() -> auto
         {
+            Abstractor abs {};
+
             abs.relationName = "Follows";
             abs.leftDeclEntity = {};
             abs.rightDeclEntity = {};
@@ -51,7 +57,11 @@ namespace pql::ast
 
             abs.relationExists = &ProgramKB::followsRelationExists;
             abs.getEntity = &ProgramKB::getStatementAt;
+
+            return abs;
         }
+        ();
+
         abs.evaluate(pkb, tbl, this, &this->directly_before, &this->directly_after);
     }
 
@@ -60,9 +70,11 @@ namespace pql::ast
         assert(pkb);
         assert(tbl);
 
-        static eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ true> abs {};
-        if(abs.relationName == nullptr)
+        // see the comment above
+        using Abstractor = eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ true>;
+        static auto abs = []() -> auto
         {
+            Abstractor abs {};
             abs.relationName = "Follows*";
             abs.leftDeclEntity = {};
             abs.rightDeclEntity = {};
@@ -85,7 +97,10 @@ namespace pql::ast
 
             abs.relationExists = &ProgramKB::followsRelationExists;
             abs.getEntity = &ProgramKB::getStatementAt;
+            return abs;
         }
+        ();
+
         abs.evaluate(pkb, tbl, this, &this->before, &this->after);
     }
 }

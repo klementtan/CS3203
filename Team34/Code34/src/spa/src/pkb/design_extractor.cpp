@@ -101,7 +101,7 @@ namespace pkb
         ts.current_proc->m_modifies.insert(varname);
     }
 
-    void DesignExtractor::processStmtList(const s_ast::StmtList* list, TraversalState& ts)
+    void DesignExtractor::processFollowingForStmtList(const s_ast::StmtList* list, TraversalState& ts)
     {
         // indices are easier to work with here.
         // do one pass forwards and one pass in reverse to effeciently set
@@ -141,64 +141,112 @@ namespace pkb
                 m_pkb->m_follows_exists = true;
             }
         }
+    }
+
+    void DesignExtractor::processAncestryForStmt(Statement* stmt, TraversalState& ts)
+    {
+        if(ts.local_stmt_stack.empty())
+            return;
+
+        // set the parent and children accordingly
+        // we really only need to look at the last thing in the stack.
+
+        auto list = ts.local_stmt_stack.back();
+        auto list_sid = list->getStmtNum();
+        stmt->m_parent = { list_sid };
+        list->m_children.insert(stmt->getStmtNum());
+
+        // the ancestors of this statement are simply:
+        // 1. the direct parent (list_sid)
+        // 2. the ancestors of the parent (list_sid->ancestors)
+        stmt->m_ancestors.insert(list_sid);
+        stmt->m_ancestors.insert(list->m_ancestors.begin(), list->m_ancestors.end());
+
+        // for populating descendants, we still need to traverse upwards.
+        for(auto slist : ts.local_stmt_stack)
+            slist->m_descendants.insert(stmt->getStmtNum());
+
+        m_pkb->m_parent_exists = true;
+    }
+
+
+    void DesignExtractor::processIfStmt(Statement* stmt, const s_ast::IfStmt* if_stmt, TraversalState& ts)
+    {
+        ts.local_stmt_stack.push_back(stmt);
+
+        this->processExpr(if_stmt->condition.get(), stmt, ts);
+        this->processStmtList(&if_stmt->true_case, ts);
+        this->processStmtList(&if_stmt->false_case, ts);
+
+        assert(ts.local_stmt_stack.back() == stmt);
+        ts.local_stmt_stack.pop_back();
+    }
+
+    void DesignExtractor::processWhileLoop(Statement* stmt, const s_ast::WhileLoop* while_loop, TraversalState& ts)
+    {
+        ts.local_stmt_stack.push_back(stmt);
+
+        this->processExpr(while_loop->condition.get(), stmt, ts);
+        this->processStmtList(&while_loop->body, ts);
+
+        assert(ts.local_stmt_stack.back() == stmt);
+        ts.local_stmt_stack.pop_back();
+    }
+
+    void DesignExtractor::processProcCall(Statement* stmt, const s_ast::ProcCall* call_stmt, TraversalState& ts)
+    {
+        // check for (a) nonexistent procedures
+        if(m_pkb->m_procedures.find(call_stmt->proc_name) == m_pkb->m_procedures.end())
+            throw util::PkbException("pkb", "call to undefined procedure '{}'", call_stmt->proc_name);
+
+        auto& callee = m_pkb->getProcedureNamed(call_stmt->proc_name);
+        callee.m_call_stmts.insert(stmt->getStmtNum());
+
+        // assert(m_visited_procs.find(call_stmt->proc_name) != m_visited_procs.end());
+        auto target = &m_pkb->getProcedureNamed(call_stmt->proc_name);
+        for(auto used : target->getUsedVariables())
+            processUses(used, stmt, ts);
+
+        for(auto modified : target->getModifiedVariables())
+            processModifies(modified, stmt, ts);
+    }
+
+
+
+
+
+    void DesignExtractor::processStmtList(const s_ast::StmtList* list, TraversalState& ts)
+    {
+        this->processFollowingForStmtList(list, ts);
 
         // now process uses, modifies, parent, and parent* in one go
         for(const auto& it : list->statements)
         {
             const auto ast_stmt = it.get();
 
-            // set the parent and children accordingly
             auto stmt = &m_pkb->getStatementAt(ast_stmt->id);
             auto sid = ast_stmt->id;
 
-            // we really only need to look at the last thing in the stack.
-            if(ts.local_stmt_stack.size() > 0)
-            {
-                auto list = ts.local_stmt_stack.back();
-                auto list_sid = list->getStmtNum();
-                stmt->m_parent = { list_sid };
-                list->m_children.insert(sid);
-
-                // the ancestors of this statement are simply:
-                // 1. the direct parent (list_sid)
-                // 2. the ancestors of the parent (list_sid->ancestors)
-                stmt->m_ancestors.insert(list_sid);
-                stmt->m_ancestors.insert(list->m_ancestors.begin(), list->m_ancestors.end());
-
-                // for populating descendants, we still need to traverse upwards.
-                for(auto slist : ts.local_stmt_stack)
-                    slist->m_descendants.insert(sid);
-
-                m_pkb->m_parent_exists = true;
-            }
+            // set the parent and children accordingly
+            this->processAncestryForStmt(stmt, ts);
 
             m_pkb->m_stmt_kinds[DesignEnt::STMT].insert(sid);
             m_pkb->m_stmt_kinds[DesignEnt::PROG_LINE].insert(sid);
 
             if(auto if_stmt = CONST_DCAST(IfStmt, ast_stmt); if_stmt)
             {
-                ts.local_stmt_stack.push_back(stmt);
-
-                this->processExpr(if_stmt->condition.get(), stmt, ts);
-                this->processStmtList(&if_stmt->true_case, ts);
-                this->processStmtList(&if_stmt->false_case, ts);
-
+                this->processIfStmt(stmt, if_stmt, ts);
                 m_pkb->m_stmt_kinds[DesignEnt::IF].insert(sid);
-
-                assert(ts.local_stmt_stack.back() == stmt);
-                ts.local_stmt_stack.pop_back();
             }
             else if(auto while_loop = CONST_DCAST(WhileLoop, ast_stmt); while_loop)
             {
-                ts.local_stmt_stack.push_back(stmt);
-
-                this->processExpr(while_loop->condition.get(), stmt, ts);
-                this->processStmtList(&while_loop->body, ts);
-
+                this->processWhileLoop(stmt, while_loop, ts);
                 m_pkb->m_stmt_kinds[DesignEnt::WHILE].insert(sid);
-
-                assert(ts.local_stmt_stack.back() == stmt);
-                ts.local_stmt_stack.pop_back();
+            }
+            else if(auto call_stmt = CONST_DCAST(ProcCall, ast_stmt); call_stmt)
+            {
+                this->processProcCall(stmt, call_stmt, ts);
+                m_pkb->m_stmt_kinds[DesignEnt::CALL].insert(sid);
             }
             else if(auto assign_stmt = CONST_DCAST(AssignStmt, ast_stmt); assign_stmt)
             {
@@ -220,25 +268,6 @@ namespace pkb
                 m_pkb->getVariableNamed(print_stmt->var_name).m_print_stmts.insert(sid);
 
                 m_pkb->m_stmt_kinds[DesignEnt::PRINT].insert(sid);
-            }
-            else if(auto call_stmt = CONST_DCAST(ProcCall, ast_stmt); call_stmt)
-            {
-                // check for (a) nonexistent procedures
-                if(m_pkb->m_procedures.find(call_stmt->proc_name) == m_pkb->m_procedures.end())
-                    throw util::PkbException("pkb", "call to undefined procedure '{}'", call_stmt->proc_name);
-
-                auto& callee = m_pkb->getProcedureNamed(call_stmt->proc_name);
-                callee.m_call_stmts.insert(sid);
-
-                m_pkb->m_stmt_kinds[DesignEnt::CALL].insert(sid);
-
-                // assert(m_visited_procs.find(call_stmt->proc_name) != m_visited_procs.end());
-                auto target = &m_pkb->getProcedureNamed(call_stmt->proc_name);
-                for(auto used : target->getUsedVariables())
-                    processUses(used, stmt, ts);
-
-                for(auto modified : target->getModifiedVariables())
-                    processModifies(modified, stmt, ts);
             }
             else
             {
@@ -280,9 +309,7 @@ namespace pkb
         if(list->parent_statement != nullptr)
         {
             if(StatementNum parent_id = list->parent_statement->id; parent_id != 0)
-            {
                 cfg->addEdge(parent_id, list->statements[0].get()->id);
-            }
         }
 
         for(const auto& it : list->statements)

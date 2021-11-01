@@ -18,19 +18,18 @@ namespace pql::eval
     {
         const char* relationName = nullptr;
 
-        std::function<const std::unordered_set<std::string>&(const Statement&)> getStmtRelatedVariables {};
+        const std::unordered_set<std::string>& (*getStmtRelatedVariables)(const Statement&) {};
 
         // proc.getUsedVariables/getModifiedVariables
-        std::function<const std::unordered_set<std::string>&(const Procedure&)> getProcRelatedVariables {};
+        const std::unordered_set<std::string>& (*getProcRelatedVariables)(const Procedure&) {};
 
         // var.getUsingProcs/getModifyingProcs
-        std::function<const std::unordered_set<std::string>&(const Variable&)> getVariableRelatedProcs {};
+        const std::unordered_set<std::string>& (*getVariableRelatedProcs)(const Variable&) {};
 
-        std::function<StatementSet(const Variable&, ast::DESIGN_ENT)> getVariableRelatedStmts {};
+        StatementSet (*getVariableRelatedStmts)(const Variable&, ast::DESIGN_ENT) {};
 
-
-        std::function<bool(const Procedure&, const std::string&)> procedureRelatesVariable {};
-        std::function<bool(const Statement&, const std::string&)> statementRelatesVariable {};
+        bool (*procedureRelatesVariable)(const Procedure&, const std::string&) {};
+        bool (*statementRelatesVariable)(const Statement&, const std::string&) {};
 
         void evaluateS(const ProgramKB* pkb, table::Table* table, const ast::RelCond* rel, const ast::StmtRef& stmt,
             const ast::EntRef& right) const;
@@ -47,9 +46,9 @@ namespace pql::ast
 
     void UsesP::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
-        static eval::UsesModifiesRelationAbstractor abs {};
-        if(abs.relationName == nullptr)
+        static auto abs = []() -> auto
         {
+            eval::UsesModifiesRelationAbstractor abs {};
             abs.relationName = "UsesP";
 
             abs.getProcRelatedVariables = [](const Procedure& p) -> decltype(auto) {
@@ -63,16 +62,18 @@ namespace pql::ast
             abs.procedureRelatesVariable = [](const Procedure& p, const std::string& s) -> bool {
                 return p.usesVariable(s);
             };
+            return abs;
         }
+        ();
 
         abs.evaluateP(pkb, tbl, this, this->user, this->ent);
     }
 
     void UsesS::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
-        static eval::UsesModifiesRelationAbstractor abs {};
-        if(abs.relationName == nullptr)
+        static auto abs = []() -> auto
         {
+            eval::UsesModifiesRelationAbstractor abs {};
             abs.relationName = "UsesS";
 
             abs.getStmtRelatedVariables = [](const Statement& s) -> decltype(auto) {
@@ -86,16 +87,18 @@ namespace pql::ast
             abs.statementRelatesVariable = [](const Statement& s, const std::string& v) -> bool {
                 return s.usesVariable(v);
             };
+            return abs;
         }
+        ();
 
         abs.evaluateS(pkb, tbl, this, this->user, this->ent);
     }
 
     void ModifiesP::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
-        static eval::UsesModifiesRelationAbstractor abs {};
-        if(abs.relationName == nullptr)
+        static auto abs = []() -> auto
         {
+            eval::UsesModifiesRelationAbstractor abs {};
             abs.relationName = "ModifiesP";
 
             abs.getProcRelatedVariables = [](const Procedure& p) -> decltype(auto) {
@@ -109,16 +112,18 @@ namespace pql::ast
             abs.procedureRelatesVariable = [](const Procedure& p, const std::string& s) -> bool {
                 return p.modifiesVariable(s);
             };
+            return abs;
         }
+        ();
 
         abs.evaluateP(pkb, tbl, this, this->modifier, this->ent);
     }
 
     void ModifiesS::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
-        static eval::UsesModifiesRelationAbstractor abs {};
-        if(abs.relationName == nullptr)
+        static auto abs = []() -> auto
         {
+            eval::UsesModifiesRelationAbstractor abs {};
             abs.relationName = "ModifiesS";
 
             abs.getStmtRelatedVariables = [](const Statement& s) -> decltype(auto) {
@@ -132,7 +137,9 @@ namespace pql::ast
             abs.statementRelatesVariable = [](const Statement& s, const std::string& v) -> bool {
                 return s.modifiesVariable(v);
             };
+            return abs;
         }
+        ();
 
         abs.evaluateS(pkb, tbl, this, this->modifier, this->ent);
     }

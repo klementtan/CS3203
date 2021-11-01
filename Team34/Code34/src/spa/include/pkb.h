@@ -229,6 +229,9 @@ namespace pkb
         const Variable& getVariableNamed(const std::string& name) const;
         Variable& getVariableNamed(const std::string& name);
 
+        const Variable* maybeGetVariableNamed(const std::string& name) const;
+        const Procedure* maybeGetProcedureNamed(const std::string& name) const;
+
         bool nextRelationExists() const;
         bool callsRelationExists() const;
         bool parentRelationExists() const;

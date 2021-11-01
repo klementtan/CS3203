@@ -143,6 +143,31 @@ namespace pql::parser
         ps->expect(TT::Semicolon);
     }
 
+    static std::string enforce_string_whitespace_rules(zst::str_view str)
+    {
+        while(str.size() > 0 && std::isspace(str[0]))
+            str.remove_prefix(1);
+
+        while(str.size() > 0 && std::isspace(str[str.size() - 1]))
+            str.remove_suffix(1);
+
+        if(str.empty())
+            throw SyntaxError("quoted string cannot be empty!");
+
+        if(!std::isalpha(str[0]))
+            throw SyntaxError("identifier (in quoted string) must start with a letter");
+
+        for(char c : str)
+        {
+            if(!std::isdigit(c) && !std::isalpha(c))
+                throw SyntaxError("invalid character '{}' in quoted identifier", c);
+        }
+
+        return str.str();
+    }
+
+
+
     static ast::EntRef parse_ent_ref(ParserState* ps)
     {
         Token tok = ps->next();
@@ -153,27 +178,7 @@ namespace pql::parser
         else if(tok.type == TT::String)
         {
             // make sure it's a valid identifier
-            auto name = tok.text.str();
-            {
-                bool fail = false;
-                if(!std::isalpha(name[0]))
-                    fail = true;
-
-                for(char c : name)
-                {
-                    if(!std::isdigit(c) && !std::isalpha(c))
-                    {
-                        fail = true;
-                        break;
-                    }
-                }
-
-                if(fail)
-                {
-                    throw SyntaxError("Expected literal entity name to be an identifier instead of '{}'", name);
-                }
-            }
-
+            auto name = enforce_string_whitespace_rules(tok.text);
             return ast::EntRef::ofName(name);
         }
         else if(tok.type == TokenType::Identifier)
@@ -579,7 +584,8 @@ namespace pql::parser
         // each 'ref' can either be a string, an integer, a declaration (synonym), or a dotop
         if(ps->peek() == TT::String)
         {
-            return ast::WithCondRef::ofString(ps->next().text.str());
+            auto trimmed = enforce_string_whitespace_rules(ps->next().text);
+            return ast::WithCondRef::ofString(trimmed);
         }
         else if(ps->peek() == TT::Number)
         {
