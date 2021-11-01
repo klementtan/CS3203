@@ -230,11 +230,10 @@ namespace pkb
         // adjacency matrix for lengths of shortest paths between 2 inst. i(row) is source and j(col) is destination.
         size_t** adj_mat;
         size_t** adj_mat_bip;
-        size_t** adj_mat_processed;
+        std::unordered_map<std::string, size_t*> adj_mat_processed;
 
         bool m_next_exists = false;
         std::unordered_map<std::string, std::pair<StatementNum, std::vector<StatementNum>>> gates;
-        std::unordered_map<std::string, std::set<StatementNum>> procCallers;
         std::unordered_map<StatementNum, StatementSet> adj_lst;
         std::unordered_map<StatementNum, std::vector<std::pair<StatementNum, size_t>>> adj_lst_bip;
         std::unordered_map<StatementNum, const Statement*> assign_stmts;

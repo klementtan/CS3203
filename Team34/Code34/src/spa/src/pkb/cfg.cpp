@@ -23,7 +23,6 @@ namespace pkb
         total_inst = v;
         adj_mat = new size_t*[v];
         adj_mat_bip = new size_t*[v];
-        adj_mat_processed = new size_t*[v];
 
         m_next_exists = false;
 
@@ -31,12 +30,10 @@ namespace pkb
         {
             this->adj_mat[i] = new size_t[v];
             this->adj_mat_bip[i] = new size_t[v];
-            this->adj_mat_processed[i] = new size_t[v];
             for(size_t j = 0; j < v; j++)
             {
                 adj_mat[i][j] = INF;
                 adj_mat_bip[i][j] = INF;
-                adj_mat_processed[i][j] = INF;
             }
         }
     }
@@ -137,9 +134,6 @@ namespace pkb
             case 2:
                 mat = adj_mat_bip;
                 break;
-            case 3:
-                mat = adj_mat_processed;
-                break;
             default:
                 mat = adj_mat;
                 break;
@@ -201,22 +195,22 @@ namespace pkb
     }
     void CFG::computeDistMatBip()
     {
-        for(int i = 0; i < total_inst; i++)
+        for(auto& proc : gates)
         {
+            adj_mat_processed[proc.first] = new size_t[total_inst];
             for(int j = 0; j < total_inst; j++)
             {
-                adj_mat_processed[i][j] = adj_mat_bip[i][j];
+                adj_mat_processed[proc.first][j]= INF;
             }
         }
         // for each procedure
-        for(size_t start = 0; start < total_inst; start++) // for each starting node
+        for(auto& proc : gates)
         {
             std::unordered_set<StatementNum> procs_called {};
             std::unordered_set<StatementNum> in_queue {};
-            size_t* dist = adj_mat_processed[start];
+            size_t start = proc.second.first-1;
+            size_t* dist = adj_mat_processed[proc.first];
             std::priority_queue<std::pair<size_t, size_t*>, std::vector<std::pair<size_t, size_t*>>,comparator> pq;
-            for(size_t i = 0; i < total_inst; i++)
-                dist[i] = INF;
             pq.push(std::make_pair(start, &dist[start]));
             dist[start] = 0;
             in_queue.insert(start);
@@ -250,10 +244,8 @@ namespace pkb
                         }
                     }
                 }
-                printQueue(pq);
                 in_queue.erase(curr_node.first);
                 pq.pop();
-                printQueue(pq);
                 if(!startingNode)
                 {
                     dist[start] = INF;
