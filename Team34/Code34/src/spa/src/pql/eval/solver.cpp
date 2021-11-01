@@ -112,7 +112,7 @@ namespace pql::eval::solver
 
         for(auto& ent : m_columns)
         {
-            auto decl =ent.getDeclaration();
+            auto decl = ent.getDeclaration();
             if(!other.contains(decl))
                 return false;
             else if(other.getVal(decl) != ent)
