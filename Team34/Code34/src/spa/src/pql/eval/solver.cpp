@@ -51,19 +51,9 @@ namespace pql::eval::solver
         // curr_entries just needs to exist in one of the set of allowed entries
         return join.isAllowedEntry(curr_entry);
     }
-    std::unordered_set<const ast::Declaration*> IntRow::getHeaders() const
-    {
-        std::unordered_set<const ast::Declaration*> headers;
-        for(const auto& [decl, _] : m_columns)
-        {
-            headers.insert(decl);
-        }
-        return headers;
-    }
 
-    bool IntRow::canMerge(const IntRow& other) const
+    bool IntRow::canMerge(const IntRow& other, const TableHeaders& other_headers) const
     {
-        std::unordered_set<const ast::Declaration*> other_headers = other.getHeaders();
         for(const auto& decl : other_headers)
         {
             if(m_columns.count(decl))
@@ -78,16 +68,15 @@ namespace pql::eval::solver
         return true;
     }
 
-    void IntRow::mergeRow(const IntRow& other)
+    void IntRow::mergeRow(const IntRow& other, const TableHeaders& other_headers)
     {
-        spa_assert(canMerge(other));
-        std::unordered_set<const ast::Declaration*> other_headers = other.getHeaders();
+        spa_assert(canMerge(other, other_headers));
+
         for(const auto& decl : other_headers)
-        {
             m_columns[decl] = other.getVal(decl);
-        }
     }
-    void IntRow::filterColumns(const std::unordered_set<const ast::Declaration*>& allowed_headers)
+
+    void IntRow::filterColumns(const TableHeaders& allowed_headers)
     {
         auto it = m_columns.begin();
         while(it != m_columns.end())
@@ -139,25 +128,18 @@ namespace pql::eval::solver
     }
 
 
-    IntTable::IntTable(std::vector<IntRow> rows, const std::unordered_set<const ast::Declaration*>& headers)
+    IntTable::IntTable(std::vector<IntRow> rows, const TableHeaders& headers)
         : m_rows(std::move(rows)), m_headers(headers)
     {
-        // TOOD: Remove this sanity check during release
-        for(const auto& row : m_rows)
-        {
-            if(row.getHeaders().size() != headers.size())
-                throw util::PqlException("pql::eval::solver",
-                    "Initialised {} with mismatched rows({}) and headers. Row header size:{} vs provided header "
-                    "size:{}",
-                    toString(), row.toString(), row.getHeaders().size(), headers.size());
-
-            for(const ast::Declaration* header : row.getHeaders())
+        // evaluate this in an assert so it goes away during release
+        spa_assert([&]() -> bool {
+            for(const auto& row : m_rows)
             {
-                if(headers.count(header) == 0)
-                    throw util::PqlException(
-                        "pql::eval::solver", "Initialised {} with mismatched rows and headers", toString());
+                spa_assert(row.size() == headers.size());
+                for(auto& pair : row.getColumns())
+                    spa_assert(headers.count(pair.first) > 0);
             }
-        }
+        }());
     }
 
     IntTable::IntTable()
@@ -187,10 +169,10 @@ namespace pql::eval::solver
         {
             for(const auto& other_row : other.getRows())
             {
-                if(this_row.canMerge(other_row))
+                if(this_row.canMerge(other_row, other.getHeaders()))
                 {
                     IntRow new_row(this_row);
-                    new_row.mergeRow(other_row);
+                    new_row.mergeRow(other_row, other.getHeaders());
 
                     new_rows.emplace_back(std::move(new_row));
                 }
@@ -198,6 +180,7 @@ namespace pql::eval::solver
         }
 
         m_rows = std::move(new_rows);
+
         for(const ast::Declaration* header : other.getHeaders())
             m_headers.insert(header);
     }
@@ -251,14 +234,21 @@ namespace pql::eval::solver
         util::logfmt("pql::eval::solver", "Rows after deduplicating {}", toString());
     }
 
-    std::unordered_set<const ast::Declaration*> IntTable::getHeaders() const
+    const TableHeaders& IntTable::getHeaders() const
     {
         return this->m_headers;
     }
+
     const std::vector<IntRow>& IntTable::getRows() const
     {
         return this->m_rows;
     }
+
+    std::vector<IntRow>& IntTable::getRowsMutable()
+    {
+        return this->m_rows;
+    }
+
 
     const IntRow& IntTable::getRow(int i) const
     {
@@ -296,7 +286,7 @@ namespace pql::eval::solver
             "pql::eval::solver", "Join(id: {}) filter tbl from {} to {}", join.getId(), m_rows.size(), new_rows.size());
         m_rows = new_rows;
     }
-    void IntTable::filterColumns(const std::unordered_set<const ast::Declaration*>& allowed_columns)
+    void IntTable::filterColumns(const TableHeaders& allowed_columns)
     {
         for(auto& row : m_rows)
         {
@@ -321,7 +311,7 @@ namespace pql::eval::solver
     {
         return m_rows.empty() ||
                // contains an empty row
-               (m_rows.size() == 1 && m_rows.front().getHeaders().empty());
+               (m_rows.size() == 1 && m_rows.front().getColumns().empty());
     }
 
     std::string IntTable::toString() const
@@ -341,7 +331,7 @@ namespace pql::eval::solver
         return ret;
     }
 
-    DepGraph::DepGraph(const std::unordered_set<const ast::Declaration*>& decls, std::vector<table::Join> joins)
+    DepGraph::DepGraph(const TableHeaders& decls, std::vector<table::Join> joins)
         : m_joins(std::move(joins)), m_colouring(), m_graph()
     {
         util::logfmt("pql::eval::solver", "Constructing Dependency Graph");
@@ -395,14 +385,14 @@ namespace pql::eval::solver
         return ret;
     }
 
-    std::vector<std::unordered_set<const ast::Declaration*>> DepGraph::getComponents() const
+    std::vector<TableHeaders> DepGraph::getComponents() const
     {
-        std::unordered_map<int, std::unordered_set<const ast::Declaration*>> colours;
+        std::unordered_map<int, TableHeaders> colours;
         for(const auto& [decl, colour] : m_colouring)
         {
             colours[colour].insert(decl);
         }
-        std::vector<std::unordered_set<const ast::Declaration*>> ret;
+        std::vector<TableHeaders> ret;
         for(const auto& [_, comp] : colours)
         {
             ret.emplace_back(comp);
@@ -410,10 +400,10 @@ namespace pql::eval::solver
         return ret;
     }
 
-    static std::unordered_set<const ast::Declaration*> mergeAndCopySet(
-        std::unordered_set<const ast::Declaration*> a, const std::unordered_set<const ast::Declaration*>& b)
+    static TableHeaders mergeAndCopySet(
+        TableHeaders a, const TableHeaders& b)
     {
-        std::unordered_set<const ast::Declaration*> ret(std::move(a));
+        TableHeaders ret(std::move(a));
         for(const ast::Declaration* decl : b)
         {
             ret.insert(decl);
@@ -422,7 +412,7 @@ namespace pql::eval::solver
     }
 
     std::vector<std::vector<const ast::Declaration*>> Solver::sort_components(
-        const std::vector<std::unordered_set<const ast::Declaration*>>& components) const
+        const std::vector<TableHeaders>& components) const
     {
         std::vector<std::vector<const ast::Declaration*>> ret;
         for(const auto& component : components)
@@ -451,8 +441,8 @@ namespace pql::eval::solver
     };
     Solver::Solver(const std::vector<table::Join>& joins,
         std::unordered_map<const ast::Declaration*, table::Domain> domains,
-        const std::unordered_set<const ast::Declaration*>& return_decls,
-        const std::unordered_set<const ast::Declaration*>& select_decls)
+        const TableHeaders& return_decls,
+        const TableHeaders& select_decls)
         : m_domains(std::move(domains)), m_joins(joins), m_return_decls(return_decls), m_int_tables(),
           m_decl_components(), m_dep_graph(mergeAndCopySet(return_decls, select_decls), joins)
     {
@@ -567,7 +557,7 @@ namespace pql::eval::solver
         }
     }
 
-    void Solver::trim(const std::unordered_set<const ast::Declaration*>& decls)
+    void Solver::trim(const TableHeaders& decls)
     {
         START_BENCHMARK_TIMER("Trimming declarations and joins");
         util::logfmt("pql::eval::solver", "Trimming declarations");
@@ -611,7 +601,7 @@ namespace pql::eval::solver
     {
         START_BENCHMARK_TIMER("Preprocess initial table");
         util::logfmt("pql::eval::solver", "Starting pre-process");
-        std::unordered_set<const ast::Declaration*> processed_decl;
+        TableHeaders processed_decl;
         std::vector<IntTable> new_int_tables;
         std::unordered_set<int> processed_join;
 

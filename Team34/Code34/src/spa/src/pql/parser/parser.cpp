@@ -304,7 +304,7 @@ namespace pql::parser
         }
         else
         {
-            spa_assert(false && "unreachable");
+            unreachable();
         }
     }
 

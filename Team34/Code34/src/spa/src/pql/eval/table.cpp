@@ -279,7 +279,7 @@ namespace pql::eval::table
             {
                 // No other design entities are allowed to have 'procName' AttrName. This should be enforced on the
                 // parser layer
-                spa_assert(false && "unreachable");
+                unreachable();
             }
         }
         else if(attr_ref.attr_name == ast::AttrName::kVarName)
@@ -301,7 +301,7 @@ namespace pql::eval::table
                 else
                 {
                     // the corresponding ast Stmt should always be ReadStmt/PrintStmt
-                    spa_assert(false && "unreachable");
+                    unreachable();
                 }
             }
             else if(decl->design_ent == ast::DESIGN_ENT::VARIABLE)
@@ -313,7 +313,7 @@ namespace pql::eval::table
             {
                 // No other design entities are allowed to have 'varName' AttrName. This should be enforced on the
                 // parser layer
-                spa_assert(false && "unreachable");
+                unreachable();
             }
         }
         else if(attr_ref.attr_name == ast::AttrName::kValue)
@@ -332,7 +332,7 @@ namespace pql::eval::table
         else
         {
             // ast::AttrName::kInvalid should never be present
-            spa_assert(false && "unreachable");
+            unreachable();
         }
 
         util::logfmt("pql::parser::table", "{} causes  {} to be extracted to {}.", attr_ref.toString(),
