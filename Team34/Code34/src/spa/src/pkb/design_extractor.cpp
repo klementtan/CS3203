@@ -6,7 +6,6 @@
 #include <functional>
 
 #include <zpr.h>
-#include <iostream>
 #include <unordered_map>
 #include <utility>
 #include "pkb.h"
@@ -349,7 +348,7 @@ namespace pkb
         {
             for(int j = 0; j < cfg->total_inst; j++)
             {
-                cfg->addEdgeBip(i+1, j+1, adjMat[i][j]);
+                cfg->addEdgeBip(i + 1, j + 1, adjMat[i][j]);
             }
         }
         // get the last stmt(s)

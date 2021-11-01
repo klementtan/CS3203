@@ -211,12 +211,12 @@ namespace pkb
         StatementSet getTransitivelyAffectedStatements(StatementNum id) const;
         StatementSet getAffectingStatements(StatementNum id) const;
         StatementSet getTransitivelyAffectingStatements(StatementNum id) const;
+
     private:
         size_t total_inst;
         // adjacency matrix for lengths of shortest paths between 2 inst. i(row) is source and j(col) is destination.
         size_t** adj_mat;
         size_t** adj_mat_bip;
-        std::unordered_map<std::string, size_t*> adj_mat_processed;
 
         bool m_next_exists = false;
         std::unordered_map<std::string, std::pair<StatementNum, std::vector<StatementNum>>> gates;
