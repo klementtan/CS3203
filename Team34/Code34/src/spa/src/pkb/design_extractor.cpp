@@ -7,7 +7,6 @@
 #include <zpr.h>
 #include <unordered_map>
 #include <utility>
-#include <assert.h>
 #include "pkb.h"
 #include "util.h"
 #include "timer.h"
@@ -29,7 +28,7 @@ namespace pkb
         std::function<void(s_ast::Stmt*, const s_ast::StmtList*)> processor {};
         processor = [this, &processor, proc](s_ast::Stmt* stmt, const s_ast::StmtList* parent) -> void {
             // the statement should not have been seen yet.
-            assert(stmt->id == 0);
+            spa_assert(stmt->id == 0);
 
             stmt->parent_list = parent;
             stmt->id = m_pkb->m_statements.size() + 1;
@@ -409,7 +408,7 @@ namespace pkb
             for(auto& callStmt : proc.getCallStmts())
             {
                 auto nextStmt = cfg->getNextStatements(callStmt);
-                assert(nextStmt.size() <= 1);
+                spa_assert(nextStmt.size() <= 1);
                 if(nextStmt.size() != 0)
                 {
                     cfg->addEdgeBip(callStmt, *nextStmt.begin(), SIZE_MAX);

@@ -7,7 +7,6 @@
 #include <queue>
 #include <unordered_set>
 #include <vector>
-#include <assert.h>
 
 #define INF SIZE_MAX
 
@@ -38,9 +37,14 @@ namespace pkb
     CFG::~CFG()
     {
         for(size_t i = 0; i < total_inst; i++)
+        {
             delete[] this->adj_mat[i];
+            delete[] this->adj_mat_bip[i];
+        }
 
         delete[] this->adj_mat;
+        delete[] this->adj_mat_bip;
+
     }
 
     void CFG::addEdge(StatementNum stmt1, StatementNum stmt2)
@@ -63,9 +67,9 @@ namespace pkb
 
     void CFG::addEdgeBip(StatementNum stmt1, StatementNum stmt2, size_t weight)
     {
-        assert(stmt1 <= total_inst && stmt1 > 0);
-        assert(stmt2 <= total_inst && stmt2 > 0);
-        assert(weight != 0);
+        spa_assert(stmt1 <= total_inst && stmt1 > 0);
+        spa_assert(stmt2 <= total_inst && stmt2 > 0);
+        spa_assert(weight != 0);
         adj_mat_bip[stmt1 - 1][stmt2 - 1] = weight;
         if(weight == INF)
         {
