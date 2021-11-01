@@ -63,9 +63,15 @@ namespace util
 }
 
 #if defined(ENABLE_ASSERTIONS) && !defined(NDEBUG)
-#define spa_assert(x) do { if(not (x)) \
-    throw util::AssertionFailure("assert", "assertion failed ({}:{}): {}",  \
-        __FILE__, __LINE__, #x); \
-} while(0)
+#define spa_assert(x)                                                                                       \
+    do                                                                                                      \
+    {                                                                                                       \
+        if(not(x))                                                                                          \
+            throw util::AssertionFailure("assert", "assertion failed ({}:{}): {}", __FILE__, __LINE__, #x); \
+    } while(0)
 #else
-#define spa_assert(x) do { } while(0)
+#define spa_assert(x) \
+    do                \
+    {                 \
+    } while(0)
+#endif

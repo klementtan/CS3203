@@ -71,12 +71,8 @@ namespace simple::parser
         }
         else if(ps->peek() == TT::Number)
         {
-            auto num = ps->next().text;
-            if(num.size() > 1 && num[0] == '0')
-                throw util::ParseException("simple::parser", "multi-digit integer literal cannot start with 0");
-
             auto constant = std::make_unique<Constant>();
-            constant->value = num.str();
+            constant->value = ps->next().text.str();
 
             return constant;
         }
