@@ -211,20 +211,6 @@ namespace pkb
         StatementSet getTransitivelyAffectedStatements(StatementNum id) const;
         StatementSet getAffectingStatements(StatementNum id) const;
         StatementSet getTransitivelyAffectingStatements(StatementNum id) const;
-
-        bool isStatementNextBip(StatementNum stmt1, StatementNum stmt2) const;
-        bool isStatementTransitivelyNextBip(StatementNum stmt1, StatementNum stmt2) const;
-        StatementSet getNextStatementsBip(StatementNum id) const;
-        StatementSet getTransitivelyNextStatementsBip(StatementNum id) const;
-        StatementSet getPreviousStatementsBip(StatementNum id) const;
-        StatementSet getTransitivelyPreviousStatementsBip(StatementNum id) const;
-
-        bool doesAffectBip(StatementNum stmt1, StatementNum stmt2) const;
-        bool doesTransitivelyAffectBip(StatementNum stmt1, StatementNum stmt2) const;
-        StatementSet getAffectedStatementsBip(StatementNum id) const;
-        StatementSet getTransitivelyAffectedStatementsBip(StatementNum id) const;
-        StatementSet getAffectingStatementsBip(StatementNum id) const;
-        StatementSet getTransitivelyAffectingStatementsBip(StatementNum id) const;
     private:
         size_t total_inst;
         // adjacency matrix for lengths of shortest paths between 2 inst. i(row) is source and j(col) is destination.

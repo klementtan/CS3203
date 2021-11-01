@@ -101,20 +101,6 @@ namespace pkb
             {
                 adj_lst_bip[stmt1].push_back(std::make_pair(stmt2, weight));
             }
-            auto callStmt = getCallStmtMapping(stmt1);
-            if(callStmt != nullptr)
-            {
-                auto procName = dynamic_cast<const simple::ast::ProcCall*>(callStmt->getAstStmt())->proc_name;
-                if(procCallers.count(procName) == 0)
-                {
-                    std::set<StatementNum> stmts { stmt1 };
-                    procCallers[procName] = stmts;
-                }
-                else
-                {
-                    procCallers[procName].insert(stmt1);
-                }
-            }
         }
     }
 
@@ -181,18 +167,6 @@ namespace pkb
             return *lhs.second > *rhs.second;
         }
     };
-    template <class T>
-    void printQueue(T& q)
-    {
-        std::priority_queue<std::pair<size_t, size_t*>, std::vector<std::pair<size_t, size_t*>>, comparator> pq = q;
-        size_t size = pq.size();
-        for(int i = 0; i < size; ++i)
-        {
-            std::cout << pq.top().first << ", ";
-            pq.pop();
-        }
-        std::cout << "\n";
-    }
     void CFG::computeDistMatBip()
     {
         for(auto& proc : gates)
@@ -497,28 +471,4 @@ namespace pkb
                 ret.insert(stmt);
         return ret;
     }
-    /*
-    bool CFG::isStatementNextBip(StatementNum id1, StatementNum id2) const
-    {
-
-    }
-
-    bool CFG::isStatementTransitivelyNextBip(StatementNum stmt1, StatementNum stmt2) const
-    {
-
-    }
-    StatementSet CFG::getNextStatementsBip(StatementNum id) const 
-    {
-
-    }
-    StatementSet CFG::getTransitivelyNextStatementsBip(StatementNum id) const 
-    {
-    }
-    StatementSet CFG::getPreviousStatementsBip(StatementNum id) const 
-    {
-    }
-    StatementSet CFG::getTransitivelyPreviousStatementsBip(StatementNum id) const 
-    {
-    }
-    */
 }

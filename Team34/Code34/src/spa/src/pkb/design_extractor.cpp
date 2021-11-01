@@ -515,36 +515,6 @@ namespace pkb
         return std::move(this->m_pkb);
     }
 
-        std::unique_ptr<ProgramKB> DesignExtractor::run2()
-    {
-        START_BENCHMARK_TIMER("design extractor");
-        // assign the statement numbers. this has to use the vector of procedures in
-        // m_program, since the numbering depends on the order.
-        for(const auto& proc : m_program->procedures)
-        {
-            m_pkb->addProcedure(proc->name, proc.get());
-            this->assignStatementNumbersAndProc(&proc->body, proc.get());
-        }
-
-        auto topo_order = this->processCallGraph();
-        for(auto* proc : topo_order)
-        {
-            auto body = &proc->getAstProc()->body;
-
-            TraversalState ts {};
-            ts.current_proc = proc;
-
-            this->processStmtList(body, ts);
-            m_visited_procs.insert(proc->getName());
-        }
-
-        this->processNextRelations();
-        this->m_pkb->m_cfg->computeDistMatBip();
-
-        return std::move(this->m_pkb);
-    }
-
-
     DesignExtractor::DesignExtractor(std::unique_ptr<s_ast::Program> program)
     {
         this->m_pkb = std::make_unique<ProgramKB>(std::move(program));
