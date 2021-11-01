@@ -24,21 +24,21 @@ namespace pql::eval::table
     class Entry
     {
     private:
-        pql::ast::Declaration* m_declaration = nullptr;
+        const pql::ast::Declaration* m_declaration = nullptr;
         EntryType m_type = EntryType::kNull;
         std::string m_val {};
         simple::ast::StatementNum m_stmt_num { 0 };
 
     public:
         Entry();
-        Entry(pql::ast::Declaration* declaration, const std::string& val);
-        Entry(pql::ast::Declaration* declaration, const simple::ast::StatementNum& val);
+        Entry(const pql::ast::Declaration* declaration, const std::string& val);
+        Entry(const pql::ast::Declaration* declaration, const simple::ast::StatementNum& val);
         // Only use this for AttrRef as we cannot determine the entry type from the declaration
-        Entry(pql::ast::Declaration* declaration, const std::string& val, EntryType type);
+        Entry(const pql::ast::Declaration* declaration, const std::string& val, EntryType type);
         [[nodiscard]] std::string getVal() const;
         [[nodiscard]] simple::ast::StatementNum getStmtNum() const;
         [[nodiscard]] EntryType getType() const;
-        [[nodiscard]] ast::Declaration* getDeclaration() const;
+        [[nodiscard]] const ast::Declaration* getDeclaration() const;
         [[nodiscard]] std::string toString() const;
         bool operator==(const Entry& other) const;
         bool operator!=(const Entry& other) const;
@@ -130,20 +130,20 @@ namespace pql::eval::table
     class Table
     {
     private:
-        std::unordered_map<ast::Declaration*, Domain> m_domains;
+        std::unordered_map<const ast::Declaration*, Domain> m_domains;
         // Mapping of <declaration, declaration>: list of corresponding entry
         // All rows must equal to at least one of the entry pair
         std::vector<Join> m_joins;
         // All declaration involved in select query
-        std::unordered_set<ast::Declaration*> m_select_decls;
+        std::unordered_set<const ast::Declaration*> m_select_decls;
         // Get mapping of declaration to the join that is involved in.
         [[nodiscard]] bool hasValidDomain() const;
 
     public:
-        void putDomain(ast::Declaration* decl, const Domain& entries);
-        void addSelectDecl(ast::Declaration* decl);
+        void putDomain(const ast::Declaration* decl, const Domain& entries);
+        void addSelectDecl(const ast::Declaration* decl);
         static Entry extractAttr(const Entry& entry, const ast::AttrRef& attr_ref, const pkb::ProgramKB* pkb);
-        Domain getDomain(ast::Declaration* decl) const;
+        Domain getDomain(const ast::Declaration* decl) const;
         void addJoin(const Join& join);
         Table();
         ~Table();

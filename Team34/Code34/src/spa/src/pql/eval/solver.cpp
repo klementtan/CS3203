@@ -29,11 +29,9 @@ namespace pql::eval::solver
 
     const table::Entry& IntRow::getVal(const ast::Declaration* decl) const
     {
-        if(!contains(decl))
-        {
-            throw util::PqlException(
-                "pql::eval::table", "IntRow:{} does not contain decl:{}", toString(), decl->toString());
-        }
+        // assume that it exists; don't check.
+        spa_assert(this->contains(decl));
+
         return m_columns.find(decl)->second;
     }
 

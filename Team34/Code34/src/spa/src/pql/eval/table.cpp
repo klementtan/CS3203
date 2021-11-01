@@ -26,7 +26,7 @@ namespace pql::eval::table
     };
 
     Entry::Entry() = default;
-    Entry::Entry(pql::ast::Declaration* declaration, const std::string& val)
+    Entry::Entry(const pql::ast::Declaration* declaration, const std::string& val)
     {
         this->m_declaration = declaration;
         this->m_val = val;
@@ -47,14 +47,14 @@ namespace pql::eval::table
         }
     }
 
-    Entry::Entry(pql::ast::Declaration* declaration, const std::string& val, EntryType type)
+    Entry::Entry(const pql::ast::Declaration* declaration, const std::string& val, EntryType type)
     {
         this->m_declaration = declaration;
         this->m_val = val;
         this->m_type = type;
     }
 
-    Entry::Entry(pql::ast::Declaration* declaration, const simple::ast::StatementNum& val)
+    Entry::Entry(const pql::ast::Declaration* declaration, const simple::ast::StatementNum& val)
     {
         if(declaration->design_ent == ast::DESIGN_ENT::VARIABLE ||
             declaration->design_ent == ast::DESIGN_ENT::PROCEDURE ||
@@ -87,7 +87,7 @@ namespace pql::eval::table
     {
         return this->m_type;
     }
-    ast::Declaration* Entry::getDeclaration() const
+    const ast::Declaration* Entry::getDeclaration() const
     {
         return this->m_declaration;
     }
@@ -185,7 +185,7 @@ namespace pql::eval::table
     Table::~Table() { }
 
 
-    void Table::putDomain(ast::Declaration* decl, const std::unordered_set<Entry>& entries)
+    void Table::putDomain(const ast::Declaration* decl, const std::unordered_set<Entry>& entries)
     {
         util::logfmt("pql::eval::table", "Updating domain of {} with {} entries", decl->toString(), entries.size());
         m_domains[decl] = entries;
@@ -195,13 +195,13 @@ namespace pql::eval::table
         m_joins.push_back(join);
     }
 
-    void Table::addSelectDecl(ast::Declaration* decl)
+    void Table::addSelectDecl(const ast::Declaration* decl)
     {
         spa_assert(decl);
         m_select_decls.insert(decl);
     }
 
-    std::unordered_set<Entry> Table::getDomain(ast::Declaration* decl) const
+    std::unordered_set<Entry> Table::getDomain(const ast::Declaration* decl) const
     {
         auto it = m_domains.find(decl);
         if(it == m_domains.end())
@@ -211,7 +211,7 @@ namespace pql::eval::table
 
     bool Table::hasValidDomain() const
     {
-        for(ast::Declaration* decl : m_select_decls)
+        for(const ast::Declaration* decl : m_select_decls)
         {
             util::logfmt("pql::eval::table", "Checking if {} has non empty domain", decl->toString());
             std::unordered_set<Entry> domain = getDomain(decl);
@@ -228,7 +228,7 @@ namespace pql::eval::table
 
     Entry Table::extractAttr(const Entry& entry, const ast::AttrRef& attr_ref, const pkb::ProgramKB* pkb)
     {
-        ast::Declaration* decl = attr_ref.decl;
+        const ast::Declaration* decl = attr_ref.decl;
         Entry extracted_entry = entry;
 
         if(attr_ref.attr_name == ast::AttrName::kProcName)
@@ -326,11 +326,12 @@ namespace pql::eval::table
 
         size_t ctr = 0;
         std::string ret {};
+        // ret.reserve(return_tuple.size() * 3);
 
         for(const ast::Elem& elem : return_tuple)
         {
             spa_assert(elem.isAttrRef() || elem.isDeclaration());
-            ast::Declaration* decl = elem.isDeclaration() ? elem.declaration() : elem.attrRef().decl;
+            const ast::Declaration* decl = elem.isDeclaration() ? elem.declaration() : elem.attrRef().decl;
             const auto& entry = row.getVal(decl);
 
             if(elem.isDeclaration())
@@ -406,13 +407,9 @@ namespace pql::eval::table
             ret_decls.insert(decl);
         }
 
-        std::unordered_map<const ast::Declaration*, table::Domain> domains;
-        for(const auto& [decl, domain] : m_domains)
-        {
-            domains[decl] = domain;
-        }
         solver::Solver solver(
-            /** joins=*/m_joins, /**domains=*/domains, /**return_decls=*/ret_decls, /**select_decls=*/select_decls);
+            /** joins=*/m_joins, /**domains=*/std::move(m_domains), /**return_decls=*/ret_decls,
+            /**select_decls=*/select_decls);
 
         if(solver.isValid())
         {
@@ -431,9 +428,12 @@ namespace pql::eval::table
         }
 
         std::list<std::string> result {};
-        auto result_tup = result_cl.tuple();
-        for(size_t i = 0; i < ret_tbl.size(); i++)
-            result.push_back(format_row_to_output(ret_tbl.getRowMutable(i), result_tup, pkb));
+        {
+            START_BENCHMARK_TIMER("converting rows to strings");
+            auto result_tup = result_cl.tuple();
+            for(size_t i = 0; i < ret_tbl.size(); i++)
+                result.push_back(format_row_to_output(ret_tbl.getRowMutable(i), result_tup, pkb));
+        }
 
         return result;
     }
