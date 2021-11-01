@@ -66,7 +66,7 @@ namespace util
 #define spa_assert(x)                                                                                       \
     do                                                                                                      \
     {                                                                                                       \
-        if(!(x))                                                                                          \
+        if(!(x))                                                                                            \
             throw util::AssertionFailure("assert", "assertion failed ({}:{}): {}", __FILE__, __LINE__, #x); \
     } while(0)
 [[noreturn]] static inline void unreachable()
