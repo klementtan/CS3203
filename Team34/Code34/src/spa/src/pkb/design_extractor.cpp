@@ -349,7 +349,7 @@ namespace pkb
     void DesignExtractor::processNextRelations()
     {
         // get adj of of direct nexts first
-        m_pkb->m_cfg = std::make_unique<CFG>(m_pkb->m_statements.size());
+        m_pkb->m_cfg = std::make_unique<CFG>(m_pkb.get(), m_pkb->m_statements.size());
         for(auto& [name, proc] : m_pkb->m_procedures)
         {
             auto body = &proc.getAstProc()->body;

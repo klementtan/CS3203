@@ -118,6 +118,28 @@ namespace pkb
 
         const std::unordered_set<std::string>& getVariablesUsedInCondition() const;
 
+        const StatementSet* maybeGetNextStatements() const;
+        const StatementSet* maybeGetPreviousStatements() const;
+        const StatementSet* maybeGetTransitivelyNextStatements() const;
+        const StatementSet* maybeGetTransitivelyPreviousStatements() const;
+
+        const StatementSet* maybeGetAffectedStatements() const;
+        const StatementSet* maybeGetAffectingStatements() const;
+        const StatementSet* maybeGetTransitivelyAffectedStatements() const;
+        const StatementSet* maybeGetTransitivelyAffectingStatements() const;
+
+        const StatementSet& cacheNextStatements(StatementSet stmts) const;
+        const StatementSet& cachePreviousStatements(StatementSet stmts) const;
+        const StatementSet& cacheTransitivelyNextStatements(StatementSet stmts) const;
+        const StatementSet& cacheTransitivelyPreviousStatements(StatementSet stmts) const;
+
+        const StatementSet& cacheAffectedStatements(StatementSet stmts) const;
+        const StatementSet& cacheAffectingStatements(StatementSet stmts) const;
+        const StatementSet& cacheTransitivelyAffectedStatements(StatementSet stmts) const;
+        const StatementSet& cacheTransitivelyAffectingStatements(StatementSet stmts) const;
+
+        void resetCache() const;
+
     private:
         const simple::ast::Stmt* m_stmt = nullptr;
 
@@ -142,6 +164,27 @@ namespace pkb
 
         StatementSet m_ancestors {};
         StatementSet m_descendants {};
+
+        // note: these are cached!
+        mutable StatementSet m_next {};
+        mutable StatementSet m_prev {};
+        mutable StatementSet m_transitively_next {};
+        mutable StatementSet m_transitively_prev {};
+
+        mutable bool m_did_cache_next = false;
+        mutable bool m_did_cache_prev = false;
+        mutable bool m_did_cache_transitively_next = false;
+        mutable bool m_did_cache_transitively_prev = false;
+
+        mutable StatementSet m_affects {};
+        mutable StatementSet m_affecting {};
+        mutable StatementSet m_transitively_affects {};
+        mutable StatementSet m_transitively_affecting {};
+
+        mutable bool m_did_cache_affects = false;
+        mutable bool m_did_cache_affecting = false;
+        mutable bool m_did_cache_transitively_affects = false;
+        mutable bool m_did_cache_transitively_affecting = false;
     };
 
     struct Variable
@@ -174,7 +217,7 @@ namespace pkb
 
     struct CFG
     {
-        CFG(size_t v);
+        CFG(const ProgramKB* pkb, size_t v);
         ~CFG();
 
         void addEdge(StatementNum stmt1, StatementNum stmt2);
@@ -190,17 +233,17 @@ namespace pkb
 
         bool isStatementNext(StatementNum stmt1, StatementNum stmt2) const;
         bool isStatementTransitivelyNext(StatementNum stmt1, StatementNum stmt2) const;
-        StatementSet getNextStatements(StatementNum id) const;
-        StatementSet getTransitivelyNextStatements(StatementNum id) const;
-        StatementSet getPreviousStatements(StatementNum id) const;
-        StatementSet getTransitivelyPreviousStatements(StatementNum id) const;
+        const StatementSet& getNextStatements(StatementNum id) const;
+        const StatementSet& getTransitivelyNextStatements(StatementNum id) const;
+        const StatementSet& getPreviousStatements(StatementNum id) const;
+        const StatementSet& getTransitivelyPreviousStatements(StatementNum id) const;
 
         bool doesAffect(StatementNum stmt1, StatementNum stmt2) const;
         bool doesTransitivelyAffect(StatementNum stmt1, StatementNum stmt2) const;
-        StatementSet getAffectedStatements(StatementNum id) const;
-        StatementSet getTransitivelyAffectedStatements(StatementNum id) const;
-        StatementSet getAffectingStatements(StatementNum id) const;
-        StatementSet getTransitivelyAffectingStatements(StatementNum id) const;
+        const StatementSet& getAffectedStatements(StatementNum id) const;
+        const StatementSet& getTransitivelyAffectedStatements(StatementNum id) const;
+        const StatementSet& getAffectingStatements(StatementNum id) const;
+        const StatementSet& getTransitivelyAffectingStatements(StatementNum id) const;
 
     private:
         size_t total_inst;
@@ -209,6 +252,7 @@ namespace pkb
 
         bool m_next_exists = false;
 
+        const ProgramKB* m_pkb;
         std::unordered_map<StatementNum, StatementSet> adj_lst;
         std::unordered_map<StatementNum, const Statement*> assign_stmts;
         std::unordered_map<StatementNum, const Statement*> mod_stmts;
