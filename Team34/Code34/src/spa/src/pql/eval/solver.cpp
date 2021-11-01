@@ -240,23 +240,15 @@ namespace pql::eval::solver
     {
         START_BENCHMARK_TIMER(zpr::sprint("row deduplication (have {} rows)", m_rows.size()));
 
-        std::vector<IntRow> new_rows;
-        std::unordered_set<IntRow> added_rows;
-        for(const auto& row : m_rows)
-        {
-            if(added_rows.count(row))
-            {
-                util::logfmt("pql::eval::solver", "Removing duplicate row {}", row.toString());
-            }
-            else
-            {
-                new_rows.emplace_back(row);
-                added_rows.emplace(row);
-            }
-        }
-        // util::logfmt("pql::eval::solver", "Rows after deduplicating {}", toString());
-        zpr::fprintln(stderr, "final = {} rows left", new_rows.size());
-        m_rows = std::move(new_rows);
+        // no copies required; move rows into the set (deduplicating them in the process)
+        std::unordered_set<IntRow> seen {};
+        for(auto& row : m_rows)
+            seen.emplace(std::move(row));
+
+        // then move them back into our list.
+        m_rows.assign(std::move_iterator(seen.begin()), std::move_iterator(seen.end()));
+
+        util::logfmt("pql::eval::solver", "Rows after deduplicating {}", toString());
     }
 
     std::unordered_set<const ast::Declaration*> IntTable::getHeaders() const
@@ -695,11 +687,8 @@ namespace pql::eval::solver
             new_table.dedupRows();
             new_int_tables.push_back(std::move(new_table));
         }
+
         m_int_tables = std::move(new_int_tables);
-
-        for(auto& table : m_int_tables)
-            zpr::fprintln(stderr, "TABLE kekw = {}", table.toString());
-
         util::logfmt("pql::eval::solver", "Solver after preprocessing {}", toString());
     }
 
@@ -737,7 +726,6 @@ namespace pql::eval::solver
                 continue;
 
             IntTable& decl_int_table = m_int_tables[get_table_index(decl)];
-            zpr::fprintln(stderr, ">>> decl_int_table for {} = {}", decl->name, decl_int_table.toString());
 
             decl_int_table.filterColumns(m_return_decls);
             util::logfmt(
