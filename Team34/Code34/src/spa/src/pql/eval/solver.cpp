@@ -238,6 +238,8 @@ namespace pql::eval::solver
 
     void IntTable::dedupRows()
     {
+        START_BENCHMARK_TIMER(zpr::sprint("row deduplication (have {} rows)", m_rows.size()));
+
         std::vector<IntRow> new_rows;
         std::unordered_set<IntRow> added_rows;
         for(const auto& row : m_rows)
@@ -252,7 +254,8 @@ namespace pql::eval::solver
                 added_rows.emplace(row);
             }
         }
-        util::logfmt("pql::eval::solver", "Rows after deduplicating {}", toString());
+        // util::logfmt("pql::eval::solver", "Rows after deduplicating {}", toString());
+        zpr::fprintln(stderr, "final = {} rows left", new_rows.size());
         m_rows = std::move(new_rows);
     }
 
@@ -273,6 +276,11 @@ namespace pql::eval::solver
     int IntTable::size() const
     {
         return m_rows.size();
+    }
+
+    size_t IntTable::numColumns() const
+    {
+        return m_headers.size();
     }
 
     void IntTable::filterRows(const table::Join& join)
@@ -664,12 +672,34 @@ namespace pql::eval::solver
             }
             util::logfmt("pql::eval::solver", "New final merged table for component {}", new_table.toString());
 
-            new_table.filterColumns(m_return_decls);
-            new_table.dedupRows();
+            /*
+                there are two things to note here:
+                1. if the table has *no rows*, we *MUST* push it to the list of tables. this is because
+                    we use the "has no rows" condition to know whether a query succeeded or failed.
 
+                2. however, if, after filtering away unnecessary columns (decls), the table is left with
+                    *no columns*, we cannot add it to the list of tables, since it (by definition) would
+                    have no rows.
+
+                    even though it has no rows, it *HAD* rows before we yeeted all the columns, so that means
+                    that the query should not fail (or at least, should not fail because of this group of decls)
+            */
+
+            if(new_table.size() > 0)
+            {
+                new_table.filterColumns(m_return_decls);
+                if(new_table.numColumns() == 0)
+                    continue;
+            }
+
+            new_table.dedupRows();
             new_int_tables.push_back(std::move(new_table));
         }
         m_int_tables = std::move(new_int_tables);
+
+        for(auto& table : m_int_tables)
+            zpr::fprintln(stderr, "TABLE kekw = {}", table.toString());
+
         util::logfmt("pql::eval::solver", "Solver after preprocessing {}", toString());
     }
 
@@ -678,9 +708,7 @@ namespace pql::eval::solver
         for(const IntTable& tbl : m_int_tables)
         {
             if(tbl.empty())
-            {
                 return false;
-            }
         }
         return true;
     }
@@ -709,6 +737,8 @@ namespace pql::eval::solver
                 continue;
 
             IntTable& decl_int_table = m_int_tables[get_table_index(decl)];
+            zpr::fprintln(stderr, ">>> decl_int_table for {} = {}", decl->name, decl_int_table.toString());
+
             decl_int_table.filterColumns(m_return_decls);
             util::logfmt(
                 "pql::eval::solver", "Merging table {} to {}", ret_table.toString(), decl_int_table.toString());

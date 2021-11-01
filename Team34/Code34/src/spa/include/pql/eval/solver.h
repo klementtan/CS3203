@@ -63,6 +63,8 @@ namespace pql::eval::solver
         [[nodiscard]] bool empty() const;
         [[nodiscard]] int size() const;
         [[nodiscard]] std::string toString() const;
+
+        [[nodiscard]] size_t numColumns() const;
     };
 
     // Dependency graph for join conditions
@@ -123,7 +125,6 @@ struct std::hash<pql::eval::solver::IntRow>
 {
     size_t operator()(const pql::eval::solver::IntRow& r) const
     {
-        // http://stackoverflow.com/a/1646913/126995
         size_t seed = 0;
         for(const auto& [decl, e] : r.getColumns())
         {
