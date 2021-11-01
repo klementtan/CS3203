@@ -44,7 +44,6 @@ namespace pkb
 
         delete[] this->adj_mat;
         delete[] this->adj_mat_bip;
-
     }
 
     void CFG::addEdge(StatementNum stmt1, StatementNum stmt2)
