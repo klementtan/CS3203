@@ -26,7 +26,8 @@ namespace pql::eval::solver
     {
         return m_columns.count(decl);
     }
-    table::Entry IntRow::getVal(const ast::Declaration* decl) const
+
+    const table::Entry& IntRow::getVal(const ast::Declaration* decl) const
     {
         if(!contains(decl))
         {
@@ -35,6 +36,7 @@ namespace pql::eval::solver
         }
         return m_columns.find(decl)->second;
     }
+
     // check columns in the row exist in one of the allowed joins
     bool IntRow::isAllowed(const table::Join& join) const
     {
@@ -59,7 +61,7 @@ namespace pql::eval::solver
             if(m_columns.count(decl))
             {
                 const table::Entry& entry = m_columns.find(decl)->second;
-                const table::Entry other_entry = other.getVal(decl);
+                const table::Entry& other_entry = other.getVal(decl);
                 // cannot merge as there are conflicting entries for the same decl
                 if(entry != other_entry)
                     return false;
@@ -96,7 +98,8 @@ namespace pql::eval::solver
     {
         return m_columns;
     }
-    int IntRow::size() const
+
+    size_t IntRow::size() const
     {
         return m_columns.size();
     }
@@ -250,12 +253,17 @@ namespace pql::eval::solver
     }
 
 
-    const IntRow& IntTable::getRow(int i) const
+    const IntRow& IntTable::getRow(size_t i) const
     {
         return m_rows[i];
     }
 
-    int IntTable::size() const
+    IntRow& IntTable::getRowMutable(size_t i)
+    {
+        return m_rows[i];
+    }
+
+    size_t IntTable::size() const
     {
         return m_rows.size();
     }

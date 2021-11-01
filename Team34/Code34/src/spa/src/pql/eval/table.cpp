@@ -4,6 +4,7 @@
 
 #include <unordered_set>
 #include <numeric>
+#include <sstream>
 
 #include "zpr.h"
 #include "timer.h"
@@ -16,7 +17,6 @@
 
 namespace pql::eval::table
 {
-    std::string rowToString(const std::unordered_map<ast::Declaration*, Entry>& row);
     extern const std::unordered_map<EntryType, std::string> EntryTypeString = {
         { EntryType::kNull, "Null" },
         { EntryType::kStmt, "Stmt" },
@@ -209,28 +209,6 @@ namespace pql::eval::table
         return it->second;
     }
 
-    std::string rowToString(const Row& row)
-    {
-        std::string ret { "Row:[\n" };
-        for(auto [decl_ptr, entry] : row)
-        {
-            ret += zpr::sprint("{}={}\n", decl_ptr->toString(), entry.toString());
-        }
-        ret += "]\n";
-        return ret;
-    }
-
-    std::string tupleToString(const std::vector<Entry>& tuple)
-    {
-        std::string ret { "Tuple:[\n" };
-        for(auto entry : tuple)
-        {
-            ret += zpr::sprint("{},", entry.toString());
-        }
-        ret += "]\n";
-        return ret;
-    }
-
     bool Table::hasValidDomain() const
     {
         for(ast::Declaration* decl : m_select_decls)
@@ -341,29 +319,51 @@ namespace pql::eval::table
         return extracted_entry;
     }
 
-    std::vector<Entry> extract_result(
-        const solver::IntRow& row, const std::vector<ast::Elem>& return_tuple, const pkb::ProgramKB* pkb)
+    static std::string format_row_to_output(
+        solver::IntRow& row, const std::vector<ast::Elem>& return_tuple, const pkb::ProgramKB* pkb)
     {
         util::logfmt("pql::parser::table", "Extracting result from row: {}", row.toString());
-        std::vector<Entry> tuple;
+
+        std::stringstream ret {};
         for(const ast::Elem& elem : return_tuple)
         {
             spa_assert(elem.isAttrRef() || elem.isDeclaration());
             ast::Declaration* decl = elem.isDeclaration() ? elem.declaration() : elem.attrRef().decl;
-            Entry entry = row.getVal(decl);
+            const auto& entry = row.getVal(decl);
 
             if(elem.isDeclaration())
             {
-                tuple.push_back(entry);
+                if(entry.getType() == EntryType::kStmt)
+                    ret << entry.getStmtNum();
+                else
+                    ret << entry.getVal();
             }
             else
             {
-                tuple.push_back(Table::extractAttr(entry, elem.attrRef(), pkb));
+                auto attr = Table::extractAttr(entry, elem.attrRef(), pkb);
+                if(attr.getType() == EntryType::kStmt)
+                    ret << attr.getStmtNum();
+                else
+                    ret << attr.getVal();
             }
+
+            ret << " ";
         }
-        util::logfmt("pql::pareser::tabler", "Extracted tuple from row {}", tupleToString(tuple));
+
+        auto tuple = ret.str();
+        if(tuple.size() > 0 && tuple.back() == ' ')
+            tuple.pop_back();
+
+        util::logfmt("pql::tabler", "Extracted tuple from row {}", tuple);
         return tuple;
     }
+
+
+
+
+
+
+
 
 
     std::list<std::string> Table::getFailedResult(const ast::ResultCl& result)
@@ -430,34 +430,10 @@ namespace pql::eval::table
             return Table::getFailedResult(result_cl);
         }
 
-        std::vector<std::vector<Entry>> result_entries(ret_tbl.size());
-
-        {
-            START_BENCHMARK_TIMER("Populating return table into result entries");
-            for(int i = 0; i < ret_tbl.size(); i++)
-            {
-                result_entries[i] = extract_result(ret_tbl.getRow(i), result_cl.tuple(), pkb);
-            }
-        }
-
-        std::list<std::string> result;
-
-        {
-            START_BENCHMARK_TIMER("Populating result entries into result (vector<string>)");
-            for(const std::vector<Entry>& entries : result_entries)
-            {
-                std::vector<std::string> curr_results;
-                for(const Entry& entry : entries)
-                {
-                    curr_results.push_back(
-                        entry.getType() == EntryType::kStmt ? std::to_string(entry.getStmtNum()) : entry.getVal());
-                }
-                std::string merged_result = std::accumulate(curr_results.begin(), curr_results.end(), std::string {},
-                    [](const std::string& a, const std::string& b) { return a.empty() ? b : a + " " + b; });
-                util::logfmt("pql::eval::table", "Adding \"{}\" to result", merged_result);
-                result.push_back(merged_result);
-            }
-        }
+        std::list<std::string> result {};
+        auto result_tup = result_cl.tuple();
+        for(size_t i = 0; i < ret_tbl.size(); i++)
+            result.push_back(format_row_to_output(ret_tbl.getRowMutable(i), result_tup, pkb));
 
         return result;
     }

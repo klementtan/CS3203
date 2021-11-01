@@ -28,9 +28,11 @@ namespace pql::eval::solver
         void mergeRow(const IntRow& other, const TableHeaders& other_headers);
         // Remove columns that are not in the allowed headers
         void filterColumns(const TableHeaders& allowed_headers);
-        table::Entry getVal(const ast::Declaration* decl) const;
+
+        const table::Entry& getVal(const ast::Declaration* decl) const;
+
         bool contains(const ast::Declaration* decl) const;
-        int size() const;
+        size_t size() const;
         const std::unordered_map<const ast::Declaration*, table::Entry>& getColumns() const;
         // check columns in the row exist in one of the allowed joins
         [[nodiscard]] bool isAllowed(const table::Join& join) const;
@@ -62,9 +64,11 @@ namespace pql::eval::solver
         [[nodiscard]] std::vector<IntRow>& getRowsMutable();
         void filterRows(const table::Join& join);
         void dedupRows();
-        const IntRow& getRow(int i) const;
+        const IntRow& getRow(size_t i) const;
+        IntRow& getRowMutable(size_t i);
+
         [[nodiscard]] bool empty() const;
-        [[nodiscard]] int size() const;
+        [[nodiscard]] size_t size() const;
         [[nodiscard]] std::string toString() const;
 
         [[nodiscard]] size_t numColumns() const;
