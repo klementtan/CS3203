@@ -379,7 +379,7 @@ namespace pql::eval::table
         util::logfmt("pql::eval::table", "Starting to get {} for table {}.", result_cl.toString(), toString());
 
 
-        std::vector<ast::Declaration*> ret_cols;
+        std::unordered_set<const ast::Declaration*> ret_cols;
         if(result_cl.isTuple())
         {
             for(const ast::Elem& elem : result_cl.tuple())
@@ -387,29 +387,18 @@ namespace pql::eval::table
                 util::logfmt("pql::eval::table", "Adding {} to columns", elem.toString());
                 if(elem.isDeclaration())
                 {
-                    ret_cols.push_back(elem.declaration());
+                    ret_cols.insert(elem.declaration());
                 }
                 else if(elem.isAttrRef())
                 {
-                    ret_cols.push_back(elem.attrRef().decl);
+                    ret_cols.insert(elem.attrRef().decl);
                 }
             }
         }
 
-        std::unordered_set<const ast::Declaration*> select_decls;
-        for(const ast::Declaration* decl : m_select_decls)
-        {
-            select_decls.insert(decl);
-        }
-        std::unordered_set<const ast::Declaration*> ret_decls;
-        for(const ast::Declaration* decl : ret_cols)
-        {
-            ret_decls.insert(decl);
-        }
-
         solver::Solver solver(
-            /** joins=*/m_joins, /**domains=*/std::move(m_domains), /**return_decls=*/ret_decls,
-            /**select_decls=*/select_decls);
+            /* joins: */ m_joins, /* domains: */ std::move(m_domains), /* return_decls: */ ret_cols,
+            /* select_decls: */ m_select_decls);
 
         if(solver.isValid())
         {
