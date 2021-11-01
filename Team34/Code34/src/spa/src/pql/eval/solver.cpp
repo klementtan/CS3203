@@ -107,19 +107,18 @@ namespace pql::eval::solver
 
     bool IntRow::operator==(const IntRow& other) const
     {
-        return m_columns == other.m_columns;
-#if 0
-        if(size() != other.size())
+        if(this->size() != other.size())
             return false;
-        for(const auto& [entry] : m_columns)
+
+        for(auto& ent : m_columns)
         {
-            if(!other.contains(decl.getDeclaration()))
+            auto decl =ent.getDeclaration();
+            if(!other.contains(decl))
                 return false;
-            if(other.getVal(decl.getDeclaration()) != entry)
+            else if(other.getVal(decl) != ent)
                 return false;
         }
         return true;
-#endif
     }
 
     std::string IntRow::toString() const
@@ -145,6 +144,7 @@ namespace pql::eval::solver
                 for(auto& entry : row.getColumns())
                     spa_assert(headers.count(entry.getDeclaration()) > 0);
             }
+            return true;
         }());
     }
 
@@ -619,7 +619,7 @@ namespace pql::eval::solver
         std::vector<IntTable> new_int_tables;
         std::unordered_set<int> processed_join;
 
-        for(const std::vector<const ast::Declaration*>& component : m_decl_components)
+        for(std::vector<const ast::Declaration*>& component : m_decl_components)
         {
             IntTable new_table;
             // A component should never be empty
@@ -631,7 +631,10 @@ namespace pql::eval::solver
                 return log + "}";
             }());
 
-            // TODO: we should sort in increasing order of table size
+            std::sort(component.begin(), component.end(), [&](auto& a, auto& b) -> bool {
+                return m_int_tables[get_table_index(a)].size() < m_int_tables[get_table_index(b)].size();
+            });
+
             for(const ast::Declaration* decl : component)
             {
                 IntTable& prev_table = m_int_tables[get_table_index(decl)];
@@ -722,7 +725,13 @@ namespace pql::eval::solver
         util::logfmt("pql::eval::solver", "Getting return table");
         IntTable ret_table;
         spa_assert(!m_return_decls.empty());
-        for(const ast::Declaration* decl : m_return_decls)
+
+        auto return_decls = std::vector<const ast::Declaration*>(m_return_decls.begin(), m_return_decls.end());
+        std::sort(return_decls.begin(), return_decls.end(), [&](auto& a, auto& b) -> bool {
+            return m_int_tables[get_table_index(a)].size() < m_int_tables[get_table_index(b)].size();
+        });
+
+        for(const ast::Declaration* decl : return_decls)
         {
             util::logfmt("pql::eval::solver", "Handling return decl {}", decl->toString());
             // already added into table by another decl in the same component
