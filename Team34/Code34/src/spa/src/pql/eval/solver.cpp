@@ -107,6 +107,8 @@ namespace pql::eval::solver
 
     bool IntRow::operator==(const IntRow& other) const
     {
+        return other.m_columns == m_columns;
+#if 0
         if(this->size() != other.size())
             return false;
 
@@ -119,6 +121,7 @@ namespace pql::eval::solver
                 return false;
         }
         return true;
+#endif
     }
 
     std::string IntRow::toString() const
