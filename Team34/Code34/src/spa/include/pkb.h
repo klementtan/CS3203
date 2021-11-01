@@ -186,7 +186,6 @@ namespace pkb
         void addEdge(StatementNum stmt1, StatementNum stmt2);
         void addEdgeBip(StatementNum stmt1, StatementNum stmt2, size_t weight);
         void computeDistMat();
-        void computeDistMatBip();
         std::string getMatRep(int i) const;
         bool nextRelationExists() const;
         bool affectsRelationExists() const;
