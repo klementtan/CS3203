@@ -45,50 +45,38 @@ namespace pql::eval::table
     };
 }
 
-namespace std
+template <>
+struct std::hash<pql::eval::table::Entry>
 {
-    template <>
-    struct hash<pql::eval::table::Entry>
+    size_t operator()(const pql::eval::table::Entry& e) const
     {
-        size_t operator()(const pql::eval::table::Entry& e) const
-        {
-            // http://stackoverflow.com/a/1646913/126995
-            size_t res = 17;
-            if(e.getType() != pql::eval::table::EntryType::kStmt)
-                res = res * 31 + std::hash<string>()(e.getVal());
-            if(e.getType() == pql::eval::table::EntryType::kStmt)
-                res = res * 31 + std::hash<simple::ast::StatementNum>()(e.getStmtNum());
-            res = res * 31 + std::hash<pql::ast::Declaration>()(*e.getDeclaration());
-            res = res * 31 + std::hash<pql::eval::table::EntryType>()(e.getType());
-            return res;
-        }
-    };
-    template <>
-    struct hash<std::pair<pql::eval::table::Entry, pql::eval::table::Entry>>
+        if(e.getType() == pql::eval::table::EntryType::kStmt)
+            return util::hash_combine(e.getStmtNum(), *e.getDeclaration(), e.getType());
+        else
+            return util::hash_combine(e.getVal(), *e.getDeclaration(), e.getType());
+    }
+};
+template <>
+struct std::hash<std::pair<pql::eval::table::Entry, pql::eval::table::Entry>>
+{
+    size_t operator()(const std::pair<pql::eval::table::Entry, pql::eval::table::Entry>& p) const
     {
-        size_t operator()(const std::pair<pql::eval::table::Entry, pql::eval::table::Entry>& p) const
-        {
-            // http://stackoverflow.com/a/1646913/126995
-            size_t res = 17;
-            res = res * 31 + std::hash<pql::eval::table::Entry>()(p.first);
-            res = res * 31 + std::hash<pql::eval::table::Entry>()(p.second);
-            return res;
-        }
-    };
+        return util::hash_combine(p.first, p.second);
+    }
+};
 
-    template <>
-    struct hash<std::pair<pql::ast::Declaration*, pql::ast::Declaration*>>
+template <>
+struct std::hash<std::pair<pql::ast::Declaration*, pql::ast::Declaration*>>
+{
+    size_t operator()(const std::pair<pql::ast::Declaration*, pql::ast::Declaration*>& p) const
     {
-        size_t operator()(const std::pair<pql::ast::Declaration*, pql::ast::Declaration*>& p) const
-        {
-            // http://stackoverflow.com/a/1646913/126995
-            size_t res = 17;
-            res = res * 31 + std::hash<pql::ast::Declaration*>()(p.first);
-            res = res * 31 + std::hash<pql::ast::Declaration*>()(p.second);
-            return res;
-        }
-    };
-}
+        return util::hash_combine(*p.first, *p.second);
+    }
+};
+
+
+
+
 namespace pql::eval::table
 {
     using Domain = std::unordered_set<Entry>;

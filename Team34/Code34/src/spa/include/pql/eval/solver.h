@@ -118,26 +118,23 @@ namespace pql::eval::solver
 
 }
 
-namespace std
+template <>
+struct std::hash<pql::eval::solver::IntRow>
 {
-    template <>
-    struct hash<pql::eval::solver::IntRow>
+    size_t operator()(const pql::eval::solver::IntRow& r) const
     {
-        size_t operator()(const pql::eval::solver::IntRow& r) const
+        // http://stackoverflow.com/a/1646913/126995
+        size_t seed = 0;
+        for(const auto& [decl, e] : r.getColumns())
         {
-            // http://stackoverflow.com/a/1646913/126995
-            size_t res = 17;
-            for(const auto& [decl, e] : r.getColumns())
-            {
-                res += std::hash<const pql::ast::Declaration*>()(decl);
-                if(e.getType() != pql::eval::table::EntryType::kStmt)
-                    res += std::hash<string>()(e.getVal());
-                if(e.getType() == pql::eval::table::EntryType::kStmt)
-                    res += std::hash<simple::ast::StatementNum>()(e.getStmtNum());
-                res += std::hash<pql::ast::Declaration>()(*e.getDeclaration());
-                res += std::hash<pql::eval::table::EntryType>()(e.getType());
-            }
-            return res;
+            util::_hash_combine(seed, util::hash_combine(*decl, e.getType()));
+            if(e.getType() == pql::eval::table::EntryType::kStmt)
+                util::_hash_combine(seed, e.getStmtNum());
+            else
+                util::_hash_combine(seed, e.getVal());
         }
-    };
-}
+
+        return seed;
+    }
+};
+
