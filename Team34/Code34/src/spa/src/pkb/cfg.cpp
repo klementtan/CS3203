@@ -23,17 +23,20 @@ namespace pkb
         total_inst = v;
         adj_mat = new size_t*[v];
         adj_mat_bip = new size_t*[v];
-        
+        adj_mat_processed = new size_t*[v];
+
         m_next_exists = false;
 
         for(size_t i = 0; i < v; i++)
         {
             this->adj_mat[i] = new size_t[v];
             this->adj_mat_bip[i] = new size_t[v];
+            this->adj_mat_processed[i] = new size_t[v];
             for(size_t j = 0; j < v; j++)
             {
                 adj_mat[i][j] = INF;
                 adj_mat_bip[i][j] = INF;
+                adj_mat_processed[i][j] = INF;
             }
         }
     }
@@ -68,6 +71,7 @@ namespace pkb
     {
         assert(stmt1 <= total_inst && stmt1 > 0);
         assert(stmt2 <= total_inst && stmt2 > 0);
+        assert(weight != 0);
         adj_mat_bip[stmt1 - 1][stmt2 - 1] = weight;
         if(weight == INF)
         {
@@ -100,6 +104,20 @@ namespace pkb
             {
                 adj_lst_bip[stmt1].push_back(std::make_pair(stmt2, weight));
             }
+            auto callStmt = getCallStmtMapping(stmt1);
+            if(callStmt != nullptr)
+            {
+                auto procName = dynamic_cast<const simple::ast::ProcCall*>(callStmt->getAstStmt())->proc_name;
+                if(procCallers.count(procName) == 0)
+                {
+                    std::set<StatementNum> stmts { stmt1 };
+                    procCallers[procName] = stmts;
+                }
+                else
+                {
+                    procCallers[procName].insert(stmt1);
+                }
+            }
         }
     }
 
@@ -118,20 +136,9 @@ namespace pkb
                 break;
             case 2:
                 mat = adj_mat_bip;
-                for(int a = 1; a < total_inst+1; a++)
-                {
-                    if(adj_lst_bip.count(a) > 0)
-                    {
-                        std::cout << "at " << a << std::endl;
-
-                        for(auto& i : adj_lst_bip.at(a))
-                        {
-                            std::cout << i.first << " " << i.second << std::endl;
-                        }
-                    }
-
-                }
-
+                break;
+            case 3:
+                mat = adj_mat_processed;
                 break;
             default:
                 mat = adj_mat;
@@ -169,6 +176,96 @@ namespace pkb
                     if(adj_mat[i][j] > (adj_mat[i][k] + adj_mat[k][j]) &&
                         (adj_mat[k][j] != INF && adj_mat[i][k] != INF))
                         adj_mat[i][j] = adj_mat[i][k] + adj_mat[k][j];
+                }
+            }
+        }
+    }
+    struct comparator
+    {
+        bool operator()(const std::pair<size_t, size_t*>& lhs, const std::pair<size_t, size_t*>& rhs)
+        {
+            return *lhs.second > *rhs.second;
+        }
+    };
+    template <class T>
+    void printQueue(T& q)
+    {
+        std::priority_queue<std::pair<size_t, size_t*>, std::vector<std::pair<size_t, size_t*>>, comparator> pq = q;
+        size_t size = pq.size();
+        for(int i = 0; i < size; ++i)
+        {
+            std::cout << pq.top().first << ", ";
+            pq.pop();
+        }
+        std::cout << "\n";
+    }
+    void CFG::computeDistMatBip()
+    {
+        for(int i = 0; i < total_inst; i++)
+        {
+            for(int j = 0; j < total_inst; j++)
+            {
+                adj_mat_processed[i][j] = adj_mat_bip[i][j];
+            }
+        }
+        // for each procedure
+        for(size_t start = 0; start < total_inst; start++) // for each starting node
+        {
+            std::unordered_set<StatementNum> procs_called {};
+            std::unordered_set<StatementNum> in_queue {};
+            size_t* dist = adj_mat_processed[start];
+            std::priority_queue<std::pair<size_t, size_t*>, std::vector<std::pair<size_t, size_t*>>,comparator> pq;
+            for(size_t i = 0; i < total_inst; i++)
+                dist[i] = INF;
+            pq.push(std::make_pair(start, &dist[start]));
+            dist[start] = 0;
+            in_queue.insert(start);
+            bool startingNode = false;
+            while(!pq.empty())
+            {
+                auto curr_node = pq.top();
+                // check if it is a call
+                auto call_stmt = getCallStmtMapping(curr_node.first + 1);
+                if(call_stmt != nullptr)
+                {
+                    procs_called.insert(call_stmt->getStmtNum() + 1);
+                }
+                for(int i = 0; i < total_inst; i++)
+                {
+                    size_t weight = adj_mat_bip[curr_node.first][i];
+                    if(weight > 1 && weight != INF && procs_called.count(weight) != 0)
+                    {
+                        weight = 1;
+                    }
+                    if(weight == 1)
+                    {
+                        if(*curr_node.second + weight < dist[i])
+                        {
+                            dist[i] = *curr_node.second + weight;
+                            if(in_queue.count(i) == 0)
+                            {
+                                pq.push(std::make_pair(i, &dist[i]));
+                                in_queue.insert(i);
+                            }
+                        }
+                    }
+                }
+                printQueue(pq);
+                in_queue.erase(curr_node.first);
+                pq.pop();
+                printQueue(pq);
+                if(!startingNode)
+                {
+                    dist[start] = INF;
+                    startingNode = true;
+                }
+                if(call_stmt != nullptr)
+                {
+                    auto call = dynamic_cast<const simple::ast::ProcCall*>(call_stmt->getAstStmt());
+                    for(auto& a : gates[call->proc_name].second)
+                    {
+                        pq.push(std::make_pair(a - 1, &dist[a - 1]));
+                    }
                 }
             }
         }
@@ -408,25 +505,28 @@ namespace pkb
                 ret.insert(stmt);
         return ret;
     }
+    /*
+    bool CFG::isStatementNextBip(StatementNum id1, StatementNum id2) const
+    {
 
-    bool CFG::doesAffectBip(StatementNum id1, StatementNum id2) const {
-        auto stmt1 = getAssignStmtMapping(id1);
-        auto stmt2 = getAssignStmtMapping(id2);
-
-        if(stmt1 == nullptr || stmt2 == nullptr)
-            return false;
-
-        const auto& modified = stmt1->getModifiedVariables();
-        const auto& used = stmt2->getUsedVariables();
-        assert(modified.size() == 1);
-        const auto var = modified.begin();
-        if(used.count(*var) == 0)
-        {
-            return false;
-        }
-        std::vector<StatementNum> call_stack {};
-        StatementSet visited;
-
-        //getAssignStmtMapping(id1)->getAstStmt()
     }
+
+    bool CFG::isStatementTransitivelyNextBip(StatementNum stmt1, StatementNum stmt2) const
+    {
+
+    }
+    StatementSet CFG::getNextStatementsBip(StatementNum id) const 
+    {
+
+    }
+    StatementSet CFG::getTransitivelyNextStatementsBip(StatementNum id) const 
+    {
+    }
+    StatementSet CFG::getPreviousStatementsBip(StatementNum id) const 
+    {
+    }
+    StatementSet CFG::getTransitivelyPreviousStatementsBip(StatementNum id) const 
+    {
+    }
+    */
 }

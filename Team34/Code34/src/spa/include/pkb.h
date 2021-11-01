@@ -7,6 +7,7 @@
 #include <optional>
 #include <unordered_map>
 #include <unordered_set>
+#include <set>
 
 #include "pql/parser/ast.h"
 #include "simple/ast.h"
@@ -211,6 +212,13 @@ namespace pkb
         StatementSet getAffectingStatements(StatementNum id) const;
         StatementSet getTransitivelyAffectingStatements(StatementNum id) const;
 
+        bool isStatementNextBip(StatementNum stmt1, StatementNum stmt2) const;
+        bool isStatementTransitivelyNextBip(StatementNum stmt1, StatementNum stmt2) const;
+        StatementSet getNextStatementsBip(StatementNum id) const;
+        StatementSet getTransitivelyNextStatementsBip(StatementNum id) const;
+        StatementSet getPreviousStatementsBip(StatementNum id) const;
+        StatementSet getTransitivelyPreviousStatementsBip(StatementNum id) const;
+
         bool doesAffectBip(StatementNum stmt1, StatementNum stmt2) const;
         bool doesTransitivelyAffectBip(StatementNum stmt1, StatementNum stmt2) const;
         StatementSet getAffectedStatementsBip(StatementNum id) const;
@@ -222,9 +230,11 @@ namespace pkb
         // adjacency matrix for lengths of shortest paths between 2 inst. i(row) is source and j(col) is destination.
         size_t** adj_mat;
         size_t** adj_mat_bip;
+        size_t** adj_mat_processed;
 
         bool m_next_exists = false;
         std::unordered_map<std::string, std::pair<StatementNum, std::vector<StatementNum>>> gates;
+        std::unordered_map<std::string, std::set<StatementNum>> procCallers;
         std::unordered_map<StatementNum, StatementSet> adj_lst;
         std::unordered_map<StatementNum, std::vector<std::pair<StatementNum, size_t>>> adj_lst_bip;
         std::unordered_map<StatementNum, const Statement*> assign_stmts;
