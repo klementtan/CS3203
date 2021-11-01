@@ -113,8 +113,7 @@ namespace pql::eval::solver
 
     public:
         Solver(const std::vector<table::Join>& joins,
-            std::unordered_map<const ast::Declaration*, table::Domain> domains,
-            const TableHeaders& return_decls,
+            std::unordered_map<const ast::Declaration*, table::Domain> domains, const TableHeaders& return_decls,
             const TableHeaders& select_decls);
         [[nodiscard]] IntTable getRetTbl();
         [[nodiscard]] bool isValid() const;

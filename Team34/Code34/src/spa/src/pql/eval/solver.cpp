@@ -400,8 +400,7 @@ namespace pql::eval::solver
         return ret;
     }
 
-    static TableHeaders mergeAndCopySet(
-        TableHeaders a, const TableHeaders& b)
+    static TableHeaders mergeAndCopySet(TableHeaders a, const TableHeaders& b)
     {
         TableHeaders ret(std::move(a));
         for(const ast::Declaration* decl : b)
@@ -440,8 +439,7 @@ namespace pql::eval::solver
         return ret;
     };
     Solver::Solver(const std::vector<table::Join>& joins,
-        std::unordered_map<const ast::Declaration*, table::Domain> domains,
-        const TableHeaders& return_decls,
+        std::unordered_map<const ast::Declaration*, table::Domain> domains, const TableHeaders& return_decls,
         const TableHeaders& select_decls)
         : m_domains(std::move(domains)), m_joins(joins), m_return_decls(return_decls), m_int_tables(),
           m_decl_components(), m_dep_graph(mergeAndCopySet(return_decls, select_decls), joins)
