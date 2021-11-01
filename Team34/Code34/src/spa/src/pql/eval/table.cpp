@@ -324,7 +324,9 @@ namespace pql::eval::table
     {
         util::logfmt("pql::parser::table", "Extracting result from row: {}", row.toString());
 
-        std::stringstream ret {};
+        size_t ctr = 0;
+        std::string ret {};
+
         for(const ast::Elem& elem : return_tuple)
         {
             spa_assert(elem.isAttrRef() || elem.isDeclaration());
@@ -334,28 +336,26 @@ namespace pql::eval::table
             if(elem.isDeclaration())
             {
                 if(entry.getType() == EntryType::kStmt)
-                    ret << entry.getStmtNum();
+                    ret += std::to_string(entry.getStmtNum());
                 else
-                    ret << entry.getVal();
+                    ret += entry.getVal();
             }
             else
             {
                 auto attr = Table::extractAttr(entry, elem.attrRef(), pkb);
                 if(attr.getType() == EntryType::kStmt)
-                    ret << attr.getStmtNum();
+                    ret += std::to_string(attr.getStmtNum());
                 else
-                    ret << attr.getVal();
+                    ret += attr.getVal();
             }
 
-            ret << " ";
+            if(ctr + 1 < return_tuple.size())
+                ret += " ";
+
+            ctr++;
         }
 
-        auto tuple = ret.str();
-        if(tuple.size() > 0 && tuple.back() == ' ')
-            tuple.pop_back();
-
-        util::logfmt("pql::tabler", "Extracted tuple from row {}", tuple);
-        return tuple;
+        return ret;
     }
 
 
