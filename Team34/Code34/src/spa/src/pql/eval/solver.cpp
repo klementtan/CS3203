@@ -726,7 +726,6 @@ namespace pql::eval::solver
 
             IntTable& decl_int_table = m_int_tables[get_table_index(decl)];
 
-            decl_int_table.filterColumns(m_return_decls);
             util::logfmt(
                 "pql::eval::solver", "Merging table {} to {}", ret_table.toString(), decl_int_table.toString());
 
