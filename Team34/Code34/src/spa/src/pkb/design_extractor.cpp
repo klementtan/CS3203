@@ -29,7 +29,7 @@ namespace pkb
         std::function<void(s_ast::Stmt*, const s_ast::StmtList*)> processor {};
         processor = [this, &processor, proc](s_ast::Stmt* stmt, const s_ast::StmtList* parent) -> void {
             // the statement should not have been seen yet.
-            spa_assert(stmt->id == 0);
+            assert(stmt->id == 0);
 
             stmt->parent_list = parent;
             stmt->id = m_pkb->m_statements.size() + 1;

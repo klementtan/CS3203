@@ -32,11 +32,5 @@ procedure John {
               y = x * y; } }
 
 )";
-static auto kb1 = DesignExtractor(parseProgram(sample_source_A)).run2();
+static auto kb1 = DesignExtractor(parseProgram(sample_source_A)).run();
 static auto cfg1 = kb1 -> getCFG();
-TEST_CASE("CFG-BIP") {
-    std::cout << cfg1->getMatRep(2);
-    std::cout << cfg1->getMatRep(3);
-
-    CHECK(true);
-}
