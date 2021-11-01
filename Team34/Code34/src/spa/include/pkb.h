@@ -225,7 +225,6 @@ namespace pkb
 
         bool m_next_exists = false;
         std::unordered_map<std::string, std::pair<StatementNum, std::vector<StatementNum>>> gates;
-        std::unordered_map<std::string, std::pair<StatementNum, std::vector<StatementNum>>> gates;
         std::unordered_map<StatementNum, StatementSet> adj_lst;
         std::unordered_map<StatementNum, std::vector<std::pair<StatementNum, size_t>>> adj_lst_bip;
         std::unordered_map<StatementNum, const Statement*> assign_stmts;

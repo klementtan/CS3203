@@ -349,7 +349,7 @@ namespace pkb
         {
             for(int j = 0; j < cfg->total_inst; j++)
             {
-                adjMatBip[i][j] = adjMat[i][j];
+                cfg->addEdgeBip(i+1, j+1, adjMat[i][j]);
             }
         }
         // get the last stmt(s)
@@ -386,15 +386,15 @@ namespace pkb
                 assert(nextStmt.size() <= 1);
                 if(nextStmt.size() != 0)
                 {
-                    adjMatBip[callStmt-1][*nextStmt.begin()-1] = 0;
+                    cfg->addEdgeBip(callStmt, *nextStmt.begin(), SIZE_MAX);
                 }
                 auto calledProc = CONST_DCAST(ProcCall, this->m_pkb->getStatementAt(callStmt).getAstStmt())->proc_name;
-                adjMatBip[callStmt-1][cfg->gates.at(calledProc).first-1] = callStmt+1;
+                cfg->addEdgeBip(callStmt, cfg->gates.at(calledProc).first, callStmt + 1);
                 if(nextStmt.size() != 0)
                 {
                     for(auto from : cfg->gates.at(calledProc).second)
                     {
-                        adjMatBip[from - 1][*nextStmt.begin() - 1] = callStmt+1;  
+                        cfg->addEdgeBip(from, *nextStmt.begin(), callStmt + 1);
                     }
                 }
             }

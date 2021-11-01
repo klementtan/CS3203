@@ -8,6 +8,10 @@
 #include <queue>
 #include <unordered_set>
 #include <iostream>
+#include <utility>
+#include <algorithm>
+#include <vector>
+
 #define INF SIZE_MAX
 
 namespace pkb
@@ -19,7 +23,6 @@ namespace pkb
         total_inst = v;
         adj_mat = new size_t*[v];
         adj_mat_bip = new size_t*[v];
-        adj_mat_processed = new size_t*[v];
         
         m_next_exists = false;
 
@@ -27,12 +30,10 @@ namespace pkb
         {
             this->adj_mat[i] = new size_t[v];
             this->adj_mat_bip[i] = new size_t[v];
-            this->adj_mat_processed[i] = new size_t[v];
             for(size_t j = 0; j < v; j++)
             {
                 adj_mat[i][j] = INF;
                 adj_mat_bip[i][j] = INF;
-                adj_mat_processed[i][j] = INF;
             }
         }
     }
@@ -44,7 +45,6 @@ namespace pkb
 
         delete[] this->adj_mat;
     }
-
 
     void CFG::addEdge(StatementNum stmt1, StatementNum stmt2)
     {
@@ -69,16 +69,38 @@ namespace pkb
         assert(stmt1 <= total_inst && stmt1 > 0);
         assert(stmt2 <= total_inst && stmt2 > 0);
         adj_mat_bip[stmt1 - 1][stmt2 - 1] = weight;
-        /*
-        if(!adj_lst_bip.count(stmt1))
+        if(weight == INF)
         {
-            std::unordered_set<std::pair<StatementNum, size_t>> stmts { std::make_pair(stmt2, weight) };
-            adj_lst_bip[stmt1] = stmts;
+            if(adj_lst_bip.count(stmt1) != 0)
+            {
+                size_t idx = 0;
+                for(auto a : adj_lst_bip[stmt1])
+                {
+                    if(a.first == stmt2 && a.second == 1)
+                    {
+                        adj_lst_bip[stmt1].erase(adj_lst_bip[stmt1].begin() + idx);
+                        break;
+                    }
+                    idx++;
+                }
+                if(adj_lst_bip[stmt1].size()==0)
+                {
+                    adj_lst_bip.erase(stmt1);
+                }
+            }
         }
         else
         {
-            adj_lst_bip[stmt1].insert(std::make_pair(stmt2, weight));
-        }*/
+            if(adj_lst_bip.count(stmt1) == 0)
+            {
+                std::vector<std::pair<StatementNum, size_t>> stmts { std::make_pair(stmt2, weight) };
+                adj_lst_bip[stmt1] = stmts;
+            }
+            else
+            {
+                adj_lst_bip[stmt1].push_back(std::make_pair(stmt2, weight));
+            }
+        }
     }
 
     bool CFG::nextRelationExists() const
@@ -96,9 +118,20 @@ namespace pkb
                 break;
             case 2:
                 mat = adj_mat_bip;
-                break;
-            case 3:
-                mat = adj_mat_processed;
+                for(int a = 1; a < total_inst+1; a++)
+                {
+                    if(adj_lst_bip.count(a) > 0)
+                    {
+                        std::cout << "at " << a << std::endl;
+
+                        for(auto& i : adj_lst_bip.at(a))
+                        {
+                            std::cout << i.first << " " << i.second << std::endl;
+                        }
+                    }
+
+                }
+
                 break;
             default:
                 mat = adj_mat;
@@ -136,90 +169,6 @@ namespace pkb
                     if(adj_mat[i][j] > (adj_mat[i][k] + adj_mat[k][j]) &&
                         (adj_mat[k][j] != INF && adj_mat[i][k] != INF))
                         adj_mat[i][j] = adj_mat[i][k] + adj_mat[k][j];
-                }
-            }
-        }
-    }
-
-    struct comparator
-    {
-        bool operator()(const std::pair<size_t, size_t*>& lhs, const std::pair<size_t, size_t*>& rhs)
-        {
-            return *lhs.second > *rhs.second;
-        }
-    };
-    template <class T>
-    void printQueue(T& q)
-    {
-        std::priority_queue<std::pair<size_t, size_t*>, std::vector<std::pair<size_t, size_t*>>, comparator> pq = q;
-        size_t size = pq.size();
-        for(int i = 0; i < size; ++i)
-        {
-            std::cout << pq.top().first << ", ";
-            pq.pop();
-        }
-        std::cout<<"\n";
-
-    }
-    void CFG::computeDistMatBip()
-    {
-        for(int i = 0; i < total_inst; i++)
-        {
-            for(int j = 0; j < total_inst; j++)
-            {
-                adj_mat_processed[i][j] = adj_mat_bip[i][j];
-            }
-        }
-        // for each procedure
-        for(size_t start = 0; start < total_inst; start++) // for each starting node
-        {
-            std::unordered_set<StatementNum> procs_called {};
-            std::unordered_set<StatementNum> in_queue {};
-            size_t* dist = adj_mat_processed[start];
-            std::priority_queue<std::pair<size_t, size_t*>, std::vector<std::pair<size_t, size_t*>>, comparator> pq;
-            for(size_t i = 0; i < total_inst; i++)
-                dist[i] = INF;
-            pq.push(std::make_pair(start, &dist[start]));
-            dist[start] = 0;
-            in_queue.insert(start);
-            while(!pq.empty())
-            {
-                auto curr_node = pq.top();
-                // check if it is a call
-                auto call_stmt = getCallStmtMapping(curr_node.first+1);
-                if(call_stmt != nullptr)
-                {
-                    procs_called.insert(call_stmt->getStmtNum()+1);
-                }
-                for(int i = 0; i < total_inst; i++)
-                {
-                    size_t weight = adj_mat_bip[curr_node.first][i];
-                    if(weight > 1 && weight != INF && procs_called.count(weight) != 0)
-                    {
-                        weight = 1;
-                    }
-                    if(weight == 1)
-                    {
-                        if(*curr_node.second + weight < dist[i])
-                        {
-                            dist[i] = *curr_node.second + weight;
-                            if(in_queue.count(i) == 0)
-                            {
-                                pq.push(std::make_pair(i, &dist[i]));
-                                in_queue.insert(i);
-                            }
-                        }
-                    }
-                }
-                in_queue.erase(curr_node.first);
-                pq.pop();
-                if(call_stmt != nullptr)
-                {
-                    auto call = dynamic_cast<const simple::ast::ProcCall*>(call_stmt->getAstStmt());
-                    for(auto& a : gates[call->proc_name].second)
-                    {
-                        pq.push(std::make_pair(a - 1, &dist[a - 1]));
-                    }
                 }
             }
         }
@@ -478,5 +427,6 @@ namespace pkb
         std::vector<StatementNum> call_stack {};
         StatementSet visited;
 
+        //getAssignStmtMapping(id1)->getAstStmt()
     }
 }
