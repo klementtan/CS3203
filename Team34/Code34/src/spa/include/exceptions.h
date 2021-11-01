@@ -55,4 +55,17 @@ namespace util
     {
         using BaseException<ParseException>::BaseException;
     };
+
+    struct AssertionFailure : BaseException<AssertionFailure>
+    {
+        using BaseException<AssertionFailure>::BaseException;
+    };
 }
+
+#if defined(ENABLE_ASSERTIONS) && !defined(NDEBUG)
+#define spa_assert(x) do { if(not (x)) \
+    throw util::AssertionFailure("assert", "assertion failed ({}:{}): {}",  \
+        __FILE__, __LINE__, #x); \
+} while(0)
+#else
+#define spa_assert(x) do { } while(0)

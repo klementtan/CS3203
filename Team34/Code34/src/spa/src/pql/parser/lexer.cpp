@@ -105,7 +105,11 @@ namespace pql::parser
             while(!sv.empty() && is_digit(sv[num_chars]))
                 num_chars += 1;
 
-            return Token { sv.take_prefix(num_chars), TT::Number };
+            auto num = sv.take_prefix(num_chars);
+            if(num.size() > 1 && num[0] == '0')
+                throw util::PqlSyntaxException("multi-digit integer literal cannot start with 0");
+
+            return Token { num, TT::Number };
         }
         else if(sv[0] == '"')
         {
@@ -119,7 +123,9 @@ namespace pql::parser
                 throw util::PqlSyntaxException("unterminated expression string (expected '\"')");
 
             auto str = sv.take_prefix(num_chars);
-            assert(sv[0] == '"');
+            if(sv[0] != '"')
+                throw util::PqlSyntaxException("unterminated expression string (expected '\"')");
+
             sv.remove_prefix(1);
 
             return { str, TT::String };
