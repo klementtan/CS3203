@@ -16,7 +16,7 @@ namespace pql::eval::solver
     IntRow::IntRow(std::unordered_map<const ast::Declaration*, table::Entry> columns)
     {
         m_columns = {};
-        for(auto& [ _, e ] : columns)
+        for(auto& [_, e] : columns)
             m_columns.emplace_back(std::move(e));
     }
 
@@ -29,9 +29,8 @@ namespace pql::eval::solver
 
     bool IntRow::contains(const ast::Declaration* decl) const
     {
-        return std::any_of(m_columns.begin(), m_columns.end(), [decl](auto& ent) -> bool {
-            return ent.getDeclaration() == decl;
-        });
+        return std::any_of(
+            m_columns.begin(), m_columns.end(), [decl](auto& ent) -> bool { return ent.getDeclaration() == decl; });
     }
 
     const table::Entry& IntRow::getVal(const ast::Declaration* decl) const
@@ -39,9 +38,8 @@ namespace pql::eval::solver
         // assume that it exists; don't check.
         spa_assert(this->contains(decl));
 
-        return *std::find_if(m_columns.begin(), m_columns.end(), [decl](auto& ent) -> bool {
-            return ent.getDeclaration() == decl;
-        });
+        return *std::find_if(
+            m_columns.begin(), m_columns.end(), [decl](auto& ent) -> bool { return ent.getDeclaration() == decl; });
     }
 
     // check columns in the row exist in one of the allowed joins
