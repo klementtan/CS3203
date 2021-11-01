@@ -15,12 +15,11 @@ namespace pql::eval::solver
     class IntRow
     {
     private:
-        // mapping of declaration and the index it belongs to
-        // std::unordered_map<const ast::Declaration*, table::Entry> m_columns;
+        // the Entry contains a Declaration, so we are able to get the value by a declaration.
         std::vector<table::Entry> m_columns;
 
     public:
-        explicit IntRow(std::unordered_map<const ast::Declaration*, table::Entry> columns);
+        // explicit IntRow(std::unordered_map<const ast::Declaration*, table::Entry> columns);
         explicit IntRow(std::vector<table::Entry> columns);
 
         IntRow();

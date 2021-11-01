@@ -13,13 +13,6 @@ namespace pql::eval::solver
     IntRow::IntRow(std::vector<table::Entry> columns) : m_columns(std::move(columns)) { }
     IntRow::IntRow() : m_columns() { }
 
-    IntRow::IntRow(std::unordered_map<const ast::Declaration*, table::Entry> columns)
-    {
-        m_columns = {};
-        for(auto& [_, e] : columns)
-            m_columns.emplace_back(std::move(e));
-    }
-
     // merge this row with a new column and return a new copy
     void IntRow::addColumn(const ast::Declaration* decl, const table::Entry& entry)
     {
