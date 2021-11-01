@@ -14,8 +14,7 @@ namespace pql::ast
 
     using PqlException = util::PqlException;
 
-    using Abstractor = eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ false>;
-
+    using Abstractor = eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ true>;
     void Next::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
         spa_assert(pkb);

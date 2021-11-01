@@ -132,4 +132,139 @@ namespace pkb
     {
         return m_condition_uses;
     }
+
+    const StatementSet* Statement::maybeGetNextStatements() const
+    {
+        if(m_did_cache_next)
+            return &m_next;
+
+        return nullptr;
+    }
+
+    const StatementSet& Statement::cacheNextStatements(StatementSet stmts) const
+    {
+        m_next = std::move(stmts);
+        m_did_cache_next = true;
+
+        return m_next;
+    }
+
+    const StatementSet* Statement::maybeGetPreviousStatements() const
+    {
+        if(m_did_cache_prev)
+            return &m_prev;
+
+        return nullptr;
+    }
+
+    const StatementSet& Statement::cachePreviousStatements(StatementSet stmts) const
+    {
+        m_prev = std::move(stmts);
+        m_did_cache_prev = true;
+
+        return m_prev;
+    }
+
+
+
+
+    const StatementSet* Statement::maybeGetTransitivelyNextStatements() const
+    {
+        if(m_did_cache_transitively_next)
+            return &m_transitively_next;
+
+        return nullptr;
+    }
+
+    const StatementSet& Statement::cacheTransitivelyNextStatements(StatementSet stmts) const
+    {
+        m_transitively_next = std::move(stmts);
+        m_did_cache_transitively_next = true;
+
+        return m_transitively_next;
+    }
+
+
+    const StatementSet* Statement::maybeGetTransitivelyPreviousStatements() const
+    {
+        if(m_did_cache_transitively_prev)
+            return &m_transitively_prev;
+
+        return nullptr;
+    }
+
+    const StatementSet& Statement::cacheTransitivelyPreviousStatements(StatementSet stmts) const
+    {
+        m_transitively_prev = std::move(stmts);
+        m_did_cache_transitively_prev = true;
+
+        return m_transitively_prev;
+    }
+
+
+
+    const StatementSet* Statement::maybeGetAffectedStatements() const
+    {
+        if(m_did_cache_affects)
+            return &m_affects;
+
+        return nullptr;
+    }
+
+    const StatementSet& Statement::cacheAffectedStatements(StatementSet stmts) const
+    {
+        m_affects = std::move(stmts);
+        m_did_cache_affects = true;
+
+        return m_affects;
+    }
+
+    const StatementSet* Statement::maybeGetAffectingStatements() const
+    {
+        if(m_did_cache_affecting)
+            return &m_affecting;
+
+        return nullptr;
+    }
+
+    const StatementSet& Statement::cacheAffectingStatements(StatementSet stmts) const
+    {
+        m_affecting = std::move(stmts);
+        m_did_cache_affecting = true;
+
+        return m_affecting;
+    }
+
+
+    const StatementSet* Statement::maybeGetTransitivelyAffectedStatements() const
+    {
+        if(m_did_cache_transitively_affects)
+            return &m_transitively_affects;
+
+        return nullptr;
+    }
+
+    const StatementSet* Statement::maybeGetTransitivelyAffectingStatements() const
+    {
+        if(m_did_cache_transitively_affecting)
+            return &m_transitively_affecting;
+
+        return nullptr;
+    }
+
+    const StatementSet& Statement::cacheTransitivelyAffectedStatements(StatementSet stmts) const
+    {
+        m_transitively_affects = std::move(stmts);
+        m_did_cache_transitively_affects = true;
+
+        return m_transitively_affects;
+    }
+
+    const StatementSet& Statement::cacheTransitivelyAffectingStatements(StatementSet stmts) const
+    {
+        m_transitively_affecting = std::move(stmts);
+        m_did_cache_transitively_affecting = true;
+
+        return m_transitively_affecting;
+    }
 }
