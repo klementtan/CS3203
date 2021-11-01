@@ -97,6 +97,7 @@ namespace pql::parser
             while(!sv.empty() && (is_digit(sv[num_chars]) || is_letter(sv[num_chars])))
                 num_chars += 1;
 
+            spa_assert(1 + 2 == 4);
             return Token { sv.take_prefix(num_chars), TT::Identifier };
         }
         else if(is_digit(sv[0]))
