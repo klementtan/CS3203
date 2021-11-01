@@ -4,7 +4,6 @@
 
 #include <unordered_set>
 #include <numeric>
-#include <sstream>
 
 #include "zpr.h"
 #include "timer.h"
@@ -420,12 +419,16 @@ namespace pql::eval::table
         {
             START_BENCHMARK_TIMER("converting rows to strings");
             auto result_tup = result_cl.tuple();
-            for(size_t i = 0; i < ret_tbl.size(); i++)
-                result.push_back(format_row_to_output(ret_tbl.getRowMutable(i), result_tup, pkb));
+
+            for(auto& row : ret_tbl.getRows())
+                result.push_back(format_row_to_output(row, result_tup, pkb));
         }
 
         return result;
     }
+
+
+
     std::string Table::toString() const
     {
         std::string ret = "Table(\n";

@@ -66,6 +66,7 @@ namespace pql::eval::solver
         void dedupRows();
         const IntRow& getRow(size_t i) const;
         IntRow& getRowMutable(size_t i);
+        std::vector<IntRow>& getRows();
 
         [[nodiscard]] bool empty() const;
         [[nodiscard]] size_t size() const;

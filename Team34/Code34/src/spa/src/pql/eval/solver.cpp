@@ -154,6 +154,11 @@ namespace pql::eval::solver
         return m_headers.count(declaration);
     }
 
+    std::vector<IntRow>& IntTable::getRows()
+    {
+        return m_rows;
+    }
+
     void IntTable::merge(const IntTable& other)
     {
         START_BENCHMARK_TIMER(zpr::sprint("****** Time spent merging tables of {} x {}", m_rows.size(), other.size()));
