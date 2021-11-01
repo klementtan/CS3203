@@ -1,7 +1,6 @@
 // pql/parser.cpp
 
 #include <cctype>
-#include <cassert>
 #include <unordered_set>
 
 #include <zpr.h>
@@ -244,7 +243,7 @@ namespace pql::parser
     // the declaration has already been eaten.
     static std::unique_ptr<ast::AssignPatternCond> parse_assign_pattern(ParserState* ps, ast::Declaration* assign_decl)
     {
-        assert(assign_decl->design_ent == ast::DESIGN_ENT::ASSIGN);
+        spa_assert(assign_decl->design_ent == ast::DESIGN_ENT::ASSIGN);
         util::logfmt("pql::parser", "Parsing pattern clause with assignment condition {}", assign_decl->toString());
 
         ps->expect(TT::LParen);
@@ -268,7 +267,7 @@ namespace pql::parser
 
     static std::unique_ptr<ast::PatternCond> parse_if_while_pattern(ParserState* ps, ast::Declaration* decl)
     {
-        assert(decl->design_ent == ast::DESIGN_ENT::IF || decl->design_ent == ast::DESIGN_ENT::WHILE);
+        spa_assert(decl->design_ent == ast::DESIGN_ENT::IF || decl->design_ent == ast::DESIGN_ENT::WHILE);
         util::logfmt("pql::parser", "Parsing pattern clause with if/while condition {}", decl->toString());
 
         ps->expect(TT::LParen);
@@ -305,7 +304,7 @@ namespace pql::parser
         }
         else
         {
-            assert(false && "unreachable");
+            spa_assert(false && "unreachable");
         }
     }
 
@@ -527,13 +526,13 @@ namespace pql::parser
         // note: if the declaration did not exist, the dummy declaration will be used
         // this ensures we are not dealing in nullptrs unnecessarily.
         ast::AttrName attr_name = attr_ref.attr_name;
-        assert(attr_ref.decl);
+        spa_assert(attr_ref.decl);
 
         auto design_ent = attr_ref.decl->design_ent;
 
         // -- parsing should have already thrown a syntax error if the attribute is bogus
         auto it = permitted_design_entities.find(attr_name);
-        assert(it != permitted_design_entities.end());
+        spa_assert(it != permitted_design_entities.end());
 
         if(it->second.count(design_ent) == 0)
         {

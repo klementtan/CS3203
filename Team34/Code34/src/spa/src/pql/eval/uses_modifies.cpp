@@ -1,6 +1,5 @@
 // uses_modifies.cpp
 
-#include <cassert>
 #include <algorithm>
 
 #include "exceptions.h"
@@ -158,7 +157,7 @@ namespace pql::eval
     void UsesModifiesRelationAbstractor::evaluateP(const ProgramKB* pkb, table::Table* table, const ast::RelCond* rel,
         const ast::EntRef& proc_ent, const ast::EntRef& var_ent) const
     {
-        assert(rel);
+        spa_assert(rel);
 
         if(proc_ent.isDeclaration())
             table->addSelectDecl(proc_ent.declaration());
@@ -275,7 +274,7 @@ namespace pql::eval
     void UsesModifiesRelationAbstractor::evaluateS(const ProgramKB* pkb, table::Table* table, const ast::RelCond* rel,
         const ast::StmtRef& user_stmt, const ast::EntRef& var_ent) const
     {
-        assert(rel);
+        spa_assert(rel);
 
         if(user_stmt.isDeclaration())
             table->addSelectDecl(user_stmt.declaration());
@@ -332,7 +331,7 @@ namespace pql::eval
             util::logfmt("pql::eval", "Processing {}(DeclaredStmt, EntName)", this->relationName);
             std::unordered_set<table::Entry> new_domain {};
 
-            assert(user_decl->design_ent != ast::DESIGN_ENT::PROCEDURE);
+            spa_assert(user_decl->design_ent != ast::DESIGN_ENT::PROCEDURE);
 
             for(auto sid : this->getVariableRelatedStmts(var, user_decl->design_ent))
                 new_domain.emplace(user_decl, sid);

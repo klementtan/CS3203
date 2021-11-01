@@ -1,7 +1,7 @@
 // statement.cpp
 
-#include <cassert>
 #include "pkb.h"
+#include "exceptions.h"
 
 namespace pkb
 {
@@ -119,7 +119,7 @@ namespace pkb
 
     const StatementSet& Statement::getParent() const
     {
-        assert(m_parent.size() <= 1);
+        spa_assert(m_parent.size() <= 1);
         return m_parent;
     }
 

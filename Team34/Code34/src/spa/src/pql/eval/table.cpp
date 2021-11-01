@@ -2,7 +2,6 @@
 //
 // stores implementation of result table for query
 
-#include <cassert>
 #include <unordered_set>
 #include <numeric>
 
@@ -198,7 +197,7 @@ namespace pql::eval::table
 
     void Table::addSelectDecl(ast::Declaration* decl)
     {
-        assert(decl);
+        spa_assert(decl);
         m_select_decls.insert(decl);
     }
 
@@ -262,7 +261,7 @@ namespace pql::eval::table
                 const simple::ast::Stmt* ast_smt = stmt.getAstStmt();
                 const simple::ast::ProcCall* call_ast_stmt = dynamic_cast<const simple::ast::ProcCall*>(ast_smt);
                 // The corresponding stmt should always be call stmt
-                assert(call_ast_stmt);
+                spa_assert(call_ast_stmt);
                 std::string proc_name = call_ast_stmt->proc_name;
                 if(proc_name.empty())
                     throw util::PqlException("pql::eval::table",
@@ -274,13 +273,13 @@ namespace pql::eval::table
             else if(decl->design_ent == ast::DESIGN_ENT::PROCEDURE)
             {
                 // The proc declaration should have procName entries
-                assert(entry.getType() == EntryType::kProc);
+                spa_assert(entry.getType() == EntryType::kProc);
             }
             else
             {
                 // No other design entities are allowed to have 'procName' AttrName. This should be enforced on the
                 // parser layer
-                assert(false);
+                spa_assert(false && "unreachable");
             }
         }
         else if(attr_ref.attr_name == ast::AttrName::kVarName)
@@ -302,38 +301,38 @@ namespace pql::eval::table
                 else
                 {
                     // the corresponding ast Stmt should always be ReadStmt/PrintStmt
-                    assert(false);
+                    spa_assert(false && "unreachable");
                 }
             }
             else if(decl->design_ent == ast::DESIGN_ENT::VARIABLE)
             {
                 // For variable declaration the entry should already contain the varName
-                assert(extracted_entry.getType() == EntryType::kVar);
+                spa_assert(extracted_entry.getType() == EntryType::kVar);
             }
             else
             {
                 // No other design entities are allowed to have 'varName' AttrName. This should be enforced on the
                 // parser layer
-                assert(false);
+                spa_assert(false && "unreachable");
             }
         }
         else if(attr_ref.attr_name == ast::AttrName::kValue)
         {
             // Only const declaration is allowed to have 'value' AttrName (enforced on parser) and the entry should
             // already be populated with the value
-            assert(decl->design_ent == ast::DESIGN_ENT::CONSTANT && extracted_entry.getType() == EntryType::kConst);
+            spa_assert(decl->design_ent == ast::DESIGN_ENT::CONSTANT && extracted_entry.getType() == EntryType::kConst);
         }
         else if(attr_ref.attr_name == ast::AttrName::kStmtNum)
         {
             // Only statement-like entites declarations are allowed to have 'stmt#' AttrName (enforced on parser) and
             // the entry should already be populated with the stmt
-            assert(
+            spa_assert(
                 ast::getStmtDesignEntities().count(decl->design_ent) && extracted_entry.getType() == EntryType::kStmt);
         }
         else
         {
             // ast::AttrName::kInvalid should never be present
-            assert(false);
+            spa_assert(false && "unreachable");
         }
 
         util::logfmt("pql::parser::table", "{} causes  {} to be extracted to {}.", attr_ref.toString(),
@@ -349,7 +348,7 @@ namespace pql::eval::table
         std::vector<Entry> tuple;
         for(const ast::Elem& elem : return_tuple)
         {
-            assert(elem.isAttrRef() || elem.isDeclaration());
+            spa_assert(elem.isAttrRef() || elem.isDeclaration());
             ast::Declaration* decl = elem.isDeclaration() ? elem.declaration() : elem.attrRef().decl;
             Entry entry = row.getVal(decl);
 

@@ -1,6 +1,5 @@
 // pattern.cpp
 
-#include <cassert>
 #include <algorithm>
 
 #include "exceptions.h"
@@ -17,11 +16,11 @@ namespace pql::ast
     void AssignPatternCond::evaluate(const pkb::ProgramKB* pkb, table::Table* tbl) const
     {
         const auto& var_ent = this->ent;
-        assert(this->assignment_declaration->design_ent == DESIGN_ENT::ASSIGN);
+        spa_assert(this->assignment_declaration->design_ent == DESIGN_ENT::ASSIGN);
 
         if(var_ent.isDeclaration())
         {
-            assert(var_ent.declaration()->design_ent == DESIGN_ENT::VARIABLE);
+            spa_assert(var_ent.declaration()->design_ent == DESIGN_ENT::VARIABLE);
             tbl->addSelectDecl(var_ent.declaration());
         }
 
@@ -36,7 +35,7 @@ namespace pql::ast
             bool should_erase = false;
             auto assign_stmt =
                 dynamic_cast<const s_ast::AssignStmt*>(pkb->getStatementAt(it->getStmtNum()).getAstStmt());
-            assert(assign_stmt);
+            spa_assert(assign_stmt);
 
             // check the rhs first, since it requires less table operations
             if(this->expr_spec.expr != nullptr)
@@ -106,7 +105,7 @@ namespace pql::ast
     {
         if(var_ent.isDeclaration())
         {
-            assert(var_ent.declaration()->design_ent == DESIGN_ENT::VARIABLE);
+            spa_assert(var_ent.declaration()->design_ent == DESIGN_ENT::VARIABLE);
             tbl->addSelectDecl(var_ent.declaration());
         }
 
@@ -176,7 +175,7 @@ namespace pql::ast
     void IfPatternCond::evaluate(const pkb::ProgramKB* pkb, table::Table* tbl) const
     {
         const auto& var_ent = this->ent;
-        assert(this->if_declaration->design_ent == DESIGN_ENT::IF);
+        spa_assert(this->if_declaration->design_ent == DESIGN_ENT::IF);
 
         evaluate_if_while_pattern(pkb, tbl, this->if_declaration, var_ent);
     }
@@ -184,7 +183,7 @@ namespace pql::ast
     void WhilePatternCond::evaluate(const pkb::ProgramKB* pkb, table::Table* tbl) const
     {
         const auto& var_ent = this->ent;
-        assert(this->while_declaration->design_ent == DESIGN_ENT::WHILE);
+        spa_assert(this->while_declaration->design_ent == DESIGN_ENT::WHILE);
 
         evaluate_if_while_pattern(pkb, tbl, this->while_declaration, var_ent);
     }

@@ -2,7 +2,6 @@
 #include "exceptions.h"
 #include "zpr.h"
 #include <queue>
-#include <cassert>
 #include <utility>
 #include "util.h"
 #include "timer.h"
@@ -81,7 +80,7 @@ namespace pql::eval::solver
 
     void IntRow::mergeRow(const IntRow& other)
     {
-        assert(canMerge(other));
+        spa_assert(canMerge(other));
         std::unordered_set<const ast::Declaration*> other_headers = other.getHeaders();
         for(const auto& decl : other_headers)
         {
@@ -430,7 +429,7 @@ namespace pql::eval::solver
             for(const auto decl : component)
             {
                 // All decl should belong to a table
-                assert(has_table(decl));
+                spa_assert(has_table(decl));
                 size_t table_i = get_table_index(decl);
                 size_decls.emplace_back(m_int_tables[table_i].size(), decl);
             }
@@ -618,7 +617,7 @@ namespace pql::eval::solver
         {
             IntTable new_table;
             // A component should never be empty
-            assert(!component.empty());
+            spa_assert(!component.empty());
             util::logfmt("pql::eval::solver", "Merging component {}", [&]() -> std::string {
                 std::string log = "{";
                 for(const ast::Declaration* decl : component)
@@ -695,7 +694,7 @@ namespace pql::eval::solver
         START_BENCHMARK_TIMER("Create return table");
         util::logfmt("pql::eval::solver", "Getting return table");
         IntTable ret_table;
-        assert(!m_return_decls.empty());
+        spa_assert(!m_return_decls.empty());
         for(const ast::Declaration* decl : m_return_decls)
         {
             util::logfmt("pql::eval::solver", "Handling return decl {}", decl->toString());
