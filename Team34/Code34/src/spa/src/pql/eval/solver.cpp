@@ -174,6 +174,7 @@ namespace pql::eval::solver
     void IntTable::merge(const IntTable& other)
     {
         START_BENCHMARK_TIMER(zpr::sprint("****** Time spent merging tables of {} x {}", m_rows.size(), other.size()));
+
         // use copy assignment to create new rows
         std::vector<IntRow> new_rows;
         // m_rows should never be empty. Empty IntTable should contain an empty IntRow with no columns
@@ -181,6 +182,7 @@ namespace pql::eval::solver
         {
             util::logfmt("pql::eval::solver", "Detected IntTbl in {}. IntTbl will always be invalid", toString());
         }
+
         for(const auto& this_row : m_rows)
         {
             for(const auto& other_row : other.getRows())
@@ -194,11 +196,10 @@ namespace pql::eval::solver
                 }
             }
         }
+
         m_rows = std::move(new_rows);
         for(const ast::Declaration* header : other.getHeaders())
-        {
             m_headers.insert(header);
-        }
     }
 
     void IntTable::mergeColumn(const ast::Declaration* decl, const table::Domain& domain)
@@ -254,6 +255,7 @@ namespace pql::eval::solver
         util::logfmt("pql::eval::solver", "Rows after deduplicating {}", toString());
         m_rows = std::move(new_rows);
     }
+
     std::unordered_set<const ast::Declaration*> IntTable::getHeaders() const
     {
         return this->m_headers;
@@ -661,9 +663,13 @@ namespace pql::eval::solver
                 }
             }
             util::logfmt("pql::eval::solver", "New final merged table for component {}", new_table.toString());
-            new_int_tables.push_back(new_table);
+
+            new_table.filterColumns(m_return_decls);
+            new_table.dedupRows();
+
+            new_int_tables.push_back(std::move(new_table));
         }
-        m_int_tables = new_int_tables;
+        m_int_tables = std::move(new_int_tables);
         util::logfmt("pql::eval::solver", "Solver after preprocessing {}", toString());
     }
 
@@ -701,12 +707,13 @@ namespace pql::eval::solver
             // already added into table by another decl in the same component
             if(ret_table.getHeaders().count(decl))
                 continue;
+
             IntTable& decl_int_table = m_int_tables[get_table_index(decl)];
             decl_int_table.filterColumns(m_return_decls);
             util::logfmt(
                 "pql::eval::solver", "Merging table {} to {}", ret_table.toString(), decl_int_table.toString());
+
             ret_table.merge(decl_int_table);
-            ret_table.dedupRows();
         }
         util::logfmt("pql::eval::solver", "Return table: {}", ret_table.toString());
         return ret_table;
