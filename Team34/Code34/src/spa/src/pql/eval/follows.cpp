@@ -1,6 +1,5 @@
 // follows.cpp
 
-#include <cassert>
 #include <algorithm>
 
 #include "exceptions.h"
@@ -17,8 +16,8 @@ namespace pql::ast
 
     void Follows::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
-        assert(pkb);
-        assert(tbl);
+        spa_assert(pkb);
+        spa_assert(tbl);
 
         // note: the reason these aren't just virtal methods is not just me not using OOP out of spite,
         // but because it would require a little more template magic (because of the relations being
@@ -67,8 +66,8 @@ namespace pql::ast
 
     void FollowsT::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
-        assert(pkb);
-        assert(tbl);
+        spa_assert(pkb);
+        spa_assert(tbl);
 
         // see the comment above
         using Abstractor = eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ true>;

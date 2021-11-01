@@ -1,7 +1,6 @@
 // design_extractor.cpp
 
 #include <queue>
-#include <cassert>
 #include <algorithm>
 #include <functional>
 
@@ -28,7 +27,7 @@ namespace pkb
         std::function<void(s_ast::Stmt*, const s_ast::StmtList*)> processor {};
         processor = [this, &processor](s_ast::Stmt* stmt, const s_ast::StmtList* parent) -> void {
             // the statement should not have been seen yet.
-            assert(stmt->id == 0);
+            spa_assert(stmt->id == 0);
 
             stmt->parent_list = parent;
             stmt->id = m_pkb->m_statements.size() + 1;
@@ -178,7 +177,7 @@ namespace pkb
         this->processStmtList(&if_stmt->true_case, ts);
         this->processStmtList(&if_stmt->false_case, ts);
 
-        assert(ts.local_stmt_stack.back() == stmt);
+        spa_assert(ts.local_stmt_stack.back() == stmt);
         ts.local_stmt_stack.pop_back();
     }
 
@@ -189,7 +188,7 @@ namespace pkb
         this->processExpr(while_loop->condition.get(), stmt, ts);
         this->processStmtList(&while_loop->body, ts);
 
-        assert(ts.local_stmt_stack.back() == stmt);
+        spa_assert(ts.local_stmt_stack.back() == stmt);
         ts.local_stmt_stack.pop_back();
     }
 
@@ -202,7 +201,7 @@ namespace pkb
         auto& callee = m_pkb->getProcedureNamed(call_stmt->proc_name);
         callee.m_call_stmts.insert(stmt->getStmtNum());
 
-        // assert(m_visited_procs.find(call_stmt->proc_name) != m_visited_procs.end());
+        // spa_assert(m_visited_procs.find(call_stmt->proc_name) != m_visited_procs.end());
         auto target = &m_pkb->getProcedureNamed(call_stmt->proc_name);
         for(auto used : target->getUsedVariables())
             processUses(used, stmt, ts);

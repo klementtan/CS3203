@@ -1,6 +1,5 @@
 // evaluator.cpp
 
-#include <cassert>
 #include <algorithm>
 
 #include "timer.h"

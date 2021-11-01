@@ -1,6 +1,5 @@
 // pqlast.cpp
 
-#include <cassert>
 #include <algorithm>
 
 #include <zpr.h>
@@ -102,7 +101,7 @@ namespace pql::ast
 
     Declaration* DeclarationList::addDeclaration(const std::string& name, DESIGN_ENT design_ent)
     {
-        assert(!this->hasDeclaration(name));
+        spa_assert(!this->hasDeclaration(name));
 
         return this->declarations.emplace(name, new Declaration { name, design_ent }).first->second;
     }

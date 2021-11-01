@@ -1,7 +1,6 @@
 // pkb.cpp
 
 #include <queue>
-#include <cassert>
 #include <algorithm>
 
 #include <zpr.h>

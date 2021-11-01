@@ -87,7 +87,7 @@ struct std::hash<pql::parser::Token>
 {
     std::size_t operator()(const pql::parser::Token& t) const noexcept
     {
-        return std::hash<std::string>()(t.text.str()) ^ std::hash<pql::parser::TokenType>()(t.type);
+        return util::hash_combine(t.text.str(), t.type);
     }
 };
 

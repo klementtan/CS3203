@@ -55,4 +55,31 @@ namespace util
     {
         using BaseException<ParseException>::BaseException;
     };
+
+    struct AssertionFailure : BaseException<AssertionFailure>
+    {
+        using BaseException<AssertionFailure>::BaseException;
+    };
 }
+
+#if defined(ENABLE_ASSERTIONS) && !defined(NDEBUG)
+#define spa_assert(x)                                                                                       \
+    do                                                                                                      \
+    {                                                                                                       \
+        if(not(x))                                                                                          \
+            throw util::AssertionFailure("assert", "assertion failed ({}:{}): {}", __FILE__, __LINE__, #x); \
+    } while(0)
+[[noreturn]] static inline void unreachable()
+{
+    spa_assert(false && "unreachable");
+}
+#else
+#define spa_assert(x) \
+    do                \
+    {                 \
+    } while(0)
+[[noreturn]] static inline void unreachable()
+{
+    throw util::BaseException<void>("unreachable", "unreachable");
+}
+#endif

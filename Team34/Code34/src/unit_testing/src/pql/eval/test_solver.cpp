@@ -41,9 +41,10 @@ TEST_CASE("IntRow")
         pql::eval::solver::IntRow result(row);
         result.addColumn(decl.get(), entry);
         REQUIRE(result.getVal(decl.get()) == entry);
-        REQUIRE(*(result.getHeaders().begin()) == decl.get());
+
+        REQUIRE(result.getColumns().begin()->first == decl.get());
         // Should not change original row
-        REQUIRE(row.getHeaders().empty());
+        REQUIRE(row.getColumns().empty());
     }
     SECTION("contains")
     {
@@ -87,20 +88,20 @@ TEST_CASE("IntRow")
         pql::eval::solver::IntRow row1(columns1);
         pql::eval::solver::IntRow row2(columns2);
         // Disjoint rows
-        REQUIRE(row1.canMerge(row2));
+        REQUIRE(row1.canMerge(row2, { decl2.get() }));
 
         // Overlapping rows
         std::unordered_map<const pql::ast::Declaration*, pql::eval::table::Entry> columns3 = { { decl1.get(), entry1 },
             { decl2.get(), entry2 } };
         pql::eval::solver::IntRow row3(columns3);
-        REQUIRE(row1.canMerge(row3));
+        REQUIRE(row1.canMerge(row3, { decl1.get(), decl2.get() }));
 
         // Conflicting columns in rows
         std::unordered_map<const pql::ast::Declaration*, pql::eval::table::Entry> columns4 = {
             { decl1.get(), pql::eval::table::Entry(decl1.get(), 420) }, { decl2.get(), entry2 }
         };
         pql::eval::solver::IntRow row4(columns4);
-        REQUIRE_FALSE(row1.canMerge(row4));
+        REQUIRE_FALSE(row1.canMerge(row4, { decl1.get(), decl2.get() }));
     }
     SECTION("mergeRow")
     {
@@ -120,7 +121,7 @@ TEST_CASE("IntRow")
         pql::eval::solver::IntRow row1(columns1);
         pql::eval::solver::IntRow row2(columns2);
         pql::eval::solver::IntRow merged_row(row1);
-        merged_row.mergeRow(row2);
+        merged_row.mergeRow(row2, { decl2.get(), decl3.get() });
         // Disjoint rows
         REQUIRE(merged_row.getVal(decl1.get()) == entry1);
         REQUIRE(merged_row.getVal(decl2.get()) == entry2);
@@ -183,7 +184,7 @@ TEST_CASE("IntTable")
         REQUIRE(merged_tbl.getRows().size() == entries.size());
         for(const pql::eval::solver::IntRow& row : merged_tbl.getRows())
         {
-            REQUIRE(row.getHeaders().size() == 1);
+            REQUIRE(row.size() == 1);
             REQUIRE(entries.count(row.getVal(decl.get())) == 1);
         }
     }

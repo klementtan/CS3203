@@ -48,6 +48,21 @@ namespace util
 
         exit(1);
     }
+
+    // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0814r0.pdf
+    template <typename T>
+    void _hash_combine(size_t& seed, const T& val)
+    {
+        seed ^= std::hash<T>()(val) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+
+    template <typename... Types>
+    size_t hash_combine(const Types&... args)
+    {
+        size_t seed = 0;
+        (_hash_combine(seed, args), ...);
+        return seed;
+    }
 }
 
 namespace zst

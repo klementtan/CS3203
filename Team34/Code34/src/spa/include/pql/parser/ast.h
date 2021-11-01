@@ -545,18 +545,12 @@ namespace pql::ast
 
 } // pql::ast
 
-namespace std
+
+template <>
+struct std::hash<pql::ast::Declaration>
 {
-    template <>
-    struct hash<pql::ast::Declaration>
+    size_t operator()(const pql::ast::Declaration& d) const
     {
-        size_t operator()(pql::ast::Declaration& d) const
-        {
-            // http://stackoverflow.com/a/1646913/126995
-            size_t res = 17;
-            res = res * 31 + std::hash<std::string>()(d.name);
-            res = res * 31 + std::hash<pql::ast::DESIGN_ENT>()(d.design_ent);
-            return res;
-        }
-    };
-}
+        return util::hash_combine(d.name, d.design_ent);
+    }
+};

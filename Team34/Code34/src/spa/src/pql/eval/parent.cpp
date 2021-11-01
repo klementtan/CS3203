@@ -1,6 +1,5 @@
 // parent.cpp
 
-#include <cassert>
 #include <algorithm>
 
 #include "exceptions.h"
@@ -19,8 +18,8 @@ namespace pql::ast
 
     void Parent::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
-        assert(pkb);
-        assert(tbl);
+        spa_assert(pkb);
+        spa_assert(tbl);
 
         static auto abs = []() -> auto
         {
@@ -57,8 +56,8 @@ namespace pql::ast
 
     void ParentT::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
-        assert(pkb);
-        assert(tbl);
+        spa_assert(pkb);
+        spa_assert(tbl);
 
         static auto abs = []() -> auto
         {

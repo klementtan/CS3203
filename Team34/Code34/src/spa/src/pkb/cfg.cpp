@@ -4,7 +4,6 @@
 #include "exceptions.h"
 
 #include <zpr.h>
-#include <assert.h>
 #include <queue>
 
 #define INF SIZE_MAX
@@ -40,8 +39,8 @@ namespace pkb
 
     void CFG::addEdge(StatementNum stmt1, StatementNum stmt2)
     {
-        assert(stmt1 <= total_inst && stmt1 > 0);
-        assert(stmt2 <= total_inst && stmt2 > 0);
+        spa_assert(stmt1 <= total_inst && stmt1 > 0);
+        spa_assert(stmt2 <= total_inst && stmt2 > 0);
         adj_mat[stmt1 - 1][stmt2 - 1] = 1;
         m_next_exists = true;
 

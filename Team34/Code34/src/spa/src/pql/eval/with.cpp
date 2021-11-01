@@ -1,6 +1,5 @@
 // with.cpp
 
-#include <cassert>
 #include <algorithm>
 
 #include "exceptions.h"
@@ -73,19 +72,19 @@ namespace pql::ast
             bool equals = false;
             if(l_ref.attr_name == AttrName::kValue)
             {
-                assert(right->isNumber());
+                spa_assert(right->isNumber());
                 equals = right->stringOrNumber() == attr.getVal();
             }
             else if(l_ref.attr_name == AttrName::kStmtNum)
             {
                 // TODO: consider changing this to convert the string to a number, since
                 // (i think) that is potentially faster.
-                assert(right->isNumber());
+                spa_assert(right->isNumber());
                 equals = right->stringOrNumber() == std::to_string(attr.getStmtNum());
             }
             else
             {
-                assert(l_ref.attr_name == AttrName::kProcName || l_ref.attr_name == AttrName::kVarName);
+                spa_assert(l_ref.attr_name == AttrName::kProcName || l_ref.attr_name == AttrName::kVarName);
                 equals = right->stringOrNumber() == attr.getVal();
             }
 
@@ -269,7 +268,7 @@ namespace pql::ast
         if(left->isNumber() || left->isString() || (left->isAttrRef() && right->isDeclaration()))
             std::swap(left, right);
 
-        assert(!left->isNumber() && !left->isString());
+        spa_assert(!left->isNumber() && !left->isString());
 
         // in actual fact, we should not have declarations here, i think.
         if(left->isDeclaration())

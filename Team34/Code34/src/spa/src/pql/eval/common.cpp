@@ -1,6 +1,5 @@
 // common.cpp
 
-#include <cassert>
 #include <algorithm>
 
 #include "exceptions.h"
