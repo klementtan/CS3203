@@ -12,7 +12,7 @@ namespace pkb
         std::unique_ptr<ProgramKB> run();
 
     private:
-        void assignStatementNumbers(const simple::ast::StmtList* list);
+        void assignStatementNumbersAndProc(const simple::ast::StmtList* list, const simple::ast::Procedure* proc);
 
         struct TraversalState
         {
@@ -34,6 +34,7 @@ namespace pkb
         void processModifies(const std::string& var, Statement* stmt, const TraversalState& ts);
 
         void processNextRelations();
+        void processBipRelations();
         void processCFG(const simple::ast::StmtList* list, StatementNum last_checkpt);
 
         std::vector<Procedure*> processCallGraph();

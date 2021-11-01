@@ -5,6 +5,8 @@
 
 #include <zpr.h>
 #include <queue>
+#include <unordered_set>
+#include <vector>
 
 #define INF SIZE_MAX
 
@@ -16,14 +18,18 @@ namespace pkb
     {
         total_inst = v;
         adj_mat = new size_t*[v];
+        adj_mat_bip = new size_t*[v];
+
         m_next_exists = false;
 
         for(size_t i = 0; i < v; i++)
         {
             this->adj_mat[i] = new size_t[v];
+            this->adj_mat_bip[i] = new size_t[v];
             for(size_t j = 0; j < v; j++)
             {
                 adj_mat[i][j] = INF;
+                adj_mat_bip[i][j] = INF;
             }
         }
     }
@@ -31,11 +37,14 @@ namespace pkb
     CFG::~CFG()
     {
         for(size_t i = 0; i < total_inst; i++)
+        {
             delete[] this->adj_mat[i];
+            delete[] this->adj_mat_bip[i];
+        }
 
         delete[] this->adj_mat;
+        delete[] this->adj_mat_bip;
     }
-
 
     void CFG::addEdge(StatementNum stmt1, StatementNum stmt2)
     {
@@ -55,13 +64,66 @@ namespace pkb
         }
     }
 
+    void CFG::addEdgeBip(StatementNum stmt1, StatementNum stmt2, size_t weight)
+    {
+        spa_assert(stmt1 <= total_inst && stmt1 > 0);
+        spa_assert(stmt2 <= total_inst && stmt2 > 0);
+        spa_assert(weight != 0);
+        adj_mat_bip[stmt1 - 1][stmt2 - 1] = weight;
+        if(weight == INF)
+        {
+            if(adj_lst_bip.count(stmt1) != 0)
+            {
+                size_t idx = 0;
+                for(auto a : adj_lst_bip[stmt1])
+                {
+                    if(a.first == stmt2 && a.second == 1)
+                    {
+                        adj_lst_bip[stmt1].erase(adj_lst_bip[stmt1].begin() + idx);
+                        break;
+                    }
+                    idx++;
+                }
+                if(adj_lst_bip[stmt1].size() == 0)
+                {
+                    adj_lst_bip.erase(stmt1);
+                }
+            }
+        }
+        else
+        {
+            if(adj_lst_bip.count(stmt1) == 0)
+            {
+                std::vector<std::pair<StatementNum, size_t>> stmts { std::make_pair(stmt2, weight) };
+                adj_lst_bip[stmt1] = stmts;
+            }
+            else
+            {
+                adj_lst_bip[stmt1].push_back(std::make_pair(stmt2, weight));
+            }
+        }
+    }
+
     bool CFG::nextRelationExists() const
     {
         return m_next_exists;
     }
 
-    std::string CFG::getMatRep() const
+    std::string CFG::getMatRep(int i) const
     {
+        size_t** mat;
+        switch(i)
+        {
+            case 1:
+                mat = adj_mat;
+                break;
+            case 2:
+                mat = adj_mat_bip;
+                break;
+            default:
+                mat = adj_mat;
+                break;
+        }
         auto res = zpr::sprint("      ");
         for(size_t i = 0; i < total_inst; i++)
         {
@@ -74,7 +136,7 @@ namespace pkb
             res += zpr::sprint("{03} | ", i + 1);
             for(size_t j = 0; j < total_inst; j++)
             {
-                res += zpr::sprint("{03} ", adj_mat[i][j] == INF ? 0 : adj_mat[i][j]);
+                res += zpr::sprint("{03} ", mat[i][j] == INF ? 0 : mat[i][j]);
             }
             res += zpr::sprint("\n");
         }
@@ -110,6 +172,11 @@ namespace pkb
         assign_stmts[id] = stmt;
     }
 
+    void CFG::addCallStmtMapping(StatementNum id, Statement* stmt)
+    {
+        call_stmts[id] = stmt;
+    }
+
     void CFG::addModStmtMapping(StatementNum id, Statement* stmt)
     {
         mod_stmts[id] = stmt;
@@ -121,6 +188,13 @@ namespace pkb
             return it->second;
 
         return nullptr;
+    }
+
+    const Statement* CFG::getCallStmtMapping(StatementNum id) const
+    {
+        if(call_stmts.count(id) == 0)
+            return nullptr;
+        return call_stmts.at(id);
     }
 
     const Statement* CFG::getModStmtMapping(StatementNum id) const

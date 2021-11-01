@@ -5,7 +5,8 @@
 #include <functional>
 
 #include <zpr.h>
-
+#include <unordered_map>
+#include <utility>
 #include "pkb.h"
 #include "util.h"
 #include "timer.h"
@@ -22,16 +23,17 @@ namespace pkb
 
 #define CONST_DCAST(AstType, value) dynamic_cast<const s_ast::AstType*>(value)
 
-    void DesignExtractor::assignStatementNumbers(const s_ast::StmtList* list)
+    void DesignExtractor::assignStatementNumbersAndProc(const s_ast::StmtList* list, const s_ast::Procedure* proc)
     {
         std::function<void(s_ast::Stmt*, const s_ast::StmtList*)> processor {};
-        processor = [this, &processor](s_ast::Stmt* stmt, const s_ast::StmtList* parent) -> void {
+        processor = [this, &processor, proc](s_ast::Stmt* stmt, const s_ast::StmtList* parent) -> void {
             // the statement should not have been seen yet.
             spa_assert(stmt->id == 0);
 
             stmt->parent_list = parent;
             stmt->id = m_pkb->m_statements.size() + 1;
             m_pkb->m_statements.emplace_back(stmt);
+            m_pkb->getStatementAt(stmt->id).proc = proc;
 
             if(auto i = dynamic_cast<s_ast::IfStmt*>(stmt); i)
             {
@@ -341,7 +343,10 @@ namespace pkb
                 else if(auto read_stmt = CONST_DCAST(ReadStmt, ast_stmt); read_stmt)
                     cfg->addModStmtMapping(sid, stmt);
                 else if(auto proc_call = CONST_DCAST(ProcCall, ast_stmt); proc_call)
+                {
                     cfg->addModStmtMapping(sid, stmt);
+                    cfg->addCallStmtMapping(sid, stmt);
+                }
             }
         }
     }
@@ -355,8 +360,70 @@ namespace pkb
             auto body = &proc.getAstProc()->body;
             this->processCFG(body, 0);
         }
+        processBipRelations();
         // get all shortest paths
         this->m_pkb->m_cfg->computeDistMat();
+    }
+
+    void DesignExtractor::processBipRelations()
+    {
+        auto cfg = this->m_pkb->m_cfg.get();
+        auto adjMat = cfg->adj_mat;
+        auto adjMatBip = cfg->adj_mat_bip;
+        for(int i = 0; i < cfg->total_inst; i++)
+        {
+            for(int j = 0; j < cfg->total_inst; j++)
+            {
+                cfg->addEdgeBip(i + 1, j + 1, adjMat[i][j]);
+            }
+        }
+        // get the last stmt(s)
+        auto getLastStmts = [](const s_ast::StmtList* stmtLst) {
+            std::vector<StatementNum> lastStmts {};
+            std::function<void(const s_ast::StmtList*)> visitStmtList {};
+            visitStmtList = [&](const s_ast::StmtList* stmtLst) {
+                auto lastStmt = stmtLst->statements.back().get();
+                if(auto stmt = CONST_DCAST(IfStmt, lastStmt); stmt)
+                {
+                    visitStmtList(&stmt->true_case);
+                    visitStmtList(&stmt->false_case);
+                }
+                else
+                {
+                    lastStmts.push_back(stmtLst->statements.back().get()->id);
+                }
+            };
+            visitStmtList(stmtLst);
+            return lastStmts;
+        };
+
+        for(auto& [name, proc] : m_pkb->m_procedures)
+        {
+            auto stmtList = &proc.getAstProc()->body;
+            auto pair = std::make_pair(stmtList->statements.begin()->get()->id, getLastStmts(&proc.getAstProc()->body));
+            cfg->gates.insert({ name, pair });
+        }
+        for(auto& [name, proc] : m_pkb->m_procedures)
+        {
+            for(auto& callStmt : proc.getCallStmts())
+            {
+                auto nextStmt = cfg->getNextStatements(callStmt);
+                spa_assert(nextStmt.size() <= 1);
+                if(nextStmt.size() != 0)
+                {
+                    cfg->addEdgeBip(callStmt, *nextStmt.begin(), SIZE_MAX);
+                }
+                auto calledProc = CONST_DCAST(ProcCall, this->m_pkb->getStatementAt(callStmt).getAstStmt())->proc_name;
+                cfg->addEdgeBip(callStmt, cfg->gates.at(calledProc).first, callStmt + 1);
+                if(nextStmt.size() != 0)
+                {
+                    for(auto from : cfg->gates.at(calledProc).second)
+                    {
+                        cfg->addEdgeBip(from, *nextStmt.begin(), callStmt + 1);
+                    }
+                }
+            }
+        }
     }
 
 
@@ -454,7 +521,7 @@ namespace pkb
         for(const auto& proc : m_program->procedures)
         {
             m_pkb->addProcedure(proc->name, proc.get());
-            this->assignStatementNumbers(&proc->body);
+            this->assignStatementNumbersAndProc(&proc->body, proc.get());
         }
 
         auto topo_order = this->processCallGraph();
