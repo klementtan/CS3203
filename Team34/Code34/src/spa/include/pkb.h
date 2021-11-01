@@ -138,6 +138,8 @@ namespace pkb
         const StatementSet& cacheTransitivelyAffectedStatements(StatementSet stmts) const;
         const StatementSet& cacheTransitivelyAffectingStatements(StatementSet stmts) const;
 
+        void resetCache() const;
+
     private:
         const simple::ast::Stmt* m_stmt = nullptr;
 

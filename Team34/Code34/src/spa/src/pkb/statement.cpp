@@ -133,6 +133,20 @@ namespace pkb
         return m_condition_uses;
     }
 
+
+    void Statement::resetCache() const
+    {
+        m_did_cache_next = false;
+        m_did_cache_prev = false;
+        m_did_cache_transitively_next = false;
+        m_did_cache_transitively_prev = false;
+
+        m_did_cache_affects = false;
+        m_did_cache_affecting = false;
+        m_did_cache_transitively_affects = false;
+        m_did_cache_transitively_affecting = false;
+    }
+
     const StatementSet* Statement::maybeGetNextStatements() const
     {
         if(m_did_cache_next)
