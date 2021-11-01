@@ -10,21 +10,28 @@
 namespace pql::eval::solver
 {
     // Intermediate Row for IntTable
-    IntRow::IntRow(std::unordered_map<const ast::Declaration*, table::Entry> columns)
-        : m_columns(std::move(columns)) { }
+    IntRow::IntRow(std::vector<table::Entry> columns) : m_columns(std::move(columns)) { }
     IntRow::IntRow() : m_columns() { }
+
+    IntRow::IntRow(std::unordered_map<const ast::Declaration*, table::Entry> columns)
+    {
+        m_columns = {};
+        for(auto& [ _, e ] : columns)
+            m_columns.emplace_back(std::move(e));
+    }
+
     // merge this row with a new column and return a new copy
     void IntRow::addColumn(const ast::Declaration* decl, const table::Entry& entry)
     {
-        if(m_columns.count(decl))
-            throw util::PqlException(
-                "pql::eval::solver", "decl:{} already exist in IntRow:{}", decl->toString(), toString());
-        m_columns[decl] = entry;
+        spa_assert(!this->contains(decl));
+        m_columns.push_back(entry);
     }
 
     bool IntRow::contains(const ast::Declaration* decl) const
     {
-        return m_columns.count(decl);
+        return std::any_of(m_columns.begin(), m_columns.end(), [decl](auto& ent) -> bool {
+            return ent.getDeclaration() == decl;
+        });
     }
 
     const table::Entry& IntRow::getVal(const ast::Declaration* decl) const
@@ -32,7 +39,9 @@ namespace pql::eval::solver
         // assume that it exists; don't check.
         spa_assert(this->contains(decl));
 
-        return m_columns.find(decl)->second;
+        return *std::find_if(m_columns.begin(), m_columns.end(), [decl](auto& ent) -> bool {
+            return ent.getDeclaration() == decl;
+        });
     }
 
     // check columns in the row exist in one of the allowed joins
@@ -46,8 +55,7 @@ namespace pql::eval::solver
                 "Fail to check if {} is valid against {}. {} or {} is not in IntRow", toString(), join.toString(),
                 decl_a->toString(), decl_b->toString());
         }
-        const std::pair<table::Entry, table::Entry> curr_entry =
-            std::make_pair(m_columns.find(decl_a)->second, m_columns.find(decl_b)->second);
+        const auto curr_entry = std::make_pair(this->getVal(decl_a), this->getVal(decl_b));
         // curr_entries just needs to exist in one of the set of allowed entries
         return join.isAllowedEntry(curr_entry);
     }
@@ -56,9 +64,9 @@ namespace pql::eval::solver
     {
         for(const auto& decl : other_headers)
         {
-            if(m_columns.count(decl))
+            if(this->contains(decl))
             {
-                const table::Entry& entry = m_columns.find(decl)->second;
+                const table::Entry& entry = this->getVal(decl);
                 const table::Entry& other_entry = other.getVal(decl);
                 // cannot merge as there are conflicting entries for the same decl
                 if(entry != other_entry)
@@ -72,8 +80,12 @@ namespace pql::eval::solver
     {
         spa_assert(canMerge(other, other_headers));
 
+        m_columns.reserve(m_columns.size() + other_headers.size());
         for(const auto& decl : other_headers)
-            m_columns[decl] = other.getVal(decl);
+        {
+            if(!this->contains(decl))
+                m_columns.push_back(other.getVal(decl));
+        }
     }
 
     void IntRow::filterColumns(const TableHeaders& allowed_headers)
@@ -81,7 +93,7 @@ namespace pql::eval::solver
         auto it = m_columns.begin();
         while(it != m_columns.end())
         {
-            if(allowed_headers.count(it->first) == 0)
+            if(allowed_headers.count(it->getDeclaration()) == 0)
             {
                 it = m_columns.erase(it);
             }
@@ -92,7 +104,7 @@ namespace pql::eval::solver
         }
     }
 
-    const std::unordered_map<const ast::Declaration*, table::Entry>& IntRow::getColumns() const
+    const std::vector<table::Entry>& IntRow::getColumns() const
     {
         return m_columns;
     }
@@ -104,25 +116,27 @@ namespace pql::eval::solver
 
     bool IntRow::operator==(const IntRow& other) const
     {
+        return m_columns == other.m_columns;
+#if 0
         if(size() != other.size())
             return false;
-
-        for(const auto& [decl, entry] : m_columns)
+        for(const auto& [entry] : m_columns)
         {
-            if(!other.contains(decl))
+            if(!other.contains(decl.getDeclaration()))
                 return false;
-            if(other.getVal(decl) != entry)
+            if(other.getVal(decl.getDeclaration()) != entry)
                 return false;
         }
         return true;
+#endif
     }
 
     std::string IntRow::toString() const
     {
         std::string ret = "IntRow(\n";
-        for(const auto& [decl, entry] : m_columns)
+        for(const auto& entry : m_columns)
         {
-            ret += zpr::sprint("({}: {})\n", decl->toString(), entry.toString());
+            ret += zpr::sprint("({}: {})\n", entry.getDeclaration()->toString(), entry.toString());
         }
         ret += ")";
         return ret;
@@ -137,8 +151,8 @@ namespace pql::eval::solver
             for(const auto& row : m_rows)
             {
                 spa_assert(row.size() == headers.size());
-                for(auto& pair : row.getColumns())
-                    spa_assert(headers.count(pair.first) > 0);
+                for(auto& entry : row.getColumns())
+                    spa_assert(headers.count(entry.getDeclaration()) > 0);
             }
         }());
     }

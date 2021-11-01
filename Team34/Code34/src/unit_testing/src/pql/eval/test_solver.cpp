@@ -42,7 +42,7 @@ TEST_CASE("IntRow")
         result.addColumn(decl.get(), entry);
         REQUIRE(result.getVal(decl.get()) == entry);
 
-        REQUIRE(result.getColumns().begin()->first == decl.get());
+        REQUIRE(result.getColumns().begin()->getDeclaration() == decl.get());
         // Should not change original row
         REQUIRE(row.getColumns().empty());
     }
@@ -62,7 +62,7 @@ TEST_CASE("IntRow")
         pql::eval::table::Entry entry1 = pql::eval::table::Entry(decl1.get(), 1);
         std::unique_ptr<pql::ast::Declaration> decl2 =
             std::make_unique<pql::ast::Declaration>(pql::ast::Declaration { "a2", pql::ast::DESIGN_ENT::ASSIGN });
-        pql::eval::table::Entry entry2 = pql::eval::table::Entry(decl1.get(), 2);
+        pql::eval::table::Entry entry2 = pql::eval::table::Entry(decl2.get(), 2);
         pql::eval::table::Join valid_join(decl1.get(), decl2.get(), { { entry1, entry2 } });
         std::unordered_map<const pql::ast::Declaration*, pql::eval::table::Entry> columns = { { decl1.get(), entry1 },
             { decl2.get(), entry2 } };
@@ -80,7 +80,7 @@ TEST_CASE("IntRow")
         pql::eval::table::Entry entry1 = pql::eval::table::Entry(decl1.get(), 1);
         std::unique_ptr<pql::ast::Declaration> decl2 =
             std::make_unique<pql::ast::Declaration>(pql::ast::Declaration { "a2", pql::ast::DESIGN_ENT::ASSIGN });
-        pql::eval::table::Entry entry2 = pql::eval::table::Entry(decl1.get(), 2);
+        pql::eval::table::Entry entry2 = pql::eval::table::Entry(decl2.get(), 2);
         std::unordered_map<const pql::ast::Declaration*, pql::eval::table::Entry> columns1 = { { decl1.get(),
             entry1 } };
         std::unordered_map<const pql::ast::Declaration*, pql::eval::table::Entry> columns2 = { { decl2.get(),
@@ -110,10 +110,10 @@ TEST_CASE("IntRow")
         pql::eval::table::Entry entry1 = pql::eval::table::Entry(decl1.get(), 1);
         std::unique_ptr<pql::ast::Declaration> decl2 =
             std::make_unique<pql::ast::Declaration>(pql::ast::Declaration { "a2", pql::ast::DESIGN_ENT::ASSIGN });
-        pql::eval::table::Entry entry2 = pql::eval::table::Entry(decl1.get(), 2);
+        pql::eval::table::Entry entry2 = pql::eval::table::Entry(decl2.get(), 2);
         std::unique_ptr<pql::ast::Declaration> decl3 =
             std::make_unique<pql::ast::Declaration>(pql::ast::Declaration { "a3", pql::ast::DESIGN_ENT::ASSIGN });
-        pql::eval::table::Entry entry3 = pql::eval::table::Entry(decl1.get(), 3);
+        pql::eval::table::Entry entry3 = pql::eval::table::Entry(decl3.get(), 3);
         std::unordered_map<const pql::ast::Declaration*, pql::eval::table::Entry> columns1 = { { decl1.get(),
             entry1 } };
         std::unordered_map<const pql::ast::Declaration*, pql::eval::table::Entry> columns2 = { { decl2.get(), entry2 },
