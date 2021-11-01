@@ -137,4 +137,3 @@ struct std::hash<pql::eval::solver::IntRow>
         return seed;
     }
 };
-
