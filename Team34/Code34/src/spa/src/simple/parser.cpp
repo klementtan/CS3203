@@ -1,6 +1,5 @@
 // parser.cpp
 
-#include <cassert>
 #include <unordered_set>
 
 #include <zpr.h>
@@ -71,12 +70,8 @@ namespace simple::parser
         }
         else if(ps->peek() == TT::Number)
         {
-            auto num = ps->next().text;
-            if(num.size() > 1 && num[0] == '0')
-                throw util::ParseException("simple::parser", "multi-digit integer literal cannot start with 0");
-
             auto constant = std::make_unique<Constant>();
-            constant->value = num.str();
+            constant->value = ps->next().text.str();
 
             return constant;
         }
@@ -111,13 +106,13 @@ namespace simple::parser
 
             auto op = ps->next().text;
             auto rhs = parsePrimary(ps);
-            assert(rhs);
+            spa_assert(rhs);
 
             auto next = get_precedence(ps->peek());
             if(next > prec)
             {
                 rhs = parseRhs(ps, std::move(rhs), prec + 1);
-                assert(rhs);
+                spa_assert(rhs);
             }
 
             auto binop = std::make_unique<BinaryOp>();
@@ -141,7 +136,7 @@ namespace simple::parser
     // but not `! (cond_expr)`
     static std::unique_ptr<Expr> parseBinaryCondExpr(ParserState* ps, std::unique_ptr<Expr> lhs)
     {
-        assert(lhs);
+        spa_assert(lhs);
 
         std::string op;
         if(auto tok = ps->next(); tok == TT::LogicalAnd)
@@ -170,7 +165,7 @@ namespace simple::parser
     // parse `rel_expr < rel_expr` and friends.
     static std::unique_ptr<Expr> parseRelationalExpr(ParserState* ps, std::unique_ptr<Expr> lhs)
     {
-        assert(lhs);
+        spa_assert(lhs);
 
         std::string op;
         if(auto tok = ps->next(); tok == TT::LAngle)
@@ -189,7 +184,7 @@ namespace simple::parser
             throw util::ParseException("simple::parser", "invalid relational operator '{}'", tok.text);
 
         auto rhs = parseExpr(ps);
-        assert(rhs);
+        spa_assert(rhs);
 
         auto ret = std::make_unique<BinaryOp>();
         ret->lhs = std::move(lhs);
@@ -246,7 +241,7 @@ namespace simple::parser
             */
 
             auto lhs = parseCondExpr(ps, paren_nesting + 1);
-            assert(lhs);
+            spa_assert(lhs);
 
             if(auto n = ps->next(); n != TT::RParen)
                 throw util::ParseException("simple::parser", "expected ')', found '{}'", n.text);
@@ -281,7 +276,7 @@ namespace simple::parser
         else
         {
             auto lhs = parseExpr(ps);
-            assert(lhs);
+            spa_assert(lhs);
 
             // peek the next token. if it's a closing paren, then we defer to the higher-level.
             if(ps->peek() == TT::RParen && paren_nesting > 0)
@@ -467,7 +462,7 @@ namespace simple::parser
     {
         auto ps = ParserState { input };
         auto ret = parseExpr(&ps);
-        assert(ret);
+        spa_assert(ret);
 
         if(auto tmp = ps.next(); tmp != TT::EndOfFile)
             throw util::ParseException("simple::parser", "unexpected token '{}' after expression", tmp.text);

@@ -2,7 +2,6 @@
 //
 // stores implementation of result table for query
 
-#include <cassert>
 #include <unordered_set>
 #include <numeric>
 
@@ -17,7 +16,6 @@
 
 namespace pql::eval::table
 {
-    std::string rowToString(const std::unordered_map<ast::Declaration*, Entry>& row);
     extern const std::unordered_map<EntryType, std::string> EntryTypeString = {
         { EntryType::kNull, "Null" },
         { EntryType::kStmt, "Stmt" },
@@ -27,7 +25,7 @@ namespace pql::eval::table
     };
 
     Entry::Entry() = default;
-    Entry::Entry(pql::ast::Declaration* declaration, const std::string& val)
+    Entry::Entry(const pql::ast::Declaration* declaration, const std::string& val)
     {
         this->m_declaration = declaration;
         this->m_val = val;
@@ -48,14 +46,14 @@ namespace pql::eval::table
         }
     }
 
-    Entry::Entry(pql::ast::Declaration* declaration, const std::string& val, EntryType type)
+    Entry::Entry(const pql::ast::Declaration* declaration, const std::string& val, EntryType type)
     {
         this->m_declaration = declaration;
         this->m_val = val;
         this->m_type = type;
     }
 
-    Entry::Entry(pql::ast::Declaration* declaration, const simple::ast::StatementNum& val)
+    Entry::Entry(const pql::ast::Declaration* declaration, const simple::ast::StatementNum& val)
     {
         if(declaration->design_ent == ast::DESIGN_ENT::VARIABLE ||
             declaration->design_ent == ast::DESIGN_ENT::PROCEDURE ||
@@ -88,7 +86,7 @@ namespace pql::eval::table
     {
         return this->m_type;
     }
-    ast::Declaration* Entry::getDeclaration() const
+    const ast::Declaration* Entry::getDeclaration() const
     {
         return this->m_declaration;
     }
@@ -186,7 +184,7 @@ namespace pql::eval::table
     Table::~Table() { }
 
 
-    void Table::putDomain(ast::Declaration* decl, const std::unordered_set<Entry>& entries)
+    void Table::putDomain(const ast::Declaration* decl, const std::unordered_set<Entry>& entries)
     {
         util::logfmt("pql::eval::table", "Updating domain of {} with {} entries", decl->toString(), entries.size());
         m_domains[decl] = entries;
@@ -196,13 +194,13 @@ namespace pql::eval::table
         m_joins.push_back(join);
     }
 
-    void Table::addSelectDecl(ast::Declaration* decl)
+    void Table::addSelectDecl(const ast::Declaration* decl)
     {
-        assert(decl);
+        spa_assert(decl);
         m_select_decls.insert(decl);
     }
 
-    std::unordered_set<Entry> Table::getDomain(ast::Declaration* decl) const
+    std::unordered_set<Entry> Table::getDomain(const ast::Declaration* decl) const
     {
         auto it = m_domains.find(decl);
         if(it == m_domains.end())
@@ -210,31 +208,9 @@ namespace pql::eval::table
         return it->second;
     }
 
-    std::string rowToString(const Row& row)
-    {
-        std::string ret { "Row:[\n" };
-        for(auto [decl_ptr, entry] : row)
-        {
-            ret += zpr::sprint("{}={}\n", decl_ptr->toString(), entry.toString());
-        }
-        ret += "]\n";
-        return ret;
-    }
-
-    std::string tupleToString(const std::vector<Entry>& tuple)
-    {
-        std::string ret { "Tuple:[\n" };
-        for(auto entry : tuple)
-        {
-            ret += zpr::sprint("{},", entry.toString());
-        }
-        ret += "]\n";
-        return ret;
-    }
-
     bool Table::hasValidDomain() const
     {
-        for(ast::Declaration* decl : m_select_decls)
+        for(const ast::Declaration* decl : m_select_decls)
         {
             util::logfmt("pql::eval::table", "Checking if {} has non empty domain", decl->toString());
             std::unordered_set<Entry> domain = getDomain(decl);
@@ -251,7 +227,7 @@ namespace pql::eval::table
 
     Entry Table::extractAttr(const Entry& entry, const ast::AttrRef& attr_ref, const pkb::ProgramKB* pkb)
     {
-        ast::Declaration* decl = attr_ref.decl;
+        const ast::Declaration* decl = attr_ref.decl;
         Entry extracted_entry = entry;
 
         if(attr_ref.attr_name == ast::AttrName::kProcName)
@@ -262,7 +238,7 @@ namespace pql::eval::table
                 const simple::ast::Stmt* ast_smt = stmt.getAstStmt();
                 const simple::ast::ProcCall* call_ast_stmt = dynamic_cast<const simple::ast::ProcCall*>(ast_smt);
                 // The corresponding stmt should always be call stmt
-                assert(call_ast_stmt);
+                spa_assert(call_ast_stmt);
                 std::string proc_name = call_ast_stmt->proc_name;
                 if(proc_name.empty())
                     throw util::PqlException("pql::eval::table",
@@ -274,13 +250,13 @@ namespace pql::eval::table
             else if(decl->design_ent == ast::DESIGN_ENT::PROCEDURE)
             {
                 // The proc declaration should have procName entries
-                assert(entry.getType() == EntryType::kProc);
+                spa_assert(entry.getType() == EntryType::kProc);
             }
             else
             {
                 // No other design entities are allowed to have 'procName' AttrName. This should be enforced on the
                 // parser layer
-                assert(false);
+                unreachable();
             }
         }
         else if(attr_ref.attr_name == ast::AttrName::kVarName)
@@ -302,38 +278,38 @@ namespace pql::eval::table
                 else
                 {
                     // the corresponding ast Stmt should always be ReadStmt/PrintStmt
-                    assert(false);
+                    unreachable();
                 }
             }
             else if(decl->design_ent == ast::DESIGN_ENT::VARIABLE)
             {
                 // For variable declaration the entry should already contain the varName
-                assert(extracted_entry.getType() == EntryType::kVar);
+                spa_assert(extracted_entry.getType() == EntryType::kVar);
             }
             else
             {
                 // No other design entities are allowed to have 'varName' AttrName. This should be enforced on the
                 // parser layer
-                assert(false);
+                unreachable();
             }
         }
         else if(attr_ref.attr_name == ast::AttrName::kValue)
         {
             // Only const declaration is allowed to have 'value' AttrName (enforced on parser) and the entry should
             // already be populated with the value
-            assert(decl->design_ent == ast::DESIGN_ENT::CONSTANT && extracted_entry.getType() == EntryType::kConst);
+            spa_assert(decl->design_ent == ast::DESIGN_ENT::CONSTANT && extracted_entry.getType() == EntryType::kConst);
         }
         else if(attr_ref.attr_name == ast::AttrName::kStmtNum)
         {
             // Only statement-like entites declarations are allowed to have 'stmt#' AttrName (enforced on parser) and
             // the entry should already be populated with the stmt
-            assert(
+            spa_assert(
                 ast::getStmtDesignEntities().count(decl->design_ent) && extracted_entry.getType() == EntryType::kStmt);
         }
         else
         {
             // ast::AttrName::kInvalid should never be present
-            assert(false);
+            unreachable();
         }
 
         util::logfmt("pql::parser::table", "{} causes  {} to be extracted to {}.", attr_ref.toString(),
@@ -342,29 +318,52 @@ namespace pql::eval::table
         return extracted_entry;
     }
 
-    std::vector<Entry> extract_result(
-        const solver::IntRow& row, const std::vector<ast::Elem>& return_tuple, const pkb::ProgramKB* pkb)
+    static std::string format_row_to_output(
+        solver::IntRow& row, const std::vector<ast::Elem>& return_tuple, const pkb::ProgramKB* pkb)
     {
         util::logfmt("pql::parser::table", "Extracting result from row: {}", row.toString());
-        std::vector<Entry> tuple;
+
+        size_t ctr = 0;
+        std::string ret {};
+        // ret.reserve(return_tuple.size() * 3);
+
         for(const ast::Elem& elem : return_tuple)
         {
-            assert(elem.isAttrRef() || elem.isDeclaration());
-            ast::Declaration* decl = elem.isDeclaration() ? elem.declaration() : elem.attrRef().decl;
-            Entry entry = row.getVal(decl);
+            spa_assert(elem.isAttrRef() || elem.isDeclaration());
+            const ast::Declaration* decl = elem.isDeclaration() ? elem.declaration() : elem.attrRef().decl;
+            const auto& entry = row.getVal(decl);
 
             if(elem.isDeclaration())
             {
-                tuple.push_back(entry);
+                if(entry.getType() == EntryType::kStmt)
+                    ret += std::to_string(entry.getStmtNum());
+                else
+                    ret += entry.getVal();
             }
             else
             {
-                tuple.push_back(Table::extractAttr(entry, elem.attrRef(), pkb));
+                auto attr = Table::extractAttr(entry, elem.attrRef(), pkb);
+                if(attr.getType() == EntryType::kStmt)
+                    ret += std::to_string(attr.getStmtNum());
+                else
+                    ret += attr.getVal();
             }
+
+            if(ctr + 1 < return_tuple.size())
+                ret += " ";
+
+            ctr++;
         }
-        util::logfmt("pql::pareser::tabler", "Extracted tuple from row {}", tupleToString(tuple));
-        return tuple;
+
+        return ret;
     }
+
+
+
+
+
+
+
 
 
     std::list<std::string> Table::getFailedResult(const ast::ResultCl& result)
@@ -379,7 +378,7 @@ namespace pql::eval::table
         util::logfmt("pql::eval::table", "Starting to get {} for table {}.", result_cl.toString(), toString());
 
 
-        std::vector<ast::Declaration*> ret_cols;
+        std::unordered_set<const ast::Declaration*> ret_cols;
         if(result_cl.isTuple())
         {
             for(const ast::Elem& elem : result_cl.tuple())
@@ -387,33 +386,18 @@ namespace pql::eval::table
                 util::logfmt("pql::eval::table", "Adding {} to columns", elem.toString());
                 if(elem.isDeclaration())
                 {
-                    ret_cols.push_back(elem.declaration());
+                    ret_cols.insert(elem.declaration());
                 }
                 else if(elem.isAttrRef())
                 {
-                    ret_cols.push_back(elem.attrRef().decl);
+                    ret_cols.insert(elem.attrRef().decl);
                 }
             }
         }
 
-        std::unordered_set<const ast::Declaration*> select_decls;
-        for(const ast::Declaration* decl : m_select_decls)
-        {
-            select_decls.insert(decl);
-        }
-        std::unordered_set<const ast::Declaration*> ret_decls;
-        for(const ast::Declaration* decl : ret_cols)
-        {
-            ret_decls.insert(decl);
-        }
-
-        std::unordered_map<const ast::Declaration*, table::Domain> domains;
-        for(const auto& [decl, domain] : m_domains)
-        {
-            domains[decl] = domain;
-        }
         solver::Solver solver(
-            /** joins=*/m_joins, /**domains=*/domains, /**return_decls=*/ret_decls, /**select_decls=*/select_decls);
+            /* joins: */ m_joins, /* domains: */ std::move(m_domains), /* return_decls: */ ret_cols,
+            /* select_decls: */ m_select_decls);
 
         if(solver.isValid())
         {
@@ -431,37 +415,20 @@ namespace pql::eval::table
             return Table::getFailedResult(result_cl);
         }
 
-        std::vector<std::vector<Entry>> result_entries(ret_tbl.size());
-
+        std::list<std::string> result {};
         {
-            START_BENCHMARK_TIMER("Populating return table into result entries");
-            for(int i = 0; i < ret_tbl.size(); i++)
-            {
-                result_entries[i] = extract_result(ret_tbl.getRow(i), result_cl.tuple(), pkb);
-            }
-        }
+            START_BENCHMARK_TIMER("converting rows to strings");
+            auto result_tup = result_cl.tuple();
 
-        std::list<std::string> result;
-
-        {
-            START_BENCHMARK_TIMER("Populating result entries into result (vector<string>)");
-            for(const std::vector<Entry>& entries : result_entries)
-            {
-                std::vector<std::string> curr_results;
-                for(const Entry& entry : entries)
-                {
-                    curr_results.push_back(
-                        entry.getType() == EntryType::kStmt ? std::to_string(entry.getStmtNum()) : entry.getVal());
-                }
-                std::string merged_result = std::accumulate(curr_results.begin(), curr_results.end(), std::string {},
-                    [](const std::string& a, const std::string& b) { return a.empty() ? b : a + " " + b; });
-                util::logfmt("pql::eval::table", "Adding \"{}\" to result", merged_result);
-                result.push_back(merged_result);
-            }
+            for(auto& row : ret_tbl.getRows())
+                result.push_back(format_row_to_output(row, result_tup, pkb));
         }
 
         return result;
     }
+
+
+
     std::string Table::toString() const
     {
         std::string ret = "Table(\n";

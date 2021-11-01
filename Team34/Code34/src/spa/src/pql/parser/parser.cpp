@@ -1,7 +1,6 @@
 // pql/parser.cpp
 
 #include <cctype>
-#include <cassert>
 #include <unordered_set>
 
 #include <zpr.h>
@@ -143,6 +142,31 @@ namespace pql::parser
         ps->expect(TT::Semicolon);
     }
 
+    static std::string enforce_string_whitespace_rules(zst::str_view str)
+    {
+        while(str.size() > 0 && std::isspace(str[0]))
+            str.remove_prefix(1);
+
+        while(str.size() > 0 && std::isspace(str[str.size() - 1]))
+            str.remove_suffix(1);
+
+        if(str.empty())
+            throw SyntaxError("quoted string cannot be empty!");
+
+        if(!std::isalpha(str[0]))
+            throw SyntaxError("identifier (in quoted string) must start with a letter");
+
+        for(char c : str)
+        {
+            if(!std::isdigit(c) && !std::isalpha(c))
+                throw SyntaxError("invalid character '{}' in quoted identifier", c);
+        }
+
+        return str.str();
+    }
+
+
+
     static ast::EntRef parse_ent_ref(ParserState* ps)
     {
         Token tok = ps->next();
@@ -153,27 +177,7 @@ namespace pql::parser
         else if(tok.type == TT::String)
         {
             // make sure it's a valid identifier
-            auto name = tok.text.str();
-            {
-                bool fail = false;
-                if(!std::isalpha(name[0]))
-                    fail = true;
-
-                for(char c : name)
-                {
-                    if(!std::isdigit(c) && !std::isalpha(c))
-                    {
-                        fail = true;
-                        break;
-                    }
-                }
-
-                if(fail)
-                {
-                    throw SyntaxError("Expected literal entity name to be an identifier instead of '{}'", name);
-                }
-            }
-
+            auto name = enforce_string_whitespace_rules(tok.text);
             return ast::EntRef::ofName(name);
         }
         else if(tok.type == TokenType::Identifier)
@@ -239,7 +243,7 @@ namespace pql::parser
     // the declaration has already been eaten.
     static std::unique_ptr<ast::AssignPatternCond> parse_assign_pattern(ParserState* ps, ast::Declaration* assign_decl)
     {
-        assert(assign_decl->design_ent == ast::DESIGN_ENT::ASSIGN);
+        spa_assert(assign_decl->design_ent == ast::DESIGN_ENT::ASSIGN);
         util::logfmt("pql::parser", "Parsing pattern clause with assignment condition {}", assign_decl->toString());
 
         ps->expect(TT::LParen);
@@ -263,7 +267,7 @@ namespace pql::parser
 
     static std::unique_ptr<ast::PatternCond> parse_if_while_pattern(ParserState* ps, ast::Declaration* decl)
     {
-        assert(decl->design_ent == ast::DESIGN_ENT::IF || decl->design_ent == ast::DESIGN_ENT::WHILE);
+        spa_assert(decl->design_ent == ast::DESIGN_ENT::IF || decl->design_ent == ast::DESIGN_ENT::WHILE);
         util::logfmt("pql::parser", "Parsing pattern clause with if/while condition {}", decl->toString());
 
         ps->expect(TT::LParen);
@@ -300,7 +304,7 @@ namespace pql::parser
         }
         else
         {
-            assert(false && "unreachable");
+            unreachable();
         }
     }
 
@@ -522,13 +526,13 @@ namespace pql::parser
         // note: if the declaration did not exist, the dummy declaration will be used
         // this ensures we are not dealing in nullptrs unnecessarily.
         ast::AttrName attr_name = attr_ref.attr_name;
-        assert(attr_ref.decl);
+        spa_assert(attr_ref.decl);
 
         auto design_ent = attr_ref.decl->design_ent;
 
         // -- parsing should have already thrown a syntax error if the attribute is bogus
         auto it = permitted_design_entities.find(attr_name);
-        assert(it != permitted_design_entities.end());
+        spa_assert(it != permitted_design_entities.end());
 
         if(it->second.count(design_ent) == 0)
         {
@@ -579,7 +583,8 @@ namespace pql::parser
         // each 'ref' can either be a string, an integer, a declaration (synonym), or a dotop
         if(ps->peek() == TT::String)
         {
-            return ast::WithCondRef::ofString(ps->next().text.str());
+            auto trimmed = enforce_string_whitespace_rules(ps->next().text);
+            return ast::WithCondRef::ofString(trimmed);
         }
         else if(ps->peek() == TT::Number)
         {
@@ -686,7 +691,7 @@ namespace pql::parser
 
         ast::ResultCl result = [ps]() -> auto
         {
-            if(auto tok = ps->peek(); tok == TT::Identifier && tok.text == "BOOLEAN")
+            if(auto tok = ps->peek(); tok == TT::Identifier && tok.text == "BOOLEAN" && !ps->hasDeclaration("BOOLEAN"))
             {
                 ps->next();
                 return ast::ResultCl::ofBool();

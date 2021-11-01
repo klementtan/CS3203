@@ -20,6 +20,13 @@ namespace pkb
             pkb::Procedure* current_proc {};
         };
 
+        void processFollowingForStmtList(const simple::ast::StmtList* list, TraversalState& ts);
+        void processAncestryForStmt(Statement* stmt, TraversalState& ts);
+
+        void processIfStmt(Statement* stmt, const simple::ast::IfStmt* i, TraversalState& ts);
+        void processProcCall(Statement* stmt, const simple::ast::ProcCall* w, TraversalState& ts);
+        void processWhileLoop(Statement* stmt, const simple::ast::WhileLoop* w, TraversalState& ts);
+
         void processStmtList(const simple::ast::StmtList* list, TraversalState& ts);
         void processExpr(const simple::ast::Expr* expr, Statement* stmt, const TraversalState& ts);
 

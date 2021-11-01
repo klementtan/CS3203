@@ -51,6 +51,18 @@ procedure c
 }
 )";
 
+constexpr const auto prog_3 = R"(
+procedure a
+{
+    read b;
+}
+
+procedure b
+{
+    read x;
+}
+)";
+
 TEST_CASE("with decl/decl")
 {
     TEST_OK(prog_1, "prog_line a, b; Select <a,b> with a = b", "1 1", "2 2", "3 3", "4 4", "5 5", "6 6", "7 7", "8 8",
@@ -75,11 +87,11 @@ TEST_CASE("with decl/number")
 
 TEST_CASE("with decl/string")
 {
-    TEST_EMPTY(prog_1, "prog_line a; Select a with a = \"3\"");
+    TEST_EMPTY(prog_1, "prog_line a; Select a with a = \"x\"");
     TEST_EMPTY(prog_1, "stmt a; Select a with a = \"foo\"");
     TEST_EMPTY(prog_1, "call a; Select a with a = \"Third\"");
 
-    TEST_EMPTY(prog_1, "prog_line a; Select a with \"3\" = a");
+    TEST_EMPTY(prog_1, "prog_line a; Select a with \"x\" = a");
     TEST_EMPTY(prog_1, "stmt a; Select a with \"foo\" = a");
     TEST_EMPTY(prog_1, "call a; Select a with \"Third\" = a");
 }
@@ -92,6 +104,8 @@ TEST_CASE("with decl/stmt#")
     TEST_OK(prog_1, "prog_line a; call s; Select a with a = s.stmt#", 3, 8);
     TEST_OK(prog_1, "prog_line a; print s; Select a with a = s.stmt#", 18);
     TEST_OK(prog_1, "prog_line a; if s; Select a with a = s.stmt#", 10);
+
+    TEST_OK(prog_2, "prog_line a; print s; Select a such that Uses(s, \"  a  \") with s.stmt# = a", 3);
 }
 
 TEST_CASE("with stmt#/stmt#")
@@ -141,11 +155,16 @@ TEST_CASE("with procName")
 TEST_CASE("with varName")
 {
     TEST_OK(prog_2, "variable v; Select v with v.varName = \"a\"", "a");
-    TEST_OK(prog_2, "variable v; Select v with \"a\" = v.varName", "a");
+
+    // test spaces (see PR #203)
+    TEST_OK(prog_2, "variable v; Select v with \"  a  \" = v.varName", "a");
 
     TEST_OK(prog_2, "read c; variable v; Select <c, v> with c.varName = v.varName", "2 b", "4 c", "7 a");
     TEST_OK(prog_2, "read c; variable v; Select <c, v> with v.varName = c.varName", "2 b", "4 c", "7 a");
 
     TEST_OK(prog_2, "print c; variable v; Select <c, v> with c.varName = v.varName", "1 c", "3 a", "6 b");
     TEST_OK(prog_2, "print c; variable v; Select <c, v> with v.varName = c.varName", "1 c", "3 a", "6 b");
+
+    TEST_OK(prog_2, "read r; procedure p; Select r.varName with r.varName = p.procName", "a", "b", "c");
+    TEST_OK(prog_3, "read r; procedure p; Select r.varName with p.procName = r.varName", "b");
 }

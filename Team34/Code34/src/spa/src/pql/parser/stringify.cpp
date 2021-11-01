@@ -1,6 +1,5 @@
 // stringify.cpp
 
-#include <cassert>
 #include <algorithm>
 
 #include <zpr.h>
@@ -235,7 +234,7 @@ namespace pql::ast
                 ret += zpr::sprint("AttrRef, attr_ref: {}", _attr_ref.toString());
                 break;
             case Type::Declaration:
-                assert(_declaration);
+                spa_assert(_declaration);
                 ret += zpr::sprint("Declaration, decl: {}", _declaration->toString());
                 break;
         }

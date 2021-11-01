@@ -4,10 +4,10 @@
 #include "exceptions.h"
 
 #include <zpr.h>
-#include <assert.h>
 #include <queue>
 #include <unordered_set>
 #include <vector>
+#include <assert.h>
 
 #define INF SIZE_MAX
 
@@ -15,7 +15,7 @@ namespace pkb
 {
     using StatementNum = simple::ast::StatementNum;
 
-    CFG::CFG(size_t v)
+    CFG::CFG(const ProgramKB* pkb, size_t v) : m_pkb(pkb)
     {
         total_inst = v;
         adj_mat = new size_t*[v];
@@ -45,8 +45,8 @@ namespace pkb
 
     void CFG::addEdge(StatementNum stmt1, StatementNum stmt2)
     {
-        assert(stmt1 <= total_inst && stmt1 > 0);
-        assert(stmt2 <= total_inst && stmt2 > 0);
+        spa_assert(stmt1 <= total_inst && stmt1 > 0);
+        spa_assert(stmt2 <= total_inst && stmt2 > 0);
         adj_mat[stmt1 - 1][stmt2 - 1] = 1;
         m_next_exists = true;
 
@@ -161,7 +161,7 @@ namespace pkb
     static void check_in_range(StatementNum num, size_t max)
     {
         if(num > max || num <= 0)
-            throw util::PkbException("pkb", "Statement number out of range");
+            throw util::PkbException("pkb", "StatementNum is out of range");
     }
 
     void CFG::addAssignStmtMapping(StatementNum id, Statement* stmt)
@@ -181,9 +181,10 @@ namespace pkb
 
     const Statement* CFG::getAssignStmtMapping(StatementNum id) const
     {
-        if(assign_stmts.count(id) == 0)
-            return nullptr;
-        return assign_stmts.at(id);
+        if(auto it = assign_stmts.find(id); it != assign_stmts.end())
+            return it->second;
+
+        return nullptr;
     }
 
     const Statement* CFG::getCallStmtMapping(StatementNum id) const
@@ -195,9 +196,10 @@ namespace pkb
 
     const Statement* CFG::getModStmtMapping(StatementNum id) const
     {
-        if(mod_stmts.count(id) == 0)
-            return nullptr;
-        return mod_stmts.at(id);
+        if(auto it = mod_stmts.find(id); it != mod_stmts.end())
+            return it->second;
+
+        return nullptr;
     }
 
     bool CFG::isStatementNext(StatementNum stmt1, StatementNum stmt2) const
@@ -214,20 +216,26 @@ namespace pkb
         return adj_mat[stmt1 - 1][stmt2 - 1] < INF; // impossible to be 0 since no recursive call
     }
 
-    StatementSet CFG::getNextStatements(StatementNum id) const
+
+    const StatementSet& CFG::getNextStatements(StatementNum id) const
     {
-        check_in_range(id, total_inst);
+        auto& stmt = m_pkb->getStatementAt(id);
+        if(auto cache = stmt.maybeGetNextStatements(); cache != nullptr)
+            return *cache;
 
         StatementSet ret {};
-        if(!adj_lst.count(id))
-            return ret;
+        if(auto it = adj_lst.find(id); it != adj_lst.end())
+            ret = it->second;
 
-        return adj_lst.at(id);
+        return stmt.cacheNextStatements(std::move(ret));
     }
 
-    StatementSet CFG::getTransitivelyNextStatements(StatementNum id) const
+    const StatementSet& CFG::getTransitivelyNextStatements(StatementNum id) const
     {
-        check_in_range(id, total_inst);
+        auto& stmt = m_pkb->getStatementAt(id);
+
+        if(auto cache = stmt.maybeGetTransitivelyNextStatements(); cache != nullptr)
+            return *cache;
 
         StatementSet ret {};
         for(size_t j = 0; j < total_inst; j++)
@@ -235,35 +243,41 @@ namespace pkb
             if(adj_mat[id - 1][j] < INF)
                 ret.insert(j + 1);
         }
-        return ret;
+
+        return stmt.cacheTransitivelyNextStatements(std::move(ret));
     }
 
-    StatementSet CFG::getPreviousStatements(StatementNum id) const
+    const StatementSet& CFG::getPreviousStatements(StatementNum id) const
     {
-        check_in_range(id, total_inst);
-        StatementSet ret {};
+        auto& stmt = m_pkb->getStatementAt(id);
+        if(auto cache = stmt.maybeGetPreviousStatements(); cache != nullptr)
+            return *cache;
 
+        StatementSet ret {};
         for(size_t i = 0; i < this->total_inst; i++)
         {
             if(adj_mat[i][id - 1] == 1)
                 ret.insert(i + 1);
         }
 
-        return ret;
+        return stmt.cachePreviousStatements(std::move(ret));
     }
 
-    StatementSet CFG::getTransitivelyPreviousStatements(StatementNum id) const
+    const StatementSet& CFG::getTransitivelyPreviousStatements(StatementNum id) const
     {
-        check_in_range(id, total_inst);
-        StatementSet ret {};
+        auto& stmt = m_pkb->getStatementAt(id);
 
+        if(auto cache = stmt.maybeGetTransitivelyPreviousStatements(); cache != nullptr)
+            return *cache;
+
+        StatementSet ret {};
         for(size_t i = 0; i < this->total_inst; i++)
         {
             if(adj_mat[i][id - 1] < INF)
                 ret.insert(i + 1);
         }
 
-        return ret;
+        return stmt.cacheTransitivelyPreviousStatements(std::move(ret));
     }
 
     bool CFG::doesAffect(StatementNum id1, StatementNum id2) const
@@ -306,12 +320,15 @@ namespace pkb
             if(getModStmtMapping(num) != nullptr && getModStmtMapping(num)->modifiesVariable(var))
                 continue;
 
-            for(auto stmt : adj_lst.at(num))
+            if(auto it = adj_lst.find(num); it != adj_lst.end())
             {
-                if(visited.count(stmt))
-                    continue;
-                visited.insert(stmt);
-                q.emplace(stmt, var);
+                for(auto stmt : it->second)
+                {
+                    if(visited.count(stmt))
+                        continue;
+                    visited.insert(stmt);
+                    q.emplace(stmt, var);
+                }
             }
         }
 
@@ -357,39 +374,56 @@ namespace pkb
         return false;
     }
 
-    StatementSet CFG::getAffectedStatements(StatementNum id) const
+    const StatementSet& CFG::getAffectedStatements(StatementNum id) const
     {
+        auto& stmt = m_pkb->getStatementAt(id);
+        if(auto cache = stmt.maybeGetAffectedStatements(); cache != nullptr)
+            return *cache;
+
         StatementSet ret {};
         for(auto stmt : getTransitivelyNextStatements(id))
             if(doesAffect(id, stmt))
                 ret.insert(stmt);
-        return ret;
+
+        return stmt.cacheAffectedStatements(std::move(ret));
     }
 
-    StatementSet CFG::getAffectingStatements(StatementNum id) const
+    const StatementSet& CFG::getAffectingStatements(StatementNum id) const
     {
+        auto& stmt = m_pkb->getStatementAt(id);
+        if(auto cache = stmt.maybeGetAffectingStatements(); cache != nullptr)
+            return *cache;
+
         StatementSet ret {};
         for(auto stmt : getTransitivelyPreviousStatements(id))
             if(doesAffect(stmt, id))
                 ret.insert(stmt);
-        return ret;
+        return stmt.cacheAffectingStatements(std::move(ret));
     }
 
-    StatementSet CFG::getTransitivelyAffectedStatements(StatementNum id) const
+    const StatementSet& CFG::getTransitivelyAffectedStatements(StatementNum id) const
     {
+        auto& stmt = m_pkb->getStatementAt(id);
+        if(auto cache = stmt.maybeGetTransitivelyAffectedStatements(); cache != nullptr)
+            return *cache;
+
         StatementSet ret {};
         for(auto stmt : getTransitivelyNextStatements(id))
             if(doesTransitivelyAffect(id, stmt))
                 ret.insert(stmt);
-        return ret;
+        return stmt.cacheTransitivelyAffectedStatements(std::move(ret));
     }
 
-    StatementSet CFG::getTransitivelyAffectingStatements(StatementNum id) const
+    const StatementSet& CFG::getTransitivelyAffectingStatements(StatementNum id) const
     {
+        auto& stmt = m_pkb->getStatementAt(id);
+        if(auto cache = stmt.maybeGetTransitivelyAffectingStatements(); cache != nullptr)
+            return *cache;
+
         StatementSet ret {};
         for(auto stmt : getTransitivelyPreviousStatements(id))
             if(doesTransitivelyAffect(stmt, id))
                 ret.insert(stmt);
-        return ret;
+        return stmt.cacheTransitivelyAffectingStatements(std::move(ret));
     }
 }

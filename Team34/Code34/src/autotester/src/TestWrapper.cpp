@@ -20,11 +20,11 @@ TestWrapper::~TestWrapper() { }
 
 void TestWrapper::parse(std::string filename)
 {
-    auto text = util::readEntireFile(filename.c_str());
-    auto program = simple::parser::parseProgram(text);
-
     try
     {
+        auto text = util::readEntireFile(filename.c_str());
+        auto program = simple::parser::parseProgram(text);
+
         this->pkb = pkb::DesignExtractor(std::move(program)).run();
     }
     catch(const util::Exception& e)

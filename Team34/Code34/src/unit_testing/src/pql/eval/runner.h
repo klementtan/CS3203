@@ -17,7 +17,7 @@ struct Runner
 
     inline Runner(pkb::ProgramKB* pkb, zst::str_view query) : m_source(""), m_pkb(pkb), m_query(query) { }
 
-    inline std::unordered_set<std::string> run(bool try_catch = false)
+    inline std::unordered_multiset<std::string> run(bool try_catch = false)
     {
         // this is necessary so we can either:
         // (a) create a pkb and delete it when this function ends
@@ -60,7 +60,7 @@ struct Runner
         {
             result = eval.evaluate();
         }
-        return std::unordered_set<std::string>(result.begin(), result.end());
+        return std::unordered_multiset<std::string>(result.begin(), result.end());
     }
 
     zst::str_view m_source;
@@ -78,9 +78,9 @@ static std::string to_string(T x)
 }
 
 template <typename... Args>
-static std::unordered_set<std::string> make_set(Args&&... args)
+static std::unordered_multiset<std::string> make_set(Args&&... args)
 {
-    auto ret = std::unordered_set<std::string> {};
+    auto ret = std::unordered_multiset<std::string> {};
     (ret.insert(to_string(static_cast<Args&&>(args))), ...);
 
     return ret;

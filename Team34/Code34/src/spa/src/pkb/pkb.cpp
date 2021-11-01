@@ -1,7 +1,6 @@
 // pkb.cpp
 
 #include <queue>
-#include <cassert>
 #include <algorithm>
 
 #include <zpr.h>
@@ -58,6 +57,22 @@ namespace pkb
     Variable& ProgramKB::getVariableNamed(const std::string& name)
     {
         return const_cast<Variable&>(const_cast<const ProgramKB*>(this)->getVariableNamed(name));
+    }
+
+    const Variable* ProgramKB::maybeGetVariableNamed(const std::string& name) const
+    {
+        if(auto it = m_variables.find(name); it != m_variables.end())
+            return &it->second;
+
+        return nullptr;
+    }
+
+    const Procedure* ProgramKB::maybeGetProcedureNamed(const std::string& name) const
+    {
+        if(auto it = m_procedures.find(name); it != m_procedures.end())
+            return &it->second;
+
+        return nullptr;
     }
 
 

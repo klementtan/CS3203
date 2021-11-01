@@ -4,7 +4,6 @@
 
 #include <list>
 #include <memory>
-#include <functional>
 
 #include "pkb.h"
 #include "pql/parser/ast.h"

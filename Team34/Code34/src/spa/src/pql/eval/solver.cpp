@@ -2,10 +2,10 @@
 #include "exceptions.h"
 #include "zpr.h"
 #include <queue>
-#include <cassert>
 #include <utility>
 #include "util.h"
 #include "timer.h"
+#include <algorithm>
 
 namespace pql::eval::solver
 {
@@ -26,15 +26,15 @@ namespace pql::eval::solver
     {
         return m_columns.count(decl);
     }
-    table::Entry IntRow::getVal(const ast::Declaration* decl) const
+
+    const table::Entry& IntRow::getVal(const ast::Declaration* decl) const
     {
-        if(!contains(decl))
-        {
-            throw util::PqlException(
-                "pql::eval::table", "IntRow:{} does not contain decl:{}", toString(), decl->toString());
-        }
+        // assume that it exists; don't check.
+        spa_assert(this->contains(decl));
+
         return m_columns.find(decl)->second;
     }
+
     // check columns in the row exist in one of the allowed joins
     bool IntRow::isAllowed(const table::Join& join) const
     {
@@ -51,25 +51,15 @@ namespace pql::eval::solver
         // curr_entries just needs to exist in one of the set of allowed entries
         return join.isAllowedEntry(curr_entry);
     }
-    std::unordered_set<const ast::Declaration*> IntRow::getHeaders() const
-    {
-        std::unordered_set<const ast::Declaration*> headers;
-        for(const auto& [decl, _] : m_columns)
-        {
-            headers.insert(decl);
-        }
-        return headers;
-    }
 
-    bool IntRow::canMerge(const IntRow& other) const
+    bool IntRow::canMerge(const IntRow& other, const TableHeaders& other_headers) const
     {
-        std::unordered_set<const ast::Declaration*> other_headers = other.getHeaders();
         for(const auto& decl : other_headers)
         {
             if(m_columns.count(decl))
             {
                 const table::Entry& entry = m_columns.find(decl)->second;
-                const table::Entry other_entry = other.getVal(decl);
+                const table::Entry& other_entry = other.getVal(decl);
                 // cannot merge as there are conflicting entries for the same decl
                 if(entry != other_entry)
                     return false;
@@ -78,14 +68,53 @@ namespace pql::eval::solver
         return true;
     }
 
-    void IntRow::mergeRow(const IntRow& other)
+    void IntRow::mergeRow(const IntRow& other, const TableHeaders& other_headers)
     {
-        assert(canMerge(other));
-        std::unordered_set<const ast::Declaration*> other_headers = other.getHeaders();
+        spa_assert(canMerge(other, other_headers));
+
         for(const auto& decl : other_headers)
-        {
             m_columns[decl] = other.getVal(decl);
+    }
+
+    void IntRow::filterColumns(const TableHeaders& allowed_headers)
+    {
+        auto it = m_columns.begin();
+        while(it != m_columns.end())
+        {
+            if(allowed_headers.count(it->first) == 0)
+            {
+                it = m_columns.erase(it);
+            }
+            else
+            {
+                it++;
+            }
         }
+    }
+
+    const std::unordered_map<const ast::Declaration*, table::Entry>& IntRow::getColumns() const
+    {
+        return m_columns;
+    }
+
+    size_t IntRow::size() const
+    {
+        return m_columns.size();
+    }
+
+    bool IntRow::operator==(const IntRow& other) const
+    {
+        if(size() != other.size())
+            return false;
+
+        for(const auto& [decl, entry] : m_columns)
+        {
+            if(!other.contains(decl))
+                return false;
+            if(other.getVal(decl) != entry)
+                return false;
+        }
+        return true;
     }
 
     std::string IntRow::toString() const
@@ -100,25 +129,18 @@ namespace pql::eval::solver
     }
 
 
-    IntTable::IntTable(std::vector<IntRow> rows, const std::unordered_set<const ast::Declaration*>& headers)
+    IntTable::IntTable(std::vector<IntRow> rows, const TableHeaders& headers)
         : m_rows(std::move(rows)), m_headers(headers)
     {
-        // TOOD: Remove this sanity check during release
-        for(const auto& row : m_rows)
-        {
-            if(row.getHeaders().size() != headers.size())
-                throw util::PqlException("pql::eval::solver",
-                    "Initialised {} with mismatched rows({}) and headers. Row header size:{} vs provided header "
-                    "size:{}",
-                    toString(), row.toString(), row.getHeaders().size(), headers.size());
-
-            for(const ast::Declaration* header : row.getHeaders())
+        // evaluate this in an assert so it goes away during release
+        spa_assert([&]() -> bool {
+            for(const auto& row : m_rows)
             {
-                if(headers.count(header) == 0)
-                    throw util::PqlException(
-                        "pql::eval::solver", "Initialised {} with mismatched rows and headers", toString());
+                spa_assert(row.size() == headers.size());
+                for(auto& pair : row.getColumns())
+                    spa_assert(headers.count(pair.first) > 0);
             }
-        }
+        }());
     }
 
     IntTable::IntTable()
@@ -132,10 +154,15 @@ namespace pql::eval::solver
         return m_headers.count(declaration);
     }
 
+    std::vector<IntRow>& IntTable::getRows()
+    {
+        return m_rows;
+    }
+
     void IntTable::merge(const IntTable& other)
     {
-        START_BENCHMARK_TIMER(
-            zpr::sprint("****** Time spent merging tables of {} x {}", m_rows.size(), other.getRows().size()));
+        START_BENCHMARK_TIMER(zpr::sprint("****** Time spent merging tables of {} x {}", m_rows.size(), other.size()));
+
         // use copy assignment to create new rows
         std::vector<IntRow> new_rows;
         // m_rows should never be empty. Empty IntTable should contain an empty IntRow with no columns
@@ -143,24 +170,25 @@ namespace pql::eval::solver
         {
             util::logfmt("pql::eval::solver", "Detected IntTbl in {}. IntTbl will always be invalid", toString());
         }
+
         for(const auto& this_row : m_rows)
         {
             for(const auto& other_row : other.getRows())
             {
-                if(this_row.canMerge(other_row))
+                if(this_row.canMerge(other_row, other.getHeaders()))
                 {
                     IntRow new_row(this_row);
-                    new_row.mergeRow(other_row);
+                    new_row.mergeRow(other_row, other.getHeaders());
 
                     new_rows.emplace_back(std::move(new_row));
                 }
             }
         }
+
         m_rows = std::move(new_rows);
+
         for(const ast::Declaration* header : other.getHeaders())
-        {
             m_headers.insert(header);
-        }
     }
 
     void IntTable::mergeColumn(const ast::Declaration* decl, const table::Domain& domain)
@@ -196,23 +224,56 @@ namespace pql::eval::solver
         m_headers.insert(decl);
         m_rows = std::move(new_rows);
     }
-    std::unordered_set<const ast::Declaration*> IntTable::getHeaders() const
+
+    void IntTable::dedupRows()
+    {
+        START_BENCHMARK_TIMER(zpr::sprint("row deduplication (have {} rows)", m_rows.size()));
+
+        // no copies required; move rows into the set (deduplicating them in the process)
+        std::unordered_set<IntRow> seen {};
+        for(auto& row : m_rows)
+            seen.emplace(std::move(row));
+
+        // then move them back into our list.
+        m_rows.assign(std::move_iterator(seen.begin()), std::move_iterator(seen.end()));
+
+        util::logfmt("pql::eval::solver", "Rows after deduplicating {}", toString());
+    }
+
+    const TableHeaders& IntTable::getHeaders() const
     {
         return this->m_headers;
     }
+
     const std::vector<IntRow>& IntTable::getRows() const
     {
         return this->m_rows;
     }
 
-    const IntRow& IntTable::getRow(int i) const
+    std::vector<IntRow>& IntTable::getRowsMutable()
+    {
+        return this->m_rows;
+    }
+
+
+    const IntRow& IntTable::getRow(size_t i) const
     {
         return m_rows[i];
     }
 
-    int IntTable::size() const
+    IntRow& IntTable::getRowMutable(size_t i)
+    {
+        return m_rows[i];
+    }
+
+    size_t IntTable::size() const
     {
         return m_rows.size();
+    }
+
+    size_t IntTable::numColumns() const
+    {
+        return m_headers.size();
     }
 
     void IntTable::filterRows(const table::Join& join)
@@ -236,11 +297,32 @@ namespace pql::eval::solver
             "pql::eval::solver", "Join(id: {}) filter tbl from {} to {}", join.getId(), m_rows.size(), new_rows.size());
         m_rows = new_rows;
     }
+    void IntTable::filterColumns(const TableHeaders& allowed_columns)
+    {
+        for(auto& row : m_rows)
+        {
+            row.filterColumns(allowed_columns);
+        }
+
+        auto it = m_headers.begin();
+        while(it != m_headers.end())
+        {
+            if(allowed_columns.count(*it) == 0)
+            {
+                it = m_headers.erase(it);
+            }
+            else
+            {
+                it++;
+            }
+        }
+    }
+
     bool IntTable::empty() const
     {
         return m_rows.empty() ||
                // contains an empty row
-               (m_rows.size() == 1 && m_rows.front().getHeaders().empty());
+               (m_rows.size() == 1 && m_rows.front().getColumns().empty());
     }
 
     std::string IntTable::toString() const
@@ -260,7 +342,7 @@ namespace pql::eval::solver
         return ret;
     }
 
-    DepGraph::DepGraph(const std::unordered_set<const ast::Declaration*>& decls, std::vector<table::Join> joins)
+    DepGraph::DepGraph(const TableHeaders& decls, std::vector<table::Join> joins)
         : m_joins(std::move(joins)), m_colouring(), m_graph()
     {
         util::logfmt("pql::eval::solver", "Constructing Dependency Graph");
@@ -314,14 +396,14 @@ namespace pql::eval::solver
         return ret;
     }
 
-    std::vector<std::unordered_set<const ast::Declaration*>> DepGraph::getComponents() const
+    std::vector<TableHeaders> DepGraph::getComponents() const
     {
-        std::unordered_map<int, std::unordered_set<const ast::Declaration*>> colours;
+        std::unordered_map<int, TableHeaders> colours;
         for(const auto& [decl, colour] : m_colouring)
         {
             colours[colour].insert(decl);
         }
-        std::vector<std::unordered_set<const ast::Declaration*>> ret;
+        std::vector<TableHeaders> ret;
         for(const auto& [_, comp] : colours)
         {
             ret.emplace_back(comp);
@@ -329,10 +411,9 @@ namespace pql::eval::solver
         return ret;
     }
 
-    static std::unordered_set<const ast::Declaration*> mergeAndCopySet(
-        std::unordered_set<const ast::Declaration*> a, const std::unordered_set<const ast::Declaration*>& b)
+    static TableHeaders mergeAndCopySet(TableHeaders a, const TableHeaders& b)
     {
-        std::unordered_set<const ast::Declaration*> ret(std::move(a));
+        TableHeaders ret(std::move(a));
         for(const ast::Declaration* decl : b)
         {
             ret.insert(decl);
@@ -341,7 +422,7 @@ namespace pql::eval::solver
     }
 
     std::vector<std::vector<const ast::Declaration*>> Solver::sort_components(
-        const std::vector<std::unordered_set<const ast::Declaration*>>& components) const
+        const std::vector<TableHeaders>& components) const
     {
         std::vector<std::vector<const ast::Declaration*>> ret;
         for(const auto& component : components)
@@ -350,12 +431,12 @@ namespace pql::eval::solver
             for(const auto decl : component)
             {
                 // All decl should belong to a table
-                assert(has_table(decl));
+                spa_assert(has_table(decl));
                 size_t table_i = get_table_index(decl);
                 size_decls.emplace_back(m_int_tables[table_i].size(), decl);
             }
             // sort smallest IntTable first
-            sort(size_decls.begin(), size_decls.end());
+            std::sort(size_decls.begin(), size_decls.end());
 
             std::vector<const ast::Declaration*> sorted_decl(size_decls.size());
 
@@ -369,9 +450,8 @@ namespace pql::eval::solver
         return ret;
     };
     Solver::Solver(const std::vector<table::Join>& joins,
-        std::unordered_map<const ast::Declaration*, table::Domain> domains,
-        const std::unordered_set<const ast::Declaration*>& return_decls,
-        const std::unordered_set<const ast::Declaration*>& select_decls)
+        std::unordered_map<const ast::Declaration*, table::Domain> domains, const TableHeaders& return_decls,
+        const TableHeaders& select_decls)
         : m_domains(std::move(domains)), m_joins(joins), m_return_decls(return_decls), m_int_tables(),
           m_decl_components(), m_dep_graph(mergeAndCopySet(return_decls, select_decls), joins)
     {
@@ -486,7 +566,7 @@ namespace pql::eval::solver
         }
     }
 
-    void Solver::trim(const std::unordered_set<const ast::Declaration*>& decls)
+    void Solver::trim(const TableHeaders& decls)
     {
         START_BENCHMARK_TIMER("Trimming declarations and joins");
         util::logfmt("pql::eval::solver", "Trimming declarations");
@@ -530,7 +610,7 @@ namespace pql::eval::solver
     {
         START_BENCHMARK_TIMER("Preprocess initial table");
         util::logfmt("pql::eval::solver", "Starting pre-process");
-        std::unordered_set<const ast::Declaration*> processed_decl;
+        TableHeaders processed_decl;
         std::vector<IntTable> new_int_tables;
         std::unordered_set<int> processed_join;
 
@@ -538,7 +618,7 @@ namespace pql::eval::solver
         {
             IntTable new_table;
             // A component should never be empty
-            assert(!component.empty());
+            spa_assert(!component.empty());
             util::logfmt("pql::eval::solver", "Merging component {}", [&]() -> std::string {
                 std::string log = "{";
                 for(const ast::Declaration* decl : component)
@@ -582,9 +662,32 @@ namespace pql::eval::solver
                 }
             }
             util::logfmt("pql::eval::solver", "New final merged table for component {}", new_table.toString());
-            new_int_tables.push_back(new_table);
+
+            /*
+                there are two things to note here:
+                1. if the table has *no rows*, we *MUST* push it to the list of tables. this is because
+                    we use the "has no rows" condition to know whether a query succeeded or failed.
+
+                2. however, if, after filtering away unnecessary columns (decls), the table is left with
+                    *no columns*, we cannot add it to the list of tables, since it (by definition) would
+                    have no rows.
+
+                    even though it has no rows, it *HAD* rows before we yeeted all the columns, so that means
+                    that the query should not fail (or at least, should not fail because of this group of decls)
+            */
+
+            if(new_table.size() > 0)
+            {
+                new_table.filterColumns(m_return_decls);
+                if(new_table.numColumns() == 0)
+                    continue;
+            }
+
+            new_table.dedupRows();
+            new_int_tables.push_back(std::move(new_table));
         }
-        m_int_tables = new_int_tables;
+
+        m_int_tables = std::move(new_int_tables);
         util::logfmt("pql::eval::solver", "Solver after preprocessing {}", toString());
     }
 
@@ -593,9 +696,7 @@ namespace pql::eval::solver
         for(const IntTable& tbl : m_int_tables)
         {
             if(tbl.empty())
-            {
                 return false;
-            }
         }
         return true;
     }
@@ -615,16 +716,19 @@ namespace pql::eval::solver
         START_BENCHMARK_TIMER("Create return table");
         util::logfmt("pql::eval::solver", "Getting return table");
         IntTable ret_table;
-        assert(!m_return_decls.empty());
+        spa_assert(!m_return_decls.empty());
         for(const ast::Declaration* decl : m_return_decls)
         {
             util::logfmt("pql::eval::solver", "Handling return decl {}", decl->toString());
             // already added into table by another decl in the same component
             if(ret_table.getHeaders().count(decl))
                 continue;
+
             IntTable& decl_int_table = m_int_tables[get_table_index(decl)];
+
             util::logfmt(
                 "pql::eval::solver", "Merging table {} to {}", ret_table.toString(), decl_int_table.toString());
+
             ret_table.merge(decl_int_table);
         }
         util::logfmt("pql::eval::solver", "Return table: {}", ret_table.toString());
