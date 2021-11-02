@@ -85,7 +85,7 @@ TEST_CASE("Next_Bip")
         CHECK(cfg2->isStatementNextBip(1, 4));
         CHECK(cfg2->isStatementNextBip(7, 3));
         CHECK(cfg3->isStatementNextBip(9, 2));
-        
+
         CHECK(cfg1->isStatementTransitivelyNextBip(2, 6));
         CHECK(cfg1->isStatementTransitivelyNextBip(1, 11));
         CHECK(cfg1->isStatementTransitivelyNextBip(1, 5));
@@ -99,7 +99,7 @@ TEST_CASE("Next_Bip")
 
         CHECK(cfg1->getNextStatementsBip(9) == StatementSet { 10, 11 });
         CHECK(cfg2->getNextStatementsBip(7) == StatementSet { 2, 3 });
-        CHECK(cfg1->getPreviousStatementsBip(7) == StatementSet { 6});
+        CHECK(cfg1->getPreviousStatementsBip(7) == StatementSet { 6 });
     }
     SECTION("negative test cases: bip")
     {

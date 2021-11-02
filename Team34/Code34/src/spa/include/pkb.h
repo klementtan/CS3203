@@ -244,7 +244,7 @@ namespace pkb
         template <class T1, class T2>
         std::size_t operator()(const std::pair<T1, T2>& p) const
         {
-            return  p.first * 100000 + p.second;
+            return p.first * 100000 + p.second;
         }
     };
 
@@ -287,13 +287,14 @@ namespace pkb
         const StatementSet& getTransitivelyNextStatementsBip(StatementNum id) const;
         const StatementSet& getPreviousStatementsBip(StatementNum id) const;
         const StatementSet& getTransitivelyPreviousStatementsBip(StatementNum id) const;
+
     private:
         size_t total_inst;
         // adjacency matrix for lengths of shortest paths between 2 inst. i(row) is source and j(col) is destination.
         size_t** adj_mat;
         size_t** adj_mat_bip;
         // cell value of 0 indicates that there are more than 1 weight, we store the ref here
-        std::unordered_map<std::pair<StatementNum, StatementNum>,std::unordered_set<size_t>, pair_hash> bip_ref;
+        std::unordered_map<std::pair<StatementNum, StatementNum>, std::unordered_set<size_t>, pair_hash> bip_ref;
 
         bool m_next_exists = false;
         // map of the starting point and return points for each proc

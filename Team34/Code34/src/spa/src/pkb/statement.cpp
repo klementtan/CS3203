@@ -147,8 +147,8 @@ namespace pkb
         m_did_cache_transitively_affecting = false;
     }
 
-    const simple::ast::Procedure* Statement::getProc() const 
-    { 
+    const simple::ast::Procedure* Statement::getProc() const
+    {
         return proc;
     }
 

@@ -625,12 +625,12 @@ namespace pkb
             return *cache;
 
         StatementSet ret {};
-        
+
         for(size_t i = 0; i < total_inst; i++)
         {
-            if(isStatementTransitivelyNextBip(i+1, id))
+            if(isStatementTransitivelyNextBip(i + 1, id))
             {
-                ret.insert(i+1);
+                ret.insert(i + 1);
             }
         }
         return stmt.cacheTransitivelyPreviousStatementsBip(std::move(ret));

@@ -422,7 +422,7 @@ namespace pkb
                     {
                         // multiple edges with same starting and ending node with different weights when returning
                         cfg->addEdgeBip(from, *nextStmt.begin(), callStmt + 1);
-                    } 
+                    }
                 }
             }
         }
