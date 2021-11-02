@@ -130,6 +130,11 @@ namespace pkb
         const StatementSet* maybeGetTransitivelyAffectedStatements() const;
         const StatementSet* maybeGetTransitivelyAffectingStatements() const;
 
+        const StatementSet* maybeGetNextStatementsBip() const;
+        const StatementSet* maybeGetPreviousStatementsBip() const;
+        const StatementSet* maybeGetTransitivelyNextStatementsBip() const;
+        const StatementSet* maybeGetTransitivelyPreviousStatementsBip() const;
+
         const StatementSet& cacheNextStatements(StatementSet stmts) const;
         const StatementSet& cachePreviousStatements(StatementSet stmts) const;
         const StatementSet& cacheTransitivelyNextStatements(StatementSet stmts) const;
@@ -139,6 +144,11 @@ namespace pkb
         const StatementSet& cacheAffectingStatements(StatementSet stmts) const;
         const StatementSet& cacheTransitivelyAffectedStatements(StatementSet stmts) const;
         const StatementSet& cacheTransitivelyAffectingStatements(StatementSet stmts) const;
+
+        const StatementSet& cacheNextStatementsBip(StatementSet stmts) const;
+        const StatementSet& cachePreviousStatementsBip(StatementSet stmts) const;
+        const StatementSet& cacheTransitivelyNextStatementsBip(StatementSet stmts) const;
+        const StatementSet& cacheTransitivelyPreviousStatementsBip(StatementSet stmts) const;
 
         void resetCache() const;
 
@@ -174,11 +184,21 @@ namespace pkb
         mutable StatementSet m_prev {};
         mutable StatementSet m_transitively_next {};
         mutable StatementSet m_transitively_prev {};
+        // for bip
+        mutable StatementSet m_next_bip {};
+        mutable StatementSet m_prev_bip {};
+        mutable StatementSet m_transitively_next_bip {};
+        mutable StatementSet m_transitively_prev_bip {};
 
         mutable bool m_did_cache_next = false;
         mutable bool m_did_cache_prev = false;
         mutable bool m_did_cache_transitively_next = false;
         mutable bool m_did_cache_transitively_prev = false;
+
+        mutable bool m_did_cache_next_bip = false;
+        mutable bool m_did_cache_prev_bip = false;
+        mutable bool m_did_cache_transitively_next_bip = false;
+        mutable bool m_did_cache_transitively_prev_bip = false;
 
         mutable StatementSet m_affects {};
         mutable StatementSet m_affecting {};
@@ -252,6 +272,12 @@ namespace pkb
         const StatementSet& getAffectingStatements(StatementNum id) const;
         const StatementSet& getTransitivelyAffectingStatements(StatementNum id) const;
 
+        bool isStatementNextBip(StatementNum stmt1, StatementNum stmt2) const;
+        bool isStatementTransitivelyNextBip(StatementNum stmt1, StatementNum stmt2) const;
+        const StatementSet& getNextStatementsBip(StatementNum id) const;
+        const StatementSet& getTransitivelyNextStatementsBip(StatementNum id) const;
+        const StatementSet& getPreviousStatementsBip(StatementNum id) const;
+        const StatementSet& getTransitivelyPreviousStatementsBip(StatementNum id) const;
     private:
         size_t total_inst;
         // adjacency matrix for lengths of shortest paths between 2 inst. i(row) is source and j(col) is destination.
@@ -259,7 +285,7 @@ namespace pkb
         size_t** adj_mat_bip;
 
         bool m_next_exists = false;
-
+        // map of the starting point and return points for each proc
         std::unordered_map<std::string, std::pair<StatementNum, std::vector<StatementNum>>> gates;
         const ProgramKB* m_pkb;
         std::unordered_map<StatementNum, StatementSet> adj_lst;
