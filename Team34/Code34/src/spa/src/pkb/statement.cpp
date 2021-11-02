@@ -147,6 +147,12 @@ namespace pkb
         m_did_cache_transitively_affecting = false;
     }
 
+    const simple::ast::Procedure* Statement::getProc() const 
+    { 
+        return proc;
+    }
+
+
     const StatementSet* Statement::maybeGetNextStatements() const
     {
         if(m_did_cache_next)
@@ -178,9 +184,6 @@ namespace pkb
 
         return m_prev;
     }
-
-
-
 
     const StatementSet* Statement::maybeGetTransitivelyNextStatements() const
     {
@@ -264,6 +267,71 @@ namespace pkb
             return &m_transitively_affecting;
 
         return nullptr;
+    }
+
+    const StatementSet* Statement::maybeGetNextStatementsBip() const
+    {
+        if(m_did_cache_next_bip)
+            return &m_next_bip;
+
+        return nullptr;
+    }
+
+    const StatementSet& Statement::cacheNextStatementsBip(StatementSet stmts) const
+    {
+        m_next_bip = std::move(stmts);
+        m_did_cache_next_bip = true;
+
+        return m_next_bip;
+    }
+
+    const StatementSet* Statement::maybeGetPreviousStatementsBip() const
+    {
+        if(m_did_cache_prev_bip)
+            return &m_prev_bip;
+
+        return nullptr;
+    }
+
+    const StatementSet& Statement::cachePreviousStatementsBip(StatementSet stmts) const
+    {
+        m_prev_bip = std::move(stmts);
+        m_did_cache_prev_bip = true;
+
+        return m_prev_bip;
+    }
+
+    const StatementSet* Statement::maybeGetTransitivelyNextStatementsBip() const
+    {
+        if(m_did_cache_transitively_next_bip)
+            return &m_transitively_next_bip;
+
+        return nullptr;
+    }
+
+    const StatementSet& Statement::cacheTransitivelyNextStatementsBip(StatementSet stmts) const
+    {
+        m_transitively_next_bip = std::move(stmts);
+        m_did_cache_transitively_next_bip = true;
+
+        return m_transitively_next_bip;
+    }
+
+
+    const StatementSet* Statement::maybeGetTransitivelyPreviousStatementsBip() const
+    {
+        if(m_did_cache_transitively_prev_bip)
+            return &m_transitively_prev_bip;
+
+        return nullptr;
+    }
+
+    const StatementSet& Statement::cacheTransitivelyPreviousStatementsBip(StatementSet stmts) const
+    {
+        m_transitively_prev_bip = std::move(stmts);
+        m_did_cache_transitively_prev_bip = true;
+
+        return m_transitively_prev_bip;
     }
 
     const StatementSet& Statement::cacheTransitivelyAffectedStatements(StatementSet stmts) const

@@ -386,7 +386,7 @@ namespace pkb
                 }
                 else if(auto stmt = CONST_DCAST(ProcCall, lastStmt); stmt)
                 {
-                    visitStmtList(&m_pkb->getProcedureNamed(stmt->proc_name).getAstProc()->body);     
+                    visitStmtList(&m_pkb->getProcedureNamed(stmt->proc_name).getAstProc()->body);
                 }
                 else
                 {
@@ -420,8 +420,9 @@ namespace pkb
                 {
                     for(auto from : cfg->gates.at(calledProc).second)
                     {
+                        // multiple edges with same starting and ending node with different weights when returning
                         cfg->addEdgeBip(from, *nextStmt.begin(), callStmt + 1);
-                    }
+                    } 
                 }
             }
         }

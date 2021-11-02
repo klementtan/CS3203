@@ -32,5 +32,84 @@ procedure John {
               y = x * y; } }
 
 )";
+
+constexpr const auto sample_source_B = R"(
+procedure B {
+        call C;
+        call C;
+        call C; }
+
+procedure C {
+        d = a;
+        a = b;
+        b = c;
+        c = d; }
+
+)";
+
+constexpr const auto sample_source_C = R"(
+procedure P {
+      call Q1;
+      while (i > 0) {
+              call Q1; }
+      if (i > 0) then {
+              call Q2; }
+        else {
+              call Q3; } }
+
+procedure Q1 {
+      call Q2;}
+
+procedure Q2 {
+      call Q3;}
+
+procedure Q3 {
+      a = a;}
+)";
+
 static auto kb1 = DesignExtractor(parseProgram(sample_source_A)).run();
 static auto cfg1 = kb1 -> getCFG();
+
+static auto kb2 = DesignExtractor(parseProgram(sample_source_B)).run();
+static auto cfg2 = kb2 -> getCFG();
+
+static auto kb3 = DesignExtractor(parseProgram(sample_source_C)).run();
+static auto cfg3 = kb3 -> getCFG();
+
+TEST_CASE("Next_Bip")
+{
+    SECTION("positive test cases: bip")
+    {
+        CHECK(cfg3->isStatementNextBip(9, 2));
+        CHECK(cfg3->isStatementTransitivelyNextBip(9, 4));
+        CHECK(cfg1->isStatementNextBip(2, 6));
+        CHECK(cfg1->isStatementNextBip(9, 10));
+        CHECK(cfg1->isStatementNextBip(9, 11));
+        CHECK(cfg1->isStatementNextBip(11, 8));
+        CHECK(cfg2->isStatementNextBip(1, 4));
+        CHECK(cfg2->isStatementNextBip(7, 3));
+        
+        CHECK(cfg1->isStatementTransitivelyNextBip(2, 6));
+        CHECK(cfg1->isStatementTransitivelyNextBip(1, 11));
+        CHECK(cfg1->isStatementTransitivelyNextBip(1, 5));
+        CHECK(cfg1->isStatementTransitivelyNextBip(4, 5));
+        CHECK(cfg1->isStatementTransitivelyNextBip(9, 5));
+        CHECK(cfg1->isStatementTransitivelyNextBip(10, 11));
+        CHECK(cfg2->isStatementTransitivelyNextBip(3, 4));
+        CHECK(cfg2->isStatementTransitivelyNextBip(1, 3));
+        
+    }
+    SECTION("negative test cases: bip")
+    {
+        CHECK(!cfg1->isStatementNextBip(2, 7));
+        CHECK(!cfg1->isStatementNextBip(2, 3));
+        CHECK(!cfg2->isStatementNextBip(1, 7));
+        CHECK(!cfg2->isStatementNextBip(1, 2));
+        CHECK(!cfg2->isStatementNextBip(7, 7));
+        CHECK(!cfg3->isStatementNextBip(9, 6));
+        CHECK(!cfg3->isStatementNextBip(3, 2));
+        CHECK(!cfg1->isStatementTransitivelyNextBip(4, 8));
+        CHECK(!cfg1->isStatementTransitivelyNextBip(6, 2));
+        CHECK(!cfg2->isStatementTransitivelyNextBip(3, 1));
+    }
+}
