@@ -94,60 +94,83 @@ namespace pql::ast
                 ++it;
         }
 
-        tbl->putDomain(l_decl, l_domain);
+        tbl->putDomain(l_decl, std::move(l_domain));
     }
 
-    static void handle_ref_ref_consts(const Domain& l_domain, const Domain& r_domain, Declaration* l_decl,
-        Declaration* r_decl, ast::AttrName l_attr, ast::AttrName r_attr, const pkb::ProgramKB* pkb, Table* tbl)
+    static void handle_ref_ref_consts(Domain l_domain, Domain r_domain, Declaration* l_decl, Declaration* r_decl,
+        ast::AttrName l_attr, ast::AttrName r_attr, const pkb::ProgramKB* pkb, Table* tbl)
     {
         std::unordered_set<std::pair<Entry, Entry>> join_pairs {};
+        Domain new_r_domain {};
 
-        if(l_attr == r_attr)
+        for(auto it = l_domain.begin(); it != l_domain.end();)
         {
-            if(l_attr == AttrName::kValue)
+            auto& e1 = *it;
+            Entry e2 {};
+            if(l_attr == r_attr)
             {
-                for(const auto& lent : l_domain)
-                    join_pairs.emplace(lent, Entry(r_decl, lent.getVal()));
+                e2 = (r_attr == AttrName::kValue) ? Entry(r_decl, e1.getVal()) : Entry(r_decl, e1.getStmtNum());
             }
             else
             {
-                for(const auto& lent : l_domain)
-                    join_pairs.emplace(lent, Entry(r_decl, lent.getStmtNum()));
+                e2 = (r_attr == AttrName::kValue) ? Entry(r_decl, std::to_string(e1.getStmtNum())) :
+                                                    Entry(r_decl, std::stoll(e1.getVal()));
             }
-        }
-        else
-        {
-            if(l_attr == AttrName::kValue && r_attr == AttrName::kStmtNum)
+
+
+            if(r_domain.count(e2) == 0)
             {
-                for(const auto& lent : l_domain)
-                    join_pairs.emplace(lent, Entry(r_decl, std::stoll(lent.getVal())));
+                it = l_domain.erase(it);
             }
             else
             {
-                for(const auto& lent : l_domain)
-                    join_pairs.emplace(lent, Entry(r_decl, std::to_string(lent.getStmtNum())));
+                join_pairs.emplace(e1, e2);
+                new_r_domain.emplace(std::move(e2));
+                ++it;
             }
         }
 
+        tbl->putDomain(l_decl, std::move(l_domain));
+        tbl->putDomain(r_decl, std::move(new_r_domain));
         tbl->addJoin(Join(l_decl, r_decl, std::move(join_pairs)));
     }
 
+    // return true if there is some valid mapping of `lhs = rhs`. false if there isn't (and so
+    // prune this particular lhs from the domain of lhs)
     using EntryPairSet = std::unordered_set<std::pair<Entry, Entry>>;
-    static inline void handle_ref_right_procname(EntryPairSet& join_pairs, const Entry& lent, const Entry& lattrval,
-        Declaration* r_decl, const pkb::ProgramKB* pkb, Table* tbl)
+    static inline bool handle_ref_right_procname(const Domain& old_r_domain, Domain& new_r_domain,
+        EntryPairSet& join_pairs, const Entry& lent, const Entry& lattrval, Declaration* r_decl,
+        const pkb::ProgramKB* pkb, Table* tbl)
     {
         if(r_decl->design_ent == DESIGN_ENT::PROCEDURE)
         {
-            join_pairs.emplace(lent, Entry(r_decl, lattrval.getVal()));
+            auto e = Entry(r_decl, lattrval.getVal());
+            if(old_r_domain.count(e) == 0)
+                return false;
+
+            join_pairs.emplace(lent, e);
+            new_r_domain.emplace(std::move(e));
+            return true;
         }
         else if(r_decl->design_ent == DESIGN_ENT::CALL)
         {
             auto proc = pkb->maybeGetProcedureNamed(lattrval.getVal());
             if(proc == nullptr)
-                return;
+                return false;
 
+            bool has_valid_rhs = false;
             for(auto& i : proc->getCallStmts())
-                join_pairs.emplace(lent, Entry(r_decl, i));
+            {
+                auto e = Entry(r_decl, i);
+                if(old_r_domain.count(e) == 0)
+                    continue;
+
+                join_pairs.emplace(lent, e);
+                new_r_domain.emplace(std::move(e));
+                has_valid_rhs = true;
+            }
+
+            return has_valid_rhs;
         }
         else
         {
@@ -155,35 +178,47 @@ namespace pql::ast
         }
     }
 
-    static inline void handle_ref_right_varname(EntryPairSet& join_pairs, const Entry& lent, const Entry& lattrval,
-        Declaration* r_decl, const pkb::ProgramKB* pkb, Table* tbl)
+    static inline bool handle_ref_right_varname(const Domain& old_r_domain, Domain& new_r_domain,
+        EntryPairSet& join_pairs, const Entry& lent, const Entry& lattrval, Declaration* r_decl,
+        const pkb::ProgramKB* pkb, Table* tbl)
     {
         if(r_decl->design_ent == DESIGN_ENT::VARIABLE)
         {
-            join_pairs.emplace(lent, Entry(r_decl, lattrval.getVal()));
+            auto e = Entry(r_decl, lattrval.getVal());
+            if(old_r_domain.count(e) == 0)
+                return false;
+
+            join_pairs.emplace(lent, e);
+            new_r_domain.emplace(std::move(e));
+            return true;
         }
-        else if(r_decl->design_ent == DESIGN_ENT::PRINT)
+        else if(r_decl->design_ent == DESIGN_ENT::PRINT || r_decl->design_ent == DESIGN_ENT::READ)
         {
             auto var = pkb->maybeGetVariableNamed(lattrval.getVal());
             if(var == nullptr)
-                return;
+                return false;
 
-            for(auto& i : var->getPrintStmts())
-                join_pairs.emplace(lent, Entry(r_decl, i));
-        }
-        else if(r_decl->design_ent == DESIGN_ENT::READ)
-        {
-            auto var = pkb->maybeGetVariableNamed(lattrval.getVal());
-            if(var == nullptr)
-                return;
+            auto& rhses = r_decl->design_ent == DESIGN_ENT::PRINT ? var->getPrintStmts() : var->getReadStmts();
 
-            for(auto& i : var->getReadStmts())
-                join_pairs.emplace(lent, Entry(r_decl, i));
+            bool has_valid_rhs = false;
+            for(auto& i : rhses)
+            {
+                auto e = Entry(r_decl, i);
+                if(old_r_domain.count(e) == 0)
+                    continue;
+
+                join_pairs.emplace(lent, e);
+                new_r_domain.emplace(std::move(e));
+                has_valid_rhs = true;
+            }
+            return has_valid_rhs;
         }
         else
         {
             throw PqlException("pql::eval", "unreachable");
         }
+
+        return true;
     }
 
 
@@ -220,28 +255,43 @@ namespace pql::ast
         if((l_attr == AttrName::kValue || l_attr == AttrName::kStmtNum) &&
             (r_attr == AttrName::kValue || r_attr == AttrName::kStmtNum))
         {
-            handle_ref_ref_consts(l_domain, r_domain, l_decl, r_decl, l_attr, r_attr, pkb, tbl);
+            handle_ref_ref_consts(std::move(l_domain), std::move(r_domain), l_decl, r_decl, l_attr, r_attr, pkb, tbl);
         }
         else
         {
+            Domain new_r_domain {};
             std::unordered_set<std::pair<Entry, Entry>> join_pairs {};
-            for(const auto& lent : l_domain)
+            for(auto it = l_domain.begin(); it != l_domain.end();)
             {
-                auto lattrval = Table::extractAttr(lent, l_ref, pkb);
+                bool should_keep = false;
+
+                auto lattrval = Table::extractAttr(*it, l_ref, pkb);
                 if(r_attr == AttrName::kProcName)
-                    handle_ref_right_procname(join_pairs, lent, lattrval, r_decl, pkb, tbl);
-
+                {
+                    should_keep =
+                        handle_ref_right_procname(r_domain, new_r_domain, join_pairs, *it, lattrval, r_decl, pkb, tbl);
+                }
                 else if(r_attr == AttrName::kVarName)
-                    handle_ref_right_varname(join_pairs, lent, lattrval, r_decl, pkb, tbl);
-
+                {
+                    should_keep =
+                        handle_ref_right_varname(r_domain, new_r_domain, join_pairs, *it, lattrval, r_decl, pkb, tbl);
+                }
                 else
+                {
                     throw PqlException("pql::eval", "unreachable");
+                }
+
+                if(should_keep)
+                    ++it;
+                else
+                    it = l_domain.erase(it);
             }
 
+            tbl->putDomain(l_decl, std::move(l_domain));
+            tbl->putDomain(r_decl, std::move(new_r_domain));
             tbl->addJoin(Join(l_decl, r_decl, std::move(join_pairs)));
         }
     }
-
 
 
 

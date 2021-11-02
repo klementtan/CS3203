@@ -140,7 +140,7 @@ namespace pql::eval::table
         [[nodiscard]] bool hasValidDomain() const;
 
     public:
-        void putDomain(const ast::Declaration* decl, const Domain& entries);
+        void putDomain(const ast::Declaration* decl, Domain entries);
         void addSelectDecl(const ast::Declaration* decl);
         static Entry extractAttr(const Entry& entry, const ast::AttrRef& attr_ref, const pkb::ProgramKB* pkb);
         Domain getDomain(const ast::Declaration* decl) const;

@@ -184,10 +184,10 @@ namespace pql::eval::table
     Table::~Table() { }
 
 
-    void Table::putDomain(const ast::Declaration* decl, const std::unordered_set<Entry>& entries)
+    void Table::putDomain(const ast::Declaration* decl, Domain entries)
     {
         util::logfmt("pql::eval::table", "Updating domain of {} with {} entries", decl->toString(), entries.size());
-        m_domains[decl] = entries;
+        m_domains[decl] = std::move(entries);
     }
     void Table::addJoin(const Join& join)
     {
@@ -393,6 +393,17 @@ namespace pql::eval::table
                     ret_cols.insert(elem.attrRef().decl);
                 }
             }
+        }
+        else
+        {
+            spa_assert(result_cl.isBool());
+            for(auto* decl : m_select_decls)
+            {
+                if(this->getDomain(decl).empty())
+                    return { "FALSE" };
+            }
+
+            return { "TRUE" };
         }
 
         solver::Solver solver(
