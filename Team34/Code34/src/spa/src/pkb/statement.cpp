@@ -145,6 +145,12 @@ namespace pkb
         m_did_cache_affecting = false;
         m_did_cache_transitively_affects = false;
         m_did_cache_transitively_affecting = false;
+
+        m_did_cache_next_bip = false;
+        m_did_cache_prev_bip = false;
+        m_did_cache_transitively_next_bip = false;
+        m_did_cache_transitively_prev_bip = false;
+
     }
 
     const simple::ast::Procedure* Statement::getProc() const

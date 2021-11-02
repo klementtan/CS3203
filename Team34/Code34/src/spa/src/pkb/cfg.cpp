@@ -8,7 +8,7 @@
 #include <unordered_set>
 #include <vector>
 #include <algorithm>
-#include <iostream>
+
 #define INF SIZE_MAX
 
 namespace pkb
@@ -465,26 +465,28 @@ namespace pkb
         return adj_mat_bip[stmt1 - 1][stmt2 - 1] != INF;
     }
 
+    StatementSet CFG::getCurrentStack(const Statement& stmt) const
+    {
+        StatementSet callStack {};
+
+        auto currProc = stmt.getProc();
+        for(auto& i : m_pkb->maybeGetProcedureNamed(currProc->name)->getAllTransitiveCallers())
+        {
+            auto& callers = m_pkb->getProcedureNamed(i).getCallStmts();
+            callStack.insert(callers.begin(), callers.end());
+        }
+        auto& callers = m_pkb->getProcedureNamed(currProc->name).getCallStmts();
+        callStack.insert(callers.begin(), callers.end());
+        return callStack;
+    }
+
     bool CFG::isStatementTransitivelyNextBip(StatementNum id1, StatementNum id2) const
     {
         auto& stmt1 = m_pkb->getStatementAt(id1);
         auto& stmt2 = m_pkb->getStatementAt(id2);
 
-        std::set<StatementNum> callStack {};
+        StatementSet callStack = getCurrentStack(stmt1);
         StatementSet visited;
-
-        auto currProc = stmt1.getProc();
-        for(auto& i : m_pkb->maybeGetProcedureNamed(currProc->name)->getAllTransitiveCallers())
-        {
-            for(auto a : m_pkb->maybeGetProcedureNamed(i)->getCallStmts())
-            {
-                callStack.insert(a);
-            }
-        }
-        for(auto a : m_pkb->maybeGetProcedureNamed(currProc->name)->getCallStmts())
-        {
-            callStack.insert(a);
-        }
 
         std::queue<StatementNum> q {};
         q.emplace(id1);
@@ -543,27 +545,13 @@ namespace pkb
 
     const StatementSet& CFG::getTransitivelyNextStatementsBip(StatementNum id) const
     {
-        // kinda similar. any ways to reduce code dup.
         auto& stmt = m_pkb->getStatementAt(id);
 
         if(auto cache = stmt.maybeGetTransitivelyNextStatementsBip(); cache != nullptr)
             return *cache;
 
-        std::set<StatementNum> callStack {};
+        StatementSet callStack = getCurrentStack(stmt);
         StatementSet visited;
-
-        auto currProc = stmt.getProc();
-        for(auto& i : m_pkb->maybeGetProcedureNamed(currProc->name)->getAllTransitiveCallers())
-        {
-            for(auto a : m_pkb->maybeGetProcedureNamed(i)->getCallStmts())
-            {
-                callStack.insert(a);
-            }
-        }
-        for(auto a : m_pkb->maybeGetProcedureNamed(currProc->name)->getCallStmts())
-        {
-            callStack.insert(a);
-        }
 
         std::queue<StatementNum> q {};
         q.emplace(id);

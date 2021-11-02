@@ -244,7 +244,7 @@ namespace pkb
         template <class T1, class T2>
         std::size_t operator()(const std::pair<T1, T2>& p) const
         {
-            return p.first * 100000 + p.second;
+            return util::hash_combine(p.first, p.second);
         }
     };
 
@@ -305,6 +305,7 @@ namespace pkb
         std::unordered_map<StatementNum, const Statement*> assign_stmts;
         std::unordered_map<StatementNum, const Statement*> mod_stmts;
         std::unordered_map<StatementNum, const Statement*> call_stmts;
+        StatementSet getCurrentStack(const Statement& id) const;
 
         friend struct DesignExtractor;
     };
