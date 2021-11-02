@@ -84,7 +84,7 @@ namespace pkb
                 bip_ref[pair].erase(weight);
                 if(bip_ref[pair].size() == 1)
                 {
-                    int a = *bip_ref[pair].begin();
+                    size_t a = *bip_ref[pair].begin();
                     adj_mat_bip[stmt1 - 1][stmt2 - 1] = a;
                     bip_ref.erase(pair);
                 }
