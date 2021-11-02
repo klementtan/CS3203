@@ -540,19 +540,60 @@ namespace pkb
 
     const StatementSet& CFG::getTransitivelyNextStatementsBip(StatementNum id) const
     {
+        // kinda similar. any ways to reduce code dup.
         auto& stmt = m_pkb->getStatementAt(id);
 
         if(auto cache = stmt.maybeGetTransitivelyNextStatementsBip(); cache != nullptr)
             return *cache;
 
-        StatementSet ret {};
-        for(size_t j = 0; j < total_inst; j++)
+        std::set<StatementNum> callStack {};
+        StatementSet visited;
+
+        auto currProc = stmt.getProc();
+        for(auto& i : m_pkb->maybeGetProcedureNamed(currProc->name)->getAllTransitiveCallers())
         {
-            if(adj_mat_bip[id - 1][j] < INF && adj_mat_bip[id - 1][j] >= 1)
-                ret.insert(j + 1);
+            for(auto a : m_pkb->maybeGetProcedureNamed(i)->getCallStmts())
+            {
+                callStack.insert(a);
+            }
+        }
+        for(auto a : m_pkb->maybeGetProcedureNamed(currProc->name)->getCallStmts())
+        {
+            callStack.insert(a);
         }
 
-        return stmt.cacheTransitivelyNextStatementsBip(std::move(ret));
+        std::queue<StatementNum> q {};
+        q.emplace(id);
+        while(!q.empty())
+        {
+            auto next = q.front();
+            auto callStmt = getCallStmtMapping(next);
+            if(callStmt != nullptr)
+            {
+                callStack.insert(next);
+                for(auto a : gates.at(callStmt->getProc()->name).second)
+                {
+                    q.emplace(a);
+                }
+            }
+            if(auto it = adj_lst_bip.find(next); it != adj_lst_bip.end())
+            {
+                for(auto& pair : it->second)
+                {
+                    if(pair.second == 1 || callStack.count(pair.second - 1) != 0)
+                    {
+                        if(visited.count(pair.first) == 0)
+                        {
+                            q.emplace(pair.first);
+                        }
+                    }
+                }
+            }
+            visited.insert(next);
+            q.pop();
+        }
+
+        return stmt.cacheTransitivelyNextStatementsBip(std::move(visited));
     }
     const StatementSet& CFG::getPreviousStatementsBip(StatementNum id) const
     {
@@ -563,7 +604,7 @@ namespace pkb
         StatementSet ret {};
         for(size_t i = 0; i < this->total_inst; i++)
         {
-            if(adj_mat_bip[i][id - 1] >= 1 && adj_mat_bip[i][id - 1] < INF)
+            if(adj_mat_bip[i][id - 1] < INF)
                 ret.insert(i + 1);
         }
 
@@ -576,13 +617,64 @@ namespace pkb
         if(auto cache = stmt.maybeGetTransitivelyPreviousStatementsBip(); cache != nullptr)
             return *cache;
 
-        StatementSet ret {};
-        for(size_t i = 0; i < this->total_inst; i++)
+        std::set<StatementNum> callStack {};
+        StatementSet visited;
+        // get stmts that call it and stmt to proc that call it. 
+        // and get stmt that are transitively called by it 
+        auto currProc = stmt.getProc();
+        for(auto& i : m_pkb->maybeGetProcedureNamed(currProc->name)->getAllTransitivelyCalledProcedures())
         {
-            if(adj_mat_bip[i][id - 1] < INF && adj_mat_bip[i][id - 1] >= 1)
-                ret.insert(i + 1);
+            for(auto a : m_pkb->maybeGetProcedureNamed(i)->getCallStmts())
+            {
+                callStack.insert(a);
+            }
+        }
+        for(auto a : m_pkb->maybeGetProcedureNamed(currProc->name)->getCallStmts())
+        {
+            callStack.insert(a);
+        }
+        // intuitively, reverse everything should work
+        std::queue<StatementNum> q {};
+        q.emplace(id);
+        while(!q.empty())
+        {
+            auto next = q.front();
+            std::cout << next << std::endl;
+
+            auto callStmt = getCallStmtMapping(next);
+            for(auto a : getPreviousStatementsBip(next))
+            {
+                std::cout << "prev " << a << std::endl;
+
+                size_t weight = adj_mat_bip[a-1][next-1];
+                if(weight != INF)
+                {
+                    if(weight == 0)
+                    {
+                        for(auto b : bip_ref.at(std::make_pair(a, next)))
+                        {
+                            if(visited.count(b) == 0)
+                            {
+                                q.emplace(b);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if(weight == 1 || callStack.count(weight - 1) != 0)
+                        {
+                            if(visited.count(a) == 0)
+                            {
+                                q.emplace(a);
+                            }
+                        }
+                    }
+                }
+            }
+            visited.insert(next);
+            q.pop();
         }
 
-        return stmt.cacheTransitivelyPreviousStatementsBip(std::move(ret));
+        return stmt.cacheTransitivelyPreviousStatementsBip(std::move(visited));
     }
 }
