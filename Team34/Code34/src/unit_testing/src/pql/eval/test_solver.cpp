@@ -20,12 +20,11 @@ std::vector<pql::eval::solver::IntRow> generate_rows(int count, std::vector<pql:
     std::vector<pql::eval::solver::IntRow> rows(count);
     for(int i = 0; i < count; i++)
     {
-        std::unordered_map<const pql::ast::Declaration*, pql::eval::table::Entry> columns;
+        std::vector<pql::eval::table::Entry> columns;
         for(pql::ast::Declaration* decl : decls)
-        {
-            columns[decl] = pql::eval::table::Entry(decl, i);
-        }
-        rows[i] = pql::eval::solver::IntRow(columns);
+            columns.emplace_back(decl, i);
+
+        rows[i] = pql::eval::solver::IntRow(std::move(columns));
     }
     return rows;
 }
@@ -42,7 +41,7 @@ TEST_CASE("IntRow")
         result.addColumn(decl.get(), entry);
         REQUIRE(result.getVal(decl.get()) == entry);
 
-        REQUIRE(result.getColumns().begin()->first == decl.get());
+        REQUIRE(result.getColumns().begin()->getDeclaration() == decl.get());
         // Should not change original row
         REQUIRE(row.getColumns().empty());
     }
@@ -51,7 +50,7 @@ TEST_CASE("IntRow")
         std::unique_ptr<pql::ast::Declaration> decl =
             std::make_unique<pql::ast::Declaration>(pql::ast::Declaration { "a", pql::ast::DESIGN_ENT::ASSIGN });
         pql::eval::table::Entry entry = pql::eval::table::Entry(decl.get(), 1);
-        std::unordered_map<const pql::ast::Declaration*, pql::eval::table::Entry> columns = { { decl.get(), entry } };
+        std::vector<pql::eval::table::Entry> columns = { entry };
         pql::eval::solver::IntRow row(columns);
         REQUIRE(row.contains(decl.get()));
     }
@@ -62,10 +61,9 @@ TEST_CASE("IntRow")
         pql::eval::table::Entry entry1 = pql::eval::table::Entry(decl1.get(), 1);
         std::unique_ptr<pql::ast::Declaration> decl2 =
             std::make_unique<pql::ast::Declaration>(pql::ast::Declaration { "a2", pql::ast::DESIGN_ENT::ASSIGN });
-        pql::eval::table::Entry entry2 = pql::eval::table::Entry(decl1.get(), 2);
+        pql::eval::table::Entry entry2 = pql::eval::table::Entry(decl2.get(), 2);
         pql::eval::table::Join valid_join(decl1.get(), decl2.get(), { { entry1, entry2 } });
-        std::unordered_map<const pql::ast::Declaration*, pql::eval::table::Entry> columns = { { decl1.get(), entry1 },
-            { decl2.get(), entry2 } };
+        std::vector<pql::eval::table::Entry> columns = { entry1, entry2 };
         pql::eval::solver::IntRow row(columns);
         REQUIRE(row.isAllowed(valid_join));
 
@@ -80,26 +78,22 @@ TEST_CASE("IntRow")
         pql::eval::table::Entry entry1 = pql::eval::table::Entry(decl1.get(), 1);
         std::unique_ptr<pql::ast::Declaration> decl2 =
             std::make_unique<pql::ast::Declaration>(pql::ast::Declaration { "a2", pql::ast::DESIGN_ENT::ASSIGN });
-        pql::eval::table::Entry entry2 = pql::eval::table::Entry(decl1.get(), 2);
-        std::unordered_map<const pql::ast::Declaration*, pql::eval::table::Entry> columns1 = { { decl1.get(),
-            entry1 } };
-        std::unordered_map<const pql::ast::Declaration*, pql::eval::table::Entry> columns2 = { { decl2.get(),
-            entry2 } };
+        pql::eval::table::Entry entry2 = pql::eval::table::Entry(decl2.get(), 2);
+        std::vector<pql::eval::table::Entry> columns1 = { entry1 };
+        std::vector<pql::eval::table::Entry> columns2 = { entry2 };
         pql::eval::solver::IntRow row1(columns1);
         pql::eval::solver::IntRow row2(columns2);
         // Disjoint rows
         REQUIRE(row1.canMerge(row2, { decl2.get() }));
 
         // Overlapping rows
-        std::unordered_map<const pql::ast::Declaration*, pql::eval::table::Entry> columns3 = { { decl1.get(), entry1 },
-            { decl2.get(), entry2 } };
+        std::vector<pql::eval::table::Entry> columns3 = { entry1, entry2 };
         pql::eval::solver::IntRow row3(columns3);
         REQUIRE(row1.canMerge(row3, { decl1.get(), decl2.get() }));
 
         // Conflicting columns in rows
-        std::unordered_map<const pql::ast::Declaration*, pql::eval::table::Entry> columns4 = {
-            { decl1.get(), pql::eval::table::Entry(decl1.get(), 420) }, { decl2.get(), entry2 }
-        };
+        std::vector<pql::eval::table::Entry> columns4 = { pql::eval::table::Entry(decl1.get(), 420), entry2 };
+
         pql::eval::solver::IntRow row4(columns4);
         REQUIRE_FALSE(row1.canMerge(row4, { decl1.get(), decl2.get() }));
     }
@@ -110,14 +104,12 @@ TEST_CASE("IntRow")
         pql::eval::table::Entry entry1 = pql::eval::table::Entry(decl1.get(), 1);
         std::unique_ptr<pql::ast::Declaration> decl2 =
             std::make_unique<pql::ast::Declaration>(pql::ast::Declaration { "a2", pql::ast::DESIGN_ENT::ASSIGN });
-        pql::eval::table::Entry entry2 = pql::eval::table::Entry(decl1.get(), 2);
+        pql::eval::table::Entry entry2 = pql::eval::table::Entry(decl2.get(), 2);
         std::unique_ptr<pql::ast::Declaration> decl3 =
             std::make_unique<pql::ast::Declaration>(pql::ast::Declaration { "a3", pql::ast::DESIGN_ENT::ASSIGN });
-        pql::eval::table::Entry entry3 = pql::eval::table::Entry(decl1.get(), 3);
-        std::unordered_map<const pql::ast::Declaration*, pql::eval::table::Entry> columns1 = { { decl1.get(),
-            entry1 } };
-        std::unordered_map<const pql::ast::Declaration*, pql::eval::table::Entry> columns2 = { { decl2.get(), entry2 },
-            { decl3.get(), entry3 } };
+        pql::eval::table::Entry entry3 = pql::eval::table::Entry(decl3.get(), 3);
+        std::vector<pql::eval::table::Entry> columns1 = { entry1 };
+        std::vector<pql::eval::table::Entry> columns2 = { entry2, entry3 };
         pql::eval::solver::IntRow row1(columns1);
         pql::eval::solver::IntRow row2(columns2);
         pql::eval::solver::IntRow merged_row(row1);

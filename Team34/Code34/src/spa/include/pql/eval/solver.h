@@ -15,11 +15,13 @@ namespace pql::eval::solver
     class IntRow
     {
     private:
-        // mapping of declaration and the index it belongs to
-        std::unordered_map<const ast::Declaration*, table::Entry> m_columns;
+        // the Entry contains a Declaration, so we are able to get the value by a declaration.
+        std::vector<table::Entry> m_columns;
 
     public:
-        explicit IntRow(std::unordered_map<const ast::Declaration*, table::Entry> columns);
+        // explicit IntRow(std::unordered_map<const ast::Declaration*, table::Entry> columns);
+        explicit IntRow(std::vector<table::Entry> columns);
+
         IntRow();
         // merge this row with a new column and return a new copy
         void addColumn(const ast::Declaration* decl, const table::Entry& entry);
@@ -33,7 +35,7 @@ namespace pql::eval::solver
 
         bool contains(const ast::Declaration* decl) const;
         size_t size() const;
-        const std::unordered_map<const ast::Declaration*, table::Entry>& getColumns() const;
+        const std::vector<table::Entry>& getColumns() const;
         // check columns in the row exist in one of the allowed joins
         [[nodiscard]] bool isAllowed(const table::Join& join) const;
         [[nodiscard]] std::string toString() const;
@@ -133,9 +135,9 @@ struct std::hash<pql::eval::solver::IntRow>
     size_t operator()(const pql::eval::solver::IntRow& r) const
     {
         size_t seed = 0;
-        for(const auto& [decl, e] : r.getColumns())
+        for(const auto& e : r.getColumns())
         {
-            util::_hash_combine(seed, util::hash_combine(*decl, e.getType()));
+            util::_hash_combine(seed, util::hash_combine(*e.getDeclaration(), e.getType()));
             if(e.getType() == pql::eval::table::EntryType::kStmt)
                 util::_hash_combine(seed, e.getStmtNum());
             else
