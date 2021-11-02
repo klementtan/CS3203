@@ -30,7 +30,6 @@ procedure John {
               x = x + z; }
       else {
               y = x * y; } }
-
 )";
 
 constexpr const auto sample_source_B = R"(
@@ -44,7 +43,6 @@ procedure C {
         a = b;
         b = c;
         c = d; }
-
 )";
 
 constexpr const auto sample_source_C = R"(
@@ -80,14 +78,13 @@ TEST_CASE("Next_Bip")
 {
     SECTION("positive test cases: bip")
     {
-        CHECK(cfg3->isStatementNextBip(9, 2));
-        CHECK(cfg3->isStatementTransitivelyNextBip(9, 4));
         CHECK(cfg1->isStatementNextBip(2, 6));
         CHECK(cfg1->isStatementNextBip(9, 10));
         CHECK(cfg1->isStatementNextBip(9, 11));
         CHECK(cfg1->isStatementNextBip(11, 8));
         CHECK(cfg2->isStatementNextBip(1, 4));
         CHECK(cfg2->isStatementNextBip(7, 3));
+        CHECK(cfg3->isStatementNextBip(9, 2));
         
         CHECK(cfg1->isStatementTransitivelyNextBip(2, 6));
         CHECK(cfg1->isStatementTransitivelyNextBip(1, 11));
@@ -97,7 +94,12 @@ TEST_CASE("Next_Bip")
         CHECK(cfg1->isStatementTransitivelyNextBip(10, 11));
         CHECK(cfg2->isStatementTransitivelyNextBip(3, 4));
         CHECK(cfg2->isStatementTransitivelyNextBip(1, 3));
-        
+        CHECK(cfg3->isStatementTransitivelyNextBip(9, 4));
+
+
+        CHECK(cfg1->getNextStatementsBip(9) == StatementSet { 10, 11 });
+        CHECK(cfg2->getNextStatementsBip(7) == StatementSet { 2, 3 });
+        CHECK(cfg1->getPreviousStatementsBip(7) == StatementSet { 6});
     }
     SECTION("negative test cases: bip")
     {
@@ -108,8 +110,12 @@ TEST_CASE("Next_Bip")
         CHECK(!cfg2->isStatementNextBip(7, 7));
         CHECK(!cfg3->isStatementNextBip(9, 6));
         CHECK(!cfg3->isStatementNextBip(3, 2));
+
         CHECK(!cfg1->isStatementTransitivelyNextBip(4, 8));
         CHECK(!cfg1->isStatementTransitivelyNextBip(6, 2));
         CHECK(!cfg2->isStatementTransitivelyNextBip(3, 1));
+
+        CHECK(cfg1->getTransitivelyNextStatementsBip(11) == StatementSet { 3, 4, 5, 8, 9, 10, 11 });
+        CHECK(cfg1->getTransitivelyPreviousStatementsBip(8) == StatementSet { 1, 2, 6, 7, 9, 10, 11 });
     }
 }

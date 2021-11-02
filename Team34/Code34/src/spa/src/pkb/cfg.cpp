@@ -488,11 +488,14 @@ namespace pkb
 
         std::queue<StatementNum> q {};
         q.emplace(id1);
+        bool initialNode = true;
         while(!q.empty())
         {
             auto next = q.front();
-            if(next == id2)
+            if(next == id2 && !initialNode)
                 return true;
+            if(initialNode)
+                initialNode = false;
             auto callStmt = getCallStmtMapping(next);
             if(callStmt != nullptr)
             {
@@ -564,6 +567,7 @@ namespace pkb
 
         std::queue<StatementNum> q {};
         q.emplace(id);
+        bool initialNode = true;
         while(!q.empty())
         {
             auto next = q.front();
@@ -589,7 +593,10 @@ namespace pkb
                     }
                 }
             }
-            visited.insert(next);
+            if(!initialNode)
+                visited.insert(next);
+            if(initialNode)
+                initialNode = false;
             q.pop();
         }
 
@@ -617,64 +624,15 @@ namespace pkb
         if(auto cache = stmt.maybeGetTransitivelyPreviousStatementsBip(); cache != nullptr)
             return *cache;
 
-        std::set<StatementNum> callStack {};
-        StatementSet visited;
-        // get stmts that call it and stmt to proc that call it. 
-        // and get stmt that are transitively called by it 
-        auto currProc = stmt.getProc();
-        for(auto& i : m_pkb->maybeGetProcedureNamed(currProc->name)->getAllTransitivelyCalledProcedures())
+        StatementSet ret {};
+        
+        for(size_t i = 0; i < total_inst; i++)
         {
-            for(auto a : m_pkb->maybeGetProcedureNamed(i)->getCallStmts())
+            if(isStatementTransitivelyNextBip(i+1, id))
             {
-                callStack.insert(a);
+                ret.insert(i+1);
             }
         }
-        for(auto a : m_pkb->maybeGetProcedureNamed(currProc->name)->getCallStmts())
-        {
-            callStack.insert(a);
-        }
-        // intuitively, reverse everything should work
-        std::queue<StatementNum> q {};
-        q.emplace(id);
-        while(!q.empty())
-        {
-            auto next = q.front();
-            std::cout << next << std::endl;
-
-            auto callStmt = getCallStmtMapping(next);
-            for(auto a : getPreviousStatementsBip(next))
-            {
-                std::cout << "prev " << a << std::endl;
-
-                size_t weight = adj_mat_bip[a-1][next-1];
-                if(weight != INF)
-                {
-                    if(weight == 0)
-                    {
-                        for(auto b : bip_ref.at(std::make_pair(a, next)))
-                        {
-                            if(visited.count(b) == 0)
-                            {
-                                q.emplace(b);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if(weight == 1 || callStack.count(weight - 1) != 0)
-                        {
-                            if(visited.count(a) == 0)
-                            {
-                                q.emplace(a);
-                            }
-                        }
-                    }
-                }
-            }
-            visited.insert(next);
-            q.pop();
-        }
-
-        return stmt.cacheTransitivelyPreviousStatementsBip(std::move(visited));
+        return stmt.cacheTransitivelyPreviousStatementsBip(std::move(ret));
     }
 }
