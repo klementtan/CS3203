@@ -670,6 +670,9 @@ namespace pql::eval::solver
                     }
                     new_table.filterRows(join);
                     processed_join.insert(join.getId());
+                    // If a table is empty, there will never be a valid assignment and we can terminate early
+                    if(new_table.size() == 0)
+                        break;
                 }
             }
             util::logfmt("pql::eval::solver", "New final merged table for component {}", new_table.toString());
@@ -696,6 +699,9 @@ namespace pql::eval::solver
 
             new_table.dedupRows();
             new_int_tables.push_back(std::move(new_table));
+            // If a table is empty, there will never be a valid assignment and we can terminate early
+            if(new_int_tables.back().size() == 0)
+                break;
         }
 
         m_int_tables = std::move(new_int_tables);
