@@ -145,6 +145,25 @@ namespace pql::eval::table
         static Entry extractAttr(const Entry& entry, const ast::AttrRef& attr_ref, const pkb::ProgramKB* pkb);
         Domain getDomain(const ast::Declaration* decl) const;
         void addJoin(const Join& join);
+
+        using JoinIdSet = std::unordered_set<int>;
+        using DeclSet = std::unordered_set<const ast::Declaration*>;
+        using ValueAssignmentMap = std::unordered_map<const ast::Declaration*, Entry>;
+        using DeclJoinMap = std::unordered_map<const ast::Declaration*, std::vector<const Join*>>;
+
+        bool evaluateJoinsOverDomains();
+
+        bool evaluateJoinValues(ValueAssignmentMap& known, const ast::Declaration* decl, size_t join_idx,
+            const std::vector<const Join*>& joins, JoinIdSet& visited_joins, DeclJoinMap& join_mapping);
+
+        bool recursivelyTraverseJoins(ValueAssignmentMap& known, JoinIdSet& visited_joins,
+            const ast::Declaration* decl, DeclJoinMap& join_mapping);
+
+        bool searchJoinsForValidValues(ValueAssignmentMap& known, const std::vector<const ast::Declaration*>& decls,
+            DeclJoinMap& join_mapping);
+
+        bool searchForValidValues(const std::vector<DeclSet>& components, DeclJoinMap& join_mapping);
+
         Table();
         ~Table();
         std::list<std::string> getResult(const ast::ResultCl& result, const pkb::ProgramKB* pkb);

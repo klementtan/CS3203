@@ -358,7 +358,215 @@ namespace pql::eval::table
         return ret;
     }
 
+    static bool check_conflicting_values(const Table::ValueAssignmentMap& values, const Entry& ent)
+    {
+        if(auto it = values.find(ent.getDeclaration()); it != values.end())
+            return it->second != ent;
+        return false;
+    }
 
+    bool Table::evaluateJoinValues(ValueAssignmentMap& values, const ast::Declaration* this_decl, size_t join_idx,
+        const std::vector<const Join*>& joins, JoinIdSet& visited_joins, DeclJoinMap& join_map)
+    {
+        if(join_idx >= joins.size())
+            return true;
+
+        auto join = joins[join_idx];
+        if(visited_joins.count(join->getId()) > 0)
+            return this->evaluateJoinValues(values, this_decl, join_idx + 1, joins, visited_joins, join_map);
+
+        auto& allowed = join->getAllowedEntries();
+        if(allowed.empty())
+            return false;
+
+        auto decl_a = join->getDeclA();
+        auto decl_b = join->getDeclB();
+
+        visited_joins.insert(join->getId());
+
+        for(auto& [ a, b ] : allowed)
+        {
+            if(check_conflicting_values(values, a) || check_conflicting_values(values, b))
+                continue;
+
+            if(m_domains[decl_a].count(a) == 0 || m_domains[decl_b].count(b) == 0)
+                continue;
+
+            auto other_decl = (this_decl == decl_a ? decl_b : decl_a);
+
+            auto values_copy = values;
+            values_copy[decl_a] = a;
+            values_copy[decl_b] = b;
+
+#if 0
+            zpr::fprintln(stderr, "{}recursing ({} left) with {} <-> {}", zpr::w(depth * 2)(""), --k, decl_a->name, decl_b->name);
+            {
+                std::vector<Entry> assigns {};
+                for(auto& [ k, v ] : values_copy)
+                    assigns.push_back(v);
+
+                std::sort(assigns.begin(), assigns.end(), [](auto& a, auto& b) -> bool {
+                    if(a.getDeclaration()->name.size() < b.getDeclaration()->name.size())
+                        return true;
+                    return a.getDeclaration()->name < b.getDeclaration()->name;
+                });
+
+                for(auto& e : assigns)
+                    zpr::fprintln(stderr, "{}  {} = {}", zpr::w(depth * 2)(""), e.getDeclaration()->name, e.getStmtNum());
+            }
+#endif
+
+            auto visited_copy = visited_joins;
+            if(this->recursivelyTraverseJoins(values_copy, visited_copy, other_decl, join_map))
+            {
+                // we must handle the remaining joins recursively, so that we are able
+                // to backtrack if any of the assignments fail.
+                if(this->evaluateJoinValues(values_copy, this_decl, join_idx + 1, joins, visited_copy, join_map))
+                {
+                    values = std::move(values_copy);
+                    return true;
+                }
+            }
+#if 0
+            zpr::println("{}FAILED (a) {} <-> {}", zpr::w(depth * 2)(""), decl_a->name, decl_b->name);
+#endif
+        }
+
+        return false;
+    }
+
+    bool Table::recursivelyTraverseJoins(ValueAssignmentMap& values, JoinIdSet& visited_joins,
+        const ast::Declaration* this_decl, DeclJoinMap& join_map)
+    {
+        // get all joins for this guy
+        spa_assert(join_map.count(this_decl) > 0);
+
+        if(m_domains[this_decl].empty())
+            return false;
+
+        return this->evaluateJoinValues(values, this_decl, 0, join_map[this_decl], visited_joins, join_map);
+    }
+
+    bool Table::searchJoinsForValidValues(ValueAssignmentMap& assignments, const std::vector<const ast::Declaration*>& decls,
+        DeclJoinMap& join_map)
+    {
+        spa_assert(decls.size() > 0);
+
+        // if there is only one decl, then by definition there are no joins, which means its value
+        // literally doesn't matter -- so return true -- as long as it has a non-empty domain.
+        if(decls.size() == 1)
+            return m_domains[*decls.begin()].size() > 0;
+
+        std::unordered_set<int> visited_joins {};
+
+        // since 'decls' is a connected component, we must be able to reach all
+        // decls from any given decl (using joins "in reverse" if needed).
+        return this->recursivelyTraverseJoins(assignments, visited_joins, *decls.begin(), join_map);
+    }
+
+    bool Table::searchForValidValues(const std::vector<DeclSet>& components, DeclJoinMap& join_mapping)
+    {
+        size_t current = 0;
+        size_t total = 13ULL * 12 * 11 * 10 * 9 * 8 * 7 * 6 * 5 * 4 * 3 * 2 * 1;
+
+        const auto get_decl = [&](const char* s) -> const ast::Declaration* {
+            for(auto d : m_select_decls)
+                if(d->name == s)
+                    return d;
+
+            return nullptr;
+        };
+
+        const auto a1 = get_decl("a1");
+        const auto a2 = get_decl("a2");
+        const auto a3 = get_decl("a3");
+        const auto a4 = get_decl("a4");
+        const auto a5 = get_decl("a5");
+        const auto a6 = get_decl("a6");
+        const auto a7 = get_decl("a7");
+        const auto a8 = get_decl("a8");
+        const auto a9 = get_decl("a9");
+        const auto a10 = get_decl("a10");
+        const auto a11 = get_decl("a11");
+        const auto a12 = get_decl("a12");
+        const auto a13 = get_decl("a13");
+
+        std::vector<const ast::Declaration*> decls = {
+            a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13
+        };
+
+        const auto comparator = [](const auto* a, const auto* b) -> bool {
+            return a->name < b->name;
+        };
+
+        const auto verify = [&](ValueAssignmentMap& values) -> bool {
+            return values.size() == 13
+                && values[a1].getStmtNum() == 1
+                && values[a2].getStmtNum() == 2
+                && values[a3].getStmtNum() == 3
+                && values[a4].getStmtNum() == 4
+                && values[a5].getStmtNum() == 5
+                && values[a6].getStmtNum() == 6
+                && values[a7].getStmtNum() == 7
+                && values[a8].getStmtNum() == 8
+                && values[a9].getStmtNum() == 9
+                && values[a10].getStmtNum() == 10
+                && values[a11].getStmtNum() == 11
+                && values[a12].getStmtNum() == 12
+                && values[a13].getStmtNum() == 13;
+        };
+
+        std::sort(decls.begin(), decls.end(), comparator);
+
+        for(auto& comp : components)
+        {
+        again:
+            current += 1;
+
+            if((current & 0x3f) == 0)
+            {
+                zpr::fprint(stderr, "\x1b[1G\x1b[2Kordering ({} / {}) -- {.2f}%:", current, total, 100 * (double) current / total);
+                for(auto ord : decls)
+                    zpr::fprint(stderr, " {}", ord->name);
+            }
+
+            ValueAssignmentMap assignment {};
+            if(!this->searchJoinsForValidValues(assignment, decls, join_mapping))
+                return false;
+
+            if(!verify(assignment))
+            {
+                zpr::fprintln(stderr, "failed!!!");
+                abort();
+            }
+
+            if(!std::next_permutation(decls.begin(), decls.end(), comparator))
+                break;
+
+            goto again;
+        }
+
+        return true;
+    }
+
+    bool Table::evaluateJoinsOverDomains()
+    {
+        if(m_select_decls.empty())
+            return true;
+
+        // make a vector of them, so we (a) can index, and (b) have a consistent order.
+        std::unordered_map<const ast::Declaration*, std::vector<const Join*>> join_mapping {};
+        for(auto& join : m_joins)
+        {
+            join_mapping[join.getDeclA()].push_back(&join);
+            join_mapping[join.getDeclB()].push_back(&join);
+        }
+
+        auto graph = solver::DepGraph(m_select_decls, m_joins);
+        auto components = graph.getComponents();
+
+        return this->searchForValidValues(components, join_mapping);
+    }
 
 
 
@@ -396,14 +604,10 @@ namespace pql::eval::table
         }
         else
         {
-            spa_assert(result_cl.isBool());
-            for(auto* decl : m_select_decls)
-            {
-                if(this->getDomain(decl).empty())
-                    return { "FALSE" };
-            }
-
-            return { "TRUE" };
+            if(this->evaluateJoinsOverDomains())
+                return { "TRUE" };
+            else
+                return { "FALSE" };
         }
 
         solver::Solver solver(

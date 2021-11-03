@@ -49,7 +49,6 @@ namespace pql::ast
                     should_erase |= !s_ast::exactMatch(this->expr_spec.expr.get(), assign_stmt->rhs.get());
             }
 
-
             // don't do extra work if we're already going to yeet this
             if(!should_erase)
             {
