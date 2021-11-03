@@ -212,10 +212,6 @@ namespace pkb
             processModifies(modified, stmt, ts);
     }
 
-
-
-
-
     void DesignExtractor::processStmtList(const s_ast::StmtList* list, TraversalState& ts)
     {
         this->processFollowingForStmtList(list, ts);
@@ -377,8 +373,8 @@ namespace pkb
                 cfg->addEdgeBip(i + 1, j + 1, adjMat[i][j]);
             }
         }
-        // get the last stmt(s)
-        auto getLastStmts = [](const s_ast::StmtList* stmtLst) {
+        // get the return points instead of last stmts
+        auto getLastStmts = [&](const s_ast::StmtList* stmtLst) {
             std::vector<StatementNum> lastStmts {};
             std::function<void(const s_ast::StmtList*)> visitStmtList {};
             visitStmtList = [&](const s_ast::StmtList* stmtLst) {
@@ -387,6 +383,10 @@ namespace pkb
                 {
                     visitStmtList(&stmt->true_case);
                     visitStmtList(&stmt->false_case);
+                }
+                else if(auto stmt = CONST_DCAST(ProcCall, lastStmt); stmt)
+                {
+                    visitStmtList(&m_pkb->getProcedureNamed(stmt->proc_name).getAstProc()->body);
                 }
                 else
                 {
@@ -415,10 +415,12 @@ namespace pkb
                 }
                 auto calledProc = CONST_DCAST(ProcCall, this->m_pkb->getStatementAt(callStmt).getAstStmt())->proc_name;
                 cfg->addEdgeBip(callStmt, cfg->gates.at(calledProc).first, callStmt + 1);
+                // add the return points
                 if(nextStmt.size() != 0)
                 {
                     for(auto from : cfg->gates.at(calledProc).second)
                     {
+                        // multiple edges with same starting and ending node with different weights when returning
                         cfg->addEdgeBip(from, *nextStmt.begin(), callStmt + 1);
                     }
                 }
