@@ -4,10 +4,13 @@
 #include "exceptions.h"
 
 #include <zpr.h>
+#include <algorithm>
 #include <queue>
+#include <stack>
 #include <unordered_set>
 #include <vector>
-#include <algorithm>
+
+#include <iostream>
 
 #define INF SIZE_MAX
 
@@ -393,6 +396,196 @@ namespace pkb
         return false;
     }
 
+    bool CFG::doesAffectBip(StatementNum id1, StatementNum id2) const
+    {
+        if(!isStatementTransitivelyNextBip(id1, id2))
+            return false;
+
+        auto stmt1 = getAssignStmtMapping(id1);
+        auto stmt2 = getAssignStmtMapping(id2);
+
+        if(stmt1 == nullptr || stmt2 == nullptr)
+            return false;
+
+        const auto& modified = stmt1->getModifiedVariables();
+        const auto& used = stmt2->getUsedVariables();
+
+        std::unordered_set<std::string> vars;
+        for(const auto& var : modified)
+        {
+            if(used.count(var))
+                vars.insert(var);
+        }
+
+        StatementSet visited;
+        std::queue<std::tuple<StatementNum, std::string, std::stack<StatementNum>>> q;
+        for(auto [stmt, weight] : adj_lst_bip.at(id1))
+        {
+            for(auto var : vars)
+            {
+                std::stack<StatementNum> s;
+                q.emplace(stmt, var, s);
+                visited.insert(stmt);
+            }
+        }
+
+        while(!q.empty())
+        {
+            auto [num, var, calls] = q.front();
+            q.pop();
+
+            if(num == id2)
+                return true;
+
+            if(getCallStmtMapping(num) == nullptr)
+                if(getModStmtMapping(num) != nullptr && getModStmtMapping(num)->modifiesVariable(var))
+                    continue;
+
+            if(auto it = adj_lst_bip.find(num); it != adj_lst_bip.end())
+            {
+                for(auto [stmt, weight] : it->second)
+                {
+                    if(weight == 1)
+                    {
+                        if(visited.count(stmt))
+                            continue;
+                        q.emplace(stmt, var, calls);
+                        visited.insert(stmt);
+                    }
+                    else
+                    {
+                        if(getCallStmtMapping(num) == nullptr)
+                        {
+                            std::stack<StatementNum> calls_copy(calls);
+                            if(!calls_copy.empty())
+                            {
+                                if(calls.top() == weight)
+                                {
+                                    if(visited.count(stmt))
+                                        continue;
+                                    calls_copy.pop();
+                                    q.emplace(stmt, var, calls_copy);
+                                    visited.insert(stmt);
+                                }
+                            }
+                            else
+                            {
+                                if(visited.count(stmt))
+                                    continue;
+                                q.emplace(stmt, var, calls_copy);
+                                visited.insert(stmt);
+                            }
+                        }
+                        else
+                        {
+                            std::stack<StatementNum> calls_copy(calls);
+                            calls_copy.push(weight);
+                            q.emplace(stmt, var, calls_copy);
+                            visited.clear();
+                            visited.insert(stmt);
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    bool CFG::doesTransitivelyAffectBip(StatementNum id1, StatementNum id2) const
+    {
+        std::queue<std::pair<StatementNum, std::queue<StatementNum>>> q;
+        for(auto stmt : getAffectedStatementsBip(id1))
+        {
+            std::queue<StatementNum> path;
+            path.push(stmt);
+            q.emplace(stmt, path);
+        }
+
+        while(!q.empty())
+        {
+            auto [num, path] = q.front();
+            q.pop();
+
+            if(num == id2)
+            {
+                if(isValidTransitivelyAffectBip(id1, id2, path))
+                    return true;
+                else
+                    continue;
+            }
+
+            for(auto stmt : getAffectedStatementsBip(num))
+            {
+                std::queue<StatementNum> path_copy(path);
+                path_copy.push(stmt);
+                q.emplace(stmt, path_copy);
+            }
+        }
+
+        return false;
+    }
+
+    bool CFG::isValidTransitivelyAffectBip(StatementNum id1, StatementNum id2, std::queue<StatementNum> path) const
+    {
+        std::queue<std::tuple<StatementNum, std::queue<StatementNum>, std::stack<StatementNum>>> q;
+        for(auto [stmt, weight] : adj_lst_bip.at(id1))
+        {
+            std::queue<StatementNum> path_copy(path);
+            std::stack<StatementNum> s;
+            q.emplace(stmt, path_copy, s);
+        }
+
+        while(!q.empty())
+        {
+            auto [num, transits, calls] = q.front();
+            q.pop();
+
+            if(!transits.empty() && transits.front() == num)
+                transits.pop();
+            if(transits.empty())
+                return true;
+
+            if(auto it = adj_lst_bip.find(num); it != adj_lst_bip.end())
+            {
+                for(auto [stmt, weight] : it->second)
+                {
+                    if(weight == 1)
+                    {
+                        q.emplace(stmt, transits, calls);
+                    }
+                    else
+                    {
+                        if(getCallStmtMapping(num) == nullptr)
+                        {
+                            std::stack<StatementNum> calls_copy(calls);
+                            if(!calls_copy.empty())
+                            {
+                                if(calls.top() == weight)
+                                {
+                                    calls_copy.pop();
+                                    q.emplace(stmt, transits, calls_copy);
+                                }
+                            }
+                            else
+                            {
+                                q.emplace(stmt, transits, calls_copy);
+                            }
+                        }
+                        else
+                        {
+                            std::stack<StatementNum> calls_copy(calls);
+                            calls_copy.push(weight);
+                            q.emplace(stmt, transits, calls_copy);
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
     bool CFG::affectsRelationExists() const
     {
         // TODO: is there a cheaper way of doing this?
@@ -419,6 +612,20 @@ namespace pkb
         return stmt.cacheAffectedStatements(std::move(ret));
     }
 
+    const StatementSet& CFG::getAffectedStatementsBip(StatementNum id) const
+    {
+        auto& stmt = m_pkb->getStatementAt(id);
+        if(auto cache = stmt.maybeGetAffectedStatementsBip(); cache != nullptr)
+            return *cache;
+
+        StatementSet ret {};
+        for(auto stmt : getTransitivelyNextStatementsBip(id))
+            if(doesAffectBip(id, stmt))
+                ret.insert(stmt);
+
+        return stmt.cacheAffectedStatementsBip(std::move(ret));
+    }
+
     const StatementSet& CFG::getAffectingStatements(StatementNum id) const
     {
         auto& stmt = m_pkb->getStatementAt(id);
@@ -430,6 +637,19 @@ namespace pkb
             if(doesAffect(stmt, id))
                 ret.insert(stmt);
         return stmt.cacheAffectingStatements(std::move(ret));
+    }
+
+    const StatementSet& CFG::getAffectingStatementsBip(StatementNum id) const
+    {
+        auto& stmt = m_pkb->getStatementAt(id);
+        if(auto cache = stmt.maybeGetAffectingStatementsBip(); cache != nullptr)
+            return *cache;
+
+        StatementSet ret {};
+        for(auto stmt : getTransitivelyPreviousStatementsBip(id))
+            if(doesAffectBip(stmt, id))
+                ret.insert(stmt);
+        return stmt.cacheAffectingStatementsBip(std::move(ret));
     }
 
     const StatementSet& CFG::getTransitivelyAffectedStatements(StatementNum id) const
@@ -445,6 +665,19 @@ namespace pkb
         return stmt.cacheTransitivelyAffectedStatements(std::move(ret));
     }
 
+    const StatementSet& CFG::getTransitivelyAffectedStatementsBip(StatementNum id) const
+    {
+        auto& stmt = m_pkb->getStatementAt(id);
+        if(auto cache = stmt.maybeGetTransitivelyAffectedStatementsBip(); cache != nullptr)
+            return *cache;
+
+        StatementSet ret {};
+        for(auto stmt : getTransitivelyNextStatementsBip(id))
+            if(doesTransitivelyAffectBip(id, stmt))
+                ret.insert(stmt);
+        return stmt.cacheTransitivelyAffectedStatementsBip(std::move(ret));
+    }
+
     const StatementSet& CFG::getTransitivelyAffectingStatements(StatementNum id) const
     {
         auto& stmt = m_pkb->getStatementAt(id);
@@ -456,6 +689,19 @@ namespace pkb
             if(doesTransitivelyAffect(stmt, id))
                 ret.insert(stmt);
         return stmt.cacheTransitivelyAffectingStatements(std::move(ret));
+    }
+
+    const StatementSet& CFG::getTransitivelyAffectingStatementsBip(StatementNum id) const
+    {
+        auto& stmt = m_pkb->getStatementAt(id);
+        if(auto cache = stmt.maybeGetTransitivelyAffectingStatementsBip(); cache != nullptr)
+            return *cache;
+
+        StatementSet ret {};
+        for(auto stmt : getTransitivelyPreviousStatementsBip(id))
+            if(doesTransitivelyAffectBip(stmt, id))
+                ret.insert(stmt);
+        return stmt.cacheTransitivelyAffectingStatementsBip(std::move(ret));
     }
 
     bool CFG::isStatementNextBip(StatementNum stmt1, StatementNum stmt2) const
@@ -590,6 +836,7 @@ namespace pkb
 
         return stmt.cacheTransitivelyNextStatementsBip(std::move(visited));
     }
+
     const StatementSet& CFG::getPreviousStatementsBip(StatementNum id) const
     {
         auto& stmt = m_pkb->getStatementAt(id);
@@ -605,6 +852,7 @@ namespace pkb
 
         return stmt.cachePreviousStatementsBip(std::move(ret));
     }
+
     const StatementSet& CFG::getTransitivelyPreviousStatementsBip(StatementNum id) const
     {
         auto& stmt = m_pkb->getStatementAt(id);

@@ -150,6 +150,11 @@ namespace pkb
         m_did_cache_prev_bip = false;
         m_did_cache_transitively_next_bip = false;
         m_did_cache_transitively_prev_bip = false;
+
+        m_did_cache_affects_bip = false;
+        m_did_cache_affecting_bip = false;
+        m_did_cache_transitively_affects_bip = false;
+        m_did_cache_transitively_affecting_bip = false;
     }
 
     const simple::ast::Procedure* Statement::getProc() const
@@ -353,5 +358,69 @@ namespace pkb
         m_did_cache_transitively_affecting = true;
 
         return m_transitively_affecting;
+    }
+
+    const StatementSet* Statement::maybeGetAffectedStatementsBip() const
+    {
+        if(m_did_cache_affects_bip)
+            return &m_affects_bip;
+
+        return nullptr;
+    }
+
+    const StatementSet& Statement::cacheAffectedStatementsBip(StatementSet stmts) const
+    {
+        m_affects_bip = std::move(stmts);
+        m_did_cache_affects_bip = true;
+
+        return m_affects_bip;
+    }
+
+    const StatementSet* Statement::maybeGetAffectingStatementsBip() const
+    {
+        if(m_did_cache_affecting_bip)
+            return &m_affecting_bip;
+
+        return nullptr;
+    }
+
+    const StatementSet& Statement::cacheAffectingStatementsBip(StatementSet stmts) const
+    {
+        m_affecting_bip = std::move(stmts);
+        m_did_cache_affecting_bip = true;
+
+        return m_affecting_bip;
+    }
+
+    const StatementSet* Statement::maybeGetTransitivelyAffectedStatementsBip() const
+    {
+        if(m_did_cache_transitively_affects_bip)
+            return &m_transitively_affects_bip;
+
+        return nullptr;
+    }
+
+    const StatementSet& Statement::cacheTransitivelyAffectedStatementsBip(StatementSet stmts) const
+    {
+        m_transitively_affects_bip = std::move(stmts);
+        m_did_cache_transitively_affects_bip = true;
+
+        return m_transitively_affects_bip;
+    }
+
+    const StatementSet* Statement::maybeGetTransitivelyAffectingStatementsBip() const
+    {
+        if(m_did_cache_transitively_affecting_bip)
+            return &m_transitively_affecting_bip;
+
+        return nullptr;
+    }
+
+    const StatementSet& Statement::cacheTransitivelyAffectingStatementsBip(StatementSet stmts) const
+    {
+        m_transitively_affecting_bip = std::move(stmts);
+        m_did_cache_transitively_affecting_bip = true;
+
+        return m_transitively_affecting_bip;
     }
 }
