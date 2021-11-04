@@ -41,20 +41,26 @@ TEST_CASE("boolean edge cases")
     TEST_OK(prog_1, "stmt a, b; Select BOOLEAN such that Follows(a, b) with a.stmt# = b.stmt#", "FALSE");
     TEST_OK(prog_1, "stmt a, b; Select BOOLEAN with a.stmt# = b.stmt# such that Follows(a, b)", "FALSE");
 
-    TEST_OK(prog_2, "assign a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,aA,aB,aC,aD,aE,aF; Select BOOLEAN such that "
+    TEST_OK(prog_2,
+        "assign a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,aA,aB,aC,aD,aE,aF; Select BOOLEAN such that "
         "Follows(a0,a1) and Follows(a1,a2) and Follows(a2,a3) and Follows(a3,a4) and Follows(a4,a5) and "
         "Follows(a5,a6) and Follows(a6,a7) and Follows(a7,a8) and Follows(a8,a9) and Follows(a9,aA) and "
-        "Follows(aA,aB) and Follows(aB,aC) and Follows(aC,aD) and Follows(aD,aE) and Follows(aE,aF)", "TRUE");
+        "Follows(aA,aB) and Follows(aB,aC) and Follows(aC,aD) and Follows(aD,aE) and Follows(aE,aF)",
+        "TRUE");
 
-    TEST_OK(prog_2, "assign a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,aA; Select BOOLEAN such that Follows(a0,a1)"
+    TEST_OK(prog_2,
+        "assign a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,aA; Select BOOLEAN such that Follows(a0,a1)"
         " and Follows(a1,a2) and Follows(a2,a3) and Follows(a3,a4) and Follows(a4,a5) and Follows(a5,a6)"
-        " and Follows(a6,a7) and Follows(a7,a8) and Follows(a8,a9) and Follows(a9,aA)", "TRUE");
+        " and Follows(a6,a7) and Follows(a7,a8) and Follows(a8,a9) and Follows(a9,aA)",
+        "TRUE");
 
-    TEST_OK(prog_2, "assign a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,aA,aB,aC,aD,aE,aF,aG; Select BOOLEAN such that "
+    TEST_OK(prog_2,
+        "assign a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,aA,aB,aC,aD,aE,aF,aG; Select BOOLEAN such that "
         "Follows(a0,a1) and Follows(a1,a2) and Follows(a2,a3) and Follows(a3,a4) and Follows(a4,a5) and "
         "Follows(a5,a6) and Follows(a6,a7) and Follows(a7,a8) and Follows(a8,a9) and Follows(a9,aA) and "
         "Follows(aA,aB) and Follows(aB,aC) and Follows(aC,aD) and Follows(aD,aE) and Follows(aE,aF) and "
-        "Follows(aF,aG)", "FALSE");
+        "Follows(aF,aG)",
+        "FALSE");
 }
 
 TEST_CASE("Check valid domain")
