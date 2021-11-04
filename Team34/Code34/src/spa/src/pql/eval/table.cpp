@@ -400,24 +400,6 @@ namespace pql::eval::table
             values_copy[decl_a] = a;
             values_copy[decl_b] = b;
 
-#if 0
-            zpr::fprintln(stderr, "{}recursing ({} left) with {} <-> {}", zpr::w(depth * 2)(""), --k, decl_a->name, decl_b->name);
-            {
-                std::vector<Entry> assigns {};
-                for(auto& [ k, v ] : values_copy)
-                    assigns.push_back(v);
-
-                std::sort(assigns.begin(), assigns.end(), [](auto& a, auto& b) -> bool {
-                    if(a.getDeclaration()->name.size() < b.getDeclaration()->name.size())
-                        return true;
-                    return a.getDeclaration()->name < b.getDeclaration()->name;
-                });
-
-                for(auto& e : assigns)
-                    zpr::fprintln(stderr, "{}  {} = {}", zpr::w(depth * 2)(""), e.getDeclaration()->name, e.getStmtNum());
-            }
-#endif
-
             auto visited_copy = visited_joins;
             if(this->recursivelyTraverseJoins(values_copy, visited_copy, other_decl, join_map))
             {
@@ -429,9 +411,6 @@ namespace pql::eval::table
                     return true;
                 }
             }
-#if 0
-            zpr::println("{}FAILED (a) {} <-> {}", zpr::w(depth * 2)(""), decl_a->name, decl_b->name);
-#endif
         }
 
         return false;
@@ -447,132 +426,6 @@ namespace pql::eval::table
             return false;
 
         return this->evaluateJoinValues(values, this_decl, 0, join_map[this_decl], visited_joins, join_map);
-    }
-
-    bool Table::searchJoinsForValidValues(ValueAssignmentMap& assignments, const DeclSet& decls, DeclJoinMap& join_map)
-    {
-        spa_assert(decls.size() > 0);
-
-        // if there is only one decl, then by definition there are no joins, which means its value
-        // literally doesn't matter -- so return true -- as long as it has a non-empty domain.
-        if(decls.size() == 1)
-            return m_domains[*decls.begin()].size() > 0;
-
-        std::unordered_set<int> visited_joins {};
-
-        // since 'decls' is a connected component, we must be able to reach all
-        // decls from any given decl (using joins "in reverse" if needed).
-        return this->recursivelyTraverseJoins(assignments, visited_joins, *decls.begin(), join_map);
-    }
-
-    bool Table::searchForValidValues(const std::vector<DeclSet>& components, DeclJoinMap& join_mapping)
-    {
-        for(auto& comp : components)
-        {
-            ValueAssignmentMap assignment {};
-            if(!this->searchJoinsForValidValues(assignment, comp, join_mapping))
-                return false;
-        }
-
-
-        return true;
-#if 0
-        size_t current = 0;
-        constexpr const size_t total = 13ULL * 12 * 11 * 10 * 9 * 8 * 7 * 6 * 5 * 4 * 3 * 2 * 1;
-
-        const auto get_decl = [&](const char* s) -> const ast::Declaration* {
-            for(auto d : m_select_decls)
-                if(d->name == s)
-                    return d;
-
-            return nullptr;
-        };
-
-        const auto a1 = get_decl("a1");
-        const auto a2 = get_decl("a2");
-        const auto a3 = get_decl("a3");
-        const auto a4 = get_decl("a4");
-        const auto a5 = get_decl("a5");
-        const auto a6 = get_decl("a6");
-        const auto a7 = get_decl("a7");
-        const auto a8 = get_decl("a8");
-        const auto a9 = get_decl("a9");
-        const auto a10 = get_decl("a10");
-        const auto a11 = get_decl("a11");
-        const auto a12 = get_decl("a12");
-        const auto a13 = get_decl("a13");
-
-        std::vector<const ast::Declaration*> decls = {
-            a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13
-        };
-
-        const auto comparator = [](const auto* a, const auto* b) -> bool {
-            return a->name < b->name;
-        };
-
-        const auto verify = [&](ValueAssignmentMap& values) -> bool {
-            return values.size() == 13
-                && values[a1].getStmtNum() == 1
-                && values[a2].getStmtNum() == 2
-                && values[a3].getStmtNum() == 3
-                && values[a4].getStmtNum() == 4
-                && values[a5].getStmtNum() == 5
-                && values[a6].getStmtNum() == 6
-                && values[a7].getStmtNum() == 7
-                && values[a8].getStmtNum() == 8
-                && values[a9].getStmtNum() == 9
-                && values[a10].getStmtNum() == 10
-                && values[a11].getStmtNum() == 11
-                && values[a12].getStmtNum() == 12
-                && values[a13].getStmtNum() == 13;
-        };
-
-        std::sort(decls.begin(), decls.end(), comparator);
-
-        std::atomic<size_t> counter = 0;
-        std::vector<std::thread> threads {};
-
-        // take by copy
-
-        auto worker = [this, &join_mapping, &verify, &comparator, &counter, total](size_t index, auto decls) {
-            std::rotate(decls.begin(), decls.begin() + index, decls.begin() + index + 1);
-
-        again:
-            if((counter & 0x3f) == 0)
-            {
-                counter += 0x40;
-                if(index == 0)
-                {
-                    zpr::fprint(stderr, "\x1b[1G\x1b[2Kordering ({} / {}) -- {.2f}%:", (size_t) counter, total,
-                        100 * (double) counter / total);
-
-                    for(auto ord : decls)
-                        zpr::fprint(stderr, " {}", ord->name);
-                }
-            }
-
-            ValueAssignmentMap assignment {};
-            if(!this->searchJoinsForValidValues(assignment, decls, join_mapping))
-                return false;
-
-            if(!verify(assignment))
-            {
-                zpr::fprintln(stderr, "failed!!!");
-                abort();
-            }
-
-            if(!std::next_permutation(decls.begin(), decls.end(), comparator))
-                return true;
-
-            goto again;
-        };
-
-        for(size_t i = 0; i < decls.size(); i++)
-            threads.emplace_back(worker, i, decls);
-
-        for(auto& thr : threads)
-            thr.join();
-#endif
     }
 
     bool Table::evaluateJoinsOverDomains()
@@ -591,7 +444,24 @@ namespace pql::eval::table
         auto graph = solver::DepGraph(m_select_decls, m_joins);
         auto components = graph.getComponents();
 
-        return this->searchForValidValues(components, join_mapping);
+        for(auto& comp : components)
+        {
+            ValueAssignmentMap assignments {};
+            spa_assert(comp.size() > 0);
+
+            auto first_decl = *comp.begin();
+            if(comp.size() == 1)
+            {
+                if(m_domains[first_decl].empty())
+                    return false;
+            }
+
+            std::unordered_set<int> visited_joins {};
+            if(!this->recursivelyTraverseJoins(assignments, visited_joins, first_decl, join_mapping))
+                return false;
+        }
+
+        return true;
     }
 
 
