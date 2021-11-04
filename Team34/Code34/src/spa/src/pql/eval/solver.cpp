@@ -1,11 +1,15 @@
-#include "pql/eval/solver.h"
-#include "exceptions.h"
-#include "zpr.h"
+// solver.cpp
+
 #include <queue>
 #include <utility>
+#include <iterator>
+#include <algorithm>
+
+#include "zpr.h"
 #include "util.h"
 #include "timer.h"
-#include <algorithm>
+#include "exceptions.h"
+#include "pql/eval/solver.h"
 
 namespace pql::eval::solver
 {
