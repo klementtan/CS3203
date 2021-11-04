@@ -10,8 +10,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include <iostream>
-
 #define INF SIZE_MAX
 
 namespace pkb

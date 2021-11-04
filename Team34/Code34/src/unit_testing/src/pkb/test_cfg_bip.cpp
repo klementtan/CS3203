@@ -7,7 +7,6 @@
 #include "simple/parser.h"
 #include "pkb.h"
 #include "util.h"
-#include <iostream>
 #include <zpr.h>
 using namespace simple::parser;
 using namespace pkb;
