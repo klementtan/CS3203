@@ -725,7 +725,7 @@ namespace pkb
     bool CFG::isStatementTransitivelyNextBip(StatementNum id1, StatementNum id2) const
     {
         auto& stmt1 = m_pkb->getStatementAt(id1);
-        auto& stmt2 = m_pkb->getStatementAt(id2);
+        // auto& stmt2 = m_pkb->getStatementAt(id2);
 
         StatementSet callStack = getCurrentStack(stmt1);
         StatementSet visited;
