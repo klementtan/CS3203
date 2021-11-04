@@ -326,19 +326,19 @@ namespace pkb
         const auto& modified = stmt1->getModifiedVariables();
         const auto& used = stmt2->getUsedVariables();
 
-        std::unordered_set<std::string> vars;
-        for(const auto& var : modified)
-        {
-            if(used.count(var))
-                vars.insert(var);
-        }
+        std::string mod_var = *modified.begin();
+        bool is_modified = false;
+        for(const auto& var : used)
+            is_modified |= var == mod_var;
+
+        if(!is_modified)
+            return false;
 
         StatementSet visited;
         std::queue<std::pair<StatementNum, std::string>> q;
         for(auto stmt : adj_lst.at(id1))
         {
-            for(auto var : vars)
-                q.emplace(stmt, var);
+            q.emplace(stmt, mod_var);
             visited.insert(stmt);
         }
 
@@ -408,23 +408,21 @@ namespace pkb
         const auto& modified = stmt1->getModifiedVariables();
         const auto& used = stmt2->getUsedVariables();
 
-        std::unordered_set<std::string> vars;
-        for(const auto& var : modified)
-        {
-            if(used.count(var))
-                vars.insert(var);
-        }
+        std::string mod_var = *modified.begin();
+        bool is_modified = false;
+        for(const auto& var : used)
+            is_modified |= var == mod_var;
+
+        if(!is_modified)
+            return false;
 
         StatementSet visited;
         std::queue<std::tuple<StatementNum, std::string, std::stack<StatementNum>>> q;
         for(auto [stmt, weight] : adj_lst_bip.at(id1))
         {
-            for(auto var : vars)
-            {
-                std::stack<StatementNum> s;
-                q.emplace(stmt, var, s);
-                visited.insert(stmt);
-            }
+            std::stack<StatementNum> s;
+            q.emplace(stmt, mod_var, s);
+            visited.insert(stmt);
         }
 
         while(!q.empty())
