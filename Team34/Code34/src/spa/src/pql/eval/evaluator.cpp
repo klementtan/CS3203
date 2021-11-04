@@ -140,15 +140,7 @@ namespace pql::eval
             {
                 START_BENCHMARK_TIMER("Evaluate all clauses");
                 for(const auto& clause : m_query->select.clauses)
-                {
                     clause->evaluate(m_pkb, &m_table);
-                    // zpr::fprintln(stderr, "domain of a:");
-                    // for(auto& v : m_table.getDomain(m_query->declarations.getAllDeclarations().at("a")))
-                    //     zpr::fprintln(stderr, "  {}", v.getStmtNum());
-                    // zpr::fprintln(stderr, "domain of b:");
-                    // for(auto& v : m_table.getDomain(m_query->declarations.getAllDeclarations().at("b")))
-                    //     zpr::fprintln(stderr, "  {}", v.getStmtNum());
-                }
             }
 
             util::logfmt("pql::eval", "Table after processing of such that: {}", m_table.toString());

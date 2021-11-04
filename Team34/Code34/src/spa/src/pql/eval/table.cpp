@@ -4,8 +4,6 @@
 
 #include <unordered_set>
 #include <numeric>
-#include <atomic>
-#include <thread>
 
 #include "zpr.h"
 #include "timer.h"
