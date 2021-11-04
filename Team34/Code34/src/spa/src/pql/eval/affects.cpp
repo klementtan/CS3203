@@ -14,7 +14,6 @@ namespace pql::ast
 
     using PqlException = util::PqlException;
 
-
     using Abstractor = eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ true>;
 
     void Affects::evaluate(const ProgramKB* pkb, table::Table* tbl) const

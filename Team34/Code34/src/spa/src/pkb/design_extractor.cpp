@@ -365,10 +365,9 @@ namespace pkb
     {
         auto cfg = this->m_pkb->m_cfg.get();
         auto adjMat = cfg->adj_mat;
-        auto adjMatBip = cfg->adj_mat_bip;
-        for(int i = 0; i < cfg->total_inst; i++)
+        for(size_t i = 0; i < cfg->total_inst; i++)
         {
-            for(int j = 0; j < cfg->total_inst; j++)
+            for(size_t j = 0; j < cfg->total_inst; j++)
             {
                 cfg->addEdgeBip(i + 1, j + 1, adjMat[i][j]);
             }

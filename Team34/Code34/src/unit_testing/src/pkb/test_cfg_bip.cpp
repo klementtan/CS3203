@@ -91,6 +91,7 @@ TEST_CASE("NextBip and NextBip*")
         CHECK(cfg1->isStatementTransitivelyNextBip(4, 5));
         CHECK(cfg1->isStatementTransitivelyNextBip(9, 5));
         CHECK(cfg1->isStatementTransitivelyNextBip(10, 11));
+        CHECK(cfg1->isStatementTransitivelyNextBip(11, 11));
         CHECK(cfg2->isStatementTransitivelyNextBip(3, 4));
         CHECK(cfg2->isStatementTransitivelyNextBip(1, 3));
         CHECK(cfg3->isStatementTransitivelyNextBip(9, 4));
