@@ -1,0 +1,50 @@
+1 - with attrRef = IDENT: procedure.procName
+procedure p1;
+Select p1 with p1.procName = "A"
+A
+5000
+2 - with IDENT = attrRef: procedure.procName
+procedure p1;
+Select p1 with "A" = p1.procName
+A
+5000
+3 - with attrRef = IDENT: call.procName
+procedure p1; call c1;
+Select c1 with c1.procName = "Extra"
+37,43
+5000
+4 - with IDENT = attrRef: call.procName
+procedure p1; call c1;
+Select c1 with "Extra" = c1.procName 
+37,43
+5000
+5 - with attrRef = IDENT: variable.varName
+procedure p1; call c1; variable v1;
+Select v1 with v1.varName = "a"
+a
+5000
+6 - with attrRef = IDENT: print.varName
+procedure p1; call c1; variable v1; print pr1;
+Select pr1 with pr1.varName = "e0"
+36
+5000
+7 - with attrRef = INTEGER: constant.value
+procedure p1; call c1; variable v1; print pr1; constant const1;
+Select const1 with const1.value = 4
+4
+5000
+8 - with attrRef = INTEGER: assign.stmt#
+procedure p1; call c1; variable v1; print pr1; constant const1; assign a1;
+Select a1 with a1.stmt# = 1
+1
+5000
+9 - with attrRef = INTEGER: prog_line
+procedure p1; call c1; variable v1; print pr1; constant const1; assign a1; prog_line pl1;
+Select pl1 with pl1 = 1
+1
+5000
+10 - with attrRef = attrRef: prog_line
+procedure p1; call c1; variable v1; print pr1; constant const1; assign a1; prog_line pl1;
+Select <v1,pr1> with v1.varName = pr1.varName
+d 4,d1 17,e0 36,e1 42,e2 48,e3 55,e3 62,e3 68,p1 74,p2 78
+5000
