@@ -112,6 +112,26 @@ namespace pql::ast
         return zpr::sprint("AffectsT(first:{}, second:{})", this->first.toString(), this->second.toString());
     }
 
+    std::string NextBip::toString() const
+    {
+        return zpr::sprint("NextBip(first:{}, second:{})", this->first.toString(), this->second.toString());
+    }
+
+    std::string NextBipT::toString() const
+    {
+        return zpr::sprint("NextBipT(first:{}, second:{})", this->first.toString(), this->second.toString());
+    }
+
+    std::string AffectsBip::toString() const
+    {
+        return zpr::sprint("AffectsBip(first:{}, second:{})", this->first.toString(), this->second.toString());
+    }
+
+    std::string AffectsBipT::toString() const
+    {
+        return zpr::sprint("AffectsBipT(first:{}, second:{})", this->first.toString(), this->second.toString());
+    }
+
     std::string ExprSpec::toString() const
     {
         return zpr::sprint(

@@ -92,4 +92,82 @@ namespace pql::ast
 
         abs.evaluate(pkb, tbl, this, &this->first, &this->second);
     }
+
+
+    void AffectsBip::evaluate(const ProgramKB* pkb, table::Table* tbl) const
+    {
+        spa_assert(pkb);
+        spa_assert(tbl);
+
+        // see the comment in follows.cpp
+        static auto abs = []() -> auto
+        {
+            Abstractor abs {};
+            abs.relationName = "AffectsBip";
+            abs.leftDeclEntity = {};
+            abs.rightDeclEntity = {};
+
+            abs.relationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
+                return pkb->getCFG()->doesAffectBip(a.getStmtNum(), b.getStmtNum());
+            };
+
+            abs.inverseRelationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
+                return pkb->getCFG()->doesAffectBip(b.getStmtNum(), a.getStmtNum());
+            };
+
+            abs.getAllRelated = [](const ProgramKB* pkb, const Statement& s) -> decltype(auto) {
+                return pkb->getCFG()->getAffectedStatementsBip(s.getStmtNum());
+            };
+
+            abs.getAllInverselyRelated = [](const ProgramKB* pkb, const Statement& s) -> decltype(auto) {
+                return pkb->getCFG()->getAffectingStatementsBip(s.getStmtNum());
+            };
+
+            abs.relationExists = &ProgramKB::affectsRelationExists;
+            abs.getEntity = &ProgramKB::getStatementAt;
+            return abs;
+        }
+        ();
+
+        abs.evaluate(pkb, tbl, this, &this->first, &this->second);
+    }
+
+
+    void AffectsBipT::evaluate(const ProgramKB* pkb, table::Table* tbl) const
+    {
+        spa_assert(pkb);
+        spa_assert(tbl);
+
+        // see the comment in follows.cpp
+        static auto abs = []() -> auto
+        {
+            Abstractor abs {};
+            abs.relationName = "AffectsBipT";
+            abs.leftDeclEntity = {};
+            abs.rightDeclEntity = {};
+
+            abs.relationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
+                return pkb->getCFG()->doesTransitivelyAffectBip(a.getStmtNum(), b.getStmtNum());
+            };
+
+            abs.inverseRelationHolds = [](const ProgramKB* pkb, const Statement& a, const Statement& b) -> bool {
+                return pkb->getCFG()->doesTransitivelyAffectBip(b.getStmtNum(), a.getStmtNum());
+            };
+
+            abs.getAllRelated = [](const ProgramKB* pkb, const Statement& s) -> decltype(auto) {
+                return pkb->getCFG()->getTransitivelyAffectedStatementsBip(s.getStmtNum());
+            };
+
+            abs.getAllInverselyRelated = [](const ProgramKB* pkb, const Statement& s) -> decltype(auto) {
+                return pkb->getCFG()->getTransitivelyAffectingStatementsBip(s.getStmtNum());
+            };
+
+            abs.relationExists = &ProgramKB::affectsRelationExists;
+            abs.getEntity = &ProgramKB::getStatementAt;
+            return abs;
+        }
+        ();
+
+        abs.evaluate(pkb, tbl, this, &this->first, &this->second);
+    }
 }
