@@ -450,11 +450,6 @@ namespace pql::eval::table
             spa_assert(comp.size() > 0);
 
             auto first_decl = *comp.begin();
-            if(comp.size() == 1)
-            {
-                if(m_domains[first_decl].empty())
-                    return false;
-            }
 
             std::unordered_set<int> visited_joins {};
             if(!this->recursivelyTraverseJoins(assignments, visited_joins, first_decl, join_mapping))
@@ -500,12 +495,19 @@ namespace pql::eval::table
         }
         else
         {
+            // check that all select domains are nonzero first so we can
+            // skip traversing any joins for the trivial case.
+            for(auto decl : m_select_decls)
+                if(m_domains[decl].empty())
+                    return { "FALSE" };
+
             if(this->evaluateJoinsOverDomains())
                 return { "TRUE" };
             else
                 return { "FALSE" };
         }
 
+        // we don't need the domains after this, so move it out.
         solver::Solver solver(
             /* joins: */ m_joins, /* domains: */ std::move(m_domains), /* return_decls: */ ret_cols,
             /* select_decls: */ m_select_decls);
@@ -519,8 +521,8 @@ namespace pql::eval::table
         {
             return Table::getFailedResult(result_cl);
         }
-        solver::IntTable ret_tbl = solver.getRetTbl();
 
+        solver::IntTable ret_tbl = solver.getRetTbl();
         if(ret_tbl.empty())
         {
             return Table::getFailedResult(result_cl);
