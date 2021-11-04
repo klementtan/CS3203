@@ -7,7 +7,6 @@
 #include "simple/parser.h"
 #include "pkb.h"
 #include "util.h"
-#include <iostream>
 #include <zpr.h>
 using namespace simple::parser;
 using namespace pkb;
@@ -74,7 +73,7 @@ static auto cfg2 = kb2 -> getCFG();
 static auto kb3 = DesignExtractor(parseProgram(sample_source_C)).run();
 static auto cfg3 = kb3 -> getCFG();
 
-TEST_CASE("Next_Bip")
+TEST_CASE("NextBip and NextBip*")
 {
     SECTION("positive test cases: bip")
     {
@@ -117,5 +116,80 @@ TEST_CASE("Next_Bip")
 
         CHECK(cfg1->getTransitivelyNextStatementsBip(11) == StatementSet { 3, 4, 5, 8, 9, 10, 11 });
         CHECK(cfg1->getTransitivelyPreviousStatementsBip(8) == StatementSet { 1, 2, 6, 7, 9, 10, 11 });
+    }
+}
+
+TEST_CASE("AffectsBip(a, b)")
+{
+    SECTION("affects another statement right after another proc call")
+    {
+        CHECK(cfg1->doesAffectBip(1, 6));
+        CHECK(cfg1->doesAffectBip(1, 10));
+        CHECK(cfg1->doesAffectBip(1, 11));
+        CHECK(cfg2->doesAffectBip(7, 6));
+        CHECK(cfg2->doesAffectBip(6, 5));
+        CHECK(cfg2->doesAffectBip(5, 4));
+    }
+
+    SECTION("affects another statement but prefer one branch")
+    {
+        CHECK(cfg1->doesAffectBip(1, 3));
+        CHECK(cfg1->doesAffectBip(1, 5));
+        CHECK(cfg1->doesAffectBip(1, 8));
+        CHECK(cfg1->doesAffectBip(3, 5));
+        CHECK(cfg1->doesAffectBip(6, 8));
+    }
+
+    SECTION("ambiguous return proc call")
+    {
+        CHECK(cfg1->doesAffectBip(10, 8));
+        CHECK(cfg1->doesAffectBip(11, 5));
+        CHECK(cfg3->doesAffectBip(9, 9));
+    }
+
+    SECTION("negative test cases: not assign statements")
+    {
+        CHECK(!cfg1->doesAffectBip(1, 2));
+        CHECK(!cfg1->doesAffectBip(1, 4));
+        CHECK(!cfg1->doesAffectBip(7, 9));
+        CHECK(!cfg1->doesAffectBip(7, 11));
+    }
+
+    SECTION("negative test cases: variables modified were not used")
+    {
+        CHECK(!cfg1->doesAffectBip(6, 3));
+        CHECK(!cfg1->doesAffectBip(8, 5));
+    }
+}
+
+TEST_CASE("AffectsBip*(a, b)")
+{
+    SECTION("should be true when Affects(a, b) holds")
+    {
+        CHECK(cfg1->doesTransitivelyAffectBip(1, 6));
+        CHECK(cfg1->doesTransitivelyAffectBip(1, 10));
+        CHECK(cfg1->doesTransitivelyAffectBip(1, 11));
+        CHECK(cfg2->doesTransitivelyAffectBip(7, 6));
+        CHECK(cfg2->doesTransitivelyAffectBip(6, 5));
+        CHECK(cfg2->doesTransitivelyAffectBip(5, 4));
+        CHECK(cfg1->doesTransitivelyAffectBip(1, 3));
+        CHECK(cfg1->doesTransitivelyAffectBip(1, 5));
+        CHECK(cfg1->doesTransitivelyAffectBip(1, 8));
+        CHECK(cfg1->doesTransitivelyAffectBip(3, 5));
+        CHECK(cfg1->doesTransitivelyAffectBip(6, 8));
+        CHECK(cfg1->doesTransitivelyAffectBip(10, 8));
+        CHECK(cfg1->doesTransitivelyAffectBip(11, 5));
+        CHECK(cfg3->doesTransitivelyAffectBip(9, 9));
+    }
+
+    SECTION("there is one intermediary variable")
+    {
+        CHECK(cfg2->doesTransitivelyAffectBip(6, 4));
+        CHECK(cfg2->doesTransitivelyAffectBip(7, 5));
+    }
+
+    SECTION("negative test case: impossible based on proc calls")
+    {
+        CHECK(!cfg2->doesTransitivelyAffectBip(7, 4));
     }
 }

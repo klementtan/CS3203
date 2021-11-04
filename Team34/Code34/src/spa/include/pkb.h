@@ -5,9 +5,10 @@
 
 #include <memory>
 #include <optional>
+#include <queue>
+#include <set>
 #include <unordered_map>
 #include <unordered_set>
-#include <set>
 
 #include "pql/parser/ast.h"
 #include "simple/ast.h"
@@ -135,6 +136,11 @@ namespace pkb
         const StatementSet* maybeGetTransitivelyNextStatementsBip() const;
         const StatementSet* maybeGetTransitivelyPreviousStatementsBip() const;
 
+        const StatementSet* maybeGetAffectedStatementsBip() const;
+        const StatementSet* maybeGetAffectingStatementsBip() const;
+        const StatementSet* maybeGetTransitivelyAffectedStatementsBip() const;
+        const StatementSet* maybeGetTransitivelyAffectingStatementsBip() const;
+
         const StatementSet& cacheNextStatements(StatementSet stmts) const;
         const StatementSet& cachePreviousStatements(StatementSet stmts) const;
         const StatementSet& cacheTransitivelyNextStatements(StatementSet stmts) const;
@@ -149,6 +155,11 @@ namespace pkb
         const StatementSet& cachePreviousStatementsBip(StatementSet stmts) const;
         const StatementSet& cacheTransitivelyNextStatementsBip(StatementSet stmts) const;
         const StatementSet& cacheTransitivelyPreviousStatementsBip(StatementSet stmts) const;
+
+        const StatementSet& cacheAffectedStatementsBip(StatementSet stmts) const;
+        const StatementSet& cacheAffectingStatementsBip(StatementSet stmts) const;
+        const StatementSet& cacheTransitivelyAffectedStatementsBip(StatementSet stmts) const;
+        const StatementSet& cacheTransitivelyAffectingStatementsBip(StatementSet stmts) const;
 
         void resetCache() const;
 
@@ -205,10 +216,20 @@ namespace pkb
         mutable StatementSet m_transitively_affects {};
         mutable StatementSet m_transitively_affecting {};
 
+        mutable StatementSet m_affects_bip {};
+        mutable StatementSet m_affecting_bip {};
+        mutable StatementSet m_transitively_affects_bip {};
+        mutable StatementSet m_transitively_affecting_bip {};
+
         mutable bool m_did_cache_affects = false;
         mutable bool m_did_cache_affecting = false;
         mutable bool m_did_cache_transitively_affects = false;
         mutable bool m_did_cache_transitively_affecting = false;
+
+        mutable bool m_did_cache_affects_bip = false;
+        mutable bool m_did_cache_affecting_bip = false;
+        mutable bool m_did_cache_transitively_affects_bip = false;
+        mutable bool m_did_cache_transitively_affecting_bip = false;
     };
 
     struct Variable
@@ -287,6 +308,15 @@ namespace pkb
         const StatementSet& getTransitivelyNextStatementsBip(StatementNum id) const;
         const StatementSet& getPreviousStatementsBip(StatementNum id) const;
         const StatementSet& getTransitivelyPreviousStatementsBip(StatementNum id) const;
+
+        bool doesAffectBip(StatementNum stmt1, StatementNum stmt2) const;
+        bool doesTransitivelyAffectBip(StatementNum stmt1, StatementNum stmt2) const;
+        const StatementSet& getAffectedStatementsBip(StatementNum id) const;
+        const StatementSet& getTransitivelyAffectedStatementsBip(StatementNum id) const;
+        const StatementSet& getAffectingStatementsBip(StatementNum id) const;
+        const StatementSet& getTransitivelyAffectingStatementsBip(StatementNum id) const;
+
+        bool isValidTransitivelyAffectBip(StatementNum stmt1, StatementNum stmt2, std::queue<StatementNum> q) const;
 
     private:
         size_t total_inst;
