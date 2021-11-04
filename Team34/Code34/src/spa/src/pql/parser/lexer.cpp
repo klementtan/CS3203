@@ -59,6 +59,8 @@ namespace pql::parser
         else if(auto kw = "Affects*"; sv.starts_with(kw))       return do_keyword(sv, kw, TT::KW_AffectsStar);
         else if(auto kw = "NextBip*"; sv.starts_with(kw))       return do_keyword(sv, kw, TT::KW_NextBipStar);
         else if(auto kw = "AffectsBip*"; sv.starts_with(kw))    return do_keyword(sv, kw, TT::KW_AffectsBipStar);
+        else if(auto kw = "NextBip"; sv.starts_with(kw))        return do_keyword(sv, kw, TT::KW_NextBip);
+        else if(auto kw = "AffectsBip"; sv.starts_with(kw))     return do_keyword(sv, kw, TT::KW_AffectsBip);
         else if(auto kw = "Next"; sv.starts_with(kw))           return do_keyword(sv, kw, TT::KW_Next);
         else if(auto kw = "Uses"; sv.starts_with(kw))           return do_keyword(sv, kw, TT::KW_Uses);
         else if(auto kw = "Calls"; sv.starts_with(kw))          return do_keyword(sv, kw, TT::KW_Calls);
@@ -66,8 +68,6 @@ namespace pql::parser
         else if(auto kw = "Follows"; sv.starts_with(kw))        return do_keyword(sv, kw, TT::KW_Follows);
         else if(auto kw = "Affects"; sv.starts_with(kw))        return do_keyword(sv, kw, TT::KW_Affects);
         else if(auto kw = "Modifies"; sv.starts_with(kw))       return do_keyword(sv, kw, TT::KW_Modifies);
-        else if(auto kw = "NextBip"; sv.starts_with(kw))        return do_keyword(sv, kw, TT::KW_NextBip);
-        else if(auto kw = "AffectsBip"; sv.starts_with(kw))     return do_keyword(sv, kw, TT::KW_AffectsBip);
         else if(auto kw = "and"; sv.starts_with(kw))            return do_keyword(sv, kw, TT::KW_And);
         else if(auto kw = "with"; sv.starts_with(kw))           return do_keyword(sv, kw, TT::KW_With);
         else if(auto kw = "Select"; sv.starts_with(kw))         return do_keyword(sv, kw, TT::KW_Select);

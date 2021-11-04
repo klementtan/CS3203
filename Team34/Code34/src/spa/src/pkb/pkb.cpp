@@ -131,6 +131,17 @@ namespace pkb
         return m_cfg->affectsRelationExists();
     }
 
+    bool ProgramKB::nextBipRelationExists() const
+    {
+        return m_cfg->nextBipRelationExists();
+    }
+
+    bool ProgramKB::affectsBipRelationExists() const
+    {
+        return m_cfg->affectsBipRelationExists();
+    }
+
+
     const pkb::CFG* ProgramKB::getCFG() const
     {
         return m_cfg.get();

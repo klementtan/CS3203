@@ -114,6 +114,7 @@ namespace pkb
         }
         else
         {
+            m_next_bip_exists = true;
             if(adj_mat_bip[stmt1 - 1][stmt2 - 1] == INF)
             {
                 adj_mat_bip[stmt1 - 1][stmt2 - 1] = weight;
@@ -142,6 +143,11 @@ namespace pkb
     bool CFG::nextRelationExists() const
     {
         return m_next_exists;
+    }
+
+    bool CFG::nextBipRelationExists() const
+    {
+        return m_next_bip_exists;
     }
 
     std::string CFG::getMatRep(int i) const
@@ -587,7 +593,19 @@ namespace pkb
         // TODO: is there a cheaper way of doing this?
         for(auto [assid, _] : this->assign_stmts)
         {
-            if(!this->getAffectedStatements(assid).empty())
+            if(this->getAffectedStatements(assid).size() > 0)
+                return true;
+        }
+
+        return false;
+    }
+
+    bool CFG::affectsBipRelationExists() const
+    {
+        // TODO: is there a cheaper way of doing this?
+        for(auto [assid, _] : this->assign_stmts)
+        {
+            if(this->getAffectedStatementsBip(assid).size() > 0)
                 return true;
         }
 
@@ -738,8 +756,6 @@ namespace pkb
             auto next = q.front();
             if(next == id2 && !initialNode)
                 return true;
-            if(initialNode)
-                initialNode = false;
             auto callStmt = getCallStmtMapping(next);
             if(callStmt != nullptr)
             {
@@ -762,9 +778,15 @@ namespace pkb
                     }
                 }
             }
-            visited.insert(next);
+
+            if(!initialNode)
+                visited.insert(next);
+            else
+                initialNode = false;
+
             q.pop();
         }
+
         return false;
     }
 
@@ -825,7 +847,7 @@ namespace pkb
             }
             if(!initialNode)
                 visited.insert(next);
-            if(initialNode)
+            else
                 initialNode = false;
             q.pop();
         }
