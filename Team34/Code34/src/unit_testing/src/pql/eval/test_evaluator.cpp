@@ -125,6 +125,8 @@ procedure if {
 }
     )";
 
-    TEST_OK(prog, "stmt s1, s2; procedure p; variable v; "
-        "Select BOOLEAN such that Follows*(s1, s2) with s1.stmt# = s2.stmt#", "FALSE");
+    TEST_OK(prog,
+        "stmt s1, s2; procedure p; variable v; "
+        "Select BOOLEAN such that Follows*(s1, s2) with s1.stmt# = s2.stmt#",
+        "FALSE");
 }

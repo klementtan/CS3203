@@ -299,10 +299,8 @@ namespace pql::eval::solver
         std::vector<IntRow> new_rows {};
 
         new_rows.reserve(m_rows.size());
-        std::copy_if(std::move_iterator(m_rows.begin()), std::move_iterator(m_rows.end()),
-            std::back_inserter(new_rows), [&](const auto& row) -> bool {
-                return row.isAllowed(join);
-            });
+        std::copy_if(std::move_iterator(m_rows.begin()), std::move_iterator(m_rows.end()), std::back_inserter(new_rows),
+            [&](const auto& row) -> bool { return row.isAllowed(join); });
 
         util::logfmt(
             "pql::eval::solver", "Join(id: {}) filter tbl from {} to {}", join.getId(), m_rows.size(), new_rows.size());
@@ -332,8 +330,8 @@ namespace pql::eval::solver
 
     void IntTable::mergeAndFilter(const IntTable& other, const table::Join& join)
     {
-        START_BENCHMARK_TIMER(zpr::sprint("****** Time spent merging+filtering tables of {} x {}",
-            m_rows.size(), other.size()));
+        START_BENCHMARK_TIMER(
+            zpr::sprint("****** Time spent merging+filtering tables of {} x {}", m_rows.size(), other.size()));
 
         std::vector<IntRow> new_rows;
         if(m_rows.empty())

@@ -156,11 +156,10 @@ namespace pql::eval::table
         bool evaluateJoinValues(ValueAssignmentMap& known, const ast::Declaration* decl, size_t join_idx,
             const std::vector<const Join*>& joins, JoinIdSet& visited_joins, DeclJoinMap& join_mapping);
 
-        bool recursivelyTraverseJoins(ValueAssignmentMap& known, JoinIdSet& visited_joins,
-            const ast::Declaration* decl, DeclJoinMap& join_mapping);
-
-        bool searchJoinsForValidValues(ValueAssignmentMap& known, const std::vector<const ast::Declaration*>& decls,
+        bool recursivelyTraverseJoins(ValueAssignmentMap& known, JoinIdSet& visited_joins, const ast::Declaration* decl,
             DeclJoinMap& join_mapping);
+
+        bool searchJoinsForValidValues(ValueAssignmentMap& known, const DeclSet& decls, DeclJoinMap& join_mapping);
 
         bool searchForValidValues(const std::vector<DeclSet>& components, DeclJoinMap& join_mapping);
 

@@ -4,6 +4,8 @@
 
 #include <unordered_set>
 #include <numeric>
+#include <atomic>
+#include <thread>
 
 #include "zpr.h"
 #include "timer.h"
@@ -384,7 +386,7 @@ namespace pql::eval::table
 
         visited_joins.insert(join->getId());
 
-        for(auto& [ a, b ] : allowed)
+        for(auto& [a, b] : allowed)
         {
             if(check_conflicting_values(values, a) || check_conflicting_values(values, b))
                 continue;
@@ -435,8 +437,8 @@ namespace pql::eval::table
         return false;
     }
 
-    bool Table::recursivelyTraverseJoins(ValueAssignmentMap& values, JoinIdSet& visited_joins,
-        const ast::Declaration* this_decl, DeclJoinMap& join_map)
+    bool Table::recursivelyTraverseJoins(
+        ValueAssignmentMap& values, JoinIdSet& visited_joins, const ast::Declaration* this_decl, DeclJoinMap& join_map)
     {
         // get all joins for this guy
         spa_assert(join_map.count(this_decl) > 0);
@@ -447,8 +449,7 @@ namespace pql::eval::table
         return this->evaluateJoinValues(values, this_decl, 0, join_map[this_decl], visited_joins, join_map);
     }
 
-    bool Table::searchJoinsForValidValues(ValueAssignmentMap& assignments, const std::vector<const ast::Declaration*>& decls,
-        DeclJoinMap& join_map)
+    bool Table::searchJoinsForValidValues(ValueAssignmentMap& assignments, const DeclSet& decls, DeclJoinMap& join_map)
     {
         spa_assert(decls.size() > 0);
 
@@ -466,8 +467,18 @@ namespace pql::eval::table
 
     bool Table::searchForValidValues(const std::vector<DeclSet>& components, DeclJoinMap& join_mapping)
     {
+        for(auto& comp : components)
+        {
+            ValueAssignmentMap assignment {};
+            if(!this->searchJoinsForValidValues(assignment, comp, join_mapping))
+                return false;
+        }
+
+
+        return true;
+#if 0
         size_t current = 0;
-        size_t total = 13ULL * 12 * 11 * 10 * 9 * 8 * 7 * 6 * 5 * 4 * 3 * 2 * 1;
+        constexpr const size_t total = 13ULL * 12 * 11 * 10 * 9 * 8 * 7 * 6 * 5 * 4 * 3 * 2 * 1;
 
         const auto get_decl = [&](const char* s) -> const ast::Declaration* {
             for(auto d : m_select_decls)
@@ -518,16 +529,26 @@ namespace pql::eval::table
 
         std::sort(decls.begin(), decls.end(), comparator);
 
-        for(auto& comp : components)
-        {
-        again:
-            current += 1;
+        std::atomic<size_t> counter = 0;
+        std::vector<std::thread> threads {};
 
-            if((current & 0x3f) == 0)
+        // take by copy
+
+        auto worker = [this, &join_mapping, &verify, &comparator, &counter, total](size_t index, auto decls) {
+            std::rotate(decls.begin(), decls.begin() + index, decls.begin() + index + 1);
+
+        again:
+            if((counter & 0x3f) == 0)
             {
-                zpr::fprint(stderr, "\x1b[1G\x1b[2Kordering ({} / {}) -- {.2f}%:", current, total, 100 * (double) current / total);
-                for(auto ord : decls)
-                    zpr::fprint(stderr, " {}", ord->name);
+                counter += 0x40;
+                if(index == 0)
+                {
+                    zpr::fprint(stderr, "\x1b[1G\x1b[2Kordering ({} / {}) -- {.2f}%:", (size_t) counter, total,
+                        100 * (double) counter / total);
+
+                    for(auto ord : decls)
+                        zpr::fprint(stderr, " {}", ord->name);
+                }
             }
 
             ValueAssignmentMap assignment {};
@@ -541,12 +562,17 @@ namespace pql::eval::table
             }
 
             if(!std::next_permutation(decls.begin(), decls.end(), comparator))
-                break;
+                return true;
 
             goto again;
-        }
+        };
 
-        return true;
+        for(size_t i = 0; i < decls.size(); i++)
+            threads.emplace_back(worker, i, decls);
+
+        for(auto& thr : threads)
+            thr.join();
+#endif
     }
 
     bool Table::evaluateJoinsOverDomains()
