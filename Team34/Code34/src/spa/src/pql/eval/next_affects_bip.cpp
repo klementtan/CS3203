@@ -16,7 +16,7 @@ namespace pql::ast
 
     using Abstractor = eval::RelationAbstractor<Statement, StatementNum, StmtRef, /* SetsAreConstRef: */ true>;
 
-	void NextBip::evaluate(const ProgramKB* pkb, table::Table* tbl) const
+    void NextBip::evaluate(const ProgramKB* pkb, table::Table* tbl) const
     {
         spa_assert(pkb);
         spa_assert(tbl);
