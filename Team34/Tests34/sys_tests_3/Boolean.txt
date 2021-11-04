@@ -1,0 +1,25 @@
+1 - Boolean: Valid and TRUE
+stmt s1;
+Select BOOLEAN such that Follows(s1, _)
+TRUE
+5000
+2 - Boolean: Valid and False
+stmt s1;
+Select BOOLEAN such that Follows(_, 1)
+FALSE
+5000
+3 - Boolean: Semantic error => undeclared declaration
+stmt s1;
+Select BOOLEAN such that Follows(_, s2)
+FALSE
+5000
+4 - Boolean: Semantic error => invalid args in pattern is not a variable
+stmt s1; assign a1; variable v1;assign a;
+Select BOOLEAN pattern a1(s1,"y * (2) + x * (a + 1) * b")
+FALSE
+5000
+5 - Boolean: SyntaxError
+stmt s1; assign a1; variable v1;assign a;
+Select BOOLEAN pattern a1(s1
+none
+5000
