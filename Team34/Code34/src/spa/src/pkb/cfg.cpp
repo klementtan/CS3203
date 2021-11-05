@@ -9,6 +9,7 @@
 #include <stack>
 #include <unordered_set>
 #include <vector>
+#include <iostream>
 
 #define INF SIZE_MAX
 
@@ -159,6 +160,16 @@ namespace pkb
                 mat = adj_mat;
                 break;
             case 2:
+                for(auto [proc_name,p] : gates)
+                {
+                    std::cout << proc_name << std::endl;
+                    std::cout << p.first << std::endl;
+                    for(auto a : p.second)
+                    {
+                        std::cout << a << "   ";
+                    }
+                    std::cout << std::endl;
+                }
                 mat = adj_mat_bip;
                 break;
             default:
@@ -725,8 +736,9 @@ namespace pkb
         return adj_mat_bip[stmt1 - 1][stmt2 - 1] != INF;
     }
 
-    StatementSet CFG::getCurrentStack(const Statement& stmt) const
+    StatementSet CFG::getCurrentStack(const StatementNum id) const
     {
+        auto& stmt= m_pkb->getStatementAt(id);
         StatementSet callStack {};
 
         auto currProc = stmt.getProc();
@@ -742,48 +754,46 @@ namespace pkb
 
     bool CFG::isStatementTransitivelyNextBip(StatementNum id1, StatementNum id2) const
     {
-        auto& stmt1 = m_pkb->getStatementAt(id1);
-        // auto& stmt2 = m_pkb->getStatementAt(id2);
-
-        StatementSet callStack = getCurrentStack(stmt1);
+        check_in_range(id1, total_inst);
+        check_in_range(id2, total_inst);
+        StatementSet callStack = getCurrentStack(id1);
         StatementSet visited;
+        std::queue<StatementNum> q;
 
-        std::queue<StatementNum> q {};
-        q.emplace(id1);
-        bool initialNode = true;
-        while(!q.empty())
-        {
-            auto next = q.front();
-            if(next == id2 && !initialNode)
-                return true;
-            auto callStmt = getCallStmtMapping(next);
+        auto addNextNodes = [&](StatementNum num) {
+            auto callStmt = getCallStmtMapping(num);
             if(callStmt != nullptr)
             {
-                callStack.insert(next);
-                for(auto a : gates.at(callStmt->getProc()->name).second)
+                callStack.insert(num);
+                auto name = dynamic_cast<const simple::ast::ProcCall*>(callStmt->getAstStmt())->proc_name;
+                for(auto return_pt : gates.at(name).second)
                 {
-                    q.emplace(a);
+                    q.emplace(return_pt);
                 }
             }
-            if(auto it = adj_lst_bip.find(next); it != adj_lst_bip.end())
+            if(auto it = adj_lst_bip.find(num); it != adj_lst_bip.end())
             {
-                for(auto& pair : it->second)
+                for(auto& [stmt, weight] : it->second)
                 {
-                    if(pair.second == 1 || callStack.count(pair.second - 1) != 0)
+                    if(weight == 1 || callStack.count(weight - 1) != 0) // intra or allowed to visit
                     {
-                        if(visited.count(pair.first) == 0)
+                        if(visited.count(stmt) == 0) // not visited yet
                         {
-                            q.emplace(pair.first);
+                            q.emplace(stmt);
                         }
                     }
                 }
             }
+        };
 
-            if(!initialNode)
-                visited.insert(next);
-            else
-                initialNode = false;
-
+        addNextNodes(id1);
+        while(!q.empty())
+        {
+            auto curr = q.front();
+            if(curr == id2)
+                return true;
+            addNextNodes(curr);
+            visited.insert(curr);
             q.pop();
         }
 
@@ -814,41 +824,42 @@ namespace pkb
         if(auto cache = stmt.maybeGetTransitivelyNextStatementsBip(); cache != nullptr)
             return *cache;
 
-        StatementSet callStack = getCurrentStack(stmt);
+        StatementSet callStack = getCurrentStack(id);
         StatementSet visited;
+        std::queue<StatementNum> q;
 
-        std::queue<StatementNum> q {};
-        q.emplace(id);
-        bool initialNode = true;
-        while(!q.empty())
-        {
-            auto next = q.front();
-            auto callStmt = getCallStmtMapping(next);
+        auto addNextNodes = [&](StatementNum num) {
+            auto callStmt = getCallStmtMapping(num);
             if(callStmt != nullptr)
             {
-                callStack.insert(next);
-                for(auto a : gates.at(callStmt->getProc()->name).second)
+                callStack.insert(num);
+                auto name = dynamic_cast<const simple::ast::ProcCall*>(callStmt->getAstStmt())->proc_name;
+                for(auto return_pt : gates.at(name).second)
                 {
-                    q.emplace(a);
+                    q.emplace(return_pt);
                 }
             }
-            if(auto it = adj_lst_bip.find(next); it != adj_lst_bip.end())
+            if(auto it = adj_lst_bip.find(num); it != adj_lst_bip.end())
             {
-                for(auto& pair : it->second)
+                for(auto& [stmt, weight] : it->second)
                 {
-                    if(pair.second == 1 || callStack.count(pair.second - 1) != 0)
+                    if(weight == 1 || callStack.count(weight - 1) != 0) // intra or allowed to visit
                     {
-                        if(visited.count(pair.first) == 0)
+                        if(visited.count(stmt) == 0) // not visited yet
                         {
-                            q.emplace(pair.first);
+                            q.emplace(stmt);
                         }
                     }
                 }
             }
-            if(!initialNode)
-                visited.insert(next);
-            else
-                initialNode = false;
+        };
+
+        addNextNodes(id);
+        while(!q.empty())
+        {
+            auto curr = q.front();
+            addNextNodes(curr);
+            visited.insert(curr);
             q.pop();
         }
 
