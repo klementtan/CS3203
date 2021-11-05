@@ -439,6 +439,13 @@ namespace pql::eval::table
             join_mapping[join.getDeclB()].push_back(&join);
         }
 
+        for(auto& [ decl, joins ] : join_mapping)
+        {
+            std::sort(joins.begin(), joins.end(), [](const auto* a, const auto* b) -> bool {
+                return a->getAllowedEntries().size() < b->getAllowedEntries().size();
+            });
+        }
+
         auto graph = solver::DepGraph(m_select_decls, m_joins);
         auto components = graph.getComponents();
 
