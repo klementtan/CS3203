@@ -107,7 +107,7 @@ namespace pql::eval
                     ++it;
             }
 
-            table->putDomain(rightRef->declaration(), domain);
+            table->putDomain(rightRef->declaration(), std::move(domain));
         }
         else if(leftRef->isDeclaration() && rightRef->isWildcard())
         {
@@ -121,7 +121,7 @@ namespace pql::eval
                 else
                     ++it;
             }
-            table->putDomain(leftRef->declaration(), domain);
+            table->putDomain(leftRef->declaration(), std::move(domain));
         }
         else if(leftRef->isDeclaration() && rightRef->isDeclaration())
         {

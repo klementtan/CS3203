@@ -55,6 +55,9 @@ namespace pql::eval::solver
         IntTable(std::vector<IntRow> rows, const TableHeaders& headers);
         IntTable();
         bool contains(const ast::Declaration* declaration);
+
+        void mergeAndFilter(const IntTable& other, const table::Join& join);
+
         // Performs cross product on the rows
         void merge(const IntTable& other);
         // Performs cross product on the Domain and return a new IntTable (O(N^2))

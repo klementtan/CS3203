@@ -65,6 +65,8 @@ namespace pql::eval
         ast::Declaration* left_decl, ast::Declaration* right_decl, GetAllRelatedToLeftFn&& get_all_related)
     {
         auto left_domain = table->getDomain(left_decl);
+        auto right_domain = table->getDomain(right_decl);
+
         auto new_right_domain = table::Domain {};
         std::unordered_set<std::pair<table::Entry, table::Entry>> join_pairs;
 
@@ -78,23 +80,43 @@ namespace pql::eval
                 continue;
             }
 
+            // special case when both decls contain the same thing.
+            if constexpr(std::is_same_v<LeftRelParam, RightRelParam>)
+            {
+                if(left_decl == right_decl && all_related.count(getEntryValue<LeftRelParam>(*it)) == 0)
+                {
+                    it = left_domain.erase(it);
+                    continue;
+                }
+            }
+
+            bool have_valid_rhs = false;
+
             auto left_entry = table::Entry(left_decl, getEntryValue<LeftRelParam>(*it));
             for(const auto& right_value : all_related)
             {
                 auto right_entry = table::Entry(right_decl, right_value);
+                if(right_domain.count(right_entry) == 0)
+                    continue;
+
                 util::logfmt("pql::eval", "{} adds Join({}, {})", rel->toString(), left_entry.toString(),
                     right_entry.toString());
 
                 join_pairs.insert({ left_entry, right_entry });
                 new_right_domain.insert(right_entry);
+                have_valid_rhs = true;
             }
-            ++it;
+
+            if(have_valid_rhs)
+                ++it;
+            else
+                it = left_domain.erase(it);
         }
 
-        table->putDomain(left_decl, left_domain);
-        table->putDomain(right_decl, table::entry_set_intersect(new_right_domain, table->getDomain(right_decl)));
+        table->putDomain(left_decl, std::move(left_domain));
+        table->putDomain(right_decl, std::move(new_right_domain));
 
-        table->addJoin(table::Join(left_decl, right_decl, join_pairs));
+        table->addJoin(table::Join(left_decl, right_decl, std::move(join_pairs)));
     }
 
 }

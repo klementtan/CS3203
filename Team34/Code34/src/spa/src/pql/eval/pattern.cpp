@@ -29,6 +29,9 @@ namespace pql::ast
         // join pairs are needed in case of `pattern a(v, ...)` (two decls)
         std::unordered_set<std::pair<table::Entry, table::Entry>> allowed_entries;
 
+        // only used if the variable part is a decl.
+        auto var_domain = table::Domain {};
+
         auto domain = tbl->getDomain(this->assignment_declaration);
         for(auto it = domain.begin(); it != domain.end();)
         {
@@ -45,7 +48,6 @@ namespace pql::ast
                 else
                     should_erase |= !s_ast::exactMatch(this->expr_spec.expr.get(), assign_stmt->rhs.get());
             }
-
 
             // don't do extra work if we're already going to yeet this
             if(!should_erase)
@@ -66,16 +68,19 @@ namespace pql::ast
                     if(var_list.empty())
                         should_erase |= true;
 
+                    bool have_valid_rhs = false;
                     for(const auto& entry : var_list)
                     {
-                        auto var_name = entry.getVal();
-                        if(var_name == assign_stmt->lhs)
+                        if(entry.getVal() == assign_stmt->lhs)
                         {
-                            // For 'pattern a (v,...)', when a = i, v must equal to the lhs
-                            // of stmt i
-                            allowed_entries.insert({ *it, entry });
+                            allowed_entries.emplace(*it, entry);
+                            var_domain.emplace(std::move(entry));
+                            have_valid_rhs = true;
                         }
                     }
+
+                    if(!have_valid_rhs)
+                        should_erase |= true;
                 }
                 else if(var_ent.isWildcard())
                 {
@@ -94,10 +99,12 @@ namespace pql::ast
         }
         if(var_ent.isDeclaration())
         {
-            tbl->addJoin(table::Join(assignment_declaration, var_ent.declaration(), allowed_entries));
+            auto var_decl = var_ent.declaration();
+            tbl->putDomain(var_decl, table::entry_set_intersect(var_domain, tbl->getDomain(var_decl)));
+            tbl->addJoin(table::Join(assignment_declaration, var_decl, std::move(allowed_entries)));
         }
 
-        tbl->putDomain(this->assignment_declaration, domain);
+        tbl->putDomain(this->assignment_declaration, std::move(domain));
     }
 
     void evaluate_if_while_pattern(
@@ -115,6 +122,10 @@ namespace pql::ast
         std::unordered_set<std::pair<table::Entry, table::Entry>> join_pairs;
 
         auto domain = tbl->getDomain(stmt_decl);
+
+        // only used if the variable part is a decl.
+        auto var_domain = table::Domain {};
+
         for(auto it = domain.begin(); it != domain.end();)
         {
             bool should_erase = false;
@@ -131,19 +142,26 @@ namespace pql::ast
                 }
                 else if(var_ent.isDeclaration())
                 {
-                    util::logfmt("pql::eval", "Processing pattern while (v, ...)");
+                    util::logfmt("pql::eval", "Processing pattern if/while (v, ...)");
 
                     auto var_decl = var_ent.declaration();
                     auto var_list = tbl->getDomain(var_decl);
                     if(var_list.empty())
                         should_erase |= true;
 
-                    for(const auto& entry : var_list)
+                    bool have_valid_rhs = false;
+                    for(auto& entry : var_list)
                     {
-                        auto var_name = entry.getVal();
-                        if(condition_vars.count(var_name) > 0)
-                            join_pairs.insert({ *it, entry });
+                        if(condition_vars.count(entry.getVal()) > 0)
+                        {
+                            join_pairs.emplace(*it, entry);       // this one copies
+                            var_domain.emplace(std::move(entry)); // and this one moves
+                            have_valid_rhs = true;
+                        }
                     }
+
+                    if(!have_valid_rhs)
+                        should_erase |= true;
                 }
                 else if(var_ent.isWildcard())
                 {
@@ -162,9 +180,13 @@ namespace pql::ast
         }
 
         if(var_ent.isDeclaration())
-            tbl->addJoin(table::Join(stmt_decl, var_ent.declaration(), join_pairs));
+        {
+            auto var_decl = var_ent.declaration();
+            tbl->putDomain(var_decl, table::entry_set_intersect(var_domain, tbl->getDomain(var_decl)));
+            tbl->addJoin(table::Join(stmt_decl, var_ent.declaration(), std::move(join_pairs)));
+        }
 
-        tbl->putDomain(stmt_decl, domain);
+        tbl->putDomain(stmt_decl, std::move(domain));
     }
 
 
