@@ -491,6 +491,19 @@ namespace pql::eval::table
 
             auto first_decl = *comp.begin();
 
+            if(join_mapping.count(first_decl) == 0)
+            {
+                // if a decl has no joins, by definition it must be its own connected component.
+                spa_assert(comp.size() == 1);
+
+                // in this case, any value will do, so we continue to the next component as long
+                // as its domain is nonzero.
+                if(m_domains[first_decl].empty())
+                    return false;
+
+                continue;
+            }
+
             std::unordered_set<int> visited_joins {};
             if(!this->recursivelyTraverseJoins(assignments, visited_joins, first_decl, join_mapping))
                 return false;
