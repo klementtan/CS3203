@@ -51,8 +51,8 @@ jobs:
         with:
           name: autotester-reports
           path: |
-            Team34/Tests34/sys_tests_1/*.xml
-            Team34/Tests34/autotester_summary.txt
+            Team34/Tests34/sys_tests_*/*.xml
+            Team34/Tests34/summary.txt
   bench:
     runs-on: windows-2019
     steps:
