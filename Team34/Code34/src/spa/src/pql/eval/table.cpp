@@ -474,7 +474,7 @@ namespace pql::eval::table
             join_mapping[join.getDeclB()].push_back(&join);
         }
 
-        for(auto& [ decl, joins ] : join_mapping)
+        for(auto& [decl, joins] : join_mapping)
         {
             std::sort(joins.begin(), joins.end(), [](const auto* a, const auto* b) -> bool {
                 return a->getAllowedEntries().size() < b->getAllowedEntries().size();
@@ -541,16 +541,22 @@ namespace pql::eval::table
         }
         else
         {
-            // check that all select domains are nonzero first so we can
-            // skip traversing any joins for the trivial case.
-            for(auto decl : m_select_decls)
-                if(m_domains[decl].empty())
-                    return { "FALSE" };
+            static constexpr bool DFS_JOIN_IMPLEMENTATION = true;
 
-            if(this->evaluateJoinsOverDomains())
-                return { "TRUE" };
-            else
-                return { "FALSE" };
+            if constexpr(DFS_JOIN_IMPLEMENTATION)
+            {
+                // check that all select domains are nonzero first so we can
+                // skip traversing any joins for the trivial case.
+                for(auto decl : m_select_decls)
+                    if(m_domains[decl].empty())
+                        return { "FALSE" };
+
+                if(this->evaluateJoinsOverDomains())
+                    return { "TRUE" };
+
+                else
+                    return { "FALSE" };
+            }
         }
 
         // we don't need the domains after this, so move it out.
