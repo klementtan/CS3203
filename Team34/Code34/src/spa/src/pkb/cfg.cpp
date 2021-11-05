@@ -752,53 +752,54 @@ namespace pkb
         return callStack;
     }
 
+    void CFG::addNextNodes(
+        StatementNum num, StatementSet& callStack, StatementSet& visited, std::queue<StatementNum>& q) const
+    {
+        auto callStmt = getCallStmtMapping(num);
+        if(callStmt != nullptr)
+        {
+            callStack.insert(num);
+            auto name = dynamic_cast<const simple::ast::ProcCall*>(callStmt->getAstStmt())->proc_name;
+            for(auto return_pt : gates.at(name).second)
+            {
+                q.emplace(return_pt);
+            }
+        }
+        if(auto it = adj_lst_bip.find(num); it != adj_lst_bip.end())
+        {
+            for(auto& [stmt, weight] : it->second)
+            {
+                if(weight == 1 || callStack.count(weight - 1) != 0) // intra or allowed to visit
+                {
+                    if(visited.count(stmt) == 0) // not visited yet
+                    {
+                        q.emplace(stmt);
+                    }
+                }
+            }
+        }
+    }
+
     bool CFG::isStatementTransitivelyNextBip(StatementNum id1, StatementNum id2) const
     {
-        check_in_range(id1, total_inst);
         check_in_range(id2, total_inst);
         StatementSet callStack = getCurrentStack(id1);
         StatementSet visited;
         std::queue<StatementNum> q;
 
-        auto addNextNodes = [&](StatementNum num) {
-            auto callStmt = getCallStmtMapping(num);
-            if(callStmt != nullptr)
-            {
-                callStack.insert(num);
-                auto name = dynamic_cast<const simple::ast::ProcCall*>(callStmt->getAstStmt())->proc_name;
-                for(auto return_pt : gates.at(name).second)
-                {
-                    q.emplace(return_pt);
-                }
-            }
-            if(auto it = adj_lst_bip.find(num); it != adj_lst_bip.end())
-            {
-                for(auto& [stmt, weight] : it->second)
-                {
-                    if(weight == 1 || callStack.count(weight - 1) != 0) // intra or allowed to visit
-                    {
-                        if(visited.count(stmt) == 0) // not visited yet
-                        {
-                            q.emplace(stmt);
-                        }
-                    }
-                }
-            }
-        };
-
-        addNextNodes(id1);
+        addNextNodes(id1, callStack, visited, q);
         while(!q.empty())
         {
             auto curr = q.front();
             if(curr == id2)
                 return true;
-            addNextNodes(curr);
+            addNextNodes(curr, callStack, visited, q);
             visited.insert(curr);
             q.pop();
         }
 
         return false;
-    }
+    } 
 
     const StatementSet& CFG::getNextStatementsBip(StatementNum id) const
     {
@@ -828,41 +829,14 @@ namespace pkb
         StatementSet visited;
         std::queue<StatementNum> q;
 
-        auto addNextNodes = [&](StatementNum num) {
-            auto callStmt = getCallStmtMapping(num);
-            if(callStmt != nullptr)
-            {
-                callStack.insert(num);
-                auto name = dynamic_cast<const simple::ast::ProcCall*>(callStmt->getAstStmt())->proc_name;
-                for(auto return_pt : gates.at(name).second)
-                {
-                    q.emplace(return_pt);
-                }
-            }
-            if(auto it = adj_lst_bip.find(num); it != adj_lst_bip.end())
-            {
-                for(auto& [stmt, weight] : it->second)
-                {
-                    if(weight == 1 || callStack.count(weight - 1) != 0) // intra or allowed to visit
-                    {
-                        if(visited.count(stmt) == 0) // not visited yet
-                        {
-                            q.emplace(stmt);
-                        }
-                    }
-                }
-            }
-        };
-
-        addNextNodes(id);
+        addNextNodes(id, callStack, visited, q);
         while(!q.empty())
         {
             auto curr = q.front();
-            addNextNodes(curr);
+            addNextNodes(curr, callStack, visited, q);
             visited.insert(curr);
             q.pop();
         }
-
         return stmt.cacheTransitivelyNextStatementsBip(std::move(visited));
     }
 
@@ -885,19 +859,58 @@ namespace pkb
     const StatementSet& CFG::getTransitivelyPreviousStatementsBip(StatementNum id) const
     {
         auto& stmt = m_pkb->getStatementAt(id);
-
         if(auto cache = stmt.maybeGetTransitivelyPreviousStatementsBip(); cache != nullptr)
             return *cache;
 
-        StatementSet ret {};
+        StatementSet callStack = getCurrentStack(id);
+        //m_pkb->getProcedureNamed(m_pkb->getStatementAt(id).getProc()->name).getCallStmts()
+        StatementSet visited;
+        std::queue<StatementNum> q;
 
-        for(size_t i = 0; i < total_inst; i++)
-        {
-            if(isStatementTransitivelyNextBip(i + 1, id))
+        auto addPrevNodes = [&](StatementNum id) {
+            std::vector<StatementNum> prevNodes;
+            for(size_t i = 0; i < total_inst; i++)
             {
-                ret.insert(i + 1);
+                if(adj_mat_bip[i][id-1] != INF)
+                {
+                    prevNodes.push_back(i + 1); 
+                }
             }
+            for(auto& prev : prevNodes)
+            {
+                if(visited.count(prev) == 0) // not visited yet
+                {
+                    if(adj_mat_bip[prev-1][id-1] == 1) // must be intra and dest cannot be call
+                    {
+                        q.emplace(prev);
+                    }
+                    else
+                    {
+                        if(getCallStmtMapping(prev) == nullptr)
+                        {
+                            callStack.insert(adj_mat_bip[prev - 1][id - 1] - 1);
+                            q.emplace(prev);
+                        }
+
+                        if(callStack.count(adj_mat_bip[prev-1][id-1] - 1) != 0 )
+                        {
+                            q.emplace(prev);
+
+                        }
+                    }
+                }
+            }
+        };
+
+        addPrevNodes(id);
+        while(!q.empty())
+        {
+            auto curr = q.front();
+            addPrevNodes(curr);
+            visited.insert(curr);
+            q.pop();
         }
-        return stmt.cacheTransitivelyPreviousStatementsBip(std::move(ret));
+
+        return stmt.cacheTransitivelyPreviousStatementsBip(std::move(visited));
     }
 }
