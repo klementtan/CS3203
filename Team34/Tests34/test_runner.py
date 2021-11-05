@@ -137,7 +137,7 @@ def main():
 
 	test_times = rp.get_test_times()
 
-	with open("autotester_summary.txt", "wb") as f:
+	with open("summary.txt", "wb") as f:
 		log_string(f, f"{num_passed}/{total_tests} ({100 * num_passed / max(1, total_tests):.1f}%) " +
 			f"test{'' if num_passed == 1 else 's'} passed, {num_failed} failed")
 
