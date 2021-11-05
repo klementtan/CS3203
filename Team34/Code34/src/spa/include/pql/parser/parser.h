@@ -41,6 +41,12 @@ namespace pql::parser
         KW_FollowsStar,
         KW_AffectsStar,
 
+        KW_NextBip,
+        KW_AffectsBip,
+
+        KW_NextBipStar,
+        KW_AffectsBipStar,
+
         KW_And,
         KW_With,
         KW_Select,

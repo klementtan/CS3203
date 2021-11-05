@@ -281,6 +281,9 @@ namespace pkb
         bool nextRelationExists() const;
         bool affectsRelationExists() const;
 
+        bool nextBipRelationExists() const;
+        bool affectsBipRelationExists() const;
+
         void addAssignStmtMapping(StatementNum stmt1, Statement* stmt2);
         void addModStmtMapping(StatementNum stmt1, Statement* stmt2);
         void addCallStmtMapping(StatementNum stmt1, Statement* stmt2);
@@ -327,6 +330,8 @@ namespace pkb
         std::unordered_map<std::pair<StatementNum, StatementNum>, std::unordered_set<size_t>, pair_hash> bip_ref;
 
         bool m_next_exists = false;
+        bool m_next_bip_exists = false;
+
         // map of the starting point and return points for each proc
         std::unordered_map<std::string, std::pair<StatementNum, std::vector<StatementNum>>> gates;
         const ProgramKB* m_pkb;
@@ -362,6 +367,9 @@ namespace pkb
         bool parentRelationExists() const;
         bool followsRelationExists() const;
         bool affectsRelationExists() const;
+
+        bool nextBipRelationExists() const;
+        bool affectsBipRelationExists() const;
 
         const simple::ast::Program* getProgram() const;
 

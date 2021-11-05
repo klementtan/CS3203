@@ -372,6 +372,41 @@ namespace pql::ast
         StmtRef second {};
     };
 
+    struct NextBip : RelCond
+    {
+        virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
+
+        StmtRef first {};
+        StmtRef second {};
+    };
+
+    struct NextBipT : RelCond
+    {
+        virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
+
+        StmtRef first {};
+        StmtRef second {};
+    };
+
+    struct AffectsBip : RelCond
+    {
+        virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
+
+        StmtRef first {};
+        StmtRef second {};
+    };
+
+    struct AffectsBipT : RelCond
+    {
+        virtual std::string toString() const override;
+        virtual void evaluate(const pkb::ProgramKB* pkb, eval::table::Table* table) const override;
+
+        StmtRef first {};
+        StmtRef second {};
+    };
 
 
     /** Expression Specification: pattern segment  of an assignment pattern. */
