@@ -398,11 +398,28 @@ namespace pql::eval::table
             values_copy[decl_a] = a;
             values_copy[decl_b] = b;
 
+            /*
+                we need to make a copy here, because both `recursivelyTraverseJoins` and `evaluateJoinValues`
+                can potentially add decl values to the value assignment. if they fail at some deeper depth,
+                we have no way of knowing which decl assignments to remove, causing backtracking failure.
+
+                by making a copy (and just assigning the copy if we succeed, or yeeting it if we fail), we
+                avoid this problem entirely.
+            */
             auto visited_copy = visited_joins;
+
+            /*
+                These two functions are actually mutually recursive. This is because if a declaration has more
+                than one join that involves it, then we need a way to backtrack and retry the first join
+                if the second join fails.
+
+                If we think of it as a tree DFS (which it is), then we need to ensure that we can retry all
+                prior branches (with a different assignment) if a given branch fails; the recursive call to
+                `evaluateJoinValues` ensures that this can happen; a naive loop over joins would not let us
+                retry assignments from previous joins.
+            */
             if(this->recursivelyTraverseJoins(values_copy, visited_copy, other_decl, join_map))
             {
-                // we must handle the remaining joins recursively, so that we are able
-                // to backtrack if any of the assignments fail.
                 if(this->evaluateJoinValues(values_copy, this_decl, join_idx + 1, joins, visited_copy, join_map))
                 {
                     values = std::move(values_copy);
@@ -417,13 +434,31 @@ namespace pql::eval::table
     bool Table::recursivelyTraverseJoins(
         ValueAssignmentMap& values, JoinIdSet& visited_joins, const ast::Declaration* this_decl, DeclJoinMap& join_map)
     {
-        // get all joins for this guy
         spa_assert(join_map.count(this_decl) > 0);
 
         if(m_domains[this_decl].empty())
             return false;
 
         return this->evaluateJoinValues(values, this_decl, 0, join_map[this_decl], visited_joins, join_map);
+    }
+
+    bool Table::validateAssignments(ValueAssignmentMap& values, const std::vector<Join>& joins)
+    {
+        for(auto& join : joins)
+        {
+            auto decl_a = join.getDeclA();
+            auto decl_b = join.getDeclB();
+
+            // the joins might be involving other decls not in the current connected component, so
+            // ignore them for now.
+            if(values.count(decl_a) == 0 || values.count(decl_b) == 0)
+                continue;
+
+            if(join.getAllowedEntries().count({ values.at(decl_a), values.at(decl_b) }) == 0)
+                return false;
+        }
+
+        return true;
     }
 
     bool Table::evaluateJoinsOverDomains()
@@ -458,6 +493,12 @@ namespace pql::eval::table
 
             std::unordered_set<int> visited_joins {};
             if(!this->recursivelyTraverseJoins(assignments, visited_joins, first_decl, join_mapping))
+                return false;
+
+            // for sanity, verify that the assignments we produced satisfy the join conditions.
+            // we only need to validate this connected component of decls, since other decls can't
+            // affect the correctness of this assignment (by definition).
+            if(!this->validateAssignments(assignments, m_joins))
                 return false;
         }
 

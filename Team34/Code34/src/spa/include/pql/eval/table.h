@@ -153,6 +153,8 @@ namespace pql::eval::table
 
         bool evaluateJoinsOverDomains();
 
+        bool validateAssignments(ValueAssignmentMap& values, const std::vector<Join>& joins);
+
         bool evaluateJoinValues(ValueAssignmentMap& known, const ast::Declaration* decl, size_t join_idx,
             const std::vector<const Join*>& joins, JoinIdSet& visited_joins, DeclJoinMap& join_mapping);
 
