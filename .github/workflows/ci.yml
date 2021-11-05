@@ -40,7 +40,7 @@ jobs:
       - name: run autotester
         run: |
           cd Team34/Tests34
-          python test_runner.py ..\Code34\build\src\autotester\Release\autotester.exe sys_tests_1 sys_tests_2 sys_tests_3
+          python test_runner.py ..\Code34\build\src\autotester\Release\autotester.exe sys_tests_1 sys_tests_2 sys_tests_3 sys_tests_stress_1
           if ($lastexitcode -ne 0) { throw "autotester failed" }
       - name: show failed tests
         run: |
