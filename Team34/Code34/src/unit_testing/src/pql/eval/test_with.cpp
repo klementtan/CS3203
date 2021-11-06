@@ -168,3 +168,10 @@ TEST_CASE("with varName")
     TEST_OK(prog_2, "read r; procedure p; Select r.varName with r.varName = p.procName", "a", "b", "c");
     TEST_OK(prog_3, "read r; procedure p; Select r.varName with p.procName = r.varName", "b");
 }
+
+TEST_CASE("with boolean")
+{
+    TEST_OK(prog_1, "print pn; prog_line n; read re; Select BOOLEAN with pn.stmt# = re.stmt#", "FALSE");
+    TEST_OK(prog_1, "stmt s; call c; prog_line n; read re; Select BOOLEAN with c.stmt# = re.stmt#", "FALSE");
+    TEST_OK(prog_3, "procedure p; read r; Select BOOLEAN with p.procName = r.varName", "TRUE");
+}

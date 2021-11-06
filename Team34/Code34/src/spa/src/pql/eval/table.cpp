@@ -24,7 +24,6 @@ namespace pql::eval::table
         { EntryType::kConst, "Const" },
     };
 
-    Entry::Entry() = default;
     Entry::Entry(const pql::ast::Declaration* declaration, const std::string& val)
     {
         this->m_declaration = declaration;
@@ -184,10 +183,10 @@ namespace pql::eval::table
     Table::~Table() { }
 
 
-    void Table::putDomain(const ast::Declaration* decl, const std::unordered_set<Entry>& entries)
+    void Table::putDomain(const ast::Declaration* decl, Domain entries)
     {
         util::logfmt("pql::eval::table", "Updating domain of {} with {} entries", decl->toString(), entries.size());
-        m_domains[decl] = entries;
+        m_domains[decl] = std::move(entries);
     }
     void Table::addJoin(const Join& join)
     {
@@ -319,7 +318,7 @@ namespace pql::eval::table
     }
 
     static std::string format_row_to_output(
-        solver::IntRow& row, const std::vector<ast::Elem>& return_tuple, const pkb::ProgramKB* pkb)
+        const solver::IntRow& row, const std::vector<ast::Elem>& return_tuple, const pkb::ProgramKB* pkb)
     {
         util::logfmt("pql::parser::table", "Extracting result from row: {}", row.toString());
 
@@ -358,7 +357,173 @@ namespace pql::eval::table
         return ret;
     }
 
+    static bool check_conflicting_values(const Table::ValueAssignmentMap& values, const Entry& ent)
+    {
+        if(auto it = values.find(ent.getDeclaration()); it != values.end())
+            return it->second != ent;
+        return false;
+    }
 
+    bool Table::evaluateJoinValues(ValueAssignmentMap& values, const ast::Declaration* this_decl, size_t join_idx,
+        const std::vector<const Join*>& joins, JoinIdSet& visited_joins, DeclJoinMap& join_map)
+    {
+        if(join_idx >= joins.size())
+            return true;
+
+        auto join = joins[join_idx];
+        if(visited_joins.count(join->getId()) > 0)
+            return this->evaluateJoinValues(values, this_decl, join_idx + 1, joins, visited_joins, join_map);
+
+        auto& allowed = join->getAllowedEntries();
+        if(allowed.empty())
+            return false;
+
+        auto decl_a = join->getDeclA();
+        auto decl_b = join->getDeclB();
+
+        visited_joins.insert(join->getId());
+
+        for(auto& [a, b] : allowed)
+        {
+            // we need to special case (decl_a == decl_b) here, ie. if a join involves the same decl twice
+            // if the values are not the same, then we skip this immediately.
+            if(decl_a == decl_b && a != b)
+                continue;
+
+            if(check_conflicting_values(values, a) || check_conflicting_values(values, b))
+                continue;
+
+            if(m_domains[decl_a].count(a) == 0 || m_domains[decl_b].count(b) == 0)
+                continue;
+
+            auto other_decl = (this_decl == decl_a ? decl_b : decl_a);
+
+            auto values_copy = values;
+            values_copy[decl_a] = a;
+            values_copy[decl_b] = b;
+
+            /*
+                we need to make a copy here, because both `recursivelyTraverseJoins` and `evaluateJoinValues`
+                can potentially add decl values to the value assignment. if they fail at some deeper depth,
+                we have no way of knowing which decl assignments to remove, causing backtracking failure.
+
+                by making a copy (and just assigning the copy if we succeed, or yeeting it if we fail), we
+                avoid this problem entirely.
+            */
+            auto visited_copy = visited_joins;
+
+            /*
+                These two functions are actually mutually recursive. This is because if a declaration has more
+                than one join that involves it, then we need a way to backtrack and retry the first join
+                if the second join fails.
+
+                If we think of it as a tree DFS (which it is), then we need to ensure that we can retry all
+                prior branches (with a different assignment) if a given branch fails; the recursive call to
+                `evaluateJoinValues` ensures that this can happen; a naive loop over joins would not let us
+                retry assignments from previous joins.
+            */
+            if(this->recursivelyTraverseJoins(values_copy, visited_copy, other_decl, join_map))
+            {
+                if(this->evaluateJoinValues(values_copy, this_decl, join_idx + 1, joins, visited_copy, join_map))
+                {
+                    values = std::move(values_copy);
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    bool Table::recursivelyTraverseJoins(
+        ValueAssignmentMap& values, JoinIdSet& visited_joins, const ast::Declaration* this_decl, DeclJoinMap& join_map)
+    {
+        spa_assert(join_map.count(this_decl) > 0);
+
+        if(m_domains[this_decl].empty())
+            return false;
+
+        return this->evaluateJoinValues(values, this_decl, 0, join_map[this_decl], visited_joins, join_map);
+    }
+
+    bool Table::validateAssignments(ValueAssignmentMap& values, const std::vector<Join>& joins)
+    {
+        for(auto& join : joins)
+        {
+            auto decl_a = join.getDeclA();
+            auto decl_b = join.getDeclB();
+
+            // the joins might be involving other decls not in the current connected component, so
+            // ignore them for now.
+            if(values.count(decl_a) == 0 || values.count(decl_b) == 0)
+                continue;
+
+            if(join.getAllowedEntries().count({ values.at(decl_a), values.at(decl_b) }) == 0)
+                return false;
+        }
+
+        return true;
+    }
+
+    bool Table::evaluateJoinsOverDomains()
+    {
+        if(m_select_decls.empty())
+            return true;
+
+        // make a vector of them, so we (a) can index, and (b) have a consistent order.
+        std::unordered_map<const ast::Declaration*, std::vector<const Join*>> join_mapping {};
+        for(auto& join : m_joins)
+        {
+            join_mapping[join.getDeclA()].push_back(&join);
+
+            // if the join involves the same decl (eg. Next(a, a)), don't add the join twice
+            if(join.getDeclA() != join.getDeclB())
+                join_mapping[join.getDeclB()].push_back(&join);
+        }
+
+        for(auto& [decl, joins] : join_mapping)
+        {
+            std::sort(joins.begin(), joins.end(), [](const auto* a, const auto* b) -> bool {
+                return a->getAllowedEntries().size() < b->getAllowedEntries().size();
+            });
+        }
+
+        auto graph = solver::DepGraph(m_select_decls, m_joins);
+        auto components = graph.getComponents();
+
+        for(auto& comp : components)
+        {
+            ValueAssignmentMap assignments {};
+            spa_assert(comp.size() > 0);
+
+            auto first_decl = *comp.begin();
+
+            if(join_mapping.count(first_decl) == 0)
+            {
+                // if a decl has no joins, by definition it must be its own connected component.
+                spa_assert(comp.size() == 1);
+
+                // in this case, any value will do, so we continue to the next component as long
+                // as its domain is nonzero.
+                if(m_domains[first_decl].empty())
+                    return false;
+
+                continue;
+            }
+
+            std::unordered_set<int> visited_joins {};
+            if(!this->recursivelyTraverseJoins(assignments, visited_joins, first_decl, join_mapping))
+                return false;
+
+            // for sanity, verify that the assignments we produced satisfy the join conditions.
+            // we only need to validate this connected component of decls, since other decls can't
+            // affect the correctness of this assignment (by definition).
+            if(!this->validateAssignments(assignments, m_joins))
+                return false;
+        }
+
+        return true;
+    }
 
 
 
@@ -394,7 +559,27 @@ namespace pql::eval::table
                 }
             }
         }
+        else
+        {
+            static constexpr bool DFS_JOIN_IMPLEMENTATION = true;
 
+            if constexpr(DFS_JOIN_IMPLEMENTATION)
+            {
+                // check that all select domains are nonzero first so we can
+                // skip traversing any joins for the trivial case.
+                for(auto decl : m_select_decls)
+                    if(m_domains[decl].empty())
+                        return { "FALSE" };
+
+                if(this->evaluateJoinsOverDomains())
+                    return { "TRUE" };
+
+                else
+                    return { "FALSE" };
+            }
+        }
+
+        // we don't need the domains after this, so move it out.
         solver::Solver solver(
             /* joins: */ m_joins, /* domains: */ std::move(m_domains), /* return_decls: */ ret_cols,
             /* select_decls: */ m_select_decls);
@@ -408,8 +593,8 @@ namespace pql::eval::table
         {
             return Table::getFailedResult(result_cl);
         }
-        solver::IntTable ret_tbl = solver.getRetTbl();
 
+        solver::IntTable ret_tbl = solver.getRetTbl();
         if(ret_tbl.empty())
         {
             return Table::getFailedResult(result_cl);

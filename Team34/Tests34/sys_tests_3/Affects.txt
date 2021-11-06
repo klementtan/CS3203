@@ -1,0 +1,60 @@
+1 - Affects(INTEGER, INTEGER): Normal affects
+assign a1, a2;
+Select BOOLEAN such that Affects(15,39)
+TRUE
+5000
+2 - Affects(INTEGER, _): True
+assign a1, a2;
+Select BOOLEAN such that Affects(15,_)
+TRUE
+5000
+3 - Affects(INTEGER, _): False
+assign a1, a2;
+Select BOOLEAN such that Affects(16,_)
+FALSE
+5000
+4 - Affects(_,INTEGER): TRUE
+assign a1, a2;
+Select BOOLEAN such that Affects(_,57)
+TRUE
+5000
+5 - Affects(_,INTEGER): False
+assign a1, a2;
+Select BOOLEAN such that Affects(_,53)
+FALSE
+5000
+6 - Affects(stmtRef,INTEGER): Valid
+assign a1, a2;
+Select a1 such that Affects(a1,57)
+1,2
+5000
+7 - Affects(stmtRef,INTEGER): Invalid
+assign a1, a2;
+Select a1 such that Affects(a1,53)
+
+5000
+8 - Affects(INTEGER,stmtRef): Valid
+assign a1, a2;
+Select a1 such that Affects(1,a1)
+57
+5000
+9 - Affects(INTEGER,stmtRef): Invalid
+assign a1, a2;
+Select a1 such that Affects(6,a1)
+
+5000
+10 - Affects(stmtRef,_): Valid
+assign a1, a2;
+Select a1 such that Affects(a1,_)
+1,2,15
+5000
+11 - Affects(_,stmtRef): Invalid
+assign a1, a2;
+Select a1 such that Affects(_,a1)
+39,57
+5000
+12 - Affects(stmtRef, stmtRef)
+assign a1, a2;
+Select <a1,a2> such that Affects(a1,a2)
+15 39,2 57,1 57
+5000
