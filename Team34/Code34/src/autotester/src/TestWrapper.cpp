@@ -43,8 +43,12 @@ void TestWrapper::evaluate(std::string query, std::list<std::string>& results)
         return;
     }
 
-    struct uwu {
-        ~uwu() { util::Arena::global().clear(); }
+    struct uwu
+    {
+        ~uwu()
+        {
+            util::Arena::global().clear();
+        }
     } tmp;
 
     try

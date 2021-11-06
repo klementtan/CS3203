@@ -32,9 +32,12 @@ namespace util
     {
         using value_type = T;
 
-        arena_allocator() noexcept {}  // not required, unless used
+        arena_allocator() noexcept { } // not required, unless used
 
-        template <typename U> arena_allocator(const arena_allocator<U>&) noexcept {}
+        template <typename U>
+        arena_allocator(const arena_allocator<U>&) noexcept
+        {
+        }
 
         inline value_type* allocate(std::size_t n)
         {
