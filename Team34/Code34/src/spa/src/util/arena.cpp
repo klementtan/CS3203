@@ -42,8 +42,10 @@ namespace util
         Chunk* cur = this->head;
         while(true)
         {
-            uint8_t* ptr = (uint8_t*) (((uintptr_t)(cur->memory + cur->used + (align - 1))) & ~(align - 1));
-            size_t real_size = (size_t)((ptr + req) - (cur->memory + cur->used));
+            // clang-format off
+            uint8_t* ptr = (uint8_t*) (((uintptr_t) (cur->memory + cur->used + (align - 1))) & ~(align - 1));
+            size_t real_size = (size_t) ((ptr + req) - (cur->memory + cur->used));
+            // clang-format on
 
             if(req == 0)
                 return cur->memory + cur->used;
