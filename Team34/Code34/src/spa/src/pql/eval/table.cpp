@@ -385,6 +385,11 @@ namespace pql::eval::table
 
         for(auto& [a, b] : allowed)
         {
+            // we need to special case (decl_a == decl_b) here, ie. if a join involves the same decl twice
+            // if the values are not the same, then we skip this immediately.
+            if(decl_a == decl_b && a != b)
+                continue;
+
             if(check_conflicting_values(values, a) || check_conflicting_values(values, b))
                 continue;
 
@@ -470,7 +475,10 @@ namespace pql::eval::table
         for(auto& join : m_joins)
         {
             join_mapping[join.getDeclA()].push_back(&join);
-            join_mapping[join.getDeclB()].push_back(&join);
+
+            // if the join involves the same decl (eg. Next(a, a)), don't add the join twice
+            if(join.getDeclA() != join.getDeclB())
+                join_mapping[join.getDeclB()].push_back(&join);
         }
 
         for(auto& [decl, joins] : join_mapping)
