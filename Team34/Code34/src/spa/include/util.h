@@ -10,6 +10,7 @@
 
 #include <zpr.h>
 
+#include "arena.h"
 
 // misc stuff
 namespace util

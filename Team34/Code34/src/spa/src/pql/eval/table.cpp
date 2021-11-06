@@ -319,7 +319,7 @@ namespace pql::eval::table
     }
 
     static std::string format_row_to_output(
-        solver::IntRow& row, const std::vector<ast::Elem>& return_tuple, const pkb::ProgramKB* pkb)
+        const solver::IntRow& row, const std::vector<ast::Elem>& return_tuple, const pkb::ProgramKB* pkb)
     {
         util::logfmt("pql::parser::table", "Extracting result from row: {}", row.toString());
 

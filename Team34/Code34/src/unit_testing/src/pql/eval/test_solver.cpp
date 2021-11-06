@@ -4,6 +4,8 @@
 
 #include "pql/eval/solver.h"
 
+using namespace pql::eval;
+
 std::vector<std::unique_ptr<pql::ast::Declaration>> generate_decl(int count, int start_i)
 {
     std::vector<std::unique_ptr<pql::ast::Declaration>> ret(count);
@@ -15,12 +17,12 @@ std::vector<std::unique_ptr<pql::ast::Declaration>> generate_decl(int count, int
     return ret;
 }
 
-std::vector<pql::eval::solver::IntRow> generate_rows(int count, std::vector<pql::ast::Declaration*> decls)
+util::ArenaVec<solver::IntRow> generate_rows(int count, std::vector<pql::ast::Declaration*> decls)
 {
-    std::vector<pql::eval::solver::IntRow> rows(count);
+    util::ArenaVec<solver::IntRow> rows(count);
     for(int i = 0; i < count; i++)
     {
-        std::vector<pql::eval::table::Entry> columns;
+        util::ArenaVec<table::Entry> columns;
         for(pql::ast::Declaration* decl : decls)
             columns.emplace_back(decl, i);
 
@@ -50,7 +52,7 @@ TEST_CASE("IntRow")
         std::unique_ptr<pql::ast::Declaration> decl =
             std::make_unique<pql::ast::Declaration>(pql::ast::Declaration { "a", pql::ast::DESIGN_ENT::ASSIGN });
         pql::eval::table::Entry entry = pql::eval::table::Entry(decl.get(), 1);
-        std::vector<pql::eval::table::Entry> columns = { entry };
+        util::ArenaVec<table::Entry> columns = { entry };
         pql::eval::solver::IntRow row(columns);
         REQUIRE(row.contains(decl.get()));
     }
@@ -63,7 +65,7 @@ TEST_CASE("IntRow")
             std::make_unique<pql::ast::Declaration>(pql::ast::Declaration { "a2", pql::ast::DESIGN_ENT::ASSIGN });
         pql::eval::table::Entry entry2 = pql::eval::table::Entry(decl2.get(), 2);
         pql::eval::table::Join valid_join(decl1.get(), decl2.get(), { { entry1, entry2 } });
-        std::vector<pql::eval::table::Entry> columns = { entry1, entry2 };
+        util::ArenaVec<table::Entry> columns = { entry1, entry2 };
         pql::eval::solver::IntRow row(columns);
         REQUIRE(row.isAllowed(valid_join));
 
@@ -79,20 +81,20 @@ TEST_CASE("IntRow")
         std::unique_ptr<pql::ast::Declaration> decl2 =
             std::make_unique<pql::ast::Declaration>(pql::ast::Declaration { "a2", pql::ast::DESIGN_ENT::ASSIGN });
         pql::eval::table::Entry entry2 = pql::eval::table::Entry(decl2.get(), 2);
-        std::vector<pql::eval::table::Entry> columns1 = { entry1 };
-        std::vector<pql::eval::table::Entry> columns2 = { entry2 };
+        util::ArenaVec<table::Entry> columns1 = { entry1 };
+        util::ArenaVec<table::Entry> columns2 = { entry2 };
         pql::eval::solver::IntRow row1(columns1);
         pql::eval::solver::IntRow row2(columns2);
         // Disjoint rows
         REQUIRE(row1.canMerge(row2, { decl2.get() }));
 
         // Overlapping rows
-        std::vector<pql::eval::table::Entry> columns3 = { entry1, entry2 };
+        util::ArenaVec<table::Entry> columns3 = { entry1, entry2 };
         pql::eval::solver::IntRow row3(columns3);
         REQUIRE(row1.canMerge(row3, { decl1.get(), decl2.get() }));
 
         // Conflicting columns in rows
-        std::vector<pql::eval::table::Entry> columns4 = { pql::eval::table::Entry(decl1.get(), 420), entry2 };
+        util::ArenaVec<table::Entry> columns4 = { pql::eval::table::Entry(decl1.get(), 420), entry2 };
 
         pql::eval::solver::IntRow row4(columns4);
         REQUIRE_FALSE(row1.canMerge(row4, { decl1.get(), decl2.get() }));
@@ -108,8 +110,8 @@ TEST_CASE("IntRow")
         std::unique_ptr<pql::ast::Declaration> decl3 =
             std::make_unique<pql::ast::Declaration>(pql::ast::Declaration { "a3", pql::ast::DESIGN_ENT::ASSIGN });
         pql::eval::table::Entry entry3 = pql::eval::table::Entry(decl3.get(), 3);
-        std::vector<pql::eval::table::Entry> columns1 = { entry1 };
-        std::vector<pql::eval::table::Entry> columns2 = { entry2, entry3 };
+        util::ArenaVec<table::Entry> columns1 = { entry1 };
+        util::ArenaVec<table::Entry> columns2 = { entry2, entry3 };
         pql::eval::solver::IntRow row1(columns1);
         pql::eval::solver::IntRow row2(columns2);
         pql::eval::solver::IntRow merged_row(row1);
@@ -128,7 +130,7 @@ TEST_CASE("IntTable")
         std::vector<pql::ast::Declaration*> decl_observers(decls.size());
         for(size_t i = 0; i < decls.size(); i++)
             decl_observers[i] = decls[i].get();
-        std::vector<pql::eval::solver::IntRow> rows = generate_rows(5, decl_observers);
+        auto rows = generate_rows(5, decl_observers);
         pql::eval::solver::IntTable tbl(
             rows, std::unordered_set<const pql::ast::Declaration*>(decl_observers.begin(), decl_observers.end()));
         for(const auto& decl : decl_observers)
@@ -144,7 +146,7 @@ TEST_CASE("IntTable")
         std::vector<pql::ast::Declaration*> decl_observers1(decls1.size());
         for(size_t i = 0; i < decls1.size(); i++)
             decl_observers1[i] = decls1[i].get();
-        std::vector<pql::eval::solver::IntRow> rows1 = generate_rows(2, decl_observers1);
+        auto rows1 = generate_rows(2, decl_observers1);
         pql::eval::solver::IntTable tbl1(
             rows1, std::unordered_set<const pql::ast::Declaration*>(decl_observers1.begin(), decl_observers1.end()));
         pql::eval::solver::IntTable merged_tbl1(tbl0);
@@ -155,7 +157,7 @@ TEST_CASE("IntTable")
         std::vector<pql::ast::Declaration*> decl_observers2(decls2.size());
         for(size_t i = 0; i < decls2.size(); i++)
             decl_observers2[i] = decls2[i].get();
-        std::vector<pql::eval::solver::IntRow> rows2 = generate_rows(2, decl_observers2);
+        auto rows2 = generate_rows(2, decl_observers2);
         pql::eval::solver::IntTable tbl2(
             rows2, std::unordered_set<const pql::ast::Declaration*>(decl_observers2.begin(), decl_observers2.end()));
         pql::eval::solver::IntTable merged_tbl2(tbl1);
@@ -187,7 +189,7 @@ TEST_CASE("IntTable")
         std::vector<pql::ast::Declaration*> decl_observers1(decls1.size());
         for(size_t i = 0; i < decls1.size(); i++)
             decl_observers1[i] = decls1[i].get();
-        std::vector<pql::eval::solver::IntRow> rows1 = generate_rows(10, decl_observers1);
+        auto rows1 = generate_rows(10, decl_observers1);
         pql::eval::solver::IntTable tbl1(
             rows1, std::unordered_set<const pql::ast::Declaration*>(decl_observers1.begin(), decl_observers1.end()));
         pql::ast::Declaration* decl_a = decl_observers1[0];

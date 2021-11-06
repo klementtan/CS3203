@@ -491,11 +491,11 @@ namespace pql::parser
         else if(rel_tok == TT::KW_NextBipStar)
             return parse_relation(ps, rel_tok, &NextBipT::first, &NextBipT::second);
 
-        else if(rel_tok == TT::KW_AffectsBip)
-            return parse_relation(ps, rel_tok, &AffectsBip::first, &AffectsBip::second);
+        // else if(rel_tok == TT::KW_AffectsBip)
+        //     return parse_relation(ps, rel_tok, &AffectsBip::first, &AffectsBip::second);
 
-        else if(rel_tok == TT::KW_AffectsBipStar)
-            return parse_relation(ps, rel_tok, &AffectsBipT::first, &AffectsBipT::second);
+        // else if(rel_tok == TT::KW_AffectsBipStar)
+        //     return parse_relation(ps, rel_tok, &AffectsBipT::first, &AffectsBipT::second);
 
         else if(rel_tok == TT::KW_Uses || rel_tok == TT::KW_Modifies)
             return parse_uses_modifies(ps);
