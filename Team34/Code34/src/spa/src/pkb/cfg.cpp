@@ -9,7 +9,6 @@
 #include <stack>
 #include <unordered_set>
 #include <vector>
-#include <iostream>
 #include <functional>
 
 
@@ -403,7 +402,7 @@ namespace pkb
         return false;
     }
 
-    bool CFG::doesAffectBip(StatementNum id1, StatementNum id2) const 
+    bool CFG::doesAffectBip(StatementNum id1, StatementNum id2) const
     {
         if(!isStatementTransitivelyNextBip(id1, id2))
             return false;
@@ -419,7 +418,7 @@ namespace pkb
             is_modified |= var == mod_var;
         if(!is_modified)
             return false;
-        
+
         std::unordered_map<std::string, std::unordered_set<size_t>> validGates;
         StatementSet visited;
         std::stack<StatementNum> emptyStack;
@@ -446,9 +445,8 @@ namespace pkb
 
             if(callStmt != nullptr)
             {
-
                 auto calleeName = dynamic_cast<const simple::ast::ProcCall*>(callStmt->getAstStmt())->proc_name;
-                
+
                 if(visited.count(gates.at(calleeName).first) == 0) // not visited
                 {
                     std::stack<StatementNum> calls_copy(callStack);
@@ -488,7 +486,7 @@ namespace pkb
                                 auto procName = m_pkb->getStatementAt(num).getProc()->name;
                                 if(validGates.count(procName) == 0)
                                 {
-                                    validGates.insert({procName, {num}});
+                                    validGates.insert({ procName, { num } });
                                 }
                                 else
                                 {
@@ -496,9 +494,8 @@ namespace pkb
                                 }
                                 if(!callStack.empty())
                                 {
-                                    if(callStack.top() == weight-1)
+                                    if(callStack.top() == weight - 1)
                                     {
-
                                         std::stack<StatementNum> calls_copy(callStack);
                                         calls_copy.pop();
                                         ret |= visit(stmt, calls_copy);
@@ -754,7 +751,7 @@ namespace pkb
 
     StatementSet CFG::getCurrentStack(const StatementNum id) const
     {
-        auto& stmt= m_pkb->getStatementAt(id);
+        auto& stmt = m_pkb->getStatementAt(id);
         StatementSet callStack {};
 
         auto currProc = stmt.getProc();
@@ -815,7 +812,7 @@ namespace pkb
         }
 
         return false;
-    } 
+    }
 
     const StatementSet& CFG::getNextStatementsBip(StatementNum id) const
     {
@@ -879,7 +876,7 @@ namespace pkb
             return *cache;
 
         StatementSet callStack = getCurrentStack(id);
-        //m_pkb->getProcedureNamed(m_pkb->getStatementAt(id).getProc()->name).getCallStmts()
+        // m_pkb->getProcedureNamed(m_pkb->getStatementAt(id).getProc()->name).getCallStmts()
         StatementSet visited;
         std::queue<StatementNum> q;
 
@@ -887,16 +884,16 @@ namespace pkb
             std::vector<StatementNum> prevNodes;
             for(size_t i = 0; i < total_inst; i++)
             {
-                if(adj_mat_bip[i][id-1] != INF)
+                if(adj_mat_bip[i][id - 1] != INF)
                 {
-                    prevNodes.push_back(i + 1); 
+                    prevNodes.push_back(i + 1);
                 }
             }
             for(auto& prev : prevNodes)
             {
                 if(visited.count(prev) == 0) // not visited yet
                 {
-                    if(adj_mat_bip[prev-1][id-1] == 1) // must be intra and dest cannot be call
+                    if(adj_mat_bip[prev - 1][id - 1] == 1) // must be intra and dest cannot be call
                     {
                         q.emplace(prev);
                     }
@@ -908,10 +905,9 @@ namespace pkb
                             q.emplace(prev);
                         }
 
-                        if(callStack.count(adj_mat_bip[prev-1][id-1] - 1) != 0 )
+                        if(callStack.count(adj_mat_bip[prev - 1][id - 1] - 1) != 0)
                         {
                             q.emplace(prev);
-
                         }
                     }
                 }
