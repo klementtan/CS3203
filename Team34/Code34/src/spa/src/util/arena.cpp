@@ -69,7 +69,6 @@ namespace util
             chunk->next = this->head;
             this->head = chunk;
             cur = this->head;
-            continue;
         }
     }
 
