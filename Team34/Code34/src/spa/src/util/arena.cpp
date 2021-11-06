@@ -8,7 +8,8 @@
 
 namespace util
 {
-    static constexpr size_t CHUNK_CAPCITY = 67108864;
+    // allocate in 256kb blocks.
+    static constexpr size_t CHUNK_CAPCITY = 256 * 1024;
 
     Arena& Arena::global()
     {

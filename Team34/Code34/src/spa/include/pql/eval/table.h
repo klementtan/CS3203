@@ -30,7 +30,7 @@ namespace pql::eval::table
         simple::ast::StatementNum m_stmt_num { 0 };
 
     public:
-        Entry();
+        Entry() = default;
         Entry(const pql::ast::Declaration* declaration, const std::string& val);
         Entry(const pql::ast::Declaration* declaration, const simple::ast::StatementNum& val);
         // Only use this for AttrRef as we cannot determine the entry type from the declaration

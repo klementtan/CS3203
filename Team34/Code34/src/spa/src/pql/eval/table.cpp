@@ -24,7 +24,6 @@ namespace pql::eval::table
         { EntryType::kConst, "Const" },
     };
 
-    Entry::Entry() = default;
     Entry::Entry(const pql::ast::Declaration* declaration, const std::string& val)
     {
         this->m_declaration = declaration;

@@ -21,7 +21,7 @@ namespace pql::eval::solver
         // explicit IntRow(std::unordered_map<const ast::Declaration*, table::Entry> columns);
         explicit IntRow(util::ArenaVec<table::Entry> columns);
 
-        IntRow();
+        IntRow() = default;
         // merge this row with a new column and return a new copy
         void addColumn(const ast::Declaration* decl, const table::Entry& entry);
         [[nodiscard]] bool canMerge(const IntRow& other, const TableHeaders& other_headers) const;
