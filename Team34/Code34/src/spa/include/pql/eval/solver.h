@@ -10,19 +10,18 @@ namespace pql::eval::solver
 {
     using TableHeaders = std::unordered_set<const ast::Declaration*>;
 
-
     // Intermediate Row for IntTable
     class IntRow
     {
     private:
         // the Entry contains a Declaration, so we are able to get the value by a declaration.
-        std::vector<table::Entry> m_columns;
+        util::ArenaVec<table::Entry> m_columns;
 
     public:
         // explicit IntRow(std::unordered_map<const ast::Declaration*, table::Entry> columns);
-        explicit IntRow(std::vector<table::Entry> columns);
+        explicit IntRow(util::ArenaVec<table::Entry> columns);
 
-        IntRow();
+        IntRow() = default;
         // merge this row with a new column and return a new copy
         void addColumn(const ast::Declaration* decl, const table::Entry& entry);
         [[nodiscard]] bool canMerge(const IntRow& other, const TableHeaders& other_headers) const;
@@ -35,7 +34,7 @@ namespace pql::eval::solver
 
         bool contains(const ast::Declaration* decl) const;
         size_t size() const;
-        const std::vector<table::Entry>& getColumns() const;
+        const util::ArenaVec<table::Entry>& getColumns() const;
         // check columns in the row exist in one of the allowed joins
         [[nodiscard]] bool isAllowed(const table::Join& join) const;
         [[nodiscard]] std::string toString() const;
@@ -47,12 +46,11 @@ namespace pql::eval::solver
     class IntTable
     {
     private:
-        std::vector<IntRow> m_rows;
-        // header for rows
+        util::ArenaVec<IntRow> m_rows;
         TableHeaders m_headers;
 
     public:
-        IntTable(std::vector<IntRow> rows, const TableHeaders& headers);
+        IntTable(util::ArenaVec<IntRow> rows, const TableHeaders& headers);
         IntTable();
         bool contains(const ast::Declaration* declaration);
 
@@ -65,13 +63,11 @@ namespace pql::eval::solver
         // Remove columns that are not in the allowed headers
         void filterColumns(const TableHeaders& allowed_headers);
         [[nodiscard]] const TableHeaders& getHeaders() const;
-        [[nodiscard]] const std::vector<IntRow>& getRows() const;
-        [[nodiscard]] std::vector<IntRow>& getRowsMutable();
+        [[nodiscard]] const util::ArenaVec<IntRow>& getRows() const;
         void filterRows(const table::Join& join);
         void dedupRows();
         const IntRow& getRow(size_t i) const;
         IntRow& getRowMutable(size_t i);
-        std::vector<IntRow>& getRows();
 
         [[nodiscard]] bool empty() const;
         [[nodiscard]] size_t size() const;

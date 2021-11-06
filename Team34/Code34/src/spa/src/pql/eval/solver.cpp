@@ -14,8 +14,7 @@
 namespace pql::eval::solver
 {
     // Intermediate Row for IntTable
-    IntRow::IntRow(std::vector<table::Entry> columns) : m_columns(std::move(columns)) { }
-    IntRow::IntRow() : m_columns() { }
+    IntRow::IntRow(util::ArenaVec<table::Entry> columns) : m_columns(std::move(columns)) { }
 
     // merge this row with a new column and return a new copy
     void IntRow::addColumn(const ast::Declaration* decl, const table::Entry& entry)
@@ -75,12 +74,16 @@ namespace pql::eval::solver
     {
         spa_assert(canMerge(other, other_headers));
 
-        m_columns.reserve(m_columns.size() + other_headers.size());
+        size_t k = m_columns.size();
+        m_columns.resize(k + other_headers.size());
+
         for(const auto& decl : other_headers)
         {
             if(!this->contains(decl))
-                m_columns.push_back(other.getVal(decl));
+                m_columns[k++] = other.getVal(decl);
         }
+
+        m_columns.resize(k);
     }
 
     void IntRow::filterColumns(const TableHeaders& allowed_headers)
@@ -99,7 +102,7 @@ namespace pql::eval::solver
         }
     }
 
-    const std::vector<table::Entry>& IntRow::getColumns() const
+    const util::ArenaVec<table::Entry>& IntRow::getColumns() const
     {
         return m_columns;
     }
@@ -140,7 +143,7 @@ namespace pql::eval::solver
     }
 
 
-    IntTable::IntTable(std::vector<IntRow> rows, const TableHeaders& headers)
+    IntTable::IntTable(util::ArenaVec<IntRow> rows, const TableHeaders& headers)
         : m_rows(std::move(rows)), m_headers(headers)
     {
         // evaluate this in an assert so it goes away during release
@@ -166,17 +169,14 @@ namespace pql::eval::solver
         return m_headers.count(declaration);
     }
 
-    std::vector<IntRow>& IntTable::getRows()
-    {
-        return m_rows;
-    }
-
     void IntTable::merge(const IntTable& other)
     {
         START_BENCHMARK_TIMER(zpr::sprint("****** Time spent merging tables of {} x {}", m_rows.size(), other.size()));
 
         // use copy assignment to create new rows
-        std::vector<IntRow> new_rows;
+        util::ArenaVec<IntRow> new_rows;
+        new_rows.reserve(m_rows.size() * other.getRows().size());
+
         // m_rows should never be empty. Empty IntTable should contain an empty IntRow with no columns
         if(m_rows.empty())
         {
@@ -211,7 +211,7 @@ namespace pql::eval::solver
                 "Failed to mergeColumn decl:{} with {}. Decl already in headers", decl->toString(), toString());
         }
         // use copy assignment to create new rows
-        std::vector<IntRow> new_rows;
+        util::ArenaVec<IntRow> new_rows;
         if(m_rows.empty())
         {
             util::logfmt("pql::eval::solver", "Merging {} to emtpy tbl {} will always result in empty table",
@@ -257,16 +257,10 @@ namespace pql::eval::solver
         return this->m_headers;
     }
 
-    const std::vector<IntRow>& IntTable::getRows() const
+    const util::ArenaVec<IntRow>& IntTable::getRows() const
     {
         return this->m_rows;
     }
-
-    std::vector<IntRow>& IntTable::getRowsMutable()
-    {
-        return this->m_rows;
-    }
-
 
     const IntRow& IntTable::getRow(size_t i) const
     {
@@ -300,7 +294,7 @@ namespace pql::eval::solver
             return;
         }
 
-        std::vector<IntRow> new_rows {};
+        util::ArenaVec<IntRow> new_rows {};
 
         new_rows.reserve(m_rows.size());
         std::copy_if(std::move_iterator(m_rows.begin()), std::move_iterator(m_rows.end()), std::back_inserter(new_rows),
@@ -337,7 +331,9 @@ namespace pql::eval::solver
         START_BENCHMARK_TIMER(
             zpr::sprint("****** Time spent merging+filtering tables of {} x {}", m_rows.size(), other.size()));
 
-        std::vector<IntRow> new_rows;
+        util::ArenaVec<IntRow> new_rows;
+        new_rows.reserve(m_rows.size() * other.getRows().size());
+
         if(m_rows.empty())
             util::logfmt("pql::eval::solver", "Detected IntTbl in {}. IntTbl will always be invalid", toString());
 

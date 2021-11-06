@@ -43,6 +43,14 @@ void TestWrapper::evaluate(std::string query, std::list<std::string>& results)
         return;
     }
 
+    struct uwu
+    {
+        ~uwu()
+        {
+            util::Arena::global().clear();
+        }
+    } tmp;
+
     try
     {
         util::logfmt("pql:ast", "Starting to generate pql ast");
