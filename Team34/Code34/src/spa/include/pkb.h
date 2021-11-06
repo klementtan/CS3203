@@ -340,7 +340,10 @@ namespace pkb
         std::unordered_map<StatementNum, const Statement*> assign_stmts;
         std::unordered_map<StatementNum, const Statement*> mod_stmts;
         std::unordered_map<StatementNum, const Statement*> call_stmts;
-        StatementSet getCurrentStack(const Statement& id) const;
+        StatementSet getCurrentStack(const StatementNum id) const;
+        void addNextNodes(
+            StatementNum num, StatementSet& callStack, StatementSet& visited, std::queue<StatementNum>& q) const;
+
 
         friend struct DesignExtractor;
     };

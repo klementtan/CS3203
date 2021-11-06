@@ -9,6 +9,8 @@
 #include <stack>
 #include <unordered_set>
 #include <vector>
+#include <functional>
+
 
 #define INF SIZE_MAX
 
@@ -404,94 +406,114 @@ namespace pkb
     {
         if(!isStatementTransitivelyNextBip(id1, id2))
             return false;
-
         auto stmt1 = getAssignStmtMapping(id1);
         auto stmt2 = getAssignStmtMapping(id2);
-
         if(stmt1 == nullptr || stmt2 == nullptr)
             return false;
-
         const auto& modified = stmt1->getModifiedVariables();
         const auto& used = stmt2->getUsedVariables();
-
         std::string mod_var = *modified.begin();
         bool is_modified = false;
         for(const auto& var : used)
             is_modified |= var == mod_var;
-
         if(!is_modified)
             return false;
 
+        std::unordered_map<std::string, std::unordered_set<size_t>> validGates;
         StatementSet visited;
-        std::queue<std::tuple<StatementNum, std::string, std::stack<StatementNum>>> q;
-        for(auto [stmt, weight] : adj_lst_bip.at(id1))
-        {
-            std::stack<StatementNum> s;
-            q.emplace(stmt, mod_var, s);
-            visited.insert(stmt);
-        }
+        std::stack<StatementNum> emptyStack;
+        bool starting = true;
 
-        while(!q.empty())
-        {
-            auto [num, var, calls] = q.front();
-            q.pop();
-
-            if(num == id2)
-                return true;
-
-            if(getCallStmtMapping(num) == nullptr)
-                if(getModStmtMapping(num) != nullptr && getModStmtMapping(num)->modifiesVariable(var))
-                    continue;
-
-            if(auto it = adj_lst_bip.find(num); it != adj_lst_bip.end())
+        std::function<bool(StatementNum, std::stack<StatementNum>)> visit {};
+        visit = [&](StatementNum num, std::stack<StatementNum> callStack) -> bool {
+            if(!starting)
             {
-                for(auto [stmt, weight] : it->second)
+                if(num == id2)
+                    return true;
+                if(getCallStmtMapping(num) == nullptr)
+                    if(getModStmtMapping(num) != nullptr && getModStmtMapping(num)->modifiesVariable(mod_var))
+                        return false;
+                visited.insert(num);
+            }
+            else
+            {
+                starting = false;
+            }
+
+            bool ret = false;
+            auto callStmt = getCallStmtMapping(num);
+
+            if(callStmt != nullptr)
+            {
+                auto calleeName = dynamic_cast<const simple::ast::ProcCall*>(callStmt->getAstStmt())->proc_name;
+
+                if(visited.count(gates.at(calleeName).first) == 0) // not visited
                 {
-                    if(weight == 1)
+                    std::stack<StatementNum> calls_copy(callStack);
+                    if(m_pkb->getStatementAt(num).hasFollower())
                     {
-                        if(visited.count(stmt))
-                            continue;
-                        q.emplace(stmt, var, calls);
-                        visited.insert(stmt);
+                        calls_copy.push(num);
                     }
-                    else
+                    ret |= visit(gates.at(calleeName).first, calls_copy);
+                }
+                else
+                {
+                    if(validGates.count(calleeName))
                     {
-                        if(getCallStmtMapping(num) == nullptr)
+                        for(auto return_pt : validGates.at(calleeName))
                         {
-                            std::stack<StatementNum> calls_copy(calls);
-                            if(!calls_copy.empty())
-                            {
-                                if(calls.top() == weight)
-                                {
-                                    if(visited.count(stmt))
-                                        continue;
-                                    calls_copy.pop();
-                                    q.emplace(stmt, var, calls_copy);
-                                    visited.insert(stmt);
-                                }
-                            }
-                            else
-                            {
-                                if(visited.count(stmt))
-                                    continue;
-                                q.emplace(stmt, var, calls_copy);
-                                visited.insert(stmt);
-                            }
-                        }
-                        else
-                        {
-                            std::stack<StatementNum> calls_copy(calls);
-                            calls_copy.push(weight);
-                            q.emplace(stmt, var, calls_copy);
-                            visited.clear();
-                            visited.insert(stmt);
+                            std::stack<StatementNum> calls_copy(callStack);
+                            calls_copy.push(num);
+                            ret |= visit(return_pt, callStack);
                         }
                     }
                 }
             }
-        }
+            else
+            {
+                if(auto it = adj_lst_bip.find(num); it != adj_lst_bip.end())
+                {
+                    for(auto& [stmt, weight] : it->second)
+                    {
+                        if(visited.count(stmt) == 0) // not visited yet
+                        {
+                            if(weight == 1)
+                            {
+                                ret |= visit(stmt, callStack);
+                            }
+                            else
+                            {
+                                auto procName = m_pkb->getStatementAt(num).getProc()->name;
+                                if(validGates.count(procName) == 0)
+                                {
+                                    validGates.insert({ procName, { num } });
+                                }
+                                else
+                                {
+                                    validGates[procName].insert(num);
+                                }
+                                if(!callStack.empty())
+                                {
+                                    if(callStack.top() == weight - 1)
+                                    {
+                                        std::stack<StatementNum> calls_copy(callStack);
+                                        calls_copy.pop();
+                                        ret |= visit(stmt, calls_copy);
+                                    }
+                                }
+                                else
+                                {
+                                    ret |= visit(stmt, callStack);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return ret;
+        };
 
-        return false;
+        return visit(id1, emptyStack);
     }
 
     bool CFG::doesTransitivelyAffectBip(StatementNum id1, StatementNum id2) const
@@ -630,7 +652,9 @@ namespace pkb
     {
         auto& stmt = m_pkb->getStatementAt(id);
         if(auto cache = stmt.maybeGetAffectedStatementsBip(); cache != nullptr)
+        {
             return *cache;
+        }
 
         StatementSet ret {};
         for(auto stmt : getTransitivelyNextStatementsBip(id))
@@ -725,8 +749,9 @@ namespace pkb
         return adj_mat_bip[stmt1 - 1][stmt2 - 1] != INF;
     }
 
-    StatementSet CFG::getCurrentStack(const Statement& stmt) const
+    StatementSet CFG::getCurrentStack(const StatementNum id) const
     {
+        auto& stmt = m_pkb->getStatementAt(id);
         StatementSet callStack {};
 
         auto currProc = stmt.getProc();
@@ -740,50 +765,49 @@ namespace pkb
         return callStack;
     }
 
-    bool CFG::isStatementTransitivelyNextBip(StatementNum id1, StatementNum id2) const
+    void CFG::addNextNodes(
+        StatementNum num, StatementSet& callStack, StatementSet& visited, std::queue<StatementNum>& q) const
     {
-        auto& stmt1 = m_pkb->getStatementAt(id1);
-        // auto& stmt2 = m_pkb->getStatementAt(id2);
-
-        StatementSet callStack = getCurrentStack(stmt1);
-        StatementSet visited;
-
-        std::queue<StatementNum> q {};
-        q.emplace(id1);
-        bool initialNode = true;
-        while(!q.empty())
+        auto callStmt = getCallStmtMapping(num);
+        if(callStmt != nullptr)
         {
-            auto next = q.front();
-            if(next == id2 && !initialNode)
-                return true;
-            auto callStmt = getCallStmtMapping(next);
-            if(callStmt != nullptr)
+            callStack.insert(num);
+            auto name = dynamic_cast<const simple::ast::ProcCall*>(callStmt->getAstStmt())->proc_name;
+            for(auto return_pt : gates.at(name).second)
             {
-                callStack.insert(next);
-                for(auto a : gates.at(callStmt->getProc()->name).second)
-                {
-                    q.emplace(a);
-                }
+                q.emplace(return_pt);
             }
-            if(auto it = adj_lst_bip.find(next); it != adj_lst_bip.end())
+        }
+        if(auto it = adj_lst_bip.find(num); it != adj_lst_bip.end())
+        {
+            for(auto& [stmt, weight] : it->second)
             {
-                for(auto& pair : it->second)
+                if(weight == 1 || callStack.count(weight - 1) != 0) // intra or allowed to visit
                 {
-                    if(pair.second == 1 || callStack.count(pair.second - 1) != 0)
+                    if(visited.count(stmt) == 0) // not visited yet
                     {
-                        if(visited.count(pair.first) == 0)
-                        {
-                            q.emplace(pair.first);
-                        }
+                        q.emplace(stmt);
                     }
                 }
             }
+        }
+    }
 
-            if(!initialNode)
-                visited.insert(next);
-            else
-                initialNode = false;
+    bool CFG::isStatementTransitivelyNextBip(StatementNum id1, StatementNum id2) const
+    {
+        check_in_range(id2, total_inst);
+        StatementSet callStack = getCurrentStack(id1);
+        StatementSet visited;
+        std::queue<StatementNum> q;
 
+        addNextNodes(id1, callStack, visited, q);
+        while(!q.empty())
+        {
+            auto curr = q.front();
+            if(curr == id2)
+                return true;
+            addNextNodes(curr, callStack, visited, q);
+            visited.insert(curr);
             q.pop();
         }
 
@@ -814,44 +838,18 @@ namespace pkb
         if(auto cache = stmt.maybeGetTransitivelyNextStatementsBip(); cache != nullptr)
             return *cache;
 
-        StatementSet callStack = getCurrentStack(stmt);
+        StatementSet callStack = getCurrentStack(id);
         StatementSet visited;
+        std::queue<StatementNum> q;
 
-        std::queue<StatementNum> q {};
-        q.emplace(id);
-        bool initialNode = true;
+        addNextNodes(id, callStack, visited, q);
         while(!q.empty())
         {
-            auto next = q.front();
-            auto callStmt = getCallStmtMapping(next);
-            if(callStmt != nullptr)
-            {
-                callStack.insert(next);
-                for(auto a : gates.at(callStmt->getProc()->name).second)
-                {
-                    q.emplace(a);
-                }
-            }
-            if(auto it = adj_lst_bip.find(next); it != adj_lst_bip.end())
-            {
-                for(auto& pair : it->second)
-                {
-                    if(pair.second == 1 || callStack.count(pair.second - 1) != 0)
-                    {
-                        if(visited.count(pair.first) == 0)
-                        {
-                            q.emplace(pair.first);
-                        }
-                    }
-                }
-            }
-            if(!initialNode)
-                visited.insert(next);
-            else
-                initialNode = false;
+            auto curr = q.front();
+            addNextNodes(curr, callStack, visited, q);
+            visited.insert(curr);
             q.pop();
         }
-
         return stmt.cacheTransitivelyNextStatementsBip(std::move(visited));
     }
 
@@ -874,19 +872,57 @@ namespace pkb
     const StatementSet& CFG::getTransitivelyPreviousStatementsBip(StatementNum id) const
     {
         auto& stmt = m_pkb->getStatementAt(id);
-
         if(auto cache = stmt.maybeGetTransitivelyPreviousStatementsBip(); cache != nullptr)
             return *cache;
 
-        StatementSet ret {};
+        StatementSet callStack = getCurrentStack(id);
+        // m_pkb->getProcedureNamed(m_pkb->getStatementAt(id).getProc()->name).getCallStmts()
+        StatementSet visited;
+        std::queue<StatementNum> q;
 
-        for(size_t i = 0; i < total_inst; i++)
-        {
-            if(isStatementTransitivelyNextBip(i + 1, id))
+        auto addPrevNodes = [&](StatementNum id) {
+            std::vector<StatementNum> prevNodes;
+            for(size_t i = 0; i < total_inst; i++)
             {
-                ret.insert(i + 1);
+                if(adj_mat_bip[i][id - 1] != INF)
+                {
+                    prevNodes.push_back(i + 1);
+                }
             }
+            for(auto& prev : prevNodes)
+            {
+                if(visited.count(prev) == 0) // not visited yet
+                {
+                    if(adj_mat_bip[prev - 1][id - 1] == 1) // must be intra and dest cannot be call
+                    {
+                        q.emplace(prev);
+                    }
+                    else
+                    {
+                        if(getCallStmtMapping(prev) == nullptr)
+                        {
+                            callStack.insert(adj_mat_bip[prev - 1][id - 1] - 1);
+                            q.emplace(prev);
+                        }
+
+                        if(callStack.count(adj_mat_bip[prev - 1][id - 1] - 1) != 0)
+                        {
+                            q.emplace(prev);
+                        }
+                    }
+                }
+            }
+        };
+
+        addPrevNodes(id);
+        while(!q.empty())
+        {
+            auto curr = q.front();
+            addPrevNodes(curr);
+            visited.insert(curr);
+            q.pop();
         }
-        return stmt.cacheTransitivelyPreviousStatementsBip(std::move(ret));
+
+        return stmt.cacheTransitivelyPreviousStatementsBip(std::move(visited));
     }
 }
